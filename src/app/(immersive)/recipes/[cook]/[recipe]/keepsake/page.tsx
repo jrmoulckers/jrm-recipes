@@ -1,12 +1,12 @@
-import { type Metadata } from "next";
-import { notFound } from "next/navigation";
+import { type Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
-import { toPrintRecipe } from "~/server/recipes/serialize";
-import { KeepsakeView } from "~/components/recipe/keepsake-view";
-import { parseKeepsakeMessage } from "~/lib/keepsake";
-import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
+import { toPrintRecipe } from '~/server/recipes/serialize';
+import { KeepsakeView } from '~/components/recipe/keepsake-view';
+import { parseKeepsakeMessage } from '~/lib/keepsake';
+import { parseRecipeParams, type RecipeRouteParams } from '~/lib/route-params';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 type KeepsakeSearchParams = {
   from?: string | string[];
@@ -27,13 +27,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const token = firstParam((await searchParams).t);
-  const { recipe } = await getNamespacedRecipeForViewer(
-    cook,
-    recipeSegment,
-    token,
-  );
+  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
   return {
-    title: recipe ? `A keepsake · ${recipe.title}` : "A keepsake recipe",
+    title: recipe ? `A keepsake · ${recipe.title}` : 'A keepsake recipe',
     // Personal keepsakes are private gifts, not content to index.
     robots: { index: false, follow: false },
   };
@@ -56,18 +52,12 @@ async function KeepsakePage({
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const sp = await searchParams;
   const token = firstParam(sp.t);
-  const { recipe } = await getNamespacedRecipeForViewer(
-    cook,
-    recipeSegment,
-    token,
-  );
+  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
   if (!recipe) notFound();
 
   const { from, note } = parseKeepsakeMessage({ from: sp.from, note: sp.note });
 
-  return (
-    <KeepsakeView recipe={toPrintRecipe(recipe)} from={from} note={note} />
-  );
+  return <KeepsakeView recipe={toPrintRecipe(recipe)} from={from} note={note} />;
 }
 
 export default withRouteMessages(KeepsakePage);

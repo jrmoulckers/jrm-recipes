@@ -1,26 +1,22 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
-import { Bell } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { Bell } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { formatRelativeTime } from "~/lib/dates";
-import { notificationSentence } from "~/lib/notifications";
-import { useServerAction } from "~/lib/use-server-action";
-import type { NotificationItem } from "~/server/notifications/queries";
+import { cn } from '~/lib/utils';
+import { formatRelativeTime } from '~/lib/dates';
+import { notificationSentence } from '~/lib/notifications';
+import { useServerAction } from '~/lib/use-server-action';
+import type { NotificationItem } from '~/server/notifications/queries';
 import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
-} from "~/server/notifications/actions";
-import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/server/notifications/actions';
+import { Button } from '~/components/ui/button';
+import { Separator } from '~/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 type Props = {
   initialCount: number;
@@ -33,7 +29,7 @@ type Props = {
  * optimistically and refreshes the server data behind the popover.
  */
 export function NotificationBell({ initialCount, initialItems }: Props) {
-  const t = useTranslations("notifications");
+  const t = useTranslations('notifications');
   const locale = useLocale();
   const [count, setCount] = React.useState(initialCount);
   const [items, setItems] = React.useState(initialItems);
@@ -50,22 +46,18 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
 
   const onOpenItem = (item: NotificationItem) => {
     if (item.readAt) return;
-    setItems((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, readAt: new Date() } : n)),
-    );
+    setItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, readAt: new Date() } : n)));
     setCount((c) => Math.max(0, c - 1));
     markOne.run({ notificationId: item.id });
   };
 
   const onMarkAll = () => {
-    setItems((prev) =>
-      prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })),
-    );
+    setItems((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })));
     setCount(0);
     markAll.run({});
   };
 
-  const badge = count > 99 ? "99+" : String(count);
+  const badge = count > 99 ? '99+' : String(count);
 
   return (
     <Popover>
@@ -74,9 +66,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
           variant="ghost"
           size="icon"
           className="relative"
-          aria-label={
-            count > 0 ? t("bell.unreadAria", { count }) : t("bell.aria")
-          }
+          aria-label={count > 0 ? t('bell.unreadAria', { count }) : t('bell.aria')}
         >
           <Bell className="size-5" aria-hidden />
           {count > 0 ? (
@@ -91,7 +81,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold">{t("title")}</span>
+          <span className="text-sm font-semibold">{t('title')}</span>
           {count > 0 ? (
             <Button
               variant="ghost"
@@ -100,30 +90,26 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
               onClick={onMarkAll}
               disabled={markAll.pending}
             >
-              {t("markAllRead")}
+              {t('markAllRead')}
             </Button>
           ) : null}
         </div>
         <Separator />
         <div className="max-h-96 overflow-y-auto py-1">
           {items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              {t("caughtUp")}
-            </p>
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t('caughtUp')}</p>
           ) : (
             <ul className="flex flex-col">
               {items.map((item) => {
                 const sentence = notificationSentence(
                   item.type,
-                  item.actor?.name ?? item.actor?.handle ?? t("someone"),
+                  item.actor?.name ?? item.actor?.handle ?? t('someone'),
                   item.context,
                 );
                 const body = (
                   <>
                     <span className="flex-1">
-                      <span className="block text-sm text-foreground">
-                        {sentence}
-                      </span>
+                      <span className="block text-sm text-foreground">{sentence}</span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
                         {formatRelativeTime(item.createdAt, locale)}
                       </span>
@@ -131,29 +117,25 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
                     {!item.readAt ? (
                       <span
                         className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-                        aria-label={t("unread")}
+                        aria-label={t('unread')}
                       />
                     ) : null}
                   </>
                 );
                 const rowClass = cn(
-                  "flex items-start gap-2 px-3 py-2 text-start transition-colors hover:bg-muted/60",
-                  !item.readAt && "bg-muted/30",
+                  'flex items-start gap-2 px-3 py-2 text-start transition-colors hover:bg-muted/60',
+                  !item.readAt && 'bg-muted/30',
                 );
                 return (
                   <li key={item.id}>
                     {item.href ? (
-                      <Link
-                        href={item.href}
-                        className={rowClass}
-                        onClick={() => onOpenItem(item)}
-                      >
+                      <Link href={item.href} className={rowClass} onClick={() => onOpenItem(item)}>
                         {body}
                       </Link>
                     ) : (
                       <button
                         type="button"
-                        className={cn(rowClass, "w-full")}
+                        className={cn(rowClass, 'w-full')}
                         onClick={() => onOpenItem(item)}
                       >
                         {body}
@@ -170,7 +152,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
           href="/notifications"
           className="block px-3 py-2 text-center text-sm font-medium text-primary hover:underline"
         >
-          {t("viewAll")}
+          {t('viewAll')}
         </Link>
       </PopoverContent>
     </Popover>

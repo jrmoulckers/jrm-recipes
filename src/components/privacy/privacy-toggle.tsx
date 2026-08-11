@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { ShieldCheck } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { brand } from "~/config/brand";
-import { Switch } from "~/components/ui/switch";
-import { useConsent } from "~/components/analytics/consent-provider";
+import { brand } from '~/config/brand';
+import { Switch } from '~/components/ui/switch';
+import { useConsent } from '~/components/analytics/consent-provider';
 
 /**
  * Analytics opt-out control (issue #324) for the preferences panel. Flipping it
@@ -14,24 +14,21 @@ import { useConsent } from "~/components/analytics/consent-provider";
  */
 export function PrivacyToggle() {
   const { captureAllowed, privacySignal, grant, deny } = useConsent();
-  const t = useTranslations("privacy.toggle");
+  const t = useTranslations('privacy.toggle');
 
   return (
     <section className="flex items-start gap-3 rounded-xl p-2 transition-colors hover:bg-muted/60">
       <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
         <ShieldCheck className="size-5" />
       </span>
-      <label
-        htmlFor="analytics-consent"
-        className="min-w-0 flex-1 cursor-pointer select-none"
-      >
-        <span className="block text-sm font-medium">{t("label")}</span>
+      <label htmlFor="analytics-consent" className="min-w-0 flex-1 cursor-pointer select-none">
+        <span className="block text-sm font-medium">{t('label')}</span>
         <span className="block text-xs text-muted-foreground">
-          {t("description", { brand: brand.name })}
+          {t('description', { brand: brand.name })}
         </span>
         {privacySignal && (
           <span className="mt-1 block text-xs font-medium text-muted-foreground">
-            {t("signalOn")}
+            {t('signalOn')}
           </span>
         )}
       </label>

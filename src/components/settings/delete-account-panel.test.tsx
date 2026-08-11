@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { IntlWrapper } from "~/test/intl";
-import { DeleteAccountPanel } from "./delete-account-panel";
-import type { DeletionPreview } from "~/server/users/deletion-preview";
+import { IntlWrapper } from '~/test/intl';
+import { DeleteAccountPanel } from './delete-account-panel';
+import type { DeletionPreview } from '~/server/users/deletion-preview';
 
 /**
  * The notice must not promise an erasure that will be held (#787).
@@ -19,11 +19,11 @@ import type { DeletionPreview } from "~/server/users/deletion-preview";
  * call sites would have passed throughout.
  */
 
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
 }));
 
-vi.mock("~/server/users/actions", () => ({
+vi.mock('~/server/users/actions', () => ({
   deleteAccountAction: vi.fn(),
 }));
 
@@ -51,21 +51,19 @@ afterEach(cleanup);
 
 /** The confirm help and CTA only exist once the two-step reveal is open. */
 function openConfirmStep() {
-  fireEvent.click(screen.getByRole("button", { name: /delete my account/i }));
+  fireEvent.click(screen.getByRole('button', { name: /delete my account/i }));
 }
 
-describe("DeleteAccountPanel held disclosure", () => {
-  it("says nothing about a hold for an ordinary account", () => {
+describe('DeleteAccountPanel held disclosure', () => {
+  it('says nothing about a hold for an ordinary account', () => {
     renderPanel({ heldRecipeCount: 0 });
     expect(screen.queryByText(/can't finish this deletion yet/i)).toBeNull();
 
     openConfirmStep();
-    expect(
-      screen.getByText(/everything above is deleted immediately/i),
-    ).toBeTruthy();
+    expect(screen.getByText(/everything above is deleted immediately/i)).toBeTruthy();
   });
 
-  it("warns before the confirm step when the erasure will be held", () => {
+  it('warns before the confirm step when the erasure will be held', () => {
     renderPanel({ heldRecipeCount: 2 });
 
     expect(screen.getByText(/can't finish this deletion yet/i)).toBeTruthy();
@@ -76,21 +74,13 @@ describe("DeleteAccountPanel held disclosure", () => {
     expect(screen.getByText(/delete nothing today/i)).toBeTruthy();
   });
 
-  it("stops promising an immediate deletion once a hold is certain", () => {
+  it('stops promising an immediate deletion once a hold is certain', () => {
     renderPanel({ heldRecipeCount: 1 });
     openConfirmStep();
 
-    expect(screen.queryByText(/everything above is deleted immediately/i)).toBe(
-      null,
-    );
-    expect(
-      screen.getByText(/Pressing the button records your request/i),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /send my deletion request/i }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole("button", { name: /permanently delete everything/i }),
-    ).toBeNull();
+    expect(screen.queryByText(/everything above is deleted immediately/i)).toBe(null);
+    expect(screen.getByText(/Pressing the button records your request/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /send my deletion request/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /permanently delete everything/i })).toBeNull();
   });
 });

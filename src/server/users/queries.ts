@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { recipes, users } from "~/server/db/schema";
+import { db, isDbConfigured } from '~/server/db';
+import { recipes, users } from '~/server/db/schema';
 
 /**
  * Public creator profile (issue #327): a cook identified by their unique
@@ -34,8 +34,8 @@ export async function getPublicProfileByHandle(handle: string) {
     where: and(
       isNull(recipes.deletedAt),
       eq(recipes.authorId, user.id),
-      eq(recipes.visibility, "public"),
-      eq(recipes.status, "published"),
+      eq(recipes.visibility, 'public'),
+      eq(recipes.status, 'published'),
     ),
     orderBy: [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     with: { author: true, tags: { with: { tag: true } } },
@@ -60,11 +60,9 @@ export async function listPublicCookHandles(): Promise<string[]> {
       and(
         isNotNull(users.handle),
         isNull(recipes.deletedAt),
-        eq(recipes.visibility, "public"),
-        eq(recipes.status, "published"),
+        eq(recipes.visibility, 'public'),
+        eq(recipes.status, 'published'),
       ),
     );
-  return rows
-    .map((row) => row.handle)
-    .filter((handle): handle is string => Boolean(handle));
+  return rows.map((row) => row.handle).filter((handle): handle is string => Boolean(handle));
 }

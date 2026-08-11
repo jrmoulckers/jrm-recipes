@@ -1,33 +1,26 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import dynamic from "next/dynamic";
-import { useTranslations } from "next-intl";
-import { Check, ImagePlus } from "lucide-react";
-import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
+import * as React from 'react';
+import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { Check, ImagePlus } from 'lucide-react';
+import { type CloudinaryUploadWidgetResults } from 'next-cloudinary';
 
-import { cn } from "~/lib/utils";
-import {
-  listAssetsAction,
-  recordUploadAction,
-  updateAltTextAction,
-} from "~/server/media/actions";
-import { Button } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { listAssetsAction, recordUploadAction, updateAltTextAction } from '~/server/media/actions';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import {
-  cloudinaryConfigured,
-  type MediaSelection,
-} from "~/components/ui/media-picker-config";
-import { Spinner } from "~/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { cloudinaryConfigured, type MediaSelection } from '~/components/ui/media-picker-config';
+import { Spinner } from '~/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 
 /**
  * The media picker (issue #656, epic #655): upload a new photo, re-use one the
@@ -38,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
  * widget lands in the editor route's first-load JS.
  */
 const CldUploadWidget = dynamic(
-  () => import("next-cloudinary").then((mod) => mod.CldUploadWidget),
+  () => import('next-cloudinary').then((mod) => mod.CldUploadWidget),
   { ssr: false },
 );
 
@@ -52,14 +45,14 @@ type PickerAsset = {
   altText: string | null;
 };
 
-type TabValue = "upload" | "library" | "link";
+type TabValue = 'upload' | 'library' | 'link';
 
 export function MediaPicker({
   open,
   onOpenChange,
   value,
   onChange,
-  folder = "heirloom",
+  folder = 'heirloom',
   altText: controlledAlt,
   onAltTextChange,
 }: {
@@ -78,18 +71,16 @@ export function MediaPicker({
   altText?: string;
   onAltTextChange?: (altText: string) => void;
 }) {
-  const t = useTranslations("mediaPicker");
+  const t = useTranslations('mediaPicker');
 
-  const [tab, setTab] = React.useState<TabValue>(
-    cloudinaryConfigured ? "upload" : "link",
-  );
+  const [tab, setTab] = React.useState<TabValue>(cloudinaryConfigured ? 'upload' : 'link');
   const [assetId, setAssetId] = React.useState<string | null>(null);
-  const [ownAltText, setOwnAltText] = React.useState("");
+  const [ownAltText, setOwnAltText] = React.useState('');
   const [altSaved, setAltSaved] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const callerManagesAlt = onAltTextChange != null;
-  const altText = callerManagesAlt ? (controlledAlt ?? "") : ownAltText;
+  const altText = callerManagesAlt ? (controlledAlt ?? '') : ownAltText;
   // Describable as soon as there is a photo when the caller stores the text
   // itself; otherwise only a library asset has somewhere to put it.
   const canDescribe = callerManagesAlt ? value.length > 0 : assetId != null;
@@ -125,26 +116,22 @@ export function MediaPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="xl">
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(next) => setTab(next as TabValue)}>
           <TabsList>
             {cloudinaryConfigured ? (
-              <TabsTrigger value="upload">{t("tabUpload")}</TabsTrigger>
+              <TabsTrigger value="upload">{t('tabUpload')}</TabsTrigger>
             ) : null}
-            <TabsTrigger value="library">{t("tabLibrary")}</TabsTrigger>
-            <TabsTrigger value="link">{t("tabLink")}</TabsTrigger>
+            <TabsTrigger value="library">{t('tabLibrary')}</TabsTrigger>
+            <TabsTrigger value="link">{t('tabLink')}</TabsTrigger>
           </TabsList>
 
           {cloudinaryConfigured ? (
             <TabsContent value="upload">
-              <UploadTab
-                folder={folder}
-                onUploaded={select}
-                onError={setError}
-              />
+              <UploadTab folder={folder} onUploaded={select} onError={setError} />
             </TabsContent>
           ) : null}
 
@@ -152,11 +139,7 @@ export function MediaPicker({
               start until this tab is actually opened (acceptance criterion:
               no added first-load work for callers who never browse). */}
           <TabsContent value="library">
-            <LibraryTab
-              selectedUrl={value}
-              onSelect={select}
-              onError={setError}
-            />
+            <LibraryTab selectedUrl={value} onSelect={select} onError={setError} />
           </TabsContent>
 
           <TabsContent value="link">
@@ -165,7 +148,7 @@ export function MediaPicker({
         </Tabs>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="media-picker-alt">{t("altLabel")}</Label>
+          <Label htmlFor="media-picker-alt">{t('altLabel')}</Label>
           <div className="flex flex-wrap items-center gap-2">
             <Input
               id="media-picker-alt"
@@ -174,7 +157,7 @@ export function MediaPicker({
               onChange={(event) => setAltText(event.target.value)}
               maxLength={300}
               className="flex-1"
-              placeholder={t("altPlaceholder")}
+              placeholder={t('altPlaceholder')}
             />
             {/* Saving to the library asset is only possible for a photo that has
                 one. When the caller stores the text itself it is already held in
@@ -185,15 +168,15 @@ export function MediaPicker({
               disabled={!assetId}
               onClick={() => void saveAltText()}
             >
-              {t("altSave")}
+              {t('altSave')}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {canDescribe ? t("altHint") : t("altUnavailable")}
+            {canDescribe ? t('altHint') : t('altUnavailable')}
           </p>
           {/* Politely announced so the save is perceivable without sight. */}
           <p aria-live="polite" className="text-xs text-muted-foreground">
-            {altSaved ? t("altSaved") : ""}
+            {altSaved ? t('altSaved') : ''}
           </p>
         </div>
 
@@ -205,7 +188,7 @@ export function MediaPicker({
 
         <div className="flex justify-end">
           <Button type="button" onClick={() => onOpenChange(false)}>
-            {t("done")}
+            {t('done')}
           </Button>
         </div>
       </DialogContent>
@@ -222,7 +205,7 @@ function UploadTab({
   onUploaded: (selection: MediaSelection, altText: string) => void;
   onError: (message: string | null) => void;
 }) {
-  const t = useTranslations("mediaPicker");
+  const t = useTranslations('mediaPicker');
 
   return (
     <CldUploadWidget
@@ -230,30 +213,29 @@ function UploadTab({
       options={{
         folder,
         maxFiles: 1,
-        resourceType: "image",
-        sources: ["local", "url", "camera"],
-        clientAllowedFormats: ["png", "jpeg", "jpg", "webp", "gif", "avif"],
+        resourceType: 'image',
+        sources: ['local', 'url', 'camera'],
+        clientAllowedFormats: ['png', 'jpeg', 'jpg', 'webp', 'gif', 'avif'],
         maxImageFileSize: 8_000_000,
       }}
       onSuccess={(result: CloudinaryUploadWidgetResults) => {
         const info = result.info;
-        if (!info || typeof info === "string") return;
+        if (!info || typeof info === 'string') return;
 
         // Show the photo immediately; the library row is bookkeeping that must
         // never hold the editor up.
-        onUploaded({ url: info.secure_url, assetId: null }, "");
+        onUploaded({ url: info.secure_url, assetId: null }, '');
 
         // `recordUploadAction` meters storage against the plan cap itself
         // (#318 moved into #657), so this replaces the old direct
         // `recordStorageUsageAction` call. Calling both would double-bill.
         void recordUploadAction({
           url: info.secure_url,
-          publicId:
-            typeof info.public_id === "string" ? info.public_id : undefined,
-          width: typeof info.width === "number" ? info.width : undefined,
-          height: typeof info.height === "number" ? info.height : undefined,
-          bytes: typeof info.bytes === "number" ? info.bytes : undefined,
-          format: typeof info.format === "string" ? info.format : undefined,
+          publicId: typeof info.public_id === 'string' ? info.public_id : undefined,
+          width: typeof info.width === 'number' ? info.width : undefined,
+          height: typeof info.height === 'number' ? info.height : undefined,
+          bytes: typeof info.bytes === 'number' ? info.bytes : undefined,
+          format: typeof info.format === 'string' ? info.format : undefined,
           folder,
         }).then(
           (recorded) => {
@@ -262,14 +244,14 @@ function UploadTab({
               if (recorded.asset) {
                 onUploaded(
                   { url: recorded.asset.url, assetId: recorded.asset.id },
-                  recorded.asset.altText ?? "",
+                  recorded.asset.altText ?? '',
                 );
               }
             } else {
               onError(recorded.error);
             }
           },
-          () => onError(t("uploadError")),
+          () => onError(t('uploadError')),
         );
       }}
     >
@@ -280,8 +262,8 @@ function UploadTab({
           className="flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ImagePlus className="size-6" />
-          <span className="text-sm font-medium">{t("uploadPhoto")}</span>
-          <span className="text-xs">{t("dropHint")}</span>
+          <span className="text-sm font-medium">{t('uploadPhoto')}</span>
+          <span className="text-xs">{t('dropHint')}</span>
         </button>
       )}
     </CldUploadWidget>
@@ -302,7 +284,7 @@ function LibraryTab({
   onSelect: (selection: MediaSelection, altText: string) => void;
   onError: (message: string | null) => void;
 }) {
-  const t = useTranslations("mediaPicker");
+  const t = useTranslations('mediaPicker');
 
   const [assets, setAssets] = React.useState<PickerAsset[]>([]);
   const [cursor, setCursor] = React.useState<string | null>(null);
@@ -346,21 +328,21 @@ function LibraryTab({
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     switch (event.key) {
-      case "ArrowRight":
-      case "ArrowDown":
+      case 'ArrowRight':
+      case 'ArrowDown':
         event.preventDefault();
         move(focusIndex + 1);
         break;
-      case "ArrowLeft":
-      case "ArrowUp":
+      case 'ArrowLeft':
+      case 'ArrowUp':
         event.preventDefault();
         move(focusIndex - 1);
         break;
-      case "Home":
+      case 'Home':
         event.preventDefault();
         move(0);
         break;
-      case "End":
+      case 'End':
         event.preventDefault();
         move(assets.length - 1);
         break;
@@ -373,20 +355,20 @@ function LibraryTab({
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Spinner />
-        {t("loading")}
+        {t('loading')}
       </p>
     );
   }
 
   if (assets.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("empty")}</p>;
+    return <p className="text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div
         role="radiogroup"
-        aria-label={t("libraryLabel")}
+        aria-label={t('libraryLabel')}
         onKeyDown={onKeyDown}
         className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
       >
@@ -398,21 +380,16 @@ function LibraryTab({
               type="button"
               role="radio"
               aria-checked={checked}
-              aria-label={asset.altText ?? t("untitledPhoto")}
+              aria-label={asset.altText ?? t('untitledPhoto')}
               tabIndex={index === focusIndex ? 0 : -1}
               ref={(node) => {
                 itemRefs.current[index] = node;
               }}
               onFocus={() => setFocusIndex(index)}
-              onClick={() =>
-                onSelect(
-                  { url: asset.url, assetId: asset.id },
-                  asset.altText ?? "",
-                )
-              }
+              onClick={() => onSelect({ url: asset.url, assetId: asset.id }, asset.altText ?? '')}
               className={cn(
-                "relative aspect-square overflow-hidden rounded-lg border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                checked && "ring-2 ring-primary",
+                'relative aspect-square overflow-hidden rounded-lg border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                checked && 'ring-2 ring-primary',
               )}
             >
               {/* Decorative: the button already carries the photo's name, so a
@@ -436,13 +413,8 @@ function LibraryTab({
       </div>
 
       {cursor ? (
-        <Button
-          type="button"
-          variant="outline"
-          loading={loading}
-          onClick={() => void load(cursor)}
-        >
-          {t("loadMore")}
+        <Button type="button" variant="outline" loading={loading} onClick={() => void load(cursor)}>
+          {t('loadMore')}
         </Button>
       ) : null}
     </div>
@@ -456,20 +428,18 @@ function LinkTab({
   value: string;
   onSelect: (selection: MediaSelection, altText: string) => void;
 }) {
-  const t = useTranslations("mediaPicker");
+  const t = useTranslations('mediaPicker');
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor="media-picker-link">{t("linkLabel")}</Label>
+      <Label htmlFor="media-picker-link">{t('linkLabel')}</Label>
       <Input
         id="media-picker-link"
         type="url"
         inputMode="url"
         value={value}
-        placeholder={t("linkPlaceholder")}
-        onChange={(event) =>
-          onSelect({ url: event.target.value, assetId: null }, "")
-        }
+        placeholder={t('linkPlaceholder')}
+        onChange={(event) => onSelect({ url: event.target.value, assetId: null }, '')}
       />
     </div>
   );

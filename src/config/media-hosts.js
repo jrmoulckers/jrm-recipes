@@ -15,7 +15,7 @@
  * Kept in `.js` (not `.ts`) so `next.config.js`. Plain Node ESM that cannot
  * import TypeScript. Can consume it alongside the app code.
  */
-export const ALLOWED_MEDIA_HOSTS = ["res.cloudinary.com", "img.clerk.com"];
+export const ALLOWED_MEDIA_HOSTS = ['res.cloudinary.com', 'img.clerk.com'];
 
 /**
  * Whether `url` is a stored-media URL on an allowlisted host. Returns `false`
@@ -31,6 +31,6 @@ export function isAllowedMediaUrl(url) {
   } catch {
     return false;
   }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
   return ALLOWED_MEDIA_HOSTS.includes(parsed.hostname.toLowerCase());
 }

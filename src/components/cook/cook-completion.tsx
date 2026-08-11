@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Camera, PartyPopper, RotateCcw } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { Camera, PartyPopper, RotateCcw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
 
 /**
  * "You did it!" completion moment (#437). Replaces the instant navigation that
@@ -34,7 +34,7 @@ export function CookCompletion({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const headingRef = React.useRef<HTMLHeadingElement>(null);
   const [photoUrl, setPhotoUrl] = React.useState<string | null>(null);
-  const t = useTranslations("cook.completion");
+  const t = useTranslations('cook.completion');
 
   React.useEffect(() => {
     headingRef.current?.focus();
@@ -44,7 +44,7 @@ export function CookCompletion({
   React.useEffect(() => {
     if (!photoUrl) return;
     return () => {
-      if (typeof URL.revokeObjectURL === "function") {
+      if (typeof URL.revokeObjectURL === 'function') {
         URL.revokeObjectURL(photoUrl);
       }
     };
@@ -53,9 +53,9 @@ export function CookCompletion({
   const onPick = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (typeof URL.createObjectURL !== "function") return;
+    if (typeof URL.createObjectURL !== 'function') return;
     setPhotoUrl((prev) => {
-      if (prev && typeof URL.revokeObjectURL === "function") {
+      if (prev && typeof URL.revokeObjectURL === 'function') {
         URL.revokeObjectURL(prev);
       }
       return URL.createObjectURL(file);
@@ -71,18 +71,18 @@ export function CookCompletion({
     >
       <div
         className={cn(
-          "w-full max-w-md rounded-3xl border border-border bg-card p-6 text-center text-card-foreground shadow-token-lg motion-safe:animate-fade-in sm:p-8",
-          celebratory && "max-w-lg",
+          'w-full max-w-md rounded-3xl border border-border bg-card p-6 text-center text-card-foreground shadow-token-lg motion-safe:animate-fade-in sm:p-8',
+          celebratory && 'max-w-lg',
         )}
       >
         <div
           className={cn(
-            "mx-auto flex items-center justify-center rounded-full bg-success/15 text-success",
-            celebratory ? "size-20" : "size-14",
+            'mx-auto flex items-center justify-center rounded-full bg-success/15 text-success',
+            celebratory ? 'size-20' : 'size-14',
           )}
           aria-hidden="true"
         >
-          <PartyPopper className={celebratory ? "size-10" : "size-7"} />
+          <PartyPopper className={celebratory ? 'size-10' : 'size-7'} />
         </div>
 
         <h1
@@ -90,15 +90,13 @@ export function CookCompletion({
           ref={headingRef}
           tabIndex={-1}
           className={cn(
-            "mt-4 text-pretty font-display font-bold tracking-tight focus:outline-none",
-            celebratory ? "text-4xl" : "text-2xl",
+            'mt-4 text-pretty font-display font-bold tracking-tight focus:outline-none',
+            celebratory ? 'text-4xl' : 'text-2xl',
           )}
         >
-          {t(celebratory ? "kidsHeading" : "heading")}
+          {t(celebratory ? 'kidsHeading' : 'heading')}
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          {t("finished", { title: recipeTitle })}
-        </p>
+        <p className="mt-2 text-muted-foreground">{t('finished', { title: recipeTitle })}</p>
 
         {children}
 
@@ -107,11 +105,11 @@ export function CookCompletion({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photoUrl}
-              alt={t("photoAlt", { title: recipeTitle })}
+              alt={t('photoAlt', { title: recipeTitle })}
               className="mx-auto max-h-72 w-full rounded-2xl object-cover shadow-token"
             />
             <figcaption className="mt-2 text-sm text-muted-foreground">
-              {t(celebratory ? "kidsCaption" : "caption")}
+              {t(celebratory ? 'kidsCaption' : 'caption')}
             </figcaption>
             <Button
               type="button"
@@ -121,18 +119,18 @@ export function CookCompletion({
               onClick={() => inputRef.current?.click()}
             >
               <RotateCcw />
-              {t("retakePhoto")}
+              {t('retakePhoto')}
             </Button>
           </figure>
         ) : (
           <Button
             type="button"
-            size={celebratory ? "xl" : "lg"}
+            size={celebratory ? 'xl' : 'lg'}
             className="mt-6 w-full gap-2"
             onClick={() => inputRef.current?.click()}
           >
             <Camera />
-            {t("takePhoto")}
+            {t('takePhoto')}
           </Button>
         )}
 
@@ -147,12 +145,12 @@ export function CookCompletion({
 
         <Button
           type="button"
-          variant={photoUrl ? "default" : "ghost"}
+          variant={photoUrl ? 'default' : 'ghost'}
           size="lg"
           className="mt-3 w-full"
           onClick={onDone}
         >
-          {t(photoUrl ? "allDone" : "skipAndFinish")}
+          {t(photoUrl ? 'allDone' : 'skipAndFinish')}
         </Button>
       </div>
     </div>

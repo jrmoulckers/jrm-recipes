@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import type { CustomUnitDef, UnitPrefs } from "~/lib/units";
+import type { CustomUnitDef, UnitPrefs } from '~/lib/units';
 
 /**
  * The viewer's unit preferences + custom units, made ambient so every
@@ -23,15 +23,8 @@ export function UnitPrefsProvider({
   customs,
   children,
 }: UnitPrefsContextValue & { children: React.ReactNode }) {
-  const value = React.useMemo<UnitPrefsContextValue>(
-    () => ({ prefs, customs }),
-    [prefs, customs],
-  );
-  return (
-    <UnitPrefsContext.Provider value={value}>
-      {children}
-    </UnitPrefsContext.Provider>
-  );
+  const value = React.useMemo<UnitPrefsContextValue>(() => ({ prefs, customs }), [prefs, customs]);
+  return <UnitPrefsContext.Provider value={value}>{children}</UnitPrefsContext.Provider>;
 }
 
 /** Read the ambient viewer unit preferences (empty object when no provider). */

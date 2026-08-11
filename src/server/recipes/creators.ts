@@ -1,15 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import { notify } from "~/server/notifications/notify";
-import { recipeCreators, recipes, users } from "~/server/db/schema";
-import type { RecipeDetailRef } from "~/lib/recipe-path";
-import { recipeSlug } from "./validation";
-import { uniqueSlug, withSlugConflictRetry } from "./mutations";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
+import { notify } from '~/server/notifications/notify';
+import { recipeCreators, recipes, users } from '~/server/db/schema';
+import type { RecipeDetailRef } from '~/lib/recipe-path';
+import { recipeSlug } from './validation';
+import { uniqueSlug, withSlugConflictRetry } from './mutations';
 
 /**
  * Co-creator lifecycle for multi-creator recipes (issue #668).
@@ -73,7 +73,7 @@ async function loadRecipe(recipeId: string): Promise<RecipeForCreators> {
     },
     with: { author: { columns: { slug: true } } },
   });
-  if (!recipe) throw new DomainError("NOT_FOUND");
+  if (!recipe) throw new DomainError('NOT_FOUND');
   return recipe;
 }
 
@@ -84,12 +84,9 @@ async function loadRecipe(recipeId: string): Promise<RecipeForCreators> {
  * gate. `NOT_FOUND` (rather than `FORBIDDEN`) is returned to a non-owner so the
  * failure can't be used to probe which recipe ids exist.
  */
-async function loadOwnedRecipe(
-  recipeId: string,
-  actorId: string,
-): Promise<RecipeForCreators> {
+async function loadOwnedRecipe(recipeId: string, actorId: string): Promise<RecipeForCreators> {
   const recipe = await loadRecipe(recipeId);
-  if (recipe.authorId !== actorId) throw new DomainError("NOT_FOUND");
+  if (recipe.authorId !== actorId) throw new DomainError('NOT_FOUND');
   return recipe;
 }
 
@@ -114,30 +111,25 @@ export async function inviteRecipeCreator(
   const recipe = await loadOwnedRecipe(recipeId, ownerId);
   // The owner is `recipes.authorId` and never has a row here; a self-row would
   // be a second, driftable source of truth for the same fact.
-  if (targetUserId === recipe.authorId) throw new DomainError("FORBIDDEN");
+  if (targetUserId === recipe.authorId) throw new DomainError('FORBIDDEN');
 
   const target = await db.query.users.findFirst({
     where: (u, { eq: is }) => is(u.id, targetUserId),
     columns: { id: true, deletedAt: true },
   });
-  if (!target || target.deletedAt) throw new DomainError("USER_NOT_FOUND");
+  if (!target || target.deletedAt) throw new DomainError('USER_NOT_FOUND');
 
   // Blocks win over invitations, in both directions, exactly as they do over
   // follows: an invitation is an unsolicited approach at a blocked person.
   const hidden = await getHiddenAuthorIds(ownerId);
-  if (hidden.has(targetUserId)) throw new DomainError("FORBIDDEN");
+  if (hidden.has(targetUserId)) throw new DomainError('FORBIDDEN');
 
   const existing = await db.query.recipeCreators.findFirst({
-    where: and(
-      eq(recipeCreators.recipeId, recipeId),
-      eq(recipeCreators.userId, targetUserId),
-    ),
+    where: and(eq(recipeCreators.recipeId, recipeId), eq(recipeCreators.userId, targetUserId)),
     columns: { id: true, status: true },
   });
   if (existing)
-    throw new DomainError(
-      existing.status === "accepted" ? "ALREADY_ACCEPTED" : "ALREADY_INVITED",
-    );
+    throw new DomainError(existing.status === 'accepted' ? 'ALREADY_ACCEPTED' : 'ALREADY_INVITED');
 
   return await db.transaction(async (tx) => {
     const [row] = await tx
@@ -146,13 +138,13 @@ export async function inviteRecipeCreator(
         recipeId,
         userId: targetUserId,
         invitedById: ownerId,
-        status: "pending",
+        status: 'pending',
       })
       .returning({ id: recipeCreators.id });
     await notify(tx, {
       recipientId: targetUserId,
       actorId: ownerId,
-      type: "recipe_creator_invite",
+      type: 'recipe_creator_invite',
       recipeId,
       context: recipe.title,
     });
@@ -189,41 +181,31 @@ export async function acceptRecipeCreatorInvite(
   return await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       const invite = await tx.query.recipeCreators.findFirst({
-        where: and(
-          eq(recipeCreators.recipeId, recipeId),
-          eq(recipeCreators.userId, userId),
-        ),
+        where: and(eq(recipeCreators.recipeId, recipeId), eq(recipeCreators.userId, userId)),
         columns: { id: true, status: true },
       });
-      if (!invite) throw new DomainError("NOT_FOUND");
-      if (invite.status === "accepted")
-        throw new DomainError("ALREADY_ACCEPTED");
+      if (!invite) throw new DomainError('NOT_FOUND');
+      if (invite.status === 'accepted') throw new DomainError('ALREADY_ACCEPTED');
 
       // `recipeSlug` can return an empty string for a title with no slug-able
       // characters, so an explicit emptiness check is used rather than `??`.
       const titleSlug = recipeSlug(recipe.title);
-      const base =
-        titleSlug.length > 0 ? titleSlug : (recipe.slug ?? recipe.id);
+      const base = titleSlug.length > 0 ? titleSlug : (recipe.slug ?? recipe.id);
       const slug = await uniqueSlug(tx, userId, base);
 
       // Guarded on `status` so two concurrent accepts can't both allocate: the
       // loser updates zero rows and is reported as no longer pending.
       const updated = await tx
         .update(recipeCreators)
-        .set({ status: "accepted", slug, acceptedAt: new Date() })
-        .where(
-          and(
-            eq(recipeCreators.id, invite.id),
-            eq(recipeCreators.status, "pending"),
-          ),
-        )
+        .set({ status: 'accepted', slug, acceptedAt: new Date() })
+        .where(and(eq(recipeCreators.id, invite.id), eq(recipeCreators.status, 'pending')))
         .returning({ id: recipeCreators.id });
-      if (updated.length === 0) throw new DomainError("NOT_PENDING");
+      if (updated.length === 0) throw new DomainError('NOT_PENDING');
 
       await notify(tx, {
         recipientId: recipe.authorId,
         actorId: userId,
-        type: "recipe_creator_accepted",
+        type: 'recipe_creator_accepted',
         recipeId,
         context: recipe.title,
       });
@@ -247,21 +229,18 @@ export async function acceptRecipeCreatorInvite(
  * free and nothing to purge — a declined invitation leaves no trace, which is
  * the point: it never granted anything.
  */
-export async function declineRecipeCreatorInvite(
-  recipeId: string,
-  userId: string,
-): Promise<void> {
+export async function declineRecipeCreatorInvite(recipeId: string, userId: string): Promise<void> {
   const deleted = await db
     .delete(recipeCreators)
     .where(
       and(
         eq(recipeCreators.recipeId, recipeId),
         eq(recipeCreators.userId, userId),
-        eq(recipeCreators.status, "pending"),
+        eq(recipeCreators.status, 'pending'),
       ),
     )
     .returning({ id: recipeCreators.id });
-  if (deleted.length === 0) throw new DomainError("NOT_PENDING");
+  if (deleted.length === 0) throw new DomainError('NOT_PENDING');
 }
 
 /**
@@ -284,19 +263,14 @@ async function deleteCreatorRow(
   const deleted = await db.transaction(async (tx) => {
     const [row] = await tx
       .delete(recipeCreators)
-      .where(
-        and(
-          eq(recipeCreators.recipeId, recipe.id),
-          eq(recipeCreators.userId, userId),
-        ),
-      )
+      .where(and(eq(recipeCreators.recipeId, recipe.id), eq(recipeCreators.userId, userId)))
       .returning({ slug: recipeCreators.slug, status: recipeCreators.status });
     return row;
   });
-  if (!deleted) throw new DomainError("NOT_FOUND");
+  if (!deleted) throw new DomainError('NOT_FOUND');
 
   let removed: CreatorNamespace | null = null;
-  if (deleted.status === "accepted" && deleted.slug) {
+  if (deleted.status === 'accepted' && deleted.slug) {
     const user = await db.query.users.findFirst({
       where: (u, { eq: is }) => is(u.id, userId),
       columns: { slug: true },
@@ -321,25 +295,20 @@ async function deleteCreatorRow(
  * Deliberately **not** exposed as a search: it answers "is this exact person a
  * cook here", so it can't be used to enumerate accounts.
  */
-export async function findCreatorTarget(
-  identifier: string,
-): Promise<{ id: string }> {
+export async function findCreatorTarget(identifier: string): Promise<{ id: string }> {
   const trimmed = identifier.trim();
-  if (trimmed.length === 0) throw new DomainError("USER_NOT_FOUND");
-  const handle = trimmed.replace(/^@/, "").toLowerCase();
+  if (trimmed.length === 0) throw new DomainError('USER_NOT_FOUND');
+  const handle = trimmed.replace(/^@/, '').toLowerCase();
   const email = trimmed.toLowerCase();
 
   const found = await db.query.users.findFirst({
     where: and(
-      or(
-        sql`lower(${users.handle}) = ${handle}`,
-        sql`lower(${users.email}) = ${email}`,
-      ),
+      or(sql`lower(${users.handle}) = ${handle}`, sql`lower(${users.email}) = ${email}`),
       isNull(users.deletedAt),
     ),
     columns: { id: true },
   });
-  if (!found) throw new DomainError("USER_NOT_FOUND");
+  if (!found) throw new DomainError('USER_NOT_FOUND');
   return found;
 }
 
@@ -357,7 +326,7 @@ export async function removeRecipeCreator(
   const recipe = await loadOwnedRecipe(recipeId, ownerId);
   // The owner has no row to remove, and must never be removable from their own
   // recipe — that is the unreachable zero-creator state, by construction.
-  if (targetUserId === ownerId) throw new DomainError("FORBIDDEN");
+  if (targetUserId === ownerId) throw new DomainError('FORBIDDEN');
   return await deleteCreatorRow(recipe, targetUserId);
 }
 
@@ -373,7 +342,7 @@ export async function leaveRecipeAsCreator(
   userId: string,
 ): Promise<CreatorRemoval> {
   const recipe = await loadRecipe(recipeId);
-  if (recipe.authorId === userId) throw new DomainError("OWNER_CANT_LEAVE");
+  if (recipe.authorId === userId) throw new DomainError('OWNER_CANT_LEAVE');
   return await deleteCreatorRow(recipe, userId);
 }
 
@@ -403,10 +372,7 @@ export async function listRecipeCreators(recipeId: string) {
 /** A user's pending co-creator invitations, for their inbox. */
 export async function listPendingCreatorInvites(userId: string) {
   return await db.query.recipeCreators.findMany({
-    where: and(
-      eq(recipeCreators.userId, userId),
-      eq(recipeCreators.status, "pending"),
-    ),
+    where: and(eq(recipeCreators.userId, userId), eq(recipeCreators.status, 'pending')),
     columns: { id: true, recipeId: true, invitedAt: true },
     with: {
       recipe: {

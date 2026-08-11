@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import * as React from 'react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
 
-import { cn } from "~/lib/utils";
-import { OVERLAY_PADDING, OVERLAY_SURFACE } from "./overlay-surface";
+import { cn } from '~/lib/utils';
+import { OVERLAY_PADDING, OVERLAY_SURFACE } from './overlay-surface';
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
@@ -14,14 +14,14 @@ const PopoverClose = PopoverPrimitive.Close;
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 6, ...props }, ref) => (
+>(({ className, align = 'center', sideOffset = 6, ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content
       ref={ref}
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 w-72 max-w-[calc(100vw-2rem)] outline-none data-[state=open]:animate-pop-in",
+        'z-50 w-72 max-w-[calc(100vw-2rem)] outline-none data-[state=open]:animate-pop-in',
         OVERLAY_SURFACE,
         OVERLAY_PADDING.popover,
         className,

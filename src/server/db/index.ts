@@ -1,8 +1,8 @@
-import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import { env } from "~/env";
-import * as schema from "./schema";
+import { env } from '~/env';
+import * as schema from './schema';
 
 /**
  * Lazy Postgres client.
@@ -25,8 +25,8 @@ let cached: PostgresJsDatabase<typeof schema> | undefined;
 function createDb(): PostgresJsDatabase<typeof schema> {
   if (!env.DATABASE_URL) {
     throw new Error(
-      "DATABASE_URL is not set. Add it to your .env (see .env.example) or " +
-        "run `docker compose up -d` for a local Postgres.",
+      'DATABASE_URL is not set. Add it to your .env (see .env.example) or ' +
+        'run `docker compose up -d` for a local Postgres.',
     );
   }
   const conn =
@@ -34,10 +34,10 @@ function createDb(): PostgresJsDatabase<typeof schema> {
     postgres(env.DATABASE_URL, {
       // Required for Neon / PgBouncer transaction pooling.
       prepare: false,
-      max: env.NODE_ENV === "production" ? 1 : 5,
+      max: env.NODE_ENV === 'production' ? 1 : 5,
     });
-  if (env.NODE_ENV !== "production") globalForDb.conn = conn;
-  return drizzle(conn, { schema, casing: "snake_case" });
+  if (env.NODE_ENV !== 'production') globalForDb.conn = conn;
+  return drizzle(conn, { schema, casing: 'snake_case' });
 }
 
 function getDb(): PostgresJsDatabase<typeof schema> {
@@ -50,7 +50,7 @@ export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
   get(_target, prop, receiver) {
     const instance = getDb();
     const value = Reflect.get(instance, prop, receiver) as unknown;
-    return typeof value === "function"
+    return typeof value === 'function'
       ? (value as (...args: unknown[]) => unknown).bind(instance)
       : value;
   },

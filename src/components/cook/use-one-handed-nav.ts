@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { isInteractiveShortcutTarget } from "~/lib/cook-state";
-import { resolveSwipe, resolveTapZone } from "~/lib/swipe";
+import { isInteractiveShortcutTarget } from '~/lib/cook-state';
+import { resolveSwipe, resolveTapZone } from '~/lib/swipe';
 
 /** Finger travel (px) before the gesture axis (horizontal vs vertical) locks. */
 const AXIS_SLOP = 8;
@@ -47,7 +47,7 @@ export function useOneHandedNav({
   reduced: boolean;
 }) {
   const startRef = React.useRef<{ x: number; y: number } | null>(null);
-  const axisRef = React.useRef<"horizontal" | "vertical" | null>(null);
+  const axisRef = React.useRef<'horizontal' | 'vertical' | null>(null);
   const swipedRef = React.useRef(false);
   const [dragOffset, setDragOffset] = React.useState(0);
   const [dragging, setDragging] = React.useState(false);
@@ -59,16 +59,13 @@ export function useOneHandedNav({
     setDragOffset(0);
   }, []);
 
-  const onPointerDown = React.useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
-      if (!event.isPrimary || event.button !== 0) return;
-      if (isInteractiveShortcutTarget(event.target)) return;
-      startRef.current = { x: event.clientX, y: event.clientY };
-      axisRef.current = null;
-      swipedRef.current = false;
-    },
-    [],
-  );
+  const onPointerDown = React.useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    if (isInteractiveShortcutTarget(event.target)) return;
+    startRef.current = { x: event.clientX, y: event.clientY };
+    axisRef.current = null;
+    swipedRef.current = false;
+  }, []);
 
   const onPointerMove = React.useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
@@ -81,11 +78,10 @@ export function useOneHandedNav({
       // drag stays a native scroll. A horizontal one becomes step navigation.
       if (axisRef.current === null) {
         if (Math.abs(dx) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return;
-        axisRef.current =
-          Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+        axisRef.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
         // Any committed drag (either axis) is never also a tap.
         swipedRef.current = true;
-        if (axisRef.current === "horizontal") {
+        if (axisRef.current === 'horizontal') {
           try {
             event.currentTarget.setPointerCapture(event.pointerId);
           } catch {
@@ -95,7 +91,7 @@ export function useOneHandedNav({
         }
       }
 
-      if (axisRef.current !== "horizontal") return;
+      if (axisRef.current !== 'horizontal') return;
       // Own the horizontal gesture so the browser doesn't scroll or select.
       event.preventDefault();
       if (reduced) return; // navigate on release, but no follow-the-finger
@@ -109,7 +105,7 @@ export function useOneHandedNav({
   const finishPointer = React.useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
       const start = startRef.current;
-      const wasHorizontal = axisRef.current === "horizontal";
+      const wasHorizontal = axisRef.current === 'horizontal';
       try {
         event.currentTarget.releasePointerCapture(event.pointerId);
       } catch {
@@ -117,12 +113,9 @@ export function useOneHandedNav({
       }
       reset();
       if (!start || !wasHorizontal) return;
-      const direction = resolveSwipe(
-        event.clientX - start.x,
-        event.clientY - start.y,
-      );
-      if (direction === "next" && canNext) onNext();
-      else if (direction === "previous" && canPrevious) onPrevious();
+      const direction = resolveSwipe(event.clientX - start.x, event.clientY - start.y);
+      if (direction === 'next' && canNext) onNext();
+      else if (direction === 'previous' && canPrevious) onPrevious();
     },
     [canNext, canPrevious, onNext, onPrevious, reset],
   );
@@ -137,7 +130,7 @@ export function useOneHandedNav({
       const rect = event.currentTarget.getBoundingClientRect();
       const direction = resolveTapZone(event.clientX, rect.left, rect.width);
       if (!direction) return;
-      if (direction === "next") onNext();
+      if (direction === 'next') onNext();
       else onPrevious();
     },
     [onNext, onPrevious],
@@ -147,7 +140,7 @@ export function useOneHandedNav({
     ? undefined
     : {
         transform: `translateX(${dragOffset}px)`,
-        transition: dragging ? "none" : "transform 0.2s var(--ease-standard)",
+        transition: dragging ? 'none' : 'transform 0.2s var(--ease-standard)',
       };
 
   return {

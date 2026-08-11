@@ -1,8 +1,8 @@
-import * as React from "react";
-import { Home, RotateCcw, TriangleAlert } from "lucide-react";
+import * as React from 'react';
+import { Home, RotateCcw, TriangleAlert } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { Button, buttonVariants } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { Button, buttonVariants } from '~/components/ui/button';
 
 /* eslint-disable i18next/no-literal-string --
  * Deliberately not localized. This panel is the last-resort error boundary: it
@@ -25,12 +25,12 @@ import { Button, buttonVariants } from "~/components/ui/button";
  * don't leak internals to the UI.
  */
 export function ErrorState({
-  title = "Something went wrong",
+  title = 'Something went wrong',
   description = "A hiccup in the kitchen. We couldn't finish loading this page. You can try again, or head back home.",
   digest,
   onReset,
   className,
-  as: Wrapper = "main",
+  as: Wrapper = 'main',
 }: {
   title?: string;
   description?: string;
@@ -44,12 +44,12 @@ export function ErrorState({
    * page's only landmark. Segment boundaries that render *inside* a layout's
    * existing `<main>` pass `"div"` to avoid nesting a second `main` landmark.
    */
-  as?: "main" | "div";
+  as?: 'main' | 'div';
 }) {
   return (
     <Wrapper
       className={cn(
-        "relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center",
+        'relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center',
         className,
       )}
     >
@@ -81,8 +81,8 @@ export function ErrorState({
             href="/"
             className={cn(
               buttonVariants({
-                variant: onReset ? "outline" : "default",
-                size: "lg",
+                variant: onReset ? 'outline' : 'default',
+                size: 'lg',
               }),
             )}
           >

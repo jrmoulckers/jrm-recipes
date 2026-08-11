@@ -1,16 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Star } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Star } from 'lucide-react';
 
-import {
-  removeRatingAction,
-  setRatingAction,
-} from "~/server/engagement/actions";
-import { cn } from "~/lib/utils";
-import { useReducedMotion } from "~/lib/use-reduced-motion";
-import { useServerAction } from "~/lib/use-server-action";
+import { removeRatingAction, setRatingAction } from '~/server/engagement/actions';
+import { cn } from '~/lib/utils';
+import { useReducedMotion } from '~/lib/use-reduced-motion';
+import { useServerAction } from '~/lib/use-server-action';
 
 type RatingSummary = { average: number; count: number };
 
@@ -47,7 +44,7 @@ export function RatingControl(props: {
 }) {
   const { recipeId, recipeSlug, canRate } = props;
   const [hoverRating, setHoverRating] = React.useState<number | null>(null);
-  const t = useTranslations("engagement.ratingControl");
+  const t = useTranslations('engagement.ratingControl');
   const [viewerRating, setViewerRating] = React.useState(props.viewerRating);
   const [summary, setSummary] = React.useState(props.summary);
   const reducedMotion = useReducedMotion();
@@ -77,7 +74,7 @@ export function RatingControl(props: {
           }),
     {
       successToast: (_result, input) =>
-        input.value == null ? t("toast.cleared") : t("toast.saved"),
+        input.value == null ? t('toast.cleared') : t('toast.saved'),
       errorToast: true,
       refresh: true,
       onError: () => {
@@ -96,8 +93,7 @@ export function RatingControl(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.summary.average, props.summary.count, props.viewerRating]);
 
-  const displayRating =
-    hoverRating ?? viewerRating ?? (!canRate ? Math.round(summary.average) : 0);
+  const displayRating = hoverRating ?? viewerRating ?? (!canRate ? Math.round(summary.average) : 0);
 
   function chooseRating(value: number) {
     if (!canRate || pending) return;
@@ -127,12 +123,12 @@ export function RatingControl(props: {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="status" aria-live="polite">
           <p className="text-sm font-semibold text-foreground">
-            {summary.count > 0 ? summary.average.toFixed(1) : t("noRatings")}
+            {summary.count > 0 ? summary.average.toFixed(1) : t('noRatings')}
           </p>
           <p className="text-xs text-muted-foreground">
             {summary.count > 0
-              ? t("ratingCount", { count: summary.count })
-              : t("firstToLeaveStars")}
+              ? t('ratingCount', { count: summary.count })
+              : t('firstToLeaveStars')}
           </p>
         </div>
 
@@ -140,7 +136,7 @@ export function RatingControl(props: {
           className="flex items-center gap-1"
           onMouseLeave={() => setHoverRating(null)}
           role="group"
-          aria-label={t("a11y.recipeRating")}
+          aria-label={t('a11y.recipeRating')}
         >
           {[1, 2, 3, 4, 5].map((value) => {
             const active = displayRating >= value;
@@ -150,32 +146,28 @@ export function RatingControl(props: {
                 key={value}
                 type="button"
                 disabled={!canRate || pending}
-                aria-label={t("a11y.rateStars", { count: value })}
+                aria-label={t('a11y.rateStars', { count: value })}
                 aria-pressed={viewerRating === value}
                 onClick={() => chooseRating(value)}
                 onMouseEnter={() => canRate && setHoverRating(value)}
                 onFocus={() => canRate && setHoverRating(value)}
                 onBlur={() => setHoverRating(null)}
                 className={cn(
-                  "rounded-full p-1.5 text-muted-foreground transition-[color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none",
-                  canRate && "hover:scale-105 hover:text-amber-400",
-                  pending && "cursor-wait",
-                  !canRate && "cursor-default",
+                  'rounded-full p-1.5 text-muted-foreground transition-[color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
+                  canRate && 'hover:scale-105 hover:text-amber-400',
+                  pending && 'cursor-wait',
+                  !canRate && 'cursor-default',
                 )}
               >
                 <Star
                   key={popping ? `pop-${commit.key}-${value}` : `star-${value}`}
-                  style={
-                    popping
-                      ? { animationDelay: `${(value - 1) * 60}ms` }
-                      : undefined
-                  }
+                  style={popping ? { animationDelay: `${(value - 1) * 60}ms` } : undefined}
                   className={cn(
-                    "size-6 transition-colors duration-150 motion-reduce:transition-none",
-                    popping && "motion-safe:animate-star-pop",
+                    'size-6 transition-colors duration-150 motion-reduce:transition-none',
+                    popping && 'motion-safe:animate-star-pop',
                     active
-                      ? "fill-amber-400 text-amber-400"
-                      : "fill-transparent text-muted-foreground",
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'fill-transparent text-muted-foreground',
                   )}
                 />
               </button>
@@ -187,9 +179,9 @@ export function RatingControl(props: {
       <p className="mt-3 text-xs text-muted-foreground">
         {canRate
           ? viewerRating
-            ? t("yourRating", { rating: viewerRating })
-            : t("tapToRate")
-          : t("signIn")}
+            ? t('yourRating', { rating: viewerRating })
+            : t('tapToRate')
+          : t('signIn')}
       </p>
     </section>
   );

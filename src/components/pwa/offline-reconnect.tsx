@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { RefreshCw, Wifi, WifiOff } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
 
 /** Delay before the auto-reload, giving a restored connection a beat to settle. */
 export const RECONNECT_DELAY_MS = 600;
@@ -42,7 +42,7 @@ export function scheduleReconnect(
  * worker serves when a navigation fails with no cached copy.
  */
 export function OfflineReconnect() {
-  const t = useTranslations("pwa.reconnect");
+  const t = useTranslations('pwa.reconnect');
   const [online, setOnline] = React.useState(true);
   const [retrying, setRetrying] = React.useState(false);
 
@@ -78,11 +78,11 @@ export function OfflineReconnect() {
       }
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       if (reloadTimer !== undefined) window.clearTimeout(reloadTimer);
     };
   }, []);
@@ -98,28 +98,28 @@ export function OfflineReconnect() {
         role="status"
         aria-live="polite"
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+          'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium transition-colors',
           online
-            ? "border-success/30 bg-success/10 text-success"
-            : "border-border bg-muted text-muted-foreground",
+            ? 'border-success/30 bg-success/10 text-success'
+            : 'border-border bg-muted text-muted-foreground',
         )}
       >
         {online ? (
           <>
             <Wifi className="size-4" />
-            {t("online")}
+            {t('online')}
           </>
         ) : (
           <>
             <WifiOff className="size-4" />
-            {t("offline")}
+            {t('offline')}
           </>
         )}
       </span>
 
       <Button size="lg" onClick={retry} disabled={retrying}>
-        <RefreshCw className={cn("size-4", retrying && "animate-spin")} />
-        {retrying ? t("retrying") : t("retry")}
+        <RefreshCw className={cn('size-4', retrying && 'animate-spin')} />
+        {retrying ? t('retrying') : t('retry')}
       </Button>
     </div>
   );

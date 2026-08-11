@@ -1,12 +1,12 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, isNull } from "drizzle-orm";
-import { z } from "zod";
+import { and, desc, eq, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 
-import { db, isDbConfigured } from "~/server/db";
-import { recipes, reviews, type Review, type User } from "~/server/db/schema";
-import { canViewRecipe } from "./queries";
-import { nextPageOffset, type Paginated } from "./pagination";
+import { db, isDbConfigured } from '~/server/db';
+import { recipes, reviews, type Review, type User } from '~/server/db/schema';
+import { canViewRecipe } from './queries';
+import { nextPageOffset, type Paginated } from './pagination';
 
 /** Default page size for a recipe's review list. */
 export const REVIEWS_PAGE_SIZE = 20;
@@ -65,15 +65,11 @@ export type ReviewListItem = Review & {
 export async function listRecipeReviews(
   recipeId: string,
   viewer: User | null,
-  {
-    limit = REVIEWS_PAGE_SIZE,
-    offset = 0,
-  }: { limit?: number; offset?: number } = {},
+  { limit = REVIEWS_PAGE_SIZE, offset = 0 }: { limit?: number; offset?: number } = {},
 ): Promise<Paginated<ReviewListItem>> {
   if (!isDbConfigured()) return { items: [], nextOffset: null };
   const recipe = await activeRecipeForGating(recipeId);
-  if (!recipe || !(await canViewRecipe(recipe, viewer)))
-    return { items: [], nextOffset: null };
+  if (!recipe || !(await canViewRecipe(recipe, viewer))) return { items: [], nextOffset: null };
 
   const items = await db.query.reviews.findMany({
     where: eq(reviews.recipeId, recipeId),
@@ -104,8 +100,8 @@ export async function upsertMyReview(
 ): Promise<Review> {
   const data = reviewInput.parse(input);
   const recipe = await activeRecipeForGating(recipeId);
-  if (!recipe) throw new Error("NOT_FOUND");
-  if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
+  if (!recipe) throw new Error('NOT_FOUND');
+  if (!(await canViewRecipe(recipe, user))) throw new Error('FORBIDDEN');
 
   const [row] = await db
     .insert(reviews)

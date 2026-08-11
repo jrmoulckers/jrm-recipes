@@ -1,14 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { eq, isNull, sql } from "drizzle-orm";
+import { eq, isNull, sql } from 'drizzle-orm';
 
-import {
-  mineFoodGraph,
-  type MinedIngredient,
-  type MiningOptions,
-} from "~/lib/food-mining";
-import { stableHash } from "~/lib/food-db";
-import { db, isDbConfigured } from "~/server/db";
+import { mineFoodGraph, type MinedIngredient, type MiningOptions } from '~/lib/food-mining';
+import { stableHash } from '~/lib/food-db';
+import { db, isDbConfigured } from '~/server/db';
 import {
   foodAliases,
   foodItems,
@@ -19,7 +15,7 @@ import {
   recipeIngredients,
   recipes,
   userFoodPrefs,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 /**
  * Batch ingestion for the live food graph (see `docs/food-graph.md`). Reads the
@@ -64,9 +60,7 @@ export type IngestResult = {
  * Run a full ingestion pass. No-op (returns zeroed counts) when no database is
  * configured. Options tune the surfacing thresholds passed to the miner.
  */
-export async function ingestFoodGraph(
-  options: MiningOptions = {},
-): Promise<IngestResult> {
+export async function ingestFoodGraph(options: MiningOptions = {}): Promise<IngestResult> {
   const empty: IngestResult = {
     ingredientsScanned: 0,
     nodesTouched: 0,
@@ -107,7 +101,7 @@ export async function ingestFoodGraph(
     await tx.delete(foodPairs);
     await tx.delete(userFoodPrefs);
     await tx.delete(foodRecipeLinks);
-    await tx.delete(foodAliases).where(eq(foodAliases.source, "mined"));
+    await tx.delete(foodAliases).where(eq(foodAliases.source, 'mined'));
 
     for (const node of mined.nodes) {
       await tx
@@ -141,7 +135,7 @@ export async function ingestFoodGraph(
           id: `alias_${stableHash(`${alias.foodId}\u0000${alias.alias}`)}`,
           foodId: alias.foodId,
           alias: alias.alias,
-          source: "mined",
+          source: 'mined',
           useCount: alias.useCount,
         })
         .onConflictDoUpdate({

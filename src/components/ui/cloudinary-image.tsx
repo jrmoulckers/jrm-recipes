@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Image, { type ImageProps } from "next/image";
+import Image, { type ImageProps } from 'next/image';
 
-import { isAllowedMediaUrl } from "~/config/media-hosts";
-import { cloudinaryLoader, isCloudinaryUrl } from "~/lib/cloudinary-loader";
+import { isAllowedMediaUrl } from '~/config/media-hosts';
+import { cloudinaryLoader, isCloudinaryUrl } from '~/lib/cloudinary-loader';
 
 /**
  * True when `src` is an absolute `http(s)://` URL, i.e. a remote host the
@@ -18,7 +18,7 @@ function isRemoteHttpUrl(src: string): boolean {
   } catch {
     return false;
   }
-  return url.protocol === "https:" || url.protocol === "http:";
+  return url.protocol === 'https:' || url.protocol === 'http:';
 }
 
 /**
@@ -48,7 +48,7 @@ function isRemoteHttpUrl(src: string): boolean {
  * emits the LCP preload when `priority` is set.
  */
 export function CloudinaryImage({ src, alt, ...rest }: ImageProps) {
-  if (typeof src === "string") {
+  if (typeof src === 'string') {
     if (isCloudinaryUrl(src)) {
       return <Image loader={cloudinaryLoader} src={src} alt={alt} {...rest} />;
     }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 import {
   type ColorScheme,
@@ -13,7 +13,7 @@ import {
   THEME_BEHAVIOR,
   isColorScheme,
   isUITheme,
-} from "~/config/themes";
+} from '~/config/themes';
 
 type ThemeContextValue = {
   /** The active UI mode (kitchen / whimsy / professional / kids / barebones). */
@@ -21,7 +21,7 @@ type ThemeContextValue = {
   /** The user's chosen scheme preference (may be "system"). */
   scheme: ColorScheme;
   /** The concrete scheme after resolving "system". */
-  resolvedScheme: "light" | "dark";
+  resolvedScheme: 'light' | 'dark';
   behavior: (typeof THEME_BEHAVIOR)[UITheme];
   setTheme: (theme: UITheme) => void;
   /**
@@ -56,7 +56,7 @@ function readPersisted(name: string): string | null {
   }
   try {
     const prefix = `${name}=`;
-    for (const part of document.cookie.split("; ")) {
+    for (const part of document.cookie.split('; ')) {
       if (part.startsWith(prefix)) {
         return decodeURIComponent(part.slice(prefix.length));
       }
@@ -77,10 +77,7 @@ function clearPersisted(name: string) {
 }
 
 function systemPrefersDark() {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
 export function ThemeProvider({
@@ -96,32 +93,28 @@ export function ThemeProvider({
     initialTheme && isUITheme(initialTheme) ? initialTheme : DEFAULT_UI_THEME,
   );
   const [scheme, setSchemeState] = React.useState<ColorScheme>(
-    initialScheme && isColorScheme(initialScheme)
-      ? initialScheme
-      : DEFAULT_COLOR_SCHEME,
+    initialScheme && isColorScheme(initialScheme) ? initialScheme : DEFAULT_COLOR_SCHEME,
   );
-  const [resolvedScheme, setResolvedScheme] = React.useState<"light" | "dark">(
-    "light",
-  );
+  const [resolvedScheme, setResolvedScheme] = React.useState<'light' | 'dark'>('light');
 
   // Apply UI mode to <html>.
   React.useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   // Apply + track color scheme, reacting to system changes when in "system".
   React.useEffect(() => {
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      const dark = scheme === "dark" || (scheme === "system" && mql.matches);
-      document.documentElement.classList.toggle("dark", dark);
-      document.documentElement.style.colorScheme = dark ? "dark" : "light";
-      setResolvedScheme(dark ? "dark" : "light");
+      const dark = scheme === 'dark' || (scheme === 'system' && mql.matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      setResolvedScheme(dark ? 'dark' : 'light');
     };
     apply();
-    if (scheme === "system") {
-      mql.addEventListener("change", apply);
-      return () => mql.removeEventListener("change", apply);
+    if (scheme === 'system') {
+      mql.addEventListener('change', apply);
+      return () => mql.removeEventListener('change', apply);
     }
   }, [scheme]);
 
@@ -135,17 +128,15 @@ export function ThemeProvider({
       if (on) {
         // Remember the mode we're leaving so we can come back to it later.
         // Never record "kids" itself (e.g. Kids mode was already active).
-        if (theme !== "kids") persist(THEME_PREVIOUS_COOKIE, theme);
-        setTheme("kids");
+        if (theme !== 'kids') persist(THEME_PREVIOUS_COOKIE, theme);
+        setTheme('kids');
         return;
       }
       // Restore the remembered mode. Fall back to the default when there isn't
       // a valid one, e.g. Kids was picked straight from the mode picker.
       const remembered = readPersisted(THEME_PREVIOUS_COOKIE);
       const restored =
-        isUITheme(remembered) && remembered !== "kids"
-          ? remembered
-          : DEFAULT_UI_THEME;
+        isUITheme(remembered) && remembered !== 'kids' ? remembered : DEFAULT_UI_THEME;
       clearPersisted(THEME_PREVIOUS_COOKIE);
       setTheme(restored);
     },
@@ -158,7 +149,7 @@ export function ThemeProvider({
   }, []);
 
   const toggleScheme = React.useCallback(() => {
-    setScheme(resolvedScheme === "dark" ? "light" : "dark");
+    setScheme(resolvedScheme === 'dark' ? 'light' : 'dark');
   }, [resolvedScheme, setScheme]);
 
   const value = React.useMemo<ThemeContextValue>(
@@ -172,25 +163,15 @@ export function ThemeProvider({
       setScheme,
       toggleScheme,
     }),
-    [
-      theme,
-      scheme,
-      resolvedScheme,
-      setTheme,
-      setKidsMode,
-      setScheme,
-      toggleScheme,
-    ],
+    [theme, scheme, resolvedScheme, setTheme, setKidsMode, setScheme, toggleScheme],
   );
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const ctx = React.useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within <ThemeProvider>");
+  if (!ctx) throw new Error('useTheme must be used within <ThemeProvider>');
   return ctx;
 }
 

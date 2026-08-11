@@ -3,7 +3,7 @@
  * framework-free so the tap-zone and swipe logic is unit-testable without a DOM.
  */
 
-export type NavDirection = "next" | "previous";
+export type NavDirection = 'next' | 'previous';
 
 export type SwipeOptions = {
   /** Minimum horizontal travel (px) before a drag counts as a swipe. */
@@ -27,7 +27,7 @@ export function resolveSwipe(
   if (Math.abs(dx) < threshold) return null;
   // Must be clearly horizontal. A diagonal scroll shouldn't navigate.
   if (Math.abs(dx) <= Math.abs(dy)) return null;
-  return dx < 0 ? "next" : "previous";
+  return dx < 0 ? 'next' : 'previous';
 }
 
 /**
@@ -36,14 +36,10 @@ export function resolveSwipe(
  * dead middle third → null so a tap aimed at the instruction text (or a
  * selection) never jumps a step.
  */
-export function resolveTapZone(
-  clientX: number,
-  left: number,
-  width: number,
-): NavDirection | null {
+export function resolveTapZone(clientX: number, left: number, width: number): NavDirection | null {
   if (width <= 0) return null;
   const ratio = (clientX - left) / width;
-  if (ratio <= 1 / 3) return "previous";
-  if (ratio >= 2 / 3) return "next";
+  if (ratio <= 1 / 3) return 'previous';
+  if (ratio >= 2 / 3) return 'next';
   return null;
 }

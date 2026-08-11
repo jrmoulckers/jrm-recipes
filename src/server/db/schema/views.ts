@@ -1,9 +1,9 @@
-import { relations } from "drizzle-orm";
-import { index, pgTable, timestamp, unique } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { index, pgTable, timestamp, unique } from 'drizzle-orm/pg-core';
 
-import { fk, pk } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
+import { fk, pk } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
 
 /**
  * One row per (user, recipe) capturing the last time that user opened the
@@ -12,23 +12,23 @@ import { recipes } from "./recipes";
  * (owned by #185).
  */
 export const recipeViews = pgTable(
-  "recipe_views",
+  'recipe_views',
   {
     id: pk(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     viewedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     // One view row per user+recipe. Re-viewing bumps `viewedAt` via upsert.
-    unique("recipe_views_user_recipe_uq").on(t.userId, t.recipeId),
+    unique('recipe_views_user_recipe_uq').on(t.userId, t.recipeId),
     // Fast "my recently viewed" feed (newest first per user).
-    index("recipe_views_user_viewed_idx").on(t.userId, t.viewedAt),
-    index("recipe_views_recipe_idx").on(t.recipeId),
+    index('recipe_views_user_viewed_idx').on(t.userId, t.viewedAt),
+    index('recipe_views_recipe_idx').on(t.recipeId),
   ],
 );
 

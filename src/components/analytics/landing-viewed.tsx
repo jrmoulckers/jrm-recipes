@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { track } from "~/lib/analytics";
+import { track } from '~/lib/analytics';
 
 /**
  * Fires the `landing_viewed` funnel event once when the marketing landing page
@@ -17,7 +17,7 @@ export function LandingViewedTracker() {
   React.useEffect(() => {
     if (firedRef.current) return;
     firedRef.current = true;
-    track("landing_viewed", {});
+    track('landing_viewed', {});
   }, []);
   return null;
 }

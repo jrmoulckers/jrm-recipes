@@ -1,15 +1,8 @@
-import { isNull, relations } from "drizzle-orm";
-import {
-  index,
-  integer,
-  pgEnum,
-  pgTable,
-  uniqueIndex,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { isNull, relations } from 'drizzle-orm';
+import { index, integer, pgEnum, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk, softDelete, timestamps } from "./_shared";
-import { users } from "./users";
+import { fk, pk, softDelete, timestamps } from './_shared';
+import { users } from './users';
 
 /**
  * Media library (issue #657, epic #655).
@@ -32,13 +25,10 @@ import { users } from "./users";
  * destroy; `external` assets are URLs a user pasted, which we can list and
  * describe but must never attempt to delete remotely.
  */
-export const mediaProvider = pgEnum("media_provider", [
-  "cloudinary",
-  "external",
-]);
+export const mediaProvider = pgEnum('media_provider', ['cloudinary', 'external']);
 
 export const mediaAssets = pgTable(
-  "media_assets",
+  'media_assets',
   {
     id: pk(),
     // `restrict`, not `cascade` (issue #678). This row is the only record that a
@@ -48,8 +38,8 @@ export const mediaAssets = pgTable(
     // destroy the remote bytes first and then delete these rows explicitly.
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "restrict" }),
-    provider: mediaProvider().notNull().default("cloudinary"),
+      .references(() => users.id, { onDelete: 'restrict' }),
+    provider: mediaProvider().notNull().default('cloudinary'),
     /**
      * Cloudinary public id, required to call `uploader.destroy`. Null for
      * `external` assets, which we have no delete authority over.
@@ -73,17 +63,17 @@ export const mediaAssets = pgTable(
   },
   (t) => [
     // Library listing: a user's newest assets first.
-    index("media_assets_user_idx").on(t.userId, t.createdAt),
+    index('media_assets_user_idx').on(t.userId, t.createdAt),
     // Lets the settings page answer "is this photo still in use?" by URL, and
     // covers the reverse lookup from a stored column back to its asset.
-    index("media_assets_url_idx").on(t.url),
+    index('media_assets_url_idx').on(t.url),
     // The upload widget's success callback can fire more than once (retries,
     // remounts). Keying on (userId, publicId) makes `recordUpload` an upsert
     // instead of a duplicate-row generator. Postgres treats NULLs as distinct,
     // so `external` assets (publicId NULL) never collide with each other.
     // Partial on live rows so a tombstoned asset can't block a re-upload that
     // happens to reuse a public id.
-    uniqueIndex("media_assets_user_public_id_uq")
+    uniqueIndex('media_assets_user_public_id_uq')
       .on(t.userId, t.publicId)
       .where(isNull(t.deletedAt)),
   ],
@@ -93,7 +83,7 @@ export const mediaAssetsRelations = relations(mediaAssets, ({ one }) => ({
   owner: one(users, {
     fields: [mediaAssets.userId],
     references: [users.id],
-    relationName: "mediaOwner",
+    relationName: 'mediaOwner',
   }),
 }));
 

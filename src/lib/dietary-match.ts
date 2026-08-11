@@ -11,8 +11,8 @@
  * formulations, so callers always pair it with a "double-check" disclaimer.
  */
 
-import { detectAllergensForSafety, type Allergen } from "./allergens";
-import { type DietaryTag, type Substitution } from "./substitutions";
+import { detectAllergensForSafety, type Allergen } from './allergens';
+import { type DietaryTag, type Substitution } from './substitutions';
 
 /** A family member's combined restrictions. */
 export type MemberNeeds = {
@@ -78,10 +78,7 @@ export function meetsDiets(
  * Best-effort verdict: safe when the recipe trips none of the member's
  * allergens and declares every diet they follow.
  */
-export function isRecipeSafeFor(
-  member: MemberNeeds,
-  recipe: RecipeDietary,
-): boolean {
+export function isRecipeSafeFor(member: MemberNeeds, recipe: RecipeDietary): boolean {
   return (
     !hasAllergenConflict(member.allergens, recipe.allergens) &&
     meetsDiets(member.diets, recipe.dietaryFlags)
@@ -96,16 +93,16 @@ export function isRecipeSafeFor(
  * the gaps.
  */
 export const DIET_FORBIDDEN_ALLERGENS: Record<DietaryTag, Allergen[]> = {
-  vegan: ["dairy", "egg", "fish", "shellfish"],
-  vegetarian: ["fish", "shellfish"],
-  "dairy-free": ["dairy"],
-  "gluten-free": ["wheat"],
-  "egg-free": ["egg"],
-  "nut-free": ["peanut", "tree-nut"],
-  "soy-free": ["soy"],
-  "shellfish-free": ["shellfish"],
-  "fish-free": ["fish"],
-  "sesame-free": ["sesame"],
+  vegan: ['dairy', 'egg', 'fish', 'shellfish'],
+  vegetarian: ['fish', 'shellfish'],
+  'dairy-free': ['dairy'],
+  'gluten-free': ['wheat'],
+  'egg-free': ['egg'],
+  'nut-free': ['peanut', 'tree-nut'],
+  'soy-free': ['soy'],
+  'shellfish-free': ['shellfish'],
+  'fish-free': ['fish'],
+  'sesame-free': ['sesame'],
 };
 
 /**
@@ -114,9 +111,9 @@ export const DIET_FORBIDDEN_ALLERGENS: Record<DietaryTag, Allergen[]> = {
  * conflict is a raw allergen rather than a declared diet.
  */
 const ALLERGEN_TO_DIET: Partial<Record<Allergen, DietaryTag>> = {
-  dairy: "dairy-free",
-  egg: "egg-free",
-  wheat: "gluten-free",
+  dairy: 'dairy-free',
+  egg: 'egg-free',
+  wheat: 'gluten-free',
 };
 
 /** A single ingredient's conflict with the active member's restrictions. */
@@ -141,9 +138,7 @@ export function detectIngredientConflict(
 ): IngredientConflict {
   const carried = new Set<Allergen>(itemAllergens);
   const allergens = member.allergens.filter((a) => carried.has(a));
-  const diets = member.diets.filter((d) =>
-    DIET_FORBIDDEN_ALLERGENS[d].some((a) => carried.has(a)),
-  );
+  const diets = member.diets.filter((d) => DIET_FORBIDDEN_ALLERGENS[d].some((a) => carried.has(a)));
   const suggested = new Set<DietaryTag>(diets);
   for (const a of allergens) {
     const tag = ALLERGEN_TO_DIET[a];
@@ -230,9 +225,7 @@ export function safeSubstitutions(
   if (avoidAllergens.length === 0) return [...subs];
   const avoid = new Set<Allergen>(avoidAllergens);
   return subs.filter((sub) => {
-    const carried = detectAllergensForSafety(
-      `${sub.substitute} ${sub.ratioOrNotes}`,
-    );
+    const carried = detectAllergensForSafety(`${sub.substitute} ${sub.ratioOrNotes}`);
     return !carried.some((allergen) => avoid.has(allergen));
   });
 }

@@ -1,19 +1,11 @@
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import {
-  GitFork,
-  Globe,
-  Lightbulb,
-  Pencil,
-  Sparkles,
-  Sprout,
-  Utensils,
-} from "lucide-react";
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { GitFork, Globe, Lightbulb, Pencil, Sparkles, Sprout, Utensils } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import type { TimelineEntry } from "~/server/recipes/timeline";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { RelativeTime } from "./relative-time";
+import { cn } from '~/lib/utils';
+import type { TimelineEntry } from '~/server/recipes/timeline';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { RelativeTime } from './relative-time';
 
 type EntryStyle = {
   icon: typeof Sprout;
@@ -25,38 +17,38 @@ type EntryStyle = {
 
 function entryStyle(entry: TimelineEntry): EntryStyle {
   switch (entry.kind) {
-    case "created":
-      return { icon: Sprout, titleKey: "created", linked: false };
-    case "adapted":
+    case 'created':
+      return { icon: Sprout, titleKey: 'created', linked: false };
+    case 'adapted':
       return {
         icon: GitFork,
-        titleKey: entry.related ? "adaptedFrom" : "adapted",
+        titleKey: entry.related ? 'adaptedFrom' : 'adapted',
         linked: true,
       };
-    case "adaptation":
+    case 'adaptation':
       return {
         icon: Utensils,
-        titleKey: entry.related ? "newAdaptation" : "adaptedByFamily",
+        titleKey: entry.related ? 'newAdaptation' : 'adaptedByFamily',
         linked: true,
       };
-    case "published":
-      return { icon: Globe, titleKey: "published", linked: false };
-    case "suggestion_applied":
-      return { icon: Lightbulb, titleKey: "suggestionApplied", linked: false };
-    case "updated":
+    case 'published':
+      return { icon: Globe, titleKey: 'published', linked: false };
+    case 'suggestion_applied':
+      return { icon: Lightbulb, titleKey: 'suggestionApplied', linked: false };
+    case 'updated':
     default:
-      return { icon: Pencil, titleKey: "updated", linked: false };
+      return { icon: Pencil, titleKey: 'updated', linked: false };
   }
 }
 
 function initials(name: string | null, handle: string | null): string {
-  const source = name ?? handle ?? "";
+  const source = name ?? handle ?? '';
   const parts = source.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "🍲";
+  if (parts.length === 0) return '🍲';
   return parts
     .slice(0, 2)
     .map((p) => p[0]!.toUpperCase())
-    .join("");
+    .join('');
 }
 
 /**
@@ -72,21 +64,19 @@ export function RecipeStory({
   entries: TimelineEntry[];
   recipeTitle: string;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   if (entries.length === 0) {
     return (
       <section
         className="rounded-xl border border-dashed border-border bg-card p-6 text-center"
-        aria-label={t("story.aria", { title: recipeTitle })}
+        aria-label={t('story.aria', { title: recipeTitle })}
       >
         <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Sparkles className="size-5" aria-hidden="true" />
         </div>
-        <h2 className="font-display text-lg font-semibold">
-          {t("story.emptyTitle")}
-        </h2>
+        <h2 className="font-display text-lg font-semibold">{t('story.emptyTitle')}</h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-          {t("story.emptyBody")}
+          {t('story.emptyBody')}
         </p>
       </section>
     );
@@ -95,19 +85,15 @@ export function RecipeStory({
   return (
     <section
       className="rounded-xl border border-border bg-card p-5 shadow-token"
-      aria-label={t("story.aria", { title: recipeTitle })}
+      aria-label={t('story.aria', { title: recipeTitle })}
     >
       <div className="mb-5 flex items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Sprout className="size-5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-xl font-semibold">
-            {t("story.heading")}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {t("story.description")}
-          </p>
+          <h2 className="font-display text-xl font-semibold">{t('story.heading')}</h2>
+          <p className="text-sm text-muted-foreground">{t('story.description')}</p>
         </div>
       </div>
 
@@ -115,8 +101,7 @@ export function RecipeStory({
         {entries.map((entry) => {
           const style = entryStyle(entry);
           const Icon = style.icon;
-          const isFork =
-            entry.kind === "adapted" || entry.kind === "adaptation";
+          const isFork = entry.kind === 'adapted' || entry.kind === 'adaptation';
           const author = entry.actor?.name ?? entry.actor?.handle ?? null;
           const when = entry.createdAt;
           const validWhen = !Number.isNaN(when.getTime());
@@ -125,10 +110,10 @@ export function RecipeStory({
             <li key={entry.id} className="relative flex gap-4">
               <div
                 className={cn(
-                  "relative z-10 mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full border bg-card",
+                  'relative z-10 mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full border bg-card',
                   isFork
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground",
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground',
                 )}
                 aria-hidden="true"
               >
@@ -160,15 +145,10 @@ export function RecipeStory({
                           <AvatarImage src={entry.actor.avatarUrl} alt="" />
                         )}
                         <AvatarFallback className="text-[0.6rem]">
-                          {initials(
-                            entry.actor?.name ?? null,
-                            entry.actor?.handle ?? null,
-                          )}
+                          {initials(entry.actor?.name ?? null, entry.actor?.handle ?? null)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium text-foreground">
-                        {author}
-                      </span>
+                      <span className="font-medium text-foreground">{author}</span>
                     </span>
                   )}
                   {validWhen && <RelativeTime value={when} />}

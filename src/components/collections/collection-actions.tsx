@@ -1,18 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import {
-  deleteCollectionAction,
-  renameCollectionAction,
-} from "~/server/collections/actions";
-import { type CollectionInput } from "~/server/collections/validation";
-import { Button } from "~/components/ui/button";
+import { deleteCollectionAction, renameCollectionAction } from '~/server/collections/actions';
+import { type CollectionInput } from '~/server/collections/validation';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,19 +17,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Input } from "~/components/ui/input";
-import { ImageUploadField } from "~/components/ui/image-upload";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { useConfirm } from "~/components/ui/confirm-dialog";
+} from '~/components/ui/dropdown-menu';
+import { Input } from '~/components/ui/input';
+import { ImageUploadField } from '~/components/ui/image-upload';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
+import { useConfirm } from '~/components/ui/confirm-dialog';
 
 export function CollectionActions({
   collection,
@@ -45,20 +42,14 @@ export function CollectionActions({
   };
 }) {
   const router = useRouter();
-  const t = useTranslations("collections.actions");
+  const t = useTranslations('collections.actions');
   const nameId = React.useId();
   const descriptionId = React.useId();
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [name, setName] = React.useState(collection.name);
-  const [description, setDescription] = React.useState(
-    collection.description ?? "",
-  );
-  const [coverImageUrl, setCoverImageUrl] = React.useState(
-    collection.coverImageUrl ?? "",
-  );
-  const [fieldErrors, setFieldErrors] = React.useState<
-    Record<string, string[]>
-  >({});
+  const [description, setDescription] = React.useState(collection.description ?? '');
+  const [coverImageUrl, setCoverImageUrl] = React.useState(collection.coverImageUrl ?? '');
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
 
@@ -78,7 +69,7 @@ export function CollectionActions({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(t("toast.updated"));
+        toast.success(t('toast.updated'));
         setRenameOpen(false);
         router.refresh();
       });
@@ -89,9 +80,9 @@ export function CollectionActions({
     // Yield a tick so the dropdown has finished closing and returned focus.
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     const ok = await confirm({
-      title: t("confirm.delete.title", { name: collection.name }),
-      description: t("confirm.delete.description"),
-      confirmLabel: t("confirm.delete.confirmLabel"),
+      title: t('confirm.delete.title', { name: collection.name }),
+      description: t('confirm.delete.description'),
+      confirmLabel: t('confirm.delete.confirmLabel'),
     });
     if (!ok) return;
     startTransition(() => {
@@ -100,8 +91,8 @@ export function CollectionActions({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(t("toast.deleted"));
-        router.push("/collections");
+        toast.success(t('toast.deleted'));
+        router.push('/collections');
       });
     });
   }
@@ -110,12 +101,7 @@ export function CollectionActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label={t("a11y.options")}
-          >
+          <Button type="button" variant="outline" size="icon" aria-label={t('a11y.options')}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
@@ -124,12 +110,12 @@ export function CollectionActions({
             onSelect={(event) => {
               event.preventDefault();
               setName(collection.name);
-              setDescription(collection.description ?? "");
-              setCoverImageUrl(collection.coverImageUrl ?? "");
+              setDescription(collection.description ?? '');
+              setCoverImageUrl(collection.coverImageUrl ?? '');
               setRenameOpen(true);
             }}
           >
-            <Pencil /> {t("menu.rename")}
+            <Pencil /> {t('menu.rename')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -141,7 +127,7 @@ export function CollectionActions({
             }}
             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
           >
-            <Trash2 /> {t("menu.delete")}
+            <Trash2 /> {t('menu.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -150,20 +136,18 @@ export function CollectionActions({
         <DialogContent>
           <form onSubmit={onRename} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>{t("edit.title")}</DialogTitle>
-              <DialogDescription>{t("edit.description")}</DialogDescription>
+              <DialogTitle>{t('edit.title')}</DialogTitle>
+              <DialogDescription>{t('edit.description')}</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={nameId}>{t("edit.fields.name")}</Label>
+              <Label htmlFor={nameId}>{t('edit.fields.name')}</Label>
               <Input
                 id={nameId}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 aria-invalid={Boolean(fieldErrors.name)}
-                aria-describedby={
-                  fieldErrors.name ? `${nameId}-error` : undefined
-                }
+                aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
                 autoFocus
               />
               {fieldErrors.name?.[0] ? (
@@ -174,23 +158,16 @@ export function CollectionActions({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor={descriptionId}>
-                {t("edit.fields.description")}
-              </Label>
+              <Label htmlFor={descriptionId}>{t('edit.fields.description')}</Label>
               <Textarea
                 id={descriptionId}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 aria-invalid={Boolean(fieldErrors.description)}
-                aria-describedby={
-                  fieldErrors.description ? `${descriptionId}-error` : undefined
-                }
+                aria-describedby={fieldErrors.description ? `${descriptionId}-error` : undefined}
               />
               {fieldErrors.description?.[0] ? (
-                <p
-                  id={`${descriptionId}-error`}
-                  className="text-sm text-destructive"
-                >
+                <p id={`${descriptionId}-error`} className="text-sm text-destructive">
                   {fieldErrors.description[0]}
                 </p>
               ) : null}
@@ -198,16 +175,14 @@ export function CollectionActions({
 
             <div className="grid gap-2">
               <ImageUploadField
-                label={t("edit.fields.coverImage")}
+                label={t('edit.fields.coverImage')}
                 value={coverImageUrl}
                 onChange={(url) => setCoverImageUrl(url)}
                 folder="heirloom/collections"
                 size="compact"
               />
               {fieldErrors.coverImageUrl?.[0] ? (
-                <p className="text-sm text-destructive">
-                  {fieldErrors.coverImageUrl[0]}
-                </p>
+                <p className="text-sm text-destructive">{fieldErrors.coverImageUrl[0]}</p>
               ) : null}
             </div>
 
@@ -218,10 +193,10 @@ export function CollectionActions({
                 onClick={() => setRenameOpen(false)}
                 disabled={isPending}
               >
-                {t("edit.actions.cancel")}
+                {t('edit.actions.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? t("edit.actions.saving") : t("edit.actions.save")}
+                {isPending ? t('edit.actions.saving') : t('edit.actions.save')}
               </Button>
             </DialogFooter>
           </form>

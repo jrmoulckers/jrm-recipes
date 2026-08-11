@@ -4,7 +4,7 @@
  * `src/components/pwa/install-app-button.tsx` feeds it live browser state.
  */
 
-export type InstallEntryMode = "native" | "ios" | "hidden";
+export type InstallEntryMode = 'native' | 'ios' | 'hidden';
 
 /**
  * How (or whether) to surface the manual install control:
@@ -23,8 +23,8 @@ export function installEntryMode(opts: {
   hasDeferredPrompt: boolean;
   iosEligible: boolean;
 }): InstallEntryMode {
-  if (opts.standalone || opts.installed) return "hidden";
-  if (opts.hasDeferredPrompt) return "native";
-  if (opts.iosEligible) return "ios";
-  return "hidden";
+  if (opts.standalone || opts.installed) return 'hidden';
+  if (opts.hasDeferredPrompt) return 'native';
+  if (opts.iosEligible) return 'ios';
+  return 'hidden';
 }

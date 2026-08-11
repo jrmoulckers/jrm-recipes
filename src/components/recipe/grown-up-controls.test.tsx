@@ -1,16 +1,16 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as React from "react";
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as React from 'react';
 
-import { ThemeProvider } from "~/components/theme/theme-provider";
-import { GrownUpControls } from "./grown-up-controls";
+import { ThemeProvider } from '~/components/theme/theme-provider';
+import { GrownUpControls } from './grown-up-controls';
 
 afterEach(cleanup);
 
 // ThemeProvider effects read matchMedia, which jsdom does not implement.
 beforeEach(() => {
   vi.stubGlobal(
-    "matchMedia",
+    'matchMedia',
     vi.fn((query: string) => ({
       matches: false,
       media: query,
@@ -24,7 +24,7 @@ beforeEach(() => {
   );
 });
 
-function renderIn(theme: "kitchen" | "kids" | "barebones") {
+function renderIn(theme: 'kitchen' | 'kids' | 'barebones') {
   return render(
     <ThemeProvider initialTheme={theme}>
       <GrownUpControls>
@@ -34,28 +34,28 @@ function renderIn(theme: "kitchen" | "kids" | "barebones") {
   );
 }
 
-describe("GrownUpControls (issue #443)", () => {
-  it("hides grown-up controls in Kids mode", () => {
-    renderIn("kids");
-    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+describe('GrownUpControls (issue #443)', () => {
+  it('hides grown-up controls in Kids mode', () => {
+    renderIn('kids');
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
-  it("shows all controls in grown-up modes", () => {
-    renderIn("kitchen");
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+  it('shows all controls in grown-up modes', () => {
+    renderIn('kitchen');
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
-  it("keeps controls visible in Simple/barebones mode (adult accessibility, not childproofing)", () => {
-    renderIn("barebones");
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+  it('keeps controls visible in Simple/barebones mode (adult accessibility, not childproofing)', () => {
+    renderIn('barebones');
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
-  it("shows children by default outside a theme provider", () => {
+  it('shows children by default outside a theme provider', () => {
     render(
       <GrownUpControls>
         <button type="button">Delete</button>
       </GrownUpControls>,
     );
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 });

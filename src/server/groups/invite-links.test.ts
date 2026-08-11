@@ -1,29 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { transactionMock, getGroupSeatLimitMock } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
   getGroupSeatLimitMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: { transaction: transactionMock },
 }));
 
-vi.mock("~/server/billing/entitlements", () => ({
+vi.mock('~/server/billing/entitlements', () => ({
   getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
-import {
-  groupInviteLinks,
-  groupMembers,
-  type MemberRole,
-  type User,
-} from "~/server/db/schema";
-import {
-  acceptInviteLink,
-  createInviteLink,
-  revokeInviteLink,
-} from "./mutations";
+import { groupInviteLinks, groupMembers, type MemberRole, type User } from '~/server/db/schema';
+import { acceptInviteLink, createInviteLink, revokeInviteLink } from './mutations';
 
 type Membership = {
   id: string;
@@ -32,10 +23,10 @@ type Membership = {
   groupId: string;
 } | null;
 
-const group = { id: "group_1", slug: "family", name: "Family" };
-const owner = { id: "owner_1" } as unknown as User;
-const stranger = { id: "stranger_1" } as unknown as User;
-const joiner = { id: "joiner_1" } as unknown as User;
+const group = { id: 'group_1', slug: 'family', name: 'Family' };
+const owner = { id: 'owner_1' } as unknown as User;
+const stranger = { id: 'stranger_1' } as unknown as User;
+const joiner = { id: 'joiner_1' } as unknown as User;
 
 const HOUR = 60 * 60 * 1000;
 const future = () => new Date(Date.now() + 24 * HOUR);
@@ -43,10 +34,10 @@ const past = () => new Date(Date.now() - HOUR);
 
 function ownerMember(): Membership {
   return {
-    id: "m_owner",
-    role: "owner",
-    userId: "owner_1",
-    groupId: "group_1",
+    id: 'm_owner',
+    role: 'owner',
+    userId: 'owner_1',
+    groupId: 'group_1',
   };
 }
 
@@ -64,9 +55,9 @@ function fakeTx(opts: {
       async () =>
         opts.returning ?? [
           {
-            id: "link_1",
-            token: "tok_link",
-            role: "member",
+            id: 'link_1',
+            token: 'tok_link',
+            role: 'member',
             expiresAt: null,
             maxUses: null,
           },
@@ -79,9 +70,7 @@ function fakeTx(opts: {
     query: {
       groups: { findFirst: vi.fn(async () => group) },
       groupMembers: {
-        findFirst: vi.fn(async () =>
-          memberships.length ? memberships.shift() : null,
-        ),
+        findFirst: vi.fn(async () => (memberships.length ? memberships.shift() : null)),
         findMany: vi.fn(async () => opts.groupMemberRoles ?? []),
       },
       groupInviteLinks: {
@@ -105,15 +94,15 @@ beforeEach(() => {
   getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
-describe("createInviteLink (issue #343)", () => {
-  it("a manager mints a link with a token and no expiry by default", async () => {
+describe('createInviteLink (issue #343)', () => {
+  it('a manager mints a link with a token and no expiry by default', async () => {
     const tx = fakeTx({ memberships: [ownerMember()] });
     runWith(tx);
 
-    const result = await createInviteLink("family", owner, { role: "member" });
+    const result = await createInviteLink('family', owner, { role: 'member' });
 
-    expect(result.token).toBe("tok_link");
-    expect(result.slug).toBe("family");
+    expect(result.token).toBe('tok_link');
+    expect(result.slug).toBe('family');
     expect(tx.insert).toHaveBeenCalledWith(groupInviteLinks);
     const values = tx.chain.values.mock.calls[0]![0] as {
       groupId: string;
@@ -122,19 +111,19 @@ describe("createInviteLink (issue #343)", () => {
       expiresAt: Date | null;
       maxUses: number | null;
     };
-    expect(values.groupId).toBe("group_1");
-    expect(values.role).toBe("member");
-    expect(typeof values.token).toBe("string");
+    expect(values.groupId).toBe('group_1');
+    expect(values.role).toBe('member');
+    expect(typeof values.token).toBe('string');
     expect(values.expiresAt).toBeNull();
     expect(values.maxUses).toBeNull();
   });
 
-  it("maps expiresInDays to a future expiry and passes maxUses through", async () => {
+  it('maps expiresInDays to a future expiry and passes maxUses through', async () => {
     const tx = fakeTx({ memberships: [ownerMember()] });
     runWith(tx);
 
-    await createInviteLink("family", owner, {
-      role: "kid",
+    await createInviteLink('family', owner, {
+      role: 'kid',
       expiresInDays: 7,
       maxUses: 5,
     });
@@ -144,31 +133,31 @@ describe("createInviteLink (issue #343)", () => {
       expiresAt: Date | null;
       maxUses: number | null;
     };
-    expect(values.role).toBe("kid");
+    expect(values.role).toBe('kid');
     expect(values.expiresAt).toBeInstanceOf(Date);
     expect(values.expiresAt!.getTime()).toBeGreaterThan(Date.now());
     expect(values.maxUses).toBe(5);
   });
 
-  it("rejects a non-manager with FORBIDDEN", async () => {
+  it('rejects a non-manager with FORBIDDEN', async () => {
     const tx = fakeTx({ memberships: [] });
     runWith(tx);
-    await expect(
-      createInviteLink("family", stranger, { role: "member" }),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(createInviteLink('family', stranger, { role: 'member' })).rejects.toThrow(
+      'FORBIDDEN',
+    );
     expect(tx.insert).not.toHaveBeenCalled();
   });
 });
 
-describe("acceptInviteLink (issue #343)", () => {
+describe('acceptInviteLink (issue #343)', () => {
   it("creates the membership at the link's role and bumps useCount", async () => {
     const tx = fakeTx({
       memberships: [null],
       link: {
-        id: "link_1",
-        groupId: "group_1",
-        role: "member",
-        token: "tok_link",
+        id: 'link_1',
+        groupId: 'group_1',
+        role: 'member',
+        token: 'tok_link',
         expiresAt: null,
         maxUses: null,
         useCount: 0,
@@ -177,12 +166,12 @@ describe("acceptInviteLink (issue #343)", () => {
     });
     runWith(tx);
 
-    const result = await acceptInviteLink("tok_link", joiner);
+    const result = await acceptInviteLink('tok_link', joiner);
 
     expect(result).toEqual({
-      groupId: "group_1",
-      slug: "family",
-      role: "member",
+      groupId: 'group_1',
+      slug: 'family',
+      role: 'member',
       alreadyMember: false,
     });
     expect(tx.insert).toHaveBeenCalledWith(groupMembers);
@@ -192,24 +181,22 @@ describe("acceptInviteLink (issue #343)", () => {
       role: MemberRole;
     };
     expect(member).toEqual({
-      groupId: "group_1",
-      userId: "joiner_1",
-      role: "member",
+      groupId: 'group_1',
+      userId: 'joiner_1',
+      role: 'member',
     });
     // useCount incremented via an update to the link.
     expect(tx.update).toHaveBeenCalledWith(groupInviteLinks);
   });
 
-  it("is idempotent for an existing member (no insert, no use spent)", async () => {
+  it('is idempotent for an existing member (no insert, no use spent)', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "m", role: "member", userId: "joiner_1", groupId: "group_1" },
-      ],
+      memberships: [{ id: 'm', role: 'member', userId: 'joiner_1', groupId: 'group_1' }],
       link: {
-        id: "link_1",
-        groupId: "group_1",
-        role: "member",
-        token: "tok_link",
+        id: 'link_1',
+        groupId: 'group_1',
+        role: 'member',
+        token: 'tok_link',
         expiresAt: null,
         maxUses: 1,
         useCount: 1,
@@ -218,20 +205,20 @@ describe("acceptInviteLink (issue #343)", () => {
     });
     runWith(tx);
 
-    const result = await acceptInviteLink("tok_link", joiner);
+    const result = await acceptInviteLink('tok_link', joiner);
 
     expect(result.alreadyMember).toBe(true);
     expect(tx.insert).not.toHaveBeenCalled();
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("rejects a revoked link", async () => {
+  it('rejects a revoked link', async () => {
     const tx = fakeTx({
       link: {
-        id: "link_1",
-        groupId: "group_1",
-        role: "member",
-        token: "tok_link",
+        id: 'link_1',
+        groupId: 'group_1',
+        role: 'member',
+        token: 'tok_link',
         expiresAt: null,
         maxUses: null,
         useCount: 0,
@@ -239,19 +226,17 @@ describe("acceptInviteLink (issue #343)", () => {
       },
     });
     runWith(tx);
-    await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
-      "REVOKED",
-    );
+    await expect(acceptInviteLink('tok_link', joiner)).rejects.toThrow('REVOKED');
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("rejects an expired link", async () => {
+  it('rejects an expired link', async () => {
     const tx = fakeTx({
       link: {
-        id: "link_1",
-        groupId: "group_1",
-        role: "member",
-        token: "tok_link",
+        id: 'link_1',
+        groupId: 'group_1',
+        role: 'member',
+        token: 'tok_link',
         expiresAt: past(),
         maxUses: null,
         useCount: 0,
@@ -259,19 +244,17 @@ describe("acceptInviteLink (issue #343)", () => {
       },
     });
     runWith(tx);
-    await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
-      "EXPIRED",
-    );
+    await expect(acceptInviteLink('tok_link', joiner)).rejects.toThrow('EXPIRED');
   });
 
-  it("rejects a new join once the cap is reached", async () => {
+  it('rejects a new join once the cap is reached', async () => {
     const tx = fakeTx({
       memberships: [null],
       link: {
-        id: "link_1",
-        groupId: "group_1",
-        role: "member",
-        token: "tok_link",
+        id: 'link_1',
+        groupId: 'group_1',
+        role: 'member',
+        token: 'tok_link',
         expiresAt: future(),
         maxUses: 2,
         useCount: 2,
@@ -281,18 +264,16 @@ describe("acceptInviteLink (issue #343)", () => {
       returning: [],
     });
     runWith(tx);
-    await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
-      "EXHAUSTED",
-    );
+    await expect(acceptInviteLink('tok_link', joiner)).rejects.toThrow('EXHAUSTED');
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("never seats more members than maxUses when two redemptions race", async () => {
+  it('never seats more members than maxUses when two redemptions race', async () => {
     const link = {
-      id: "link_1",
-      groupId: "group_1",
-      role: "member" as MemberRole,
-      token: "tok_link",
+      id: 'link_1',
+      groupId: 'group_1',
+      role: 'member' as MemberRole,
+      token: 'tok_link',
       expiresAt: null,
       maxUses: 1,
       useCount: 0,
@@ -303,10 +284,10 @@ describe("acceptInviteLink (issue #343)", () => {
     const first = fakeTx({
       memberships: [null],
       link,
-      returning: [{ id: "link_1" }],
+      returning: [{ id: 'link_1' }],
     });
     runWith(first);
-    const a = await acceptInviteLink("tok_link", joiner);
+    const a = await acceptInviteLink('tok_link', joiner);
     expect(a.alreadyMember).toBe(false);
     expect(first.insert).toHaveBeenCalledWith(groupMembers);
     // The use is claimed before the membership is seated, so an exhausted link
@@ -325,128 +306,120 @@ describe("acceptInviteLink (issue #343)", () => {
       returning: [],
     });
     runWith(second);
-    await expect(acceptInviteLink("tok_link", stranger)).rejects.toThrow(
-      "EXHAUSTED",
-    );
+    await expect(acceptInviteLink('tok_link', stranger)).rejects.toThrow('EXHAUSTED');
     expect(second.insert).not.toHaveBeenCalled();
   });
 
-  it("rejects an unknown token", async () => {
+  it('rejects an unknown token', async () => {
     const tx = fakeTx({ link: null });
     runWith(tx);
-    await expect(acceptInviteLink("nope", joiner)).rejects.toThrow("NOT_FOUND");
+    await expect(acceptInviteLink('nope', joiner)).rejects.toThrow('NOT_FOUND');
   });
 });
 
-describe("revokeInviteLink (issue #366)", () => {
+describe('revokeInviteLink (issue #366)', () => {
   const activeLink = {
-    id: "link_1",
-    groupId: "group_1",
-    token: "tok_link",
+    id: 'link_1',
+    groupId: 'group_1',
+    token: 'tok_link',
     revokedAt: null,
   };
 
-  it("a manager revokes an active link by setting revokedAt", async () => {
+  it('a manager revokes an active link by setting revokedAt', async () => {
     const tx = fakeTx({ memberships: [ownerMember()], link: activeLink });
     runWith(tx);
 
-    const result = await revokeInviteLink("family", owner, "tok_link");
+    const result = await revokeInviteLink('family', owner, 'tok_link');
 
-    expect(result).toEqual({ id: "link_1", slug: "family" });
+    expect(result).toEqual({ id: 'link_1', slug: 'family' });
     expect(tx.update).toHaveBeenCalledWith(groupInviteLinks);
     const patch = tx.chain.set.mock.calls[0]![0] as { revokedAt: Date };
     expect(patch.revokedAt).toBeInstanceOf(Date);
   });
 
-  it("is idempotent for an already-revoked link (no second write)", async () => {
+  it('is idempotent for an already-revoked link (no second write)', async () => {
     const tx = fakeTx({
       memberships: [ownerMember()],
       link: { ...activeLink, revokedAt: past() },
     });
     runWith(tx);
 
-    const result = await revokeInviteLink("family", owner, "tok_link");
+    const result = await revokeInviteLink('family', owner, 'tok_link');
 
-    expect(result).toEqual({ id: "link_1", slug: "family" });
+    expect(result).toEqual({ id: 'link_1', slug: 'family' });
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("rejects a non-manager with FORBIDDEN", async () => {
+  it('rejects a non-manager with FORBIDDEN', async () => {
     const tx = fakeTx({ memberships: [], link: activeLink });
     runWith(tx);
-    await expect(
-      revokeInviteLink("family", stranger, "tok_link"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(revokeInviteLink('family', stranger, 'tok_link')).rejects.toThrow('FORBIDDEN');
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("rejects an unknown token with NOT_FOUND", async () => {
+  it('rejects an unknown token with NOT_FOUND', async () => {
     const tx = fakeTx({ memberships: [ownerMember()], link: null });
     runWith(tx);
-    await expect(revokeInviteLink("family", owner, "nope")).rejects.toThrow(
-      "NOT_FOUND",
-    );
+    await expect(revokeInviteLink('family', owner, 'nope')).rejects.toThrow('NOT_FOUND');
     expect(tx.update).not.toHaveBeenCalled();
   });
 });
 
-describe("acceptInviteLink seat enforcement (#325)", () => {
+describe('acceptInviteLink seat enforcement (#325)', () => {
   const openLink = (role: MemberRole) => ({
-    id: "link_1",
-    groupId: "group_1",
+    id: 'link_1',
+    groupId: 'group_1',
     role,
-    token: "tok_link",
+    token: 'tok_link',
     expiresAt: null,
     maxUses: null,
     useCount: 0,
     revokedAt: null,
   });
 
-  it("rejects joining a full group and rolls the use-claim back", async () => {
+  it('rejects joining a full group and rolls the use-claim back', async () => {
     getGroupSeatLimitMock.mockResolvedValue(2);
     const tx = fakeTx({
       memberships: [null],
-      link: openLink("member"),
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      link: openLink('member'),
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
     });
     runWith(tx);
 
-    await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
-      "SEAT_LIMIT_REACHED",
-    );
+    await expect(acceptInviteLink('tok_link', joiner)).rejects.toThrow('SEAT_LIMIT_REACHED');
     // The seat check runs after the atomic use-claim but before seating, and it
     // throws inside the tx, so no member is inserted and the useCount bump is
     // rolled back with the transaction.
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("lets a member join via link when a seat is available", async () => {
+  it('lets a member join via link when a seat is available', async () => {
     getGroupSeatLimitMock.mockResolvedValue(5);
     const tx = fakeTx({
       memberships: [null],
-      link: openLink("member"),
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      link: openLink('member'),
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
     });
     runWith(tx);
 
-    await expect(acceptInviteLink("tok_link", joiner)).resolves.toMatchObject({
-      role: "member",
+    await expect(acceptInviteLink('tok_link', joiner)).resolves.toMatchObject({
+      role: 'member',
       alreadyMember: false,
     });
     expect(tx.insert).toHaveBeenCalledWith(groupMembers);
   });
 
-  it("never counts a kid joining via link against seats", async () => {
+  it('never counts a kid joining via link against seats', async () => {
     getGroupSeatLimitMock.mockResolvedValue(2);
     const tx = fakeTx({
       memberships: [null],
-      link: openLink("kid"),
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      link: openLink('kid'),
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
     });
     runWith(tx);
 
-    await expect(acceptInviteLink("tok_link", joiner)).resolves.toMatchObject({
-      role: "kid",
+    await expect(acceptInviteLink('tok_link', joiner)).resolves.toMatchObject({
+      role: 'kid',
       alreadyMember: false,
     });
     expect(tx.insert).toHaveBeenCalledWith(groupMembers);

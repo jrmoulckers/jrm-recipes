@@ -1,4 +1,4 @@
-import { A11Y_COOKIE } from "~/config/a11y";
+import { A11Y_COOKIE } from '~/config/a11y';
 
 /**
  * Blocking inline script that applies saved accessibility preferences to
@@ -32,10 +32,6 @@ export function A11yScript({ nonce }: { nonce?: string }) {
 })();
 `;
   return (
-    <script
-      nonce={nonce}
-      dangerouslySetInnerHTML={{ __html: script }}
-      suppressHydrationWarning
-    />
+    <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} suppressHydrationWarning />
   );
 }

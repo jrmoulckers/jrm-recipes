@@ -1,17 +1,14 @@
-import { isCronAuthorized, isCronConfigured } from "~/server/cron/auth";
-import { isDbConfigured } from "~/server/db";
-import { buildWeeklyDigest } from "~/server/digest/builder";
-import { getEmailProvider, renderDigestEmail } from "~/server/digest/email";
-import {
-  getUserDigestData,
-  listDigestRecipients,
-} from "~/server/digest/queries";
-import { log } from "~/lib/log";
+import { isCronAuthorized, isCronConfigured } from '~/server/cron/auth';
+import { isDbConfigured } from '~/server/db';
+import { buildWeeklyDigest } from '~/server/digest/builder';
+import { getEmailProvider, renderDigestEmail } from '~/server/digest/email';
+import { getUserDigestData, listDigestRecipients } from '~/server/digest/queries';
+import { log } from '~/lib/log';
 
 // Reads Postgres + may call an email provider, so keep it on the Node runtime.
 // Always dynamic. It's a scheduled side-effecting trigger, never cached.
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const WINDOW_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -28,13 +25,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 async function handle(request: Request): Promise<Response> {
   if (!isCronConfigured()) {
-    return Response.json(
-      { error: "Digest endpoint is not configured." },
-      { status: 503 },
-    );
+    return Response.json({ error: 'Digest endpoint is not configured.' }, { status: 503 });
   }
   if (!isCronAuthorized(request)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: 'Unauthorized.' }, { status: 401 });
   }
   if (!isDbConfigured()) {
     return Response.json({ ok: true, sent: 0, skipped: 0, recipients: 0 });
@@ -75,7 +69,7 @@ async function handle(request: Request): Promise<Response> {
     } catch (error) {
       // Isolate a bad recipient/provider hiccup so the rest of the run proceeds.
       failed++;
-      log.error("digest: send failed for recipient", {
+      log.error('digest: send failed for recipient', {
         provider: provider.name,
         error,
       });

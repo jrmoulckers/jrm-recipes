@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   displayLocalShoppingListName,
@@ -10,13 +10,13 @@ import {
   useShoppingStore,
   type LocalShoppingItem,
   type LocalShoppingList,
-} from "./shopping-store";
-import type { ShoppingRecipeInput } from "./shopping-list";
-import { DEFAULT_UNIT_PREFS } from "./units";
+} from './shopping-store';
+import type { ShoppingRecipeInput } from './shopping-list';
+import { DEFAULT_UNIT_PREFS } from './units';
 
 const defaultList = (): LocalShoppingList => ({
-  id: "default",
-  name: "Neighborhood market",
+  id: 'default',
+  name: 'Neighborhood market',
   storeIds: [],
   isDefault: true,
   archived: false,
@@ -27,8 +27,8 @@ function reset() {
   useShoppingStore.setState({
     lists: [defaultList()],
     stores: [],
-    defaultListId: "default",
-    currentListId: "default",
+    defaultListId: 'default',
+    currentListId: 'default',
     routes: [],
     restorePoints: [],
     unitPreferences: { ...DEFAULT_UNIT_PREFS },
@@ -41,9 +41,7 @@ function reset() {
 const store = () => useShoppingStore.getState();
 const list = (id: string) => store().lists.find((item) => item.id === id)!;
 
-function recipe(
-  ingredients: ShoppingRecipeInput["ingredients"],
-): ShoppingRecipeInput {
+function recipe(ingredients: ShoppingRecipeInput['ingredients']): ShoppingRecipeInput {
   return { ingredients };
 }
 
@@ -53,47 +51,47 @@ afterEach(() => {
   reset();
 });
 
-describe("persisted migration", () => {
-  it("localizes only the untouched generated sentinel name", () => {
+describe('persisted migration', () => {
+  it('localizes only the untouched generated sentinel name', () => {
     expect(
       displayLocalShoppingListName(
         { id: LOCAL_DEFAULT_LIST_ID, name: LOCAL_DEFAULT_LIST_NAME },
-        "Lista de la compra",
+        'Lista de la compra',
       ),
-    ).toBe("Lista de la compra");
+    ).toBe('Lista de la compra');
     expect(
       displayLocalShoppingListName(
-        { id: LOCAL_DEFAULT_LIST_ID, name: "Mercado semanal" },
-        "Lista de la compra",
+        { id: LOCAL_DEFAULT_LIST_ID, name: 'Mercado semanal' },
+        'Lista de la compra',
       ),
-    ).toBe("Mercado semanal");
+    ).toBe('Mercado semanal');
     expect(
       displayLocalShoppingListName(
-        { id: "user-list", name: LOCAL_DEFAULT_LIST_NAME },
-        "Lista de la compra",
+        { id: 'user-list', name: LOCAL_DEFAULT_LIST_NAME },
+        'Lista de la compra',
       ),
     ).toBe(LOCAL_DEFAULT_LIST_NAME);
     expect(
       displayLocalShoppingListName(
         {
-          id: "generated-fallback",
+          id: 'generated-fallback',
           name: LOCAL_DEFAULT_LIST_NAME,
           generatedName: true,
         },
-        "Einkaufsliste",
+        'Einkaufsliste',
       ),
-    ).toBe("Einkaufsliste");
+    ).toBe('Einkaufsliste');
   });
 
-  it("moves every legacy flat item into one explicit default list", () => {
+  it('moves every legacy flat item into one explicit default list', () => {
     const legacyItem = {
-      id: "legacy",
-      item: "Milk",
+      id: 'legacy',
+      item: 'Milk',
       quantity: 1,
       quantityMax: null,
-      unit: "gal",
+      unit: 'gal',
       note: null,
-      category: "Dairy & Eggs",
+      category: 'Dairy & Eggs',
       optional: false,
       checked: false,
       recipeId: null,
@@ -101,46 +99,40 @@ describe("persisted migration", () => {
 
     const migrated = migrateShoppingState({ items: [legacyItem] }, 0);
 
-    expect(migrated.defaultListId).toBe("local-default");
-    expect(migrated.currentListId).toBe("local-default");
+    expect(migrated.defaultListId).toBe('local-default');
+    expect(migrated.currentListId).toBe('local-default');
     expect(migrated.lists?.[0]?.items[0]).toMatchObject(legacyItem);
-    expect(typeof migrated.lists?.[0]?.items[0]?.aggregationKey).toBe("string");
+    expect(typeof migrated.lists?.[0]?.items[0]?.aggregationKey).toBe('string');
     expect(migrated.routes).toEqual([]);
-    expect(
-      displayLocalShoppingListName(migrated.lists![0]!, "قائمة التسوق"),
-    ).toBe("قائمة التسوق");
+    expect(displayLocalShoppingListName(migrated.lists![0]!, 'قائمة التسوق')).toBe('قائمة التسوق');
   });
 
-  it("recovers a valid empty default from malformed legacy data", () => {
-    const migrated = migrateShoppingState({ items: "broken" }, 0);
+  it('recovers a valid empty default from malformed legacy data', () => {
+    const migrated = migrateShoppingState({ items: 'broken' }, 0);
     expect(migrated.lists?.[0]?.items).toEqual([]);
   });
 
-  it("lifts legacy per-list store names into a shared store library", () => {
+  it('lifts legacy per-list store names into a shared store library', () => {
     const migrated = migrateShoppingState(
       {
         lists: [
-          { ...defaultList(), id: "a", storeIds: undefined, storeName: "QFC" },
-          { ...defaultList(), id: "b", storeIds: undefined, storeName: "qfc " },
-          { ...defaultList(), id: "c", storeIds: undefined, storeName: null },
+          { ...defaultList(), id: 'a', storeIds: undefined, storeName: 'QFC' },
+          { ...defaultList(), id: 'b', storeIds: undefined, storeName: 'qfc ' },
+          { ...defaultList(), id: 'c', storeIds: undefined, storeName: null },
         ],
-        defaultListId: "a",
-        currentListId: "a",
+        defaultListId: 'a',
+        currentListId: 'a',
       },
       4,
     );
 
     expect(migrated.stores).toHaveLength(1);
     const storeId = migrated.stores![0]!.id;
-    expect(migrated.stores![0]!.name).toBe("QFC");
-    expect(migrated.lists?.map((entry) => entry.storeIds)).toEqual([
-      [storeId],
-      [storeId],
-      [],
-    ]);
+    expect(migrated.stores![0]!.name).toBe('QFC');
+    expect(migrated.lists?.map((entry) => entry.storeIds)).toEqual([[storeId], [storeId], []]);
   });
 
-  it("stops localizing a generated name after the user renames it", () => {
+  it('stops localizing a generated name after the user renames it', () => {
     useShoppingStore.setState({
       lists: [
         {
@@ -157,23 +149,21 @@ describe("persisted migration", () => {
       currentListId: LOCAL_DEFAULT_LIST_ID,
     });
 
-    store().renameList(LOCAL_DEFAULT_LIST_ID, "My market");
+    store().renameList(LOCAL_DEFAULT_LIST_ID, 'My market');
 
     expect(store().lists[0]).toMatchObject({
-      name: "My market",
+      name: 'My market',
       generatedName: false,
     });
-    expect(
-      displayLocalShoppingListName(store().lists[0]!, "Lista de la compra"),
-    ).toBe("My market");
+    expect(displayLocalShoppingListName(store().lists[0]!, 'Lista de la compra')).toBe('My market');
   });
 
-  it("adds empty per-list history when upgrading the multi-list store", () => {
+  it('adds empty per-list history when upgrading the multi-list store', () => {
     const migrated = migrateShoppingState(
       {
         lists: [defaultList()],
-        defaultListId: "default",
-        currentListId: "default",
+        defaultListId: 'default',
+        currentListId: 'default',
         routes: [],
       },
       1,
@@ -182,16 +172,16 @@ describe("persisted migration", () => {
     expect(migrated.restorePoints).toEqual([]);
   });
 
-  it("preserves duplicate legacy entities while assigning globally unique ids", () => {
+  it('preserves duplicate legacy entities while assigning globally unique ids', () => {
     const duplicate = {
-      id: "same-key",
-      item: "Milk",
-      foodId: "food-milk",
+      id: 'same-key',
+      item: 'Milk',
+      foodId: 'food-milk',
       quantity: 1,
       quantityMax: null,
-      unit: "l",
+      unit: 'l',
       note: null,
-      category: "Dairy & Eggs",
+      category: 'Dairy & Eggs',
       optional: false,
       checked: false,
       recipeId: null,
@@ -201,7 +191,7 @@ describe("persisted migration", () => {
         { ...defaultList(), items: [duplicate] },
         {
           ...defaultList(),
-          id: "second",
+          id: 'second',
           isDefault: false,
           items: [{ ...duplicate, checked: true }],
         },
@@ -213,36 +203,31 @@ describe("persisted migration", () => {
 
     expect(items).toHaveLength(2);
     expect(new Set(items.map((candidate) => candidate.id)).size).toBe(2);
-    expect(
-      new Set(items.map((candidate) => candidate.aggregationKey)).size,
-    ).toBe(1);
+    expect(new Set(items.map((candidate) => candidate.aggregationKey)).size).toBe(1);
   });
 
-  it("hydrates version-one lists and routes with safe package defaults", () => {
+  it('hydrates version-one lists and routes with safe package defaults', () => {
     const oldItem = {
-      id: "milk",
-      item: "Milk",
+      id: 'milk',
+      item: 'Milk',
       foodId: null,
       quantity: 3,
       quantityMax: null,
-      unit: "cup",
+      unit: 'cup',
       note: null,
-      category: "Dairy & Eggs",
+      category: 'Dairy & Eggs',
       optional: false,
       checked: false,
       recipeId: null,
     } as LocalShoppingItem;
     const oldState = {
       lists: [{ ...defaultList(), items: [oldItem] }],
-      defaultListId: "default",
-      currentListId: "default",
+      defaultListId: 'default',
+      currentListId: 'default',
       routes: [],
     };
 
-    const hydrated = mergeShoppingState(
-      migrateShoppingState(oldState, 1),
-      store(),
-    );
+    const hydrated = mergeShoppingState(migrateShoppingState(oldState, 1), store());
 
     expect(hydrated.packageRounding).toBe(false);
     expect(hydrated.customUnits).toEqual([]);
@@ -250,7 +235,7 @@ describe("persisted migration", () => {
     expect(hydrated.lists[0]?.items[0]).toMatchObject({
       requiredBaseQuantity: 709.764,
       requiredBaseQuantityMax: null,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
       purchaseQuantity: null,
       packageCount: null,
       packageLabel: null,
@@ -258,76 +243,68 @@ describe("persisted migration", () => {
   });
 });
 
-describe("independent current and default lists", () => {
-  it("viewing another list does not change fallback routing", () => {
-    const viewed = store().createList("Warehouse");
+describe('independent current and default lists', () => {
+  it('viewing another list does not change fallback routing', () => {
+    const viewed = store().createList('Warehouse');
     store().setCurrentList(viewed);
-    store().addRecipe(recipe([{ item: "Milk", quantity: 1 }]));
+    store().addRecipe(recipe([{ item: 'Milk', quantity: 1 }]));
 
     expect(store().currentListId).toBe(viewed);
-    expect(store().defaultListId).toBe("default");
-    expect(list("default").items.map((item) => item.item)).toEqual(["Milk"]);
+    expect(store().defaultListId).toBe('default');
+    expect(list('default').items.map((item) => item.item)).toEqual(['Milk']);
     expect(list(viewed).items).toEqual([]);
   });
 
-  it("changes the fallback only through makeDefault", () => {
-    const warehouse = store().createList("Warehouse");
+  it('changes the fallback only through makeDefault', () => {
+    const warehouse = store().createList('Warehouse');
     store().makeDefault(warehouse);
-    store().addRecipe(recipe([{ item: "Milk", quantity: 1 }]));
+    store().addRecipe(recipe([{ item: 'Milk', quantity: 1 }]));
 
     expect(store().defaultListId).toBe(warehouse);
     expect(list(warehouse).isDefault).toBe(true);
-    expect(list("default").isDefault).toBe(false);
+    expect(list('default').isDefault).toBe(false);
     expect(list(warehouse).items).toHaveLength(1);
   });
 });
 
-describe("routing and list lifecycle", () => {
-  it("marks a generated fallback for localized display", () => {
-    store().archiveList("default");
+describe('routing and list lifecycle', () => {
+  it('marks a generated fallback for localized display', () => {
+    store().archiveList('default');
 
     const fallback = store().lists.find((candidate) => !candidate.archived)!;
     expect(fallback.generatedName).toBe(true);
-    expect(displayLocalShoppingListName(fallback, "Einkaufsliste")).toBe(
-      "Einkaufsliste",
-    );
+    expect(displayLocalShoppingListName(fallback, 'Einkaufsliste')).toBe('Einkaufsliste');
   });
 
-  it("routes an ingredient to one preferred list and not its alternatives", () => {
-    const costco = store().createList("Warehouse");
-    store().addManual("default", { item: "Onion", foodId: "food-onion" });
-    const onion = list("default").items[0]!;
-    store().moveItem("default", onion.id, costco, true, ["default"]);
-    store().addRecipe(
-      recipe([{ item: "Yellow onion", foodId: "food-onion", quantity: 2 }]),
-    );
+  it('routes an ingredient to one preferred list and not its alternatives', () => {
+    const costco = store().createList('Warehouse');
+    store().addManual('default', { item: 'Onion', foodId: 'food-onion' });
+    const onion = list('default').items[0]!;
+    store().moveItem('default', onion.id, costco, true, ['default']);
+    store().addRecipe(recipe([{ item: 'Yellow onion', foodId: 'food-onion', quantity: 2 }]));
 
     expect(list(costco).items).toHaveLength(1);
     expect(list(defaultList().id).items).toHaveLength(0);
-    expect(store().routes[0]?.alternativeListIds).toEqual(["default"]);
+    expect(store().routes[0]?.alternativeListIds).toEqual(['default']);
   });
 
-  it("promotes an active alternative when a preferred list is archived", () => {
-    const costco = store().createList("Warehouse");
-    store().addManual("default", { item: "Onion" });
-    store().moveItem("default", list("default").items[0]!.id, costco, true, [
-      "default",
-    ]);
+  it('promotes an active alternative when a preferred list is archived', () => {
+    const costco = store().createList('Warehouse');
+    store().addManual('default', { item: 'Onion' });
+    store().moveItem('default', list('default').items[0]!.id, costco, true, ['default']);
 
     store().archiveList(costco);
 
-    expect(store().routes[0]?.preferredListId).toBe("default");
-    expect(store().defaultListId).toBe("default");
-    expect(store().currentListId).toBe("default");
+    expect(store().routes[0]?.preferredListId).toBe('default');
+    expect(store().defaultListId).toBe('default');
+    expect(store().currentListId).toBe('default');
   });
 
-  it("preserves a non-preferred alternative across archive and restore", () => {
-    const costco = store().createList("Warehouse");
-    const source = store().createList("Temporary");
-    store().addManual(source, { item: "Onion" });
-    store().moveItem(source, list(source).items[0]!.id, "default", true, [
-      costco,
-    ]);
+  it('preserves a non-preferred alternative across archive and restore', () => {
+    const costco = store().createList('Warehouse');
+    const source = store().createList('Temporary');
+    store().addManual(source, { item: 'Onion' });
+    store().moveItem(source, list(source).items[0]!.id, 'default', true, [costco]);
 
     store().archiveList(costco);
     expect(store().routes[0]?.alternativeListIds).toEqual([costco]);
@@ -336,22 +313,22 @@ describe("routing and list lifecycle", () => {
     expect(store().routes[0]?.alternativeListIds).toEqual([costco]);
   });
 
-  it("promotes a new default only when the default is archived", () => {
-    const costco = store().createList("Warehouse");
+  it('promotes a new default only when the default is archived', () => {
+    const costco = store().createList('Warehouse');
     store().setCurrentList(costco);
-    store().archiveList("default");
+    store().archiveList('default');
 
     expect(store().defaultListId).toBe(costco);
     expect(store().currentListId).toBe(costco);
     expect(list(costco).isDefault).toBe(true);
   });
 
-  it.each(["archiveList", "deleteList"] as const)(
-    "falls back to the explicit default when the viewed list is removed by %s",
+  it.each(['archiveList', 'deleteList'] as const)(
+    'falls back to the explicit default when the viewed list is removed by %s',
     (operation) => {
-      const costco = store().createList("Warehouse");
+      const costco = store().createList('Warehouse');
       store().makeDefault(costco);
-      const temporary = store().createList("Temporary");
+      const temporary = store().createList('Temporary');
 
       store()[operation](temporary);
 
@@ -362,249 +339,229 @@ describe("routing and list lifecycle", () => {
   );
 });
 
-describe("per-list item mutations", () => {
-  it("consolidates duplicate recipe ingredients inside their destination", () => {
-    store().setUnitPreferences(
-      { ...DEFAULT_UNIT_PREFS, defaultSystem: "us" },
-      false,
-    );
-    store().addRecipe(recipe([{ item: "Flour", quantity: 1, unit: "cup" }]));
-    const originalId = list("default").items[0]!.id;
-    store().addRecipe(recipe([{ item: "Flour", quantity: 2, unit: "cup" }]));
-    expect(list("default").items).toMatchObject([
-      { id: originalId, item: "Flour", quantity: 3, unit: "cup" },
+describe('per-list item mutations', () => {
+  it('consolidates duplicate recipe ingredients inside their destination', () => {
+    store().setUnitPreferences({ ...DEFAULT_UNIT_PREFS, defaultSystem: 'us' }, false);
+    store().addRecipe(recipe([{ item: 'Flour', quantity: 1, unit: 'cup' }]));
+    const originalId = list('default').items[0]!.id;
+    store().addRecipe(recipe([{ item: 'Flour', quantity: 2, unit: 'cup' }]));
+    expect(list('default').items).toMatchObject([
+      { id: originalId, item: 'Flour', quantity: 3, unit: 'cup' },
     ]);
   });
 
-  it("clears only the requested list", () => {
-    const costco = store().createList("Warehouse");
-    store().addManual("default", { item: "Eggs" });
-    store().addManual(costco, { item: "Butter" });
+  it('clears only the requested list', () => {
+    const costco = store().createList('Warehouse');
+    store().addManual('default', { item: 'Eggs' });
+    store().addManual(costco, { item: 'Butter' });
     store().clearAll(costco);
 
-    expect(list("default").items.map((item) => item.item)).toEqual(["Eggs"]);
+    expect(list('default').items.map((item) => item.item)).toEqual(['Eggs']);
     expect(list(costco).items).toEqual([]);
   });
 
-  it("still creates unique ids without crypto.randomUUID", () => {
-    vi.stubGlobal("crypto", {});
-    store().addManual("default", { item: "Sugar" });
-    store().addManual("default", { item: "Cocoa" });
-    const ids = list("default").items.map((item) => item.id);
+  it('still creates unique ids without crypto.randomUUID', () => {
+    vi.stubGlobal('crypto', {});
+    store().addManual('default', { item: 'Sugar' });
+    store().addManual('default', { item: 'Cocoa' });
+    const ids = list('default').items.map((item) => item.id);
     expect(new Set(ids).size).toBe(2);
   });
 
-  it("keeps aggregate identity separate from unique entities and scopes mutations", () => {
-    const warehouse = store().createList("Warehouse");
-    store().addRecipe(recipe([{ item: "Milk", foodId: "milk", quantity: 1 }]));
-    const checked = list("default").items[0]!;
-    store().setChecked("default", checked.id, true);
-    store().addRecipe(recipe([{ item: "Milk", foodId: "milk", quantity: 2 }]));
+  it('keeps aggregate identity separate from unique entities and scopes mutations', () => {
+    const warehouse = store().createList('Warehouse');
+    store().addRecipe(recipe([{ item: 'Milk', foodId: 'milk', quantity: 1 }]));
+    const checked = list('default').items[0]!;
+    store().setChecked('default', checked.id, true);
+    store().addRecipe(recipe([{ item: 'Milk', foodId: 'milk', quantity: 2 }]));
     store().addManual(warehouse, {
-      item: "Milk",
-      foodId: "milk",
+      item: 'Milk',
+      foodId: 'milk',
       quantity: 3,
     });
 
-    const defaultItems = list("default").items;
+    const defaultItems = list('default').items;
     const warehouseItem = list(warehouse).items[0]!;
     expect(defaultItems).toHaveLength(2);
-    expect(
-      new Set([...defaultItems, warehouseItem].map((candidate) => candidate.id))
-        .size,
-    ).toBe(3);
-    expect(defaultItems[0]?.aggregationKey).toBe(
-      defaultItems[1]?.aggregationKey,
-    );
+    expect(new Set([...defaultItems, warehouseItem].map((candidate) => candidate.id)).size).toBe(3);
+    expect(defaultItems[0]?.aggregationKey).toBe(defaultItems[1]?.aggregationKey);
     expect(defaultItems[0]?.aggregationKey).toBe(warehouseItem.aggregationKey);
 
-    store().setChecked("default", defaultItems[1]!.id, true);
-    expect(list("default").items.map((candidate) => candidate.checked)).toEqual(
-      [true, true],
-    );
+    store().setChecked('default', defaultItems[1]!.id, true);
+    expect(list('default').items.map((candidate) => candidate.checked)).toEqual([true, true]);
     expect(list(warehouse).items[0]?.checked).toBe(false);
-    store().setCategory(warehouse, warehouseItem.id, "Bakery");
-    expect(list(warehouse).items[0]?.category).toBe("Bakery");
-    expect(list("default").items[0]?.category).not.toBe("Bakery");
+    store().setCategory(warehouse, warehouseItem.id, 'Bakery');
+    expect(list(warehouse).items[0]?.category).toBe('Bakery');
+    expect(list('default').items[0]?.category).not.toBe('Bakery');
 
-    store().remove("default", defaultItems[1]!.id);
-    expect(list("default").items.map((candidate) => candidate.id)).toEqual([
-      checked.id,
-    ]);
+    store().remove('default', defaultItems[1]!.id);
+    expect(list('default').items.map((candidate) => candidate.id)).toEqual([checked.id]);
     expect(list(warehouse).items).toHaveLength(1);
   });
 });
 
-describe("offline quantity and package preferences", () => {
-  it("uses the same aggregation options for preferences and custom units", () => {
-    store().setUnitPreferences(
-      { ...DEFAULT_UNIT_PREFS, defaultSystem: "metric" },
-      false,
-    );
+describe('offline quantity and package preferences', () => {
+  it('uses the same aggregation options for preferences and custom units', () => {
+    store().setUnitPreferences({ ...DEFAULT_UNIT_PREFS, defaultSystem: 'metric' }, false);
     store().createCustomUnit({
-      name: "bottle",
-      abbreviation: "btl",
-      dimension: "volume",
-      baseUnit: "ml",
+      name: 'bottle',
+      abbreviation: 'btl',
+      dimension: 'volume',
+      baseUnit: 'ml',
       baseAmount: 750,
       displayAsTrue: true,
     });
-    store().addRecipe(
-      recipe([{ item: "Juice", quantity: 1, unit: "l", foodId: "juice" }]),
-    );
-    const juice = list("default").items[0]!;
+    store().addRecipe(recipe([{ item: 'Juice', quantity: 1, unit: 'l', foodId: 'juice' }]));
+    const juice = list('default').items[0]!;
 
     store().saveIngredientPackage({
       itemId: juice.id,
-      listId: "default",
-      preferredListId: "default",
+      listId: 'default',
+      preferredListId: 'default',
       packageAmount: 1,
-      packageUnit: "bottle",
-      packageLabel: "glass bottle",
-      packageRoundBehavior: "enable",
+      packageUnit: 'bottle',
+      packageLabel: 'glass bottle',
+      packageRoundBehavior: 'enable',
     });
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       quantity: 1,
-      unit: "l",
+      unit: 'l',
       packageCount: 2,
       purchaseQuantity: 2,
-      purchaseUnit: "bottle",
-      packageLabel: "glass bottle",
+      purchaseUnit: 'bottle',
+      packageLabel: 'glass bottle',
     });
   });
 
-  it("canonicalizes package routes through create, rename, and delete", () => {
-    store().addManual("default", {
-      item: "Juice",
-      foodId: "juice",
+  it('canonicalizes package routes through create, rename, and delete', () => {
+    store().addManual('default', {
+      item: 'Juice',
+      foodId: 'juice',
       quantity: 1,
-      unit: "l",
+      unit: 'l',
     });
-    const juice = list("default").items[0]!;
+    const juice = list('default').items[0]!;
     store().saveIngredientPackage({
       itemId: juice.id,
-      listId: "default",
-      preferredListId: "default",
+      listId: 'default',
+      preferredListId: 'default',
       packageAmount: 1,
-      packageUnit: "btl",
-      packageLabel: "glass bottle",
-      packageRoundBehavior: "enable",
+      packageUnit: 'btl',
+      packageLabel: 'glass bottle',
+      packageRoundBehavior: 'enable',
     });
 
     const customId = store().createCustomUnit({
-      name: "bottle",
-      abbreviation: "btl",
-      dimension: "volume",
-      baseUnit: "ml",
+      name: 'bottle',
+      abbreviation: 'btl',
+      dimension: 'volume',
+      baseUnit: 'ml',
       baseAmount: 750,
       displayAsTrue: true,
     });
     expect(store().routes[0]).toMatchObject({
       packageAmount: 750,
-      packageUnit: "ml",
-      packageLabel: "glass bottle",
-      packageRoundBehavior: "enable",
-      preferredListId: "default",
+      packageUnit: 'ml',
+      packageLabel: 'glass bottle',
+      packageRoundBehavior: 'enable',
+      preferredListId: 'default',
     });
-    expect(list("default").items[0]?.packageCount).toBe(2);
+    expect(list('default').items[0]?.packageCount).toBe(2);
 
     store().updateCustomUnit(customId, {
-      name: "flask",
-      abbreviation: "fl",
-      dimension: "volume",
-      baseUnit: "l",
+      name: 'flask',
+      abbreviation: 'fl',
+      dimension: 'volume',
+      baseUnit: 'l',
       baseAmount: 1,
       displayAsTrue: false,
     });
     expect(store().routes[0]).toMatchObject({
       packageAmount: 750,
-      packageUnit: "ml",
+      packageUnit: 'ml',
     });
-    expect(list("default").items[0]?.packageCount).toBe(2);
+    expect(list('default').items[0]?.packageCount).toBe(2);
 
     store().deleteCustomUnit(customId);
     expect(store().routes[0]).toMatchObject({
       packageAmount: 750,
-      packageUnit: "ml",
+      packageUnit: 'ml',
     });
-    expect(list("default").items[0]?.packageCount).toBe(2);
+    expect(list('default').items[0]?.packageCount).toBe(2);
   });
 
-  it("inherits the off-by-default global setting and never rounds below a range", () => {
-    store().setUnitPreferences(
-      { ...DEFAULT_UNIT_PREFS, defaultSystem: "us" },
-      false,
-    );
-    store().addManual("default", {
-      item: "Milk",
+  it('inherits the off-by-default global setting and never rounds below a range', () => {
+    store().setUnitPreferences({ ...DEFAULT_UNIT_PREFS, defaultSystem: 'us' }, false);
+    store().addManual('default', {
+      item: 'Milk',
       quantity: 3,
       quantityMax: 5,
-      unit: "cup",
+      unit: 'cup',
     });
-    const milk = list("default").items[0]!;
+    const milk = list('default').items[0]!;
     store().saveIngredientPackage({
       itemId: milk.id,
-      listId: "default",
-      preferredListId: "default",
+      listId: 'default',
+      preferredListId: 'default',
       packageAmount: 4,
-      packageUnit: "cup",
-      packageLabel: "carton",
-      packageRoundBehavior: "inherit",
+      packageUnit: 'cup',
+      packageLabel: 'carton',
+      packageRoundBehavior: 'inherit',
     });
-    expect(list("default").items[0]?.packageCount).toBeNull();
+    expect(list('default').items[0]?.packageCount).toBeNull();
 
     store().setUnitPreferences(store().unitPreferences, true);
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       quantity: 1.5,
       quantityMax: 2.5,
-      unit: "pint",
+      unit: 'pint',
       packageCount: 2,
       purchaseQuantity: 8,
-      purchaseUnit: "cup",
+      purchaseUnit: 'cup',
     });
   });
 
-  it("saves package metadata on the existing preferred-store route", () => {
-    const warehouse = store().createList("Warehouse");
-    store().addManual("default", { item: "Rice", foodId: "food-rice" });
-    const rice = list("default").items[0]!;
+  it('saves package metadata on the existing preferred-store route', () => {
+    const warehouse = store().createList('Warehouse');
+    store().addManual('default', { item: 'Rice', foodId: 'food-rice' });
+    const rice = list('default').items[0]!;
 
     store().saveIngredientPackage({
       itemId: rice.id,
-      listId: "default",
+      listId: 'default',
       preferredListId: warehouse,
       packageAmount: 5,
-      packageUnit: "lb",
-      packageRoundBehavior: "disable",
+      packageUnit: 'lb',
+      packageRoundBehavior: 'disable',
     });
 
     expect(store().routes).toHaveLength(1);
     expect(store().routes[0]).toMatchObject({
-      foodId: "food-rice",
+      foodId: 'food-rice',
       preferredListId: warehouse,
       packageAmount: 5,
-      packageUnit: "lb",
-      packageRoundBehavior: "disable",
+      packageUnit: 'lb',
+      packageRoundBehavior: 'disable',
     });
   });
 
-  it("scopes a package edit by list even if legacy entity ids collide", () => {
-    const warehouse = store().createList("Warehouse");
-    store().addManual("default", {
-      item: "Milk",
-      foodId: "food-milk",
+  it('scopes a package edit by list even if legacy entity ids collide', () => {
+    const warehouse = store().createList('Warehouse');
+    store().addManual('default', {
+      item: 'Milk',
+      foodId: 'food-milk',
       quantity: 1,
-      unit: "l",
+      unit: 'l',
     });
     store().addManual(warehouse, {
-      item: "Flour",
-      foodId: "food-flour",
+      item: 'Flour',
+      foodId: 'food-flour',
       quantity: 1,
-      unit: "kg",
+      unit: 'kg',
     });
-    const sharedId = list("default").items[0]!.id;
+    const sharedId = list('default').items[0]!.id;
     useShoppingStore.setState((state) => ({
       lists: state.lists.map((candidate) =>
         candidate.id === warehouse
@@ -624,33 +581,33 @@ describe("offline quantity and package preferences", () => {
       listId: warehouse,
       preferredListId: warehouse,
       packageAmount: 500,
-      packageUnit: "g",
-      packageRoundBehavior: "enable",
+      packageUnit: 'g',
+      packageRoundBehavior: 'enable',
     });
 
     expect(store().routes).toMatchObject([
-      { foodId: "food-flour", packageAmount: 500, packageUnit: "g" },
+      { foodId: 'food-flour', packageAmount: 500, packageUnit: 'g' },
     ]);
-    expect(list("default").items[0]?.packageCount).toBeNull();
+    expect(list('default').items[0]?.packageCount).toBeNull();
     expect(list(warehouse).items[0]?.packageCount).toBe(2);
   });
 
-  it("reaggregates identical items in separate lists from their own requirements", () => {
-    const archived = store().createList("Archived market");
-    store().addManual("default", {
-      item: "Milk",
-      foodId: "food-milk",
+  it('reaggregates identical items in separate lists from their own requirements', () => {
+    const archived = store().createList('Archived market');
+    store().addManual('default', {
+      item: 'Milk',
+      foodId: 'food-milk',
       quantity: 1,
-      unit: "cup",
+      unit: 'cup',
     });
     store().addManual(archived, {
-      item: "Milk",
-      foodId: "food-milk",
+      item: 'Milk',
+      foodId: 'food-milk',
       quantity: 3,
-      unit: "cup",
+      unit: 'cup',
     });
     store().archiveList(archived);
-    const source = list("default").items[0]!;
+    const source = list('default').items[0]!;
     useShoppingStore.setState((state) => ({
       lists: state.lists.map((candidate) =>
         candidate.id === archived
@@ -668,14 +625,14 @@ describe("offline quantity and package preferences", () => {
 
     store().saveIngredientPackage({
       itemId: source.id,
-      listId: "default",
-      preferredListId: "default",
+      listId: 'default',
+      preferredListId: 'default',
       packageAmount: 1,
-      packageUnit: "cup",
-      packageRoundBehavior: "enable",
+      packageUnit: 'cup',
+      packageRoundBehavior: 'enable',
     });
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       requiredBaseQuantity: 236.588,
       packageCount: 1,
       purchaseQuantity: 1,
@@ -687,74 +644,74 @@ describe("offline quantity and package preferences", () => {
     });
   });
 
-  it("keeps the canonical requirement when a custom unit is edited or deleted", () => {
+  it('keeps the canonical requirement when a custom unit is edited or deleted', () => {
     const customId = store().createCustomUnit({
-      name: "scoop",
+      name: 'scoop',
       abbreviation: null,
-      dimension: "volume",
-      baseUnit: "cup",
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 0.5,
       displayAsTrue: false,
     });
     store().setUnitPreferences(
       {
         ...DEFAULT_UNIT_PREFS,
-        defaultSystem: "metric",
-        dryVolumeUnit: "scoop",
+        defaultSystem: 'metric',
+        dryVolumeUnit: 'scoop',
       },
       false,
     );
-    store().addManual("default", {
-      item: "Flour",
+    store().addManual('default', {
+      item: 'Flour',
       quantity: 1,
-      unit: "scoop",
+      unit: 'scoop',
     });
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       requiredBaseQuantity: 118.294,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
 
     store().updateCustomUnit(customId, {
-      name: "scoop",
+      name: 'scoop',
       abbreviation: null,
-      dimension: "volume",
-      baseUnit: "cup",
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 1,
       displayAsTrue: false,
     });
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       quantity: 0.5,
-      unit: "scoop",
+      unit: 'scoop',
       requiredBaseQuantity: 118.294,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
 
     store().deleteCustomUnit(customId);
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       quantity: 118.294,
-      unit: "ml",
+      unit: 'ml',
       requiredBaseQuantity: 118.294,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
   });
 
-  it("canonicalizes persisted unknown units when a definition is created", () => {
+  it('canonicalizes persisted unknown units when a definition is created', () => {
     useShoppingStore.setState((state) => ({
       lists: state.lists.map((candidate) => ({
         ...candidate,
         items: [
           {
-            id: "legacy-scoop",
-            aggregationKey: "legacy-scoop",
-            item: "Flour",
+            id: 'legacy-scoop',
+            aggregationKey: 'legacy-scoop',
+            item: 'Flour',
             foodId: null,
             quantity: 2,
             quantityMax: null,
-            unit: "scoop",
+            unit: 'scoop',
             requiredBaseQuantity: 2,
             requiredBaseQuantityMax: null,
-            requiredBaseUnit: "scoop",
+            requiredBaseUnit: 'scoop',
             purchaseQuantity: null,
             purchaseUnit: null,
             packageCount: null,
@@ -762,7 +719,7 @@ describe("offline quantity and package preferences", () => {
             packageUnit: null,
             packageLabel: null,
             note: null,
-            category: "Pantry",
+            category: 'Pantry',
             optional: false,
             checked: false,
             recipeId: null,
@@ -772,26 +729,26 @@ describe("offline quantity and package preferences", () => {
     }));
 
     store().createCustomUnit({
-      name: "scoop",
-      abbreviation: "scp",
-      dimension: "volume",
-      baseUnit: "cup",
+      name: 'scoop',
+      abbreviation: 'scp',
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 0.5,
       displayAsTrue: false,
     });
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       requiredBaseQuantity: 236.588,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
   });
 
-  it("uses the old definition for persisted name and abbreviation matches", () => {
+  it('uses the old definition for persisted name and abbreviation matches', () => {
     const customId = store().createCustomUnit({
-      name: "scoop",
-      abbreviation: "scp",
-      dimension: "volume",
-      baseUnit: "cup",
+      name: 'scoop',
+      abbreviation: 'scp',
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 0.5,
       displayAsTrue: false,
     });
@@ -800,16 +757,16 @@ describe("offline quantity and package preferences", () => {
         ...candidate,
         items: [
           {
-            id: "persisted-name",
-            aggregationKey: "persisted-name",
-            item: "Flour",
+            id: 'persisted-name',
+            aggregationKey: 'persisted-name',
+            item: 'Flour',
             foodId: null,
             quantity: 2,
             quantityMax: null,
-            unit: "scoop",
+            unit: 'scoop',
             requiredBaseQuantity: 2,
             requiredBaseQuantityMax: null,
-            requiredBaseUnit: "scoop",
+            requiredBaseUnit: 'scoop',
             purchaseQuantity: null,
             purchaseUnit: null,
             packageCount: null,
@@ -817,22 +774,22 @@ describe("offline quantity and package preferences", () => {
             packageUnit: null,
             packageLabel: null,
             note: null,
-            category: "Pantry",
+            category: 'Pantry',
             optional: false,
             checked: false,
             recipeId: null,
           },
           {
-            id: "persisted-abbreviation",
-            aggregationKey: "persisted-abbreviation",
-            item: "Sugar",
+            id: 'persisted-abbreviation',
+            aggregationKey: 'persisted-abbreviation',
+            item: 'Sugar',
             foodId: null,
             quantity: 3,
             quantityMax: null,
-            unit: "SCP",
+            unit: 'SCP',
             requiredBaseQuantity: 3,
             requiredBaseQuantityMax: null,
-            requiredBaseUnit: "SCP",
+            requiredBaseUnit: 'SCP',
             purchaseQuantity: null,
             purchaseUnit: null,
             packageCount: null,
@@ -840,7 +797,7 @@ describe("offline quantity and package preferences", () => {
             packageUnit: null,
             packageLabel: null,
             note: null,
-            category: "Pantry",
+            category: 'Pantry',
             optional: false,
             checked: false,
             recipeId: null,
@@ -850,32 +807,32 @@ describe("offline quantity and package preferences", () => {
     }));
 
     store().updateCustomUnit(customId, {
-      name: "measure",
-      abbreviation: "msr",
-      dimension: "volume",
-      baseUnit: "cup",
+      name: 'measure',
+      abbreviation: 'msr',
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 1,
       displayAsTrue: false,
     });
 
-    expect(list("default").items).toMatchObject([
-      { requiredBaseQuantity: 236.588, requiredBaseUnit: "ml" },
-      { requiredBaseQuantity: 354.882, requiredBaseUnit: "ml" },
+    expect(list('default').items).toMatchObject([
+      { requiredBaseQuantity: 236.588, requiredBaseUnit: 'ml' },
+      { requiredBaseQuantity: 354.882, requiredBaseUnit: 'ml' },
     ]);
 
     store().deleteCustomUnit(customId);
-    expect(list("default").items).toMatchObject([
-      { requiredBaseQuantity: 236.588, requiredBaseUnit: "ml" },
-      { requiredBaseQuantity: 354.882, requiredBaseUnit: "ml" },
+    expect(list('default').items).toMatchObject([
+      { requiredBaseQuantity: 236.588, requiredBaseUnit: 'ml' },
+      { requiredBaseQuantity: 354.882, requiredBaseUnit: 'ml' },
     ]);
   });
 
-  it("canonicalizes an abbreviation-backed requirement before offline deletion", () => {
+  it('canonicalizes an abbreviation-backed requirement before offline deletion', () => {
     const customId = store().createCustomUnit({
-      name: "scoop",
-      abbreviation: "scp",
-      dimension: "volume",
-      baseUnit: "cup",
+      name: 'scoop',
+      abbreviation: 'scp',
+      dimension: 'volume',
+      baseUnit: 'cup',
       baseAmount: 0.5,
       displayAsTrue: false,
     });
@@ -884,16 +841,16 @@ describe("offline quantity and package preferences", () => {
         ...candidate,
         items: [
           {
-            id: "persisted-abbreviation",
-            aggregationKey: "persisted-abbreviation",
-            item: "Sugar",
+            id: 'persisted-abbreviation',
+            aggregationKey: 'persisted-abbreviation',
+            item: 'Sugar',
             foodId: null,
             quantity: 3,
             quantityMax: null,
-            unit: "SCP",
+            unit: 'SCP',
             requiredBaseQuantity: 3,
             requiredBaseQuantityMax: null,
-            requiredBaseUnit: "SCP",
+            requiredBaseUnit: 'SCP',
             purchaseQuantity: null,
             purchaseUnit: null,
             packageCount: null,
@@ -901,7 +858,7 @@ describe("offline quantity and package preferences", () => {
             packageUnit: null,
             packageLabel: null,
             note: null,
-            category: "Pantry",
+            category: 'Pantry',
             optional: false,
             checked: false,
             recipeId: null,
@@ -912,124 +869,114 @@ describe("offline quantity and package preferences", () => {
 
     store().deleteCustomUnit(customId);
 
-    expect(list("default").items[0]).toMatchObject({
+    expect(list('default').items[0]).toMatchObject({
       quantity: 354.882,
-      unit: "ml",
+      unit: 'ml',
       requiredBaseQuantity: 354.882,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
   });
 });
 
-describe("bounded per-list recovery history", () => {
-  it("separates removing completed items from unchecking them", () => {
-    store().addManual("default", { item: "Eggs" });
-    const itemId = list("default").items[0]!.id;
-    store().setChecked("default", itemId, true);
+describe('bounded per-list recovery history', () => {
+  it('separates removing completed items from unchecking them', () => {
+    store().addManual('default', { item: 'Eggs' });
+    const itemId = list('default').items[0]!.id;
+    store().setChecked('default', itemId, true);
 
-    store().uncheckAll("default");
-    expect(list("default").items).toMatchObject([
-      { id: itemId, checked: false },
-    ]);
+    store().uncheckAll('default');
+    expect(list('default').items).toMatchObject([{ id: itemId, checked: false }]);
     expect(store().restorePoints).toEqual([]);
 
-    store().setChecked("default", itemId, true);
-    const restorePointId = store().removeCompleted("default");
+    store().setChecked('default', itemId, true);
+    const restorePointId = store().removeCompleted('default');
     expect(restorePointId).toBeTruthy();
-    expect(list("default").items).toEqual([]);
+    expect(list('default').items).toEqual([]);
     expect(store().restorePoints).toMatchObject([
       {
         id: restorePointId,
-        listId: "default",
-        operation: "remove-completed",
+        listId: 'default',
+        operation: 'remove-completed',
         items: [{ id: itemId, checked: true }],
       },
     ]);
   });
 
-  it("restores an earlier snapshot and records the displaced current state", () => {
-    store().addManual("default", { item: "Milk" });
-    const originalId = list("default").items[0]!.id;
-    const removedPointId = store().clearAll("default")!;
-    store().addManual("default", { item: "Bread" });
+  it('restores an earlier snapshot and records the displaced current state', () => {
+    store().addManual('default', { item: 'Milk' });
+    const originalId = list('default').items[0]!.id;
+    const removedPointId = store().clearAll('default')!;
+    store().addManual('default', { item: 'Bread' });
 
-    const undoPointId = store().restoreFromHistory("default", removedPointId);
+    const undoPointId = store().restoreFromHistory('default', removedPointId);
 
-    expect(list("default").items.map((item) => item.item)).toEqual(["Milk"]);
+    expect(list('default').items.map((item) => item.item)).toEqual(['Milk']);
     expect(store().restorePoints[0]).toMatchObject({
       id: undoPointId,
-      listId: "default",
-      operation: "restore",
-      items: [{ item: "Bread" }],
+      listId: 'default',
+      operation: 'restore',
+      items: [{ item: 'Bread' }],
     });
-    expect(
-      store().restorePoints.some((point) => point.id === removedPointId),
-    ).toBe(true);
-    expect(list("default").items[0]!.id).toBe(originalId);
+    expect(store().restorePoints.some((point) => point.id === removedPointId)).toBe(true);
+    expect(list('default').items[0]!.id).toBe(originalId);
   });
 
-  it("cannot restore a point into a different list", () => {
-    store().addManual("default", { item: "Milk" });
-    const pointId = store().clearAll("default")!;
-    const other = store().createList("Warehouse");
+  it('cannot restore a point into a different list', () => {
+    store().addManual('default', { item: 'Milk' });
+    const pointId = store().clearAll('default')!;
+    const other = store().createList('Warehouse');
 
     expect(store().restoreFromHistory(other, pointId)).toBeNull();
     expect(list(other).items).toEqual([]);
-    expect(list("default").items).toEqual([]);
+    expect(list('default').items).toEqual([]);
   });
 
-  it("keeps the newest 20 restore points for each list", () => {
+  it('keeps the newest 20 restore points for each list', () => {
     for (let index = 0; index < SHOPPING_HISTORY_LIMIT + 3; index++) {
-      store().addManual("default", { item: `Item ${index}` });
-      store().clearAll("default");
+      store().addManual('default', { item: `Item ${index}` });
+      store().clearAll('default');
     }
 
-    const points = store().restorePoints.filter(
-      (point) => point.listId === "default",
-    );
+    const points = store().restorePoints.filter((point) => point.listId === 'default');
     expect(points).toHaveLength(SHOPPING_HISTORY_LIMIT);
-    expect(points[0]!.items[0]!.item).toBe("Item 22");
-    expect(points.at(-1)!.items[0]!.item).toBe("Item 3");
+    expect(points[0]!.items[0]!.item).toBe('Item 22');
+    expect(points.at(-1)!.items[0]!.item).toBe('Item 3');
   });
 
-  it("captures both lists before a bulk move", () => {
-    const warehouse = store().createList("Warehouse");
-    store().addManual("default", { item: "Milk" });
-    store().addManual("default", { item: "Eggs" });
-    store().addManual(warehouse, { item: "Butter" });
-    const moving = list("default").items.map((item) => item.id);
+  it('captures both lists before a bulk move', () => {
+    const warehouse = store().createList('Warehouse');
+    store().addManual('default', { item: 'Milk' });
+    store().addManual('default', { item: 'Eggs' });
+    store().addManual(warehouse, { item: 'Butter' });
+    const moving = list('default').items.map((item) => item.id);
 
-    const result = store().bulkMoveItems("default", moving, warehouse);
+    const result = store().bulkMoveItems('default', moving, warehouse);
 
     expect(result).not.toBeNull();
-    expect(list("default").items).toEqual([]);
+    expect(list('default').items).toEqual([]);
     expect(
       list(warehouse)
         .items.map((item) => item.item)
         .sort(),
-    ).toEqual(["Butter", "Eggs", "Milk"]);
+    ).toEqual(['Butter', 'Eggs', 'Milk']);
     expect(
-      store().restorePoints.find(
-        (point) => point.id === result?.sourceRestorePointId,
-      ),
+      store().restorePoints.find((point) => point.id === result?.sourceRestorePointId),
     ).toMatchObject({
-      listId: "default",
-      operation: "bulk-move",
-      items: [{ item: "Milk" }, { item: "Eggs" }],
+      listId: 'default',
+      operation: 'bulk-move',
+      items: [{ item: 'Milk' }, { item: 'Eggs' }],
     });
     expect(
-      store().restorePoints.find(
-        (point) => point.id === result?.targetRestorePointId,
-      ),
+      store().restorePoints.find((point) => point.id === result?.targetRestorePointId),
     ).toMatchObject({
       listId: warehouse,
-      operation: "bulk-move",
-      items: [{ item: "Butter" }],
+      operation: 'bulk-move',
+      items: [{ item: 'Butter' }],
     });
 
     const undoPoints = store().restoreMultipleFromHistory([
       {
-        listId: "default",
+        listId: 'default',
         restorePointId: result!.sourceRestorePointId,
       },
       {
@@ -1038,90 +985,79 @@ describe("bounded per-list recovery history", () => {
       },
     ]);
     expect(undoPoints).toHaveLength(2);
-    expect(list("default").items.map((item) => item.item)).toEqual([
-      "Milk",
-      "Eggs",
-    ]);
-    expect(list(warehouse).items.map((item) => item.item)).toEqual(["Butter"]);
+    expect(list('default').items.map((item) => item.item)).toEqual(['Milk', 'Eggs']);
+    expect(list(warehouse).items.map((item) => item.item)).toEqual(['Butter']);
   });
 
-  it("captures list replacement without recording normal checkbox toggles", () => {
-    store().addManual("default", { item: "Old item" });
-    const old = list("default").items[0]!;
-    store().setChecked("default", old.id, true);
+  it('captures list replacement without recording normal checkbox toggles', () => {
+    store().addManual('default', { item: 'Old item' });
+    const old = list('default').items[0]!;
+    store().setChecked('default', old.id, true);
     expect(store().restorePoints).toEqual([]);
 
     const replacement: LocalShoppingItem = {
       ...old,
-      id: "replacement",
-      item: "New item",
+      id: 'replacement',
+      item: 'New item',
       checked: false,
     };
-    const restorePointId = store().replaceListItems("default", [replacement]);
+    const restorePointId = store().replaceListItems('default', [replacement]);
 
-    expect(list("default").items).toEqual([replacement]);
+    expect(list('default').items).toEqual([replacement]);
     expect(store().restorePoints[0]).toMatchObject({
       id: restorePointId,
-      operation: "list-rebuild",
-      items: [{ item: "Old item", checked: true }],
+      operation: 'list-rebuild',
+      items: [{ item: 'Old item', checked: true }],
     });
   });
 });
 
-describe("store library", () => {
-  it("reuses an existing store instead of creating a near-duplicate", () => {
-    const first = store().createStore("Costco");
-    const second = store().createStore("  costco ");
+describe('store library', () => {
+  it('reuses an existing store instead of creating a near-duplicate', () => {
+    const first = store().createStore('Costco');
+    const second = store().createStore('  costco ');
 
     expect(second).toBe(first);
     expect(store().stores).toHaveLength(1);
   });
 
-  it("ignores a blank store name", () => {
-    expect(store().createStore("   ")).toBe("");
+  it('ignores a blank store name', () => {
+    expect(store().createStore('   ')).toBe('');
     expect(store().stores).toEqual([]);
   });
 
-  it("links several stores to one list and dedupes unknown ids", () => {
-    const costco = store().createStore("Costco");
-    const market = store().createStore("Neighborhood market");
+  it('links several stores to one list and dedupes unknown ids', () => {
+    const costco = store().createStore('Costco');
+    const market = store().createStore('Neighborhood market');
 
-    const listId = store().createList("Weekly run", [
-      costco,
-      market,
-      costco,
-      "missing",
-    ]);
+    const listId = store().createList('Weekly run', [costco, market, costco, 'missing']);
 
     expect(list(listId).storeIds).toEqual([costco, market]);
   });
 
-  it("renames a store everywhere it is used", () => {
-    const costco = store().createStore("Costco");
-    const listId = store().createList("Weekly run", [costco]);
+  it('renames a store everywhere it is used', () => {
+    const costco = store().createStore('Costco');
+    const listId = store().createList('Weekly run', [costco]);
 
-    store().renameStore(costco, "Costco Wholesale");
+    store().renameStore(costco, 'Costco Wholesale');
 
-    expect(store().stores[0]!.name).toBe("Costco Wholesale");
+    expect(store().stores[0]!.name).toBe('Costco Wholesale');
     expect(list(listId).storeIds).toEqual([costco]);
   });
 
-  it("refuses a rename that collides with another store", () => {
-    const costco = store().createStore("Costco");
-    store().createStore("Market");
+  it('refuses a rename that collides with another store', () => {
+    const costco = store().createStore('Costco');
+    store().createStore('Market');
 
-    store().renameStore(costco, "market");
+    store().renameStore(costco, 'market');
 
-    expect(store().stores.map((entry) => entry.name)).toEqual([
-      "Costco",
-      "Market",
-    ]);
+    expect(store().stores.map((entry) => entry.name)).toEqual(['Costco', 'Market']);
   });
 
-  it("unlinks a deleted store but keeps the lists that used it", () => {
-    const costco = store().createStore("Costco");
-    const market = store().createStore("Market");
-    const listId = store().createList("Weekly run", [costco, market]);
+  it('unlinks a deleted store but keeps the lists that used it', () => {
+    const costco = store().createStore('Costco');
+    const market = store().createStore('Market');
+    const listId = store().createList('Weekly run', [costco, market]);
 
     store().deleteStore(costco);
 

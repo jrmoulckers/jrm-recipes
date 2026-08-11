@@ -8,16 +8,10 @@
  * food name, so re-running `pnpm db:seed` updates in place and row counts stay
  * constant.
  */
-import {
-  FOOD_ITEMS,
-  foodNodeId,
-  foodSlug,
-  normalizeFoodText,
-  stableHash,
-} from "~/lib/food-db";
-import { foodAllergensForSlug } from "~/lib/food-allergens";
-import { NUTRITION_BY_SLUG } from "~/lib/food-nutrition";
-import type { NewFoodAlias, NewFoodItem, NewFoodNutrition } from "./schema";
+import { FOOD_ITEMS, foodNodeId, foodSlug, normalizeFoodText, stableHash } from '~/lib/food-db';
+import { foodAllergensForSlug } from '~/lib/food-allergens';
+import { NUTRITION_BY_SLUG } from '~/lib/food-nutrition';
+import type { NewFoodAlias, NewFoodItem, NewFoodNutrition } from './schema';
 
 /** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
 export { foodSlug };
@@ -44,7 +38,7 @@ export function buildFoodItemRows(): NewFoodItem[] {
       category: food.category,
       densityGPerMl: food.densityGPerMl ?? null,
       allergens: foodAllergensForSlug(slug),
-      source: "curated",
+      source: 'curated',
     } satisfies NewFoodItem;
   });
 }
@@ -74,7 +68,7 @@ export function buildFoodAliasRows(): NewFoodAlias[] {
         id: `alias_${stableHash(key)}`,
         foodId,
         alias,
-        source: "curated",
+        source: 'curated',
         useCount: 0,
       } satisfies NewFoodAlias);
     }

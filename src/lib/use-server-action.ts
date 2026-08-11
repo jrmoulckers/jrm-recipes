@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 import type {
   ActionFailure,
   ActionResult,
   ActionSuccess,
   FieldErrors,
-} from "~/server/action-result";
-import { useFriendlyError } from "~/lib/error-copy";
-import { isOffline } from "~/lib/connectivity-copy";
+} from '~/server/action-result';
+import { useFriendlyError } from '~/lib/error-copy';
+import { isOffline } from '~/lib/connectivity-copy';
 
 type SuccessToast<T, Args extends unknown[]> =
   string | ((result: ActionSuccess<T>, ...args: Args) => string);
@@ -70,13 +70,11 @@ export function useServerAction<T, Args extends unknown[]>(
   options: UseServerActionOptions<T, Args> = {},
 ): UseServerActionReturn<Args> {
   const router = useRouter();
-  const t = useTranslations("pwa.connectivity");
+  const t = useTranslations('pwa.connectivity');
   const friendlyError = useFriendlyError();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors | null>(
-    null,
-  );
+  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors | null>(null);
 
   // Keep the latest options without forcing `run` to change identity so callers
   // can safely pass inline option objects each render. The translators are held
@@ -103,7 +101,7 @@ export function useServerAction<T, Args extends unknown[]>(
           setFieldErrors(null);
           if (opts.successToast !== undefined) {
             toast.success(
-              typeof opts.successToast === "function"
+              typeof opts.successToast === 'function'
                 ? opts.successToast(result, ...args)
                 : opts.successToast,
             );
@@ -118,12 +116,12 @@ export function useServerAction<T, Args extends unknown[]>(
         if (opts.errorToast) {
           const { t: translate, friendlyError: toFriendly } = copyRef.current;
           toast.error(
-            typeof opts.errorToast === "function"
+            typeof opts.errorToast === 'function'
               ? opts.errorToast(result, ...args)
-              : typeof opts.errorToast === "string"
+              : typeof opts.errorToast === 'string'
                 ? opts.errorToast
                 : isOffline()
-                  ? translate("actionBlocked")
+                  ? translate('actionBlocked')
                   : toFriendly(result.error),
           );
         }

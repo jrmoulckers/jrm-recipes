@@ -1,15 +1,15 @@
-import { type Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getPublicProfileByHandle } from "~/server/users/queries";
-import { listFollowers } from "~/server/follows/queries";
-import { displayNameFrom } from "~/lib/utils";
-import { FollowPeopleList } from "~/components/follows/follow-people-list";
-import { parseHandleParams, type HandleRouteParams } from "~/lib/route-params";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { getPublicProfileByHandle } from '~/server/users/queries';
+import { listFollowers } from '~/server/follows/queries';
+import { displayNameFrom } from '~/lib/utils';
+import { FollowPeopleList } from '~/components/follows/follow-people-list';
+import { parseHandleParams, type HandleRouteParams } from '~/lib/route-params';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata({
   params,
@@ -18,22 +18,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { handle } = await parseHandleParams(params);
   const profile = await getPublicProfileByHandle(handle);
-  const t = await getTranslations("metadata");
+  const t = await getTranslations('metadata');
   const displayName = profile
     ? displayNameFrom(profile.user.name, `@${profile.user.handle}`)
     : `@${handle}`;
   return {
-    title: t("followers.title", { handle }),
-    description: t("followers.description", { name: displayName }),
+    title: t('followers.title', { handle }),
+    description: t('followers.description', { name: displayName }),
     robots: { index: false },
   };
 }
 
-async function FollowersPage({
-  params,
-}: {
-  params: Promise<HandleRouteParams>;
-}) {
+async function FollowersPage({ params }: { params: Promise<HandleRouteParams> }) {
   const { handle } = await parseHandleParams(params);
   const profile = await getPublicProfileByHandle(handle);
   // No follow graph exists for cooks who haven't opted in to a public profile.
@@ -42,7 +38,7 @@ async function FollowersPage({
   const { user } = profile;
   const displayName = displayNameFrom(user.name, `@${user.handle}`);
   const first = await listFollowers(user.id);
-  const t = await getTranslations("cooks.followers");
+  const t = await getTranslations('cooks.followers');
 
   return (
     <div className="container flex max-w-2xl flex-col gap-6 py-10">
@@ -53,16 +49,14 @@ async function FollowersPage({
         >
           <ArrowLeft className="size-4" /> {displayName}
         </Link>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          {t("title")}
-        </h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
       </header>
       <FollowPeopleList
         userId={user.id}
         direction="followers"
         initialPeople={first.people}
         initialCursor={first.nextCursor}
-        emptyLabel={t("empty", { name: displayName })}
+        emptyLabel={t('empty', { name: displayName })}
       />
     </div>
   );

@@ -1,13 +1,13 @@
-import { isCronAuthorized, isCronConfigured } from "~/server/cron/auth";
-import { isDbConfigured } from "~/server/db";
-import { ingestFoodGraph } from "~/server/db/ingest-food-graph";
-import { log } from "~/lib/log";
+import { isCronAuthorized, isCronConfigured } from '~/server/cron/auth';
+import { isDbConfigured } from '~/server/db';
+import { ingestFoodGraph } from '~/server/db/ingest-food-graph';
+import { log } from '~/lib/log';
 
 // Reads the whole recipe-ingredient corpus and rewrites the derived food-graph
 // tables, so keep it on the Node runtime. Always dynamic. It's a scheduled
 // side-effecting trigger, never cached.
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 // The full recompute scales with the corpus, so give it the most headroom the
 // plan allows (Hobby caps serverless functions at 60s). This is exactly why the
 // pass belongs on a scheduled job and not in a user's save request, where it
@@ -30,13 +30,10 @@ export const maxDuration = 60;
  */
 async function handle(request: Request): Promise<Response> {
   if (!isCronConfigured()) {
-    return Response.json(
-      { error: "Food-graph endpoint is not configured." },
-      { status: 503 },
-    );
+    return Response.json({ error: 'Food-graph endpoint is not configured.' }, { status: 503 });
   }
   if (!isCronAuthorized(request)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: 'Unauthorized.' }, { status: 401 });
   }
   if (!isDbConfigured()) {
     return Response.json({ ok: true, skipped: true });
@@ -51,11 +48,8 @@ async function handle(request: Request): Promise<Response> {
       ...result,
     });
   } catch (error) {
-    log.error("food-graph: recompute failed", { error });
-    return Response.json(
-      { ok: false, error: "Food-graph recompute failed." },
-      { status: 500 },
-    );
+    log.error('food-graph: recompute failed', { error });
+    return Response.json({ ok: false, error: 'Food-graph recompute failed.' }, { status: 500 });
   }
 }
 

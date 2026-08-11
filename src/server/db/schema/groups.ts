@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations, sql } from 'drizzle-orm';
 import {
   check,
   index,
@@ -9,15 +9,15 @@ import {
   unique,
   uniqueIndex,
   varchar,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
 
 /** A family or group that recipes can belong to and members collaborate in. */
 export const groups = pgTable(
-  "groups",
+  'groups',
   {
     id: pk(),
     slug: varchar({ length: 80 }).notNull().unique(),
@@ -28,53 +28,48 @@ export const groups = pgTable(
     // audit): `groups` is a tiny, slow-growing table and the `set null` cascade
     // on user delete touches at most a handful of rows, so an index would cost
     // more on writes than it saves.
-    createdById: fk().references(() => users.id, { onDelete: "set null" }),
+    createdById: fk().references(() => users.id, { onDelete: 'set null' }),
     ...timestamps(),
   },
   (t) => [
-    index("groups_slug_idx").on(t.slug),
+    index('groups_slug_idx').on(t.slug),
     // Media-library usage lookup (issue #658). Partial: most groups have no
     // avatar. The count that uses it is always restricted to the caller's own
     // memberships — see `getAssetUsage`.
-    index("groups_avatar_url_idx")
+    index('groups_avatar_url_idx')
       .on(t.avatarUrl)
       .where(sql`${t.avatarUrl} is not null`),
   ],
 );
 
-export const memberRole = pgEnum("member_role", [
-  "owner",
-  "admin",
-  "member",
-  "kid",
-]);
+export const memberRole = pgEnum('member_role', ['owner', 'admin', 'member', 'kid']);
 
 /** Membership of a user in a group, with a role that governs permissions. */
 export const groupMembers = pgTable(
-  "group_members",
+  'group_members',
   {
     id: pk(),
     groupId: fk()
       .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
+      .references(() => groups.id, { onDelete: 'cascade' }),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    role: memberRole().notNull().default("member"),
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: memberRole().notNull().default('member'),
     ...timestamps(),
   },
   (t) => [
-    unique("group_members_group_user_uq").on(t.groupId, t.userId),
-    index("group_members_user_idx").on(t.userId),
+    unique('group_members_group_user_uq').on(t.groupId, t.userId),
+    index('group_members_user_idx').on(t.userId),
   ],
 );
 
 /** Lifecycle of a group invitation (issue #181). */
-export const invitationStatus = pgEnum("invitation_status", [
-  "pending",
-  "accepted",
-  "revoked",
-  "expired",
+export const invitationStatus = pgEnum('invitation_status', [
+  'pending',
+  'accepted',
+  'revoked',
+  'expired',
 ]);
 
 /**
@@ -85,23 +80,23 @@ export const invitationStatus = pgEnum("invitation_status", [
  * on accept, an opaque `token` for the accept link, and an optional expiry.
  */
 export const groupInvitations = pgTable(
-  "group_invitations",
+  'group_invitations',
   {
     id: pk(),
     groupId: fk()
       .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
+      .references(() => groups.id, { onDelete: 'cascade' }),
     // Who sent the invite. Nulls out if that user is later removed so the
     // invitation record (and any membership it produced) survives.
-    invitedById: fk().references(() => users.id, { onDelete: "set null" }),
+    invitedById: fk().references(() => users.id, { onDelete: 'set null' }),
     // The invitee's account once known. Set at invite time if the email/handle
     // already maps to a user, otherwise stamped on accept.
-    userId: fk().references(() => users.id, { onDelete: "set null" }),
+    userId: fk().references(() => users.id, { onDelete: 'set null' }),
     email: varchar({ length: 320 }),
     handle: varchar({ length: 60 }),
-    role: memberRole().notNull().default("member"),
+    role: memberRole().notNull().default('member'),
     token: varchar({ length: 64 }).notNull().unique(),
-    status: invitationStatus().notNull().default("pending"),
+    status: invitationStatus().notNull().default('pending'),
     expiresAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
@@ -111,14 +106,14 @@ export const groupInvitations = pgTable(
     // is revoked/expired/accepted. Partial so it ignores handle-only invites
     // (email IS NULL) and resolved rows. The unique `token` already covers
     // accept-link lookups, so no separate token index is needed.
-    uniqueIndex("group_invitations_pending_email_uq")
+    uniqueIndex('group_invitations_pending_email_uq')
       .on(t.groupId, t.email)
       .where(sql`${t.status} = 'pending' and ${t.email} is not null`),
-    index("group_invitations_group_idx").on(t.groupId),
+    index('group_invitations_group_idx').on(t.groupId),
     // Must be reachable by at least one of email or handle (mirrors the Zod
     // `inviteInput` refine) so an invite can never be created with no invitee.
     check(
-      "group_invitations_contact_check",
+      'group_invitations_contact_check',
       sql`${t.email} is not null or ${t.handle} is not null`,
     ),
   ],
@@ -133,16 +128,16 @@ export const groupInvitations = pgTable(
  * or revoked (`revokedAt`). `useCount` tracks accepted joins for the cap.
  */
 export const groupInviteLinks = pgTable(
-  "group_invite_links",
+  'group_invite_links',
   {
     id: pk(),
     groupId: fk()
       .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
+      .references(() => groups.id, { onDelete: 'cascade' }),
     // Who created the link. Nulls out if that user is later removed so the link
     // (and memberships it produced) survive.
-    createdById: fk().references(() => users.id, { onDelete: "set null" }),
-    role: memberRole().notNull().default("member"),
+    createdById: fk().references(() => users.id, { onDelete: 'set null' }),
+    role: memberRole().notNull().default('member'),
     token: varchar({ length: 64 }).notNull().unique(),
     // Null expiry = never expires. Null maxUses = unlimited joins.
     expiresAt: timestamp({ withTimezone: true }),
@@ -152,10 +147,10 @@ export const groupInviteLinks = pgTable(
     ...timestamps(),
   },
   (t) => [
-    index("group_invite_links_group_idx").on(t.groupId),
+    index('group_invite_links_group_idx').on(t.groupId),
     // Covering index for the createdById FK (issue #153 convention) so the
     // `set null` cascade on user delete doesn't sequentially scan.
-    index("group_invite_links_created_by_idx").on(t.createdById),
+    index('group_invite_links_created_by_idx').on(t.createdById),
   ],
 );
 
@@ -181,39 +176,33 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
   }),
 }));
 
-export const groupInvitationsRelations = relations(
-  groupInvitations,
-  ({ one }) => ({
-    group: one(groups, {
-      fields: [groupInvitations.groupId],
-      references: [groups.id],
-    }),
-    invitedBy: one(users, {
-      fields: [groupInvitations.invitedById],
-      references: [users.id],
-      relationName: "invitedBy",
-    }),
-    user: one(users, {
-      fields: [groupInvitations.userId],
-      references: [users.id],
-      relationName: "invitee",
-    }),
+export const groupInvitationsRelations = relations(groupInvitations, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInvitations.groupId],
+    references: [groups.id],
   }),
-);
+  invitedBy: one(users, {
+    fields: [groupInvitations.invitedById],
+    references: [users.id],
+    relationName: 'invitedBy',
+  }),
+  user: one(users, {
+    fields: [groupInvitations.userId],
+    references: [users.id],
+    relationName: 'invitee',
+  }),
+}));
 
-export const groupInviteLinksRelations = relations(
-  groupInviteLinks,
-  ({ one }) => ({
-    group: one(groups, {
-      fields: [groupInviteLinks.groupId],
-      references: [groups.id],
-    }),
-    createdBy: one(users, {
-      fields: [groupInviteLinks.createdById],
-      references: [users.id],
-    }),
+export const groupInviteLinksRelations = relations(groupInviteLinks, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInviteLinks.groupId],
+    references: [groups.id],
   }),
-);
+  createdBy: one(users, {
+    fields: [groupInviteLinks.createdById],
+    references: [users.id],
+  }),
+}));
 
 export type Group = typeof groups.$inferSelect;
 export type NewGroup = typeof groups.$inferInsert;

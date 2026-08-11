@@ -1,7 +1,7 @@
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 /**
  * A single plan-limit usage meter for the billing surface (issue #319).
@@ -25,13 +25,13 @@ export function UsageMeter({
   used: number;
   limit: number | null;
   ratio: number;
-  state: "ok" | "warn" | "blocked";
+  state: 'ok' | 'warn' | 'blocked';
   format?: (n: number) => string;
 }) {
-  const t = useTranslations("billing.usageMeter");
+  const t = useTranslations('billing.usageMeter');
   const unlimited = limit === null;
   const pct = unlimited ? 100 : Math.min(100, Math.max(0, ratio * 100));
-  const alert = state !== "ok";
+  const alert = state !== 'ok';
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -39,22 +39,22 @@ export function UsageMeter({
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
           {unlimited
-            ? t("unlimited", { used: format(used) })
-            : t("limited", { used: format(used), limit: format(limit) })}
+            ? t('unlimited', { used: format(used) })
+            : t('limited', { used: format(used), limit: format(limit) })}
         </span>
       </div>
       <div
         className="h-2 overflow-hidden rounded-full bg-muted"
         role="progressbar"
-        aria-label={t("ariaLabel", { label })}
+        aria-label={t('ariaLabel', { label })}
         aria-valuemin={0}
         aria-valuemax={unlimited ? undefined : limit}
         aria-valuenow={used}
       >
         <div
           className={cn(
-            "h-full rounded-full transition-[width]",
-            unlimited ? "bg-primary/40" : alert ? "bg-warning" : "bg-primary",
+            'h-full rounded-full transition-[width]',
+            unlimited ? 'bg-primary/40' : alert ? 'bg-warning' : 'bg-primary',
           )}
           style={{ width: `${pct}%` }}
         />

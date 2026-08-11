@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations, sql } from 'drizzle-orm';
 import {
   check,
   index,
@@ -8,11 +8,11 @@ import {
   timestamp,
   unique,
   varchar,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
 
 /**
  * A first-class recipe review (Phase 2): a written critique paired with a star
@@ -28,15 +28,15 @@ import { recipes } from "./recipes";
  * but that reconciliation is deliberately out of scope here.
  */
 export const reviews = pgTable(
-  "reviews",
+  'reviews',
   {
     id: pk(),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     rating: integer().notNull(),
     title: varchar({ length: 200 }),
     body: text(),
@@ -48,26 +48,26 @@ export const reviews = pgTable(
     // Moderation hide (issue #357): a set timestamp removes this from member
     // (and always kid) views. `hiddenBy` records the actioning moderator.
     hiddenAt: timestamp({ withTimezone: true }),
-    hiddenBy: fk().references(() => users.id, { onDelete: "set null" }),
+    hiddenBy: fk().references(() => users.id, { onDelete: 'set null' }),
     ...timestamps(),
   },
   (t) => [
     // At most one review per user per recipe (issue #174), enforced at the DB.
     // the upsert helper targets this constraint to edit-in-place on re-review.
-    unique("reviews_recipe_user_uq").on(t.recipeId, t.userId),
-    index("reviews_recipe_idx").on(t.recipeId),
+    unique('reviews_recipe_user_uq').on(t.recipeId, t.userId),
+    index('reviews_recipe_idx').on(t.recipeId),
     // Covering index for the userId foreign key (mirrors ratings/comments,
     // issue #153) so "reviews by user" reads and the `ON DELETE cascade` when a
     // user is removed both stay index-fast instead of scanning the table.
-    index("reviews_user_idx").on(t.userId),
+    index('reviews_user_idx').on(t.userId),
     // Media-library usage lookup (issue #658). Partial: most reviews have no
     // photo.
-    index("reviews_photo_url_idx")
+    index('reviews_photo_url_idx')
       .on(t.photoUrl)
       .where(sql`${t.photoUrl} is not null`),
     // DB backstop for the 1–5 star range enforced in Zod (`reviewInput.rating`),
     // mirroring `ratings_value_range_check` for writes that bypass the action.
-    check("reviews_rating_range_check", sql`${t.rating} between 1 and 5`),
+    check('reviews_rating_range_check', sql`${t.rating} between 1 and 5`),
   ],
 );
 

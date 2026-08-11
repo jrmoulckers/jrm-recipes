@@ -1,10 +1,10 @@
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { AlertTriangle } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { AlertTriangle } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
 
 /**
  * A calm, non-punitive usage notice for soft limits (issue #318).
@@ -18,47 +18,37 @@ export function UsageLimitNotice({
   used,
   limit,
   state,
-  resource = "recipes",
+  resource = 'recipes',
   className,
 }: {
   used: number;
   limit: number;
-  state: "warn" | "blocked";
+  state: 'warn' | 'blocked';
   resource?: string;
   className?: string;
 }) {
-  const t = useTranslations("billing.usageLimit");
-  const blocked = state === "blocked";
+  const t = useTranslations('billing.usageLimit');
+  const blocked = state === 'blocked';
 
   return (
     <div
       role="status"
       className={cn(
-        "flex flex-col gap-3 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between",
+        'flex flex-col gap-3 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between',
         blocked
-          ? "border-warning/40 bg-warning/10 text-foreground"
-          : "border-border bg-surface/60 text-muted-foreground",
+          ? 'border-warning/40 bg-warning/10 text-foreground'
+          : 'border-border bg-surface/60 text-muted-foreground',
         className,
       )}
     >
       <span className="flex items-start gap-2 sm:items-center">
-        <AlertTriangle
-          className="mt-0.5 size-4 shrink-0 sm:mt-0"
-          aria-hidden="true"
-        />
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 sm:mt-0" aria-hidden="true" />
         <span>
-          {blocked
-            ? t("blocked", { limit, resource })
-            : t("warn", { used, limit, resource })}
+          {blocked ? t('blocked', { limit, resource }) : t('warn', { used, limit, resource })}
         </span>
       </span>
-      <Button
-        asChild
-        size="sm"
-        variant={blocked ? "default" : "outline"}
-        className="shrink-0"
-      >
-        <Link href="/pricing">{t("seePlans")}</Link>
+      <Button asChild size="sm" variant={blocked ? 'default' : 'outline'} className="shrink-0">
+        <Link href="/pricing">{t('seePlans')}</Link>
       </Button>
     </div>
   );

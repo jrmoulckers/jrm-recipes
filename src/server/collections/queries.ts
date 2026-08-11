@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, desc, eq, inArray, max, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   collectionGroups,
   collectionRecipes,
@@ -11,13 +11,9 @@ import {
   favorites,
   groupMembers,
   type User,
-} from "~/server/db/schema";
-import { canView } from "~/server/recipes/queries";
-import {
-  ROTATION_MIN,
-  ROTATION_WINDOW_DAYS,
-  selectBackInRotation,
-} from "~/lib/rotation";
+} from '~/server/db/schema';
+import { canView } from '~/server/recipes/queries';
+import { ROTATION_MIN, ROTATION_WINDOW_DAYS, selectBackInRotation } from '~/lib/rotation';
 
 const recipeCardWith = {
   author: true,
@@ -35,18 +31,10 @@ async function viewerGroupIds(viewer: User | null): Promise<string[]> {
   return rows.map((r) => r.groupId);
 }
 
-export type CollectionSummary = Awaited<
-  ReturnType<typeof listMyCollections>
->[number];
-export type FavoriteRecipe = Awaited<
-  ReturnType<typeof listMyFavorites>
->[number];
-export type FullCollection = NonNullable<
-  Awaited<ReturnType<typeof getCollection>>
->;
-export type CollectionMembership = Awaited<
-  ReturnType<typeof getCollectionsForRecipe>
->[number];
+export type CollectionSummary = Awaited<ReturnType<typeof listMyCollections>>[number];
+export type FavoriteRecipe = Awaited<ReturnType<typeof listMyFavorites>>[number];
+export type FullCollection = NonNullable<Awaited<ReturnType<typeof getCollection>>>;
+export type CollectionMembership = Awaited<ReturnType<typeof getCollectionsForRecipe>>[number];
 
 /** The user's collections, newest first, with a recipe count + cover fallback. */
 export async function listMyCollections(userId: string) {
@@ -61,10 +49,7 @@ export async function listMyCollections(userId: string) {
       },
       recipes: {
         columns: { recipeId: true },
-        orderBy: [
-          asc(collectionRecipes.position),
-          asc(collectionRecipes.addedAt),
-        ],
+        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
         with: { recipe: { columns: { coverImageUrl: true } } },
       },
     },
@@ -73,8 +58,7 @@ export async function listMyCollections(userId: string) {
   return rows.map((collection) => {
     const cover =
       collection.coverImageUrl ??
-      collection.recipes.find((r) => r.recipe?.coverImageUrl)?.recipe
-        ?.coverImageUrl ??
+      collection.recipes.find((r) => r.recipe?.coverImageUrl)?.recipe?.coverImageUrl ??
       null;
     return {
       id: collection.id,
@@ -99,10 +83,7 @@ export async function getCollection(id: string, viewer: User | null) {
     where: and(eq(collections.id, id), eq(collections.userId, viewer.id)),
     with: {
       recipes: {
-        orderBy: [
-          asc(collectionRecipes.position),
-          asc(collectionRecipes.addedAt),
-        ],
+        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
         with: { recipe: { with: recipeCardWith } },
       },
     },
@@ -135,17 +116,11 @@ export async function getCollection(id: string, viewer: User | null) {
  * shared cookbook never leaks a private recipe. Returns `null` when missing or
  * forbidden (callers should `notFound()`).
  */
-export async function getSharedCollection(
-  idOrToken: string,
-  viewer: User | null,
-) {
+export async function getSharedCollection(idOrToken: string, viewer: User | null) {
   if (!isDbConfigured()) return null;
 
   const collection = await db.query.collections.findFirst({
-    where: or(
-      eq(collections.id, idOrToken),
-      eq(collections.shareToken, idOrToken),
-    ),
+    where: or(eq(collections.id, idOrToken), eq(collections.shareToken, idOrToken)),
     with: {
       owner: { columns: { id: true, name: true } },
       sharedWithGroups: {
@@ -154,10 +129,7 @@ export async function getSharedCollection(
         },
       },
       recipes: {
-        orderBy: [
-          asc(collectionRecipes.position),
-          asc(collectionRecipes.addedAt),
-        ],
+        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
         with: { recipe: { with: recipeCardWith } },
       },
     },
@@ -173,12 +145,11 @@ export async function getSharedCollection(
     .filter((group) => groupIds.includes(group.id));
 
   const isOwner = viewer?.id === collection.userId;
-  const matchedByToken =
-    collection.shareToken != null && collection.shareToken === idOrToken;
+  const matchedByToken = collection.shareToken != null && collection.shareToken === idOrToken;
   const permitted =
     isOwner ||
-    collection.visibility === "public" ||
-    (collection.visibility === "unlisted" && matchedByToken) ||
+    collection.visibility === 'public' ||
+    (collection.visibility === 'unlisted' && matchedByToken) ||
     sharedToViewerGroups.length > 0;
   if (!permitted) return null;
 
@@ -255,10 +226,7 @@ export { ROTATION_WINDOW_DAYS, ROTATION_MIN };
  */
 export async function listBackInRotation(
   userId: string,
-  {
-    windowDays = ROTATION_WINDOW_DAYS,
-    limit = 12,
-  }: { windowDays?: number; limit?: number } = {},
+  { windowDays = ROTATION_WINDOW_DAYS, limit = 12 }: { windowDays?: number; limit?: number } = {},
 ) {
   if (!isDbConfigured()) return [];
   const favorited = await db.query.favorites.findMany({
@@ -282,8 +250,7 @@ export async function listBackInRotation(
     .groupBy(cookLogEntries.recipeId);
   const lastCooked = new Map<string, number>();
   for (const row of cookedRows) {
-    if (row.last != null)
-      lastCooked.set(row.recipeId, new Date(row.last).getTime());
+    if (row.last != null) lastCooked.set(row.recipeId, new Date(row.last).getTime());
   }
 
   return selectBackInRotation(recipes, lastCooked, { windowDays, limit });
@@ -293,10 +260,7 @@ export async function listBackInRotation(
  * The user's collections annotated with whether each already contains `recipeId`.
  * Powers the "Save to collection" picker.
  */
-export async function getCollectionsForRecipe(
-  userId: string,
-  recipeId: string,
-) {
+export async function getCollectionsForRecipe(userId: string, recipeId: string) {
   if (!isDbConfigured()) return [];
   const rows = await db.query.collections.findMany({
     where: eq(collections.userId, userId),
@@ -322,8 +286,7 @@ function collectionCover(collection: {
 }): string | null {
   return (
     collection.coverImageUrl ??
-    collection.recipes.find((r) => r.recipe?.coverImageUrl)?.recipe
-      ?.coverImageUrl ??
+    collection.recipes.find((r) => r.recipe?.coverImageUrl)?.recipe?.coverImageUrl ??
     null
   );
 }
@@ -333,17 +296,11 @@ function collectionCover(collection: {
  * flagged with whether the collection is already shared there (issue #365).
  * Returns [] unless the caller owns the collection.
  */
-export async function listShareTargetsForCollection(
-  collectionId: string,
-  user: User,
-) {
+export async function listShareTargetsForCollection(collectionId: string, user: User) {
   if (!isDbConfigured()) return [];
 
   const owned = await db.query.collections.findFirst({
-    where: and(
-      eq(collections.id, collectionId),
-      eq(collections.userId, user.id),
-    ),
+    where: and(eq(collections.id, collectionId), eq(collections.userId, user.id)),
     columns: { id: true },
   });
   if (!owned) return [];
@@ -385,17 +342,11 @@ export type CollectionShareTarget = Awaited<
  * Collections shared with a group, for the group page's "Shared collections"
  * shelf (issue #365). Returns [] unless the viewer is a member of the group.
  */
-export async function listCollectionsSharedWithGroup(
-  groupId: string,
-  viewer: User | null,
-) {
+export async function listCollectionsSharedWithGroup(groupId: string, viewer: User | null) {
   if (!isDbConfigured() || !viewer) return [];
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, viewer.id),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, viewer.id)),
     columns: { id: true },
   });
   if (!membership) return [];

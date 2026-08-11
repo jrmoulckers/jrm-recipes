@@ -1,19 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { useThemeBehavior } from "~/components/theme/theme-provider";
-import {
-  type KidHazard,
-  KID_HAZARD_INFO,
-  detectStepHazards,
-} from "~/lib/kid-safety";
-import { cn } from "~/lib/utils";
+import { useThemeBehavior } from '~/components/theme/theme-provider';
+import { type KidHazard, KID_HAZARD_INFO, detectStepHazards } from '~/lib/kid-safety';
+import { cn } from '~/lib/utils';
 
 /** High-contrast, theme-token styles per hazard (heat = danger, sharp = caution). */
 const HAZARD_STYLES: Record<KidHazard, string> = {
-  heat: "border-destructive/45 bg-destructive/10 text-destructive",
-  sharp: "border-warning/55 bg-warning/15 text-foreground",
+  heat: 'border-destructive/45 bg-destructive/10 text-destructive',
+  sharp: 'border-warning/55 bg-warning/15 text-foreground',
 };
 
 /**
@@ -35,15 +31,12 @@ export function KidSafetyCallout({
   className?: string;
 }) {
   const { kidSafe } = useThemeBehavior();
-  const hazards = React.useMemo(
-    () => detectStepHazards({ text, techniques }),
-    [text, techniques],
-  );
+  const hazards = React.useMemo(() => detectStepHazards({ text, techniques }), [text, techniques]);
 
   if (!kidSafe || hazards.length === 0) return null;
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn('flex flex-col gap-3', className)}>
       {hazards.map((hazard) => {
         const info = KID_HAZARD_INFO[hazard];
         return (
@@ -52,7 +45,7 @@ export function KidSafetyCallout({
             role="note"
             aria-label={info.label}
             className={cn(
-              "flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-lg font-semibold leading-snug",
+              'flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-lg font-semibold leading-snug',
               HAZARD_STYLES[hazard],
             )}
           >

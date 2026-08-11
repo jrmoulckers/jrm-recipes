@@ -1,12 +1,12 @@
-import { Star, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { Star, Users } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import type { RatingBreakdownResult } from "~/server/engagement/queries";
-import { cn } from "~/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import type { RatingBreakdownResult } from '~/server/engagement/queries';
+import { cn } from '~/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 
 function initialsOf(name: string | null, handle: string | null): string {
-  const source = (name ?? handle ?? "?").trim();
+  const source = (name ?? handle ?? '?').trim();
   return source.slice(0, 1).toUpperCase();
 }
 
@@ -16,21 +16,17 @@ function initialsOf(name: string | null, handle: string | null): string {
  * The aggregation and visibility gating happen in `getRatingBreakdown`. Shown
  * beside the rating control so a viewer sees not just the number but who loved it.
  */
-export async function RatingSummary({
-  breakdown,
-}: {
-  breakdown: RatingBreakdownResult;
-}) {
-  const t = await getTranslations("engagement.ratingSummary");
+export async function RatingSummary({ breakdown }: { breakdown: RatingBreakdownResult }) {
+  const t = await getTranslations('engagement.ratingSummary');
   const { average, count, distribution, raters, totalRaters } = breakdown;
 
   if (count === 0) {
     return (
       <section
-        aria-label={t("a11y.breakdown")}
+        aria-label={t('a11y.breakdown')}
         className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
       >
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        <p className="text-sm text-muted-foreground">{t('empty')}</p>
       </section>
     );
   }
@@ -40,7 +36,7 @@ export async function RatingSummary({
 
   return (
     <section
-      aria-label={t("a11y.breakdown")}
+      aria-label={t('a11y.breakdown')}
       className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -50,7 +46,7 @@ export async function RatingSummary({
           </span>
           <span
             className="flex items-center gap-0.5"
-            aria-label={t("a11y.averageStars", {
+            aria-label={t('a11y.averageStars', {
               average: average.toFixed(1),
             })}
           >
@@ -58,18 +54,16 @@ export async function RatingSummary({
               <Star
                 key={n}
                 className={cn(
-                  "size-4",
+                  'size-4',
                   average >= n - 0.25
-                    ? "fill-amber-400 text-amber-400"
-                    : "fill-transparent text-muted-foreground",
+                    ? 'fill-amber-400 text-amber-400'
+                    : 'fill-transparent text-muted-foreground',
                 )}
                 aria-hidden
               />
             ))}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {t("ratingCount", { count })}
-          </span>
+          <span className="text-xs text-muted-foreground">{t('ratingCount', { count })}</span>
         </div>
 
         <ul className="flex flex-1 flex-col gap-1.5">
@@ -80,15 +74,12 @@ export async function RatingSummary({
               <li key={row.star} className="flex items-center gap-2 text-sm">
                 <span className="flex w-10 shrink-0 items-center gap-0.5 text-muted-foreground">
                   {row.star}
-                  <Star
-                    className="size-3 fill-amber-400 text-amber-400"
-                    aria-hidden
-                  />
+                  <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden />
                 </span>
                 <span
                   className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
                   role="img"
-                  aria-label={t("a11y.distributionRow", {
+                  aria-label={t('a11y.distributionRow', {
                     star: row.star,
                     count: row.count,
                     pct,
@@ -113,16 +104,10 @@ export async function RatingSummary({
           <Users className="size-4 text-muted-foreground" aria-hidden />
           <div className="flex -space-x-2">
             {raters.map((rater) => {
-              const name = rater.name ?? rater.handle ?? t("member");
+              const name = rater.name ?? rater.handle ?? t('member');
               return (
-                <Avatar
-                  key={rater.id}
-                  className="size-7 ring-2 ring-card"
-                  title={name}
-                >
-                  {rater.avatarUrl ? (
-                    <AvatarImage src={rater.avatarUrl} alt={name} />
-                  ) : null}
+                <Avatar key={rater.id} className="size-7 ring-2 ring-card" title={name}>
+                  {rater.avatarUrl ? <AvatarImage src={rater.avatarUrl} alt={name} /> : null}
                   <AvatarFallback className="text-xs">
                     {initialsOf(rater.name, rater.handle)}
                   </AvatarFallback>
@@ -131,9 +116,7 @@ export async function RatingSummary({
             })}
           </div>
           {overflow > 0 ? (
-            <span className="text-xs text-muted-foreground">
-              {t("more", { count: overflow })}
-            </span>
+            <span className="text-xs text-muted-foreground">{t('more', { count: overflow })}</span>
           ) : null}
         </div>
       ) : null}

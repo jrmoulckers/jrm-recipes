@@ -1,29 +1,29 @@
-import { type Metadata } from "next";
-import { type ReactNode } from "react";
-import Link from "next/link";
-import { BookMarked, Heart, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import { type ReactNode } from 'react';
+import Link from 'next/link';
+import { BookMarked, Heart, Users } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser, isAuthConfigured } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
 import {
   listMyCollections,
   listCollectionsSharedWithViewer,
   listMyFavorites,
   type ViewerSharedCollection,
-} from "~/server/collections/queries";
-import { Button } from "~/components/ui/button";
-import { RecipeCard } from "~/components/recipe/recipe-card";
-import { CollectionCard } from "~/components/collections/collection-card";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
-import { CreateCollectionDialog } from "~/components/collections/create-collection-dialog";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+} from '~/server/collections/queries';
+import { Button } from '~/components/ui/button';
+import { RecipeCard } from '~/components/recipe/recipe-card';
+import { CollectionCard } from '~/components/collections/collection-card';
+import { CloudinaryImage } from '~/components/ui/cloudinary-image';
+import { CreateCollectionDialog } from '~/components/collections/create-collection-dialog';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
+  const t = await getTranslations('metadata');
   return {
-    title: t("saved.title"),
-    description: t("saved.description"),
+    title: t('saved.title'),
+    description: t('saved.description'),
   };
 }
 
@@ -31,33 +31,27 @@ async function CollectionsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
-  const t = await getTranslations("collections.page");
+  const t = await getTranslations('collections.page');
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
   const [collections, favorites] = user
     ? await Promise.all([listMyCollections(user.id), listMyFavorites(user.id)])
     : [[], []];
-  const sharedWithMe = user
-    ? await listCollectionsSharedWithViewer(user.id)
-    : [];
+  const sharedWithMe = user ? await listCollectionsSharedWithViewer(user.id) : [];
 
   return (
     <div className="container flex flex-col gap-10 py-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="mt-1 max-w-2xl text-muted-foreground">
-            {t("description")}
-          </p>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 max-w-2xl text-muted-foreground">{t('description')}</p>
         </div>
         {user && dbConfigured ? (
           <CreateCollectionDialog />
         ) : (
           <Button size="lg" disabled>
-            {t("newCollection")}
+            {t('newCollection')}
           </Button>
         )}
       </header>
@@ -70,25 +64,20 @@ async function CollectionsPage() {
             <div className="flex items-center gap-2">
               <Heart className="size-5 text-primary" />
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                {t("favorites.heading")}
+                {t('favorites.heading')}
               </h2>
             </div>
             {favorites.length > 0 ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {favorites.map((recipe) => (
-                  <RecipeCard
-                    key={recipe.id}
-                    recipe={recipe}
-                    favorited
-                    canFavorite
-                  />
+                  <RecipeCard key={recipe.id} recipe={recipe} favorited canFavorite />
                 ))}
               </div>
             ) : (
               <EmptyState
                 icon={<Heart className="size-7" />}
-                title={t("favorites.emptyTitle")}
-                description={t("favorites.emptyBody")}
+                title={t('favorites.emptyTitle')}
+                description={t('favorites.emptyBody')}
               />
             )}
           </section>
@@ -97,7 +86,7 @@ async function CollectionsPage() {
             <div className="flex items-center gap-2">
               <BookMarked className="size-5 text-primary" />
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                {t("collections.heading")}
+                {t('collections.heading')}
               </h2>
             </div>
             {collections.length > 0 ? (
@@ -109,8 +98,8 @@ async function CollectionsPage() {
             ) : (
               <EmptyState
                 icon={<BookMarked className="size-7" />}
-                title={t("collections.emptyTitle")}
-                description={t("collections.emptyBody")}
+                title={t('collections.emptyTitle')}
+                description={t('collections.emptyBody')}
                 action={<CreateCollectionDialog />}
               />
             )}
@@ -121,15 +110,12 @@ async function CollectionsPage() {
               <div className="flex items-center gap-2">
                 <Users className="size-5 text-primary" />
                 <h2 className="font-display text-2xl font-bold tracking-tight">
-                  {t("sharedWithYou")}
+                  {t('sharedWithYou')}
                 </h2>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {sharedWithMe.map((collection) => (
-                  <SharedWithYouCard
-                    key={collection.id}
-                    collection={collection}
-                  />
+                  <SharedWithYouCard key={collection.id} collection={collection} />
                 ))}
               </div>
             </section>
@@ -140,12 +126,8 @@ async function CollectionsPage() {
   );
 }
 
-async function SharedWithYouCard({
-  collection,
-}: {
-  collection: ViewerSharedCollection;
-}) {
-  const tCard = await getTranslations("collections.card");
+async function SharedWithYouCard({ collection }: { collection: ViewerSharedCollection }) {
+  const tCard = await getTranslations('collections.card');
   return (
     <Link
       href={`/collections/${collection.id}`}
@@ -170,7 +152,7 @@ async function SharedWithYouCard({
         {collection.groupName ? (
           <div className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-primary backdrop-blur">
             <Users className="size-3" aria-hidden="true" />
-            {tCard("sharedWith", { group: collection.groupName })}
+            {tCard('sharedWith', { group: collection.groupName })}
           </div>
         ) : null}
       </div>
@@ -179,17 +161,15 @@ async function SharedWithYouCard({
           {collection.name}
         </h3>
         {collection.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {collection.description}
-          </p>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{collection.description}</p>
         )}
         <div className="mt-auto pt-1 text-xs text-muted-foreground">
           {collection.ownerName
-            ? tCard("recipeCountByOwner", {
+            ? tCard('recipeCountByOwner', {
                 count: collection.recipeCount,
                 name: collection.ownerName,
               })
-            : tCard("recipeCount", { count: collection.recipeCount })}
+            : tCard('recipeCount', { count: collection.recipeCount })}
         </div>
       </div>
     </Link>
@@ -222,7 +202,7 @@ function EmptyState({
 }
 
 async function SignInNudge() {
-  const t = await getTranslations("collections.page.signIn");
+  const t = await getTranslations('collections.page.signIn');
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -230,10 +210,8 @@ async function SignInNudge() {
           <Heart className="size-7" aria-hidden="true" />
         </span>
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="mt-2 text-muted-foreground">{t("body")}</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('body')}</p>
         </div>
       </div>
     </div>
@@ -241,15 +219,13 @@ async function SignInNudge() {
 }
 
 async function ConnectDbNotice() {
-  const t = await getTranslations("dbNotice");
+  const t = await getTranslations('dbNotice');
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <p className="mx-auto max-w-md">
-        {t.rich("collections", {
+        {t.rich('collections', {
           code: (chunks: ReactNode) => (
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-              {chunks}
-            </code>
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{chunks}</code>
           ),
         })}
       </p>

@@ -18,7 +18,7 @@
  */
 
 /** Every plan id we sell. `free` is the default, unpaid tier. */
-export const PLAN_IDS = ["free", "family"] as const;
+export const PLAN_IDS = ['free', 'family'] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 /**
@@ -27,49 +27,40 @@ export type PlanId = (typeof PLAN_IDS)[number];
  * collaboration.
  */
 export type FeatureFlagKey =
-  | "aiGeneration"
-  | "aiTutor"
-  | "aiSubstitutions"
-  | "videoExport"
-  | "advancedCollaboration";
+  'aiGeneration' | 'aiTutor' | 'aiSubstitutions' | 'videoExport' | 'advancedCollaboration';
 
 /**
  * Numeric caps. A value of `null` means "unlimited" (see {@link isUnlimited} /
  * {@link limitToNumber}). `0` means the feature is fully off for that plan.
  */
 export type LimitKey =
-  | "maxRecipes"
-  | "maxStorageMb"
-  | "maxFamilyMembers"
-  | "maxGroups"
-  | "aiCreditsPerMonth";
+  'maxRecipes' | 'maxStorageMb' | 'maxFamilyMembers' | 'maxGroups' | 'aiCreditsPerMonth';
 
 /** A limit value: a concrete cap, or `null` for unlimited. */
 export type LimitValue = number | null;
 
 /** The complete, per-plan capability object. Every key is always present. */
-export type Entitlements = Record<FeatureFlagKey, boolean> &
-  Record<LimitKey, LimitValue>;
+export type Entitlements = Record<FeatureFlagKey, boolean> & Record<LimitKey, LimitValue>;
 
 /** Any single entitlement key (feature flag or limit). */
 export type EntitlementKey = keyof Entitlements;
 
 /** All feature-flag keys, exported so callers/tests can iterate exhaustively. */
 export const FEATURE_FLAG_KEYS: readonly FeatureFlagKey[] = [
-  "aiGeneration",
-  "aiTutor",
-  "aiSubstitutions",
-  "videoExport",
-  "advancedCollaboration",
+  'aiGeneration',
+  'aiTutor',
+  'aiSubstitutions',
+  'videoExport',
+  'advancedCollaboration',
 ];
 
 /** All numeric-limit keys, exported so callers/tests can iterate exhaustively. */
 export const LIMIT_KEYS: readonly LimitKey[] = [
-  "maxRecipes",
-  "maxStorageMb",
-  "maxFamilyMembers",
-  "maxGroups",
-  "aiCreditsPerMonth",
+  'maxRecipes',
+  'maxStorageMb',
+  'maxFamilyMembers',
+  'maxGroups',
+  'aiCreditsPerMonth',
 ];
 
 export type Plan = {
@@ -102,14 +93,14 @@ export type Plan = {
  * finite limits so families can fully use Heirloom before deciding to upgrade.
  */
 const free: Plan = {
-  id: "free",
-  name: "Free",
-  tagline: "Everything a family needs to start cooking together.",
+  id: 'free',
+  name: 'Free',
+  tagline: 'Everything a family needs to start cooking together.',
   highlights: [
-    "Up to 50 saved recipes",
-    "One family group, up to 5 members",
-    "200 MB of photo storage",
-    "Cook Mode, meal planning and shopping lists",
+    'Up to 50 saved recipes',
+    'One family group, up to 5 members',
+    '200 MB of photo storage',
+    'Cook Mode, meal planning and shopping lists',
   ],
   monthlyPriceUsd: 0,
   stripePriceEnvKey: null,
@@ -133,19 +124,19 @@ const free: Plan = {
  * limits so a whole extended family can keep every recipe forever.
  */
 const family: Plan = {
-  id: "family",
-  name: "Family",
-  tagline: "Unlimited recipes and AI help for the whole family.",
+  id: 'family',
+  name: 'Family',
+  tagline: 'Unlimited recipes and AI help for the whole family.',
   highlights: [
-    "Unlimited recipes",
-    "Up to 20 family members across unlimited groups",
-    "10 GB of photo and video storage",
-    "AI recipe generation, cooking tutor and substitutions",
-    "Video and reel exports to share your dishes",
-    "500 AI credits every month",
+    'Unlimited recipes',
+    'Up to 20 family members across unlimited groups',
+    '10 GB of photo and video storage',
+    'AI recipe generation, cooking tutor and substitutions',
+    'Video and reel exports to share your dishes',
+    '500 AI credits every month',
   ],
   monthlyPriceUsd: 5,
-  stripePriceEnvKey: "STRIPE_PRICE_FAMILY",
+  stripePriceEnvKey: 'STRIPE_PRICE_FAMILY',
   trialDays: 14,
   entitlements: {
     aiGeneration: true,
@@ -168,7 +159,7 @@ export const PLANS: Record<PlanId, Plan> = { free, family };
 export const PLAN_LIST: readonly Plan[] = [free, family];
 
 /** The default plan for anyone without an active paid subscription. */
-export const DEFAULT_PLAN_ID: PlanId = "free";
+export const DEFAULT_PLAN_ID: PlanId = 'free';
 
 /** Entitlements granted when no active subscription resolves. */
 export const FREE_ENTITLEMENTS: Entitlements = free.entitlements;
@@ -190,11 +181,11 @@ export const SEAT_RULES = {
  * fixed span of Family to whoever redeems the code.
  */
 export const GIFT_CONFIG = {
-  planId: "family" as PlanId,
+  planId: 'family' as PlanId,
   /** How long a redeemed gift grants Family for. */
   durationMonths: 12,
   /** Env var holding the Stripe one-time Price ID for the gift. */
-  stripePriceEnvKey: "STRIPE_PRICE_GIFT_FAMILY",
+  stripePriceEnvKey: 'STRIPE_PRICE_GIFT_FAMILY',
 } as const;
 
 /** True when a limit value means "unlimited". */

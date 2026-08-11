@@ -1,4 +1,4 @@
-import { parseLeftoversNote } from "./planner-batch";
+import { parseLeftoversNote } from './planner-batch';
 
 /**
  * Shapes and pure logic for the printable "week menu" fridge sheet (#438).
@@ -29,9 +29,7 @@ export type WeekMenuEntry = {
 export type WeekMenuDay = WeekMenuDayInput & { dinners: WeekMenuDinner[] };
 
 /** Render minutes as a glanceable label, e.g. "45 min" or "1 hr 30 min". */
-export function formatCookTime(
-  totalMinutes: number | null | undefined,
-): string | null {
+export function formatCookTime(totalMinutes: number | null | undefined): string | null {
   if (totalMinutes == null || totalMinutes <= 0) return null;
   if (totalMinutes < 60) return `${totalMinutes} min`;
   const hours = Math.floor(totalMinutes / 60);
@@ -45,15 +43,10 @@ export function formatCookTime(
  * (e.g. "Order pizza") pass through as-is. Days with nothing planned come back
  * with an empty `dinners` array so the sheet can show a graceful placeholder.
  */
-export function buildWeekMenu(
-  days: WeekMenuDayInput[],
-  entries: WeekMenuEntry[],
-): WeekMenuDay[] {
+export function buildWeekMenu(days: WeekMenuDayInput[], entries: WeekMenuEntry[]): WeekMenuDay[] {
   const byDate = new Map<string, WeekMenuDinner[]>();
   for (const entry of entries) {
-    const legacyLeftovers = entry.recipe
-      ? parseLeftoversNote(entry.note)
-      : null;
+    const legacyLeftovers = entry.recipe ? parseLeftoversNote(entry.note) : null;
     const leftovers = entry.leftoverSourceId != null || legacyLeftovers != null;
     let dinner: WeekMenuDinner | null = null;
     if (leftovers && entry.recipe) {

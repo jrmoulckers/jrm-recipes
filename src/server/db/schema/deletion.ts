@@ -1,22 +1,14 @@
-import {
-  index,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk } from "./_shared";
-import { users } from "./users";
+import { fk, pk } from './_shared';
+import { users } from './users';
 
 /** How an erasure was initiated. */
-export const deletionTrigger = pgEnum("deletion_trigger", [
-  "clerk_webhook",
-  "in_app",
-  "admin",
-  "dsr_request",
+export const deletionTrigger = pgEnum('deletion_trigger', [
+  'clerk_webhook',
+  'in_app',
+  'admin',
+  'dsr_request',
 ]);
 
 /**
@@ -45,7 +37,7 @@ export const deletionTrigger = pgEnum("deletion_trigger", [
  * outlives the data it describes and nothing else references it.
  */
 export const deletionRecords = pgTable(
-  "deletion_records",
+  'deletion_records',
   {
     id: pk(),
     /**
@@ -103,7 +95,7 @@ export const deletionRecords = pgTable(
     // `hasBeenErased` reads this to recognise a repeat `user.deleted` webhook
     // after the local row is gone, which is what makes erasure idempotent
     // against Clerk's retries.
-    index("deletion_records_clerk_id_hash_idx").on(t.clerkIdHash),
+    index('deletion_records_clerk_id_hash_idx').on(t.clerkIdHash),
   ],
 );
 
@@ -112,9 +104,7 @@ export type NewDeletionRecord = typeof deletionRecords.$inferInsert;
 export type DeletionTrigger = (typeof deletionTrigger.enumValues)[number];
 
 /** Why an erasure request could not be executed when it arrived. */
-export const erasureHoldReason = pgEnum("erasure_hold_reason", [
-  "co_created_entanglement",
-]);
+export const erasureHoldReason = pgEnum('erasure_hold_reason', ['co_created_entanglement']);
 
 /**
  * An erasure request that arrived, was accepted, and has **not** been executed
@@ -145,13 +135,13 @@ export const erasureHoldReason = pgEnum("erasure_hold_reason", [
  * backlog count.
  */
 export const erasureHolds = pgTable(
-  "erasure_holds",
+  'erasure_holds',
   {
     id: pk(),
     userId: fk()
       .notNull()
       .unique()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     trigger: deletionTrigger().notNull(),
     reason: erasureHoldReason().notNull(),
     /**
@@ -176,7 +166,7 @@ export const erasureHolds = pgTable(
   (t) => [
     // The backlog query is "open holds, oldest first", so it filters on
     // `releasedAt IS NULL` and orders by first request.
-    index("erasure_holds_released_at_idx").on(t.releasedAt, t.firstRequestedAt),
+    index('erasure_holds_released_at_idx').on(t.releasedAt, t.firstRequestedAt),
   ],
 );
 

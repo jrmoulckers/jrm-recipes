@@ -23,9 +23,9 @@ import {
   type CustomUnitDef,
   type Dimension,
   type UnitPrefs,
-} from "./units";
-import { detectAllergensForSafety, type Allergen } from "./allergens";
-import { volumeClassForItem } from "./food-units";
+} from './units';
+import { detectAllergensForSafety, type Allergen } from './allergens';
+import { volumeClassForItem } from './food-units';
 
 // --- Public types -------------------------------------------------------
 
@@ -112,7 +112,7 @@ export type ShoppingListResult = {
 };
 
 /** Ingredient-level override layered over the global package-rounding setting. */
-export type PackageRoundBehavior = "inherit" | "enable" | "disable";
+export type PackageRoundBehavior = 'inherit' | 'enable' | 'disable';
 
 /**
  * Serializable package preference shared by server and offline aggregation.
@@ -141,15 +141,15 @@ export type ShoppingAggregationOptions = {
 // --- Categories ---------------------------------------------------------
 
 export const SHOPPING_CATEGORIES = [
-  "Produce",
-  "Meat & Seafood",
-  "Dairy & Eggs",
-  "Bakery",
-  "Pantry",
-  "Spices & Seasonings",
-  "Frozen",
-  "Beverages",
-  "Other",
+  'Produce',
+  'Meat & Seafood',
+  'Dairy & Eggs',
+  'Bakery',
+  'Pantry',
+  'Spices & Seasonings',
+  'Frozen',
+  'Beverages',
+  'Other',
 ] as const;
 
 export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
@@ -159,20 +159,18 @@ export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
  * Use these labels when rendering category names in sentence case.
  */
 export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategory, string> = {
-  Produce: "Produce",
-  "Meat & Seafood": "Meat & seafood",
-  "Dairy & Eggs": "Dairy & eggs",
-  Bakery: "Bakery",
-  Pantry: "Pantry",
-  "Spices & Seasonings": "Spices & seasonings",
-  Frozen: "Frozen",
-  Beverages: "Beverages",
-  Other: "Other",
+  Produce: 'Produce',
+  'Meat & Seafood': 'Meat & seafood',
+  'Dairy & Eggs': 'Dairy & eggs',
+  Bakery: 'Bakery',
+  Pantry: 'Pantry',
+  'Spices & Seasonings': 'Spices & seasonings',
+  Frozen: 'Frozen',
+  Beverages: 'Beverages',
+  Other: 'Other',
 };
 
-const CATEGORY_INDEX = new Map<ShoppingCategory, number>(
-  SHOPPING_CATEGORIES.map((c, i) => [c, i]),
-);
+const CATEGORY_INDEX = new Map<ShoppingCategory, number>(SHOPPING_CATEGORIES.map((c, i) => [c, i]));
 
 /**
  * Keyword rules grouped by aisle. Every keyword is compiled into a whole-word
@@ -184,215 +182,215 @@ const CATEGORY_INDEX = new Map<ShoppingCategory, number>(
  */
 const CATEGORY_RULES: { category: ShoppingCategory; keywords: string[] }[] = [
   {
-    category: "Frozen",
-    keywords: ["frozen", "ice cream", "popsicle"],
+    category: 'Frozen',
+    keywords: ['frozen', 'ice cream', 'popsicle'],
   },
   {
-    category: "Beverages",
+    category: 'Beverages',
     keywords: [
-      "wine",
-      "beer",
-      "juice",
-      "coffee",
-      "tea",
-      "soda",
-      "cola",
-      "sparkling water",
-      "seltzer",
-      "broth",
-      "stock",
+      'wine',
+      'beer',
+      'juice',
+      'coffee',
+      'tea',
+      'soda',
+      'cola',
+      'sparkling water',
+      'seltzer',
+      'broth',
+      'stock',
     ],
   },
   {
-    category: "Spices & Seasonings",
+    category: 'Spices & Seasonings',
     keywords: [
-      "salt",
-      "pepper",
-      "peppercorn",
-      "cumin",
-      "paprika",
-      "cinnamon",
-      "nutmeg",
-      "oregano",
-      "basil",
-      "thyme",
-      "rosemary",
-      "parsley",
-      "cilantro",
-      "coriander",
-      "turmeric",
-      "curry",
-      "chili powder",
-      "cayenne",
-      "clove",
-      "cloves",
-      "bay leaf",
-      "bay leaves",
-      "vanilla",
-      "ginger",
-      "garlic powder",
-      "onion powder",
-      "spice",
-      "seasoning",
-      "herb",
-      "herbs",
+      'salt',
+      'pepper',
+      'peppercorn',
+      'cumin',
+      'paprika',
+      'cinnamon',
+      'nutmeg',
+      'oregano',
+      'basil',
+      'thyme',
+      'rosemary',
+      'parsley',
+      'cilantro',
+      'coriander',
+      'turmeric',
+      'curry',
+      'chili powder',
+      'cayenne',
+      'clove',
+      'cloves',
+      'bay leaf',
+      'bay leaves',
+      'vanilla',
+      'ginger',
+      'garlic powder',
+      'onion powder',
+      'spice',
+      'seasoning',
+      'herb',
+      'herbs',
     ],
   },
   {
-    category: "Dairy & Eggs",
+    category: 'Dairy & Eggs',
     keywords: [
-      "milk",
-      "cream",
-      "butter",
-      "cheese",
-      "parmesan",
-      "mozzarella",
-      "cheddar",
-      "yogurt",
-      "yoghurt",
-      "egg",
-      "eggs",
-      "sour cream",
-      "buttermilk",
-      "ricotta",
-      "feta",
+      'milk',
+      'cream',
+      'butter',
+      'cheese',
+      'parmesan',
+      'mozzarella',
+      'cheddar',
+      'yogurt',
+      'yoghurt',
+      'egg',
+      'eggs',
+      'sour cream',
+      'buttermilk',
+      'ricotta',
+      'feta',
     ],
   },
   {
-    category: "Meat & Seafood",
+    category: 'Meat & Seafood',
     keywords: [
-      "chicken",
-      "beef",
-      "pork",
-      "bacon",
-      "sausage",
-      "turkey",
-      "lamb",
-      "steak",
-      "ground beef",
-      "mince",
-      "fish",
-      "salmon",
-      "tuna",
-      "shrimp",
-      "prawn",
-      "crab",
-      "cod",
-      "ham",
-      "meat",
+      'chicken',
+      'beef',
+      'pork',
+      'bacon',
+      'sausage',
+      'turkey',
+      'lamb',
+      'steak',
+      'ground beef',
+      'mince',
+      'fish',
+      'salmon',
+      'tuna',
+      'shrimp',
+      'prawn',
+      'crab',
+      'cod',
+      'ham',
+      'meat',
     ],
   },
   {
-    category: "Bakery",
+    category: 'Bakery',
     keywords: [
-      "bread",
-      "baguette",
-      "bun",
-      "buns",
-      "roll",
-      "rolls",
-      "tortilla",
-      "pita",
-      "bagel",
-      "croissant",
-      "brioche",
+      'bread',
+      'baguette',
+      'bun',
+      'buns',
+      'roll',
+      'rolls',
+      'tortilla',
+      'pita',
+      'bagel',
+      'croissant',
+      'brioche',
     ],
   },
   {
-    category: "Produce",
+    category: 'Produce',
     keywords: [
-      "onion",
-      "garlic",
-      "tomato",
-      "potato",
-      "carrot",
-      "celery",
-      "lettuce",
-      "spinach",
-      "kale",
-      "pepper",
-      "bell pepper",
-      "cucumber",
-      "zucchini",
-      "mushroom",
-      "broccoli",
-      "cauliflower",
-      "cabbage",
-      "corn",
-      "peas",
-      "bean",
-      "beans",
-      "apple",
-      "banana",
-      "lemon",
-      "lime",
-      "orange",
-      "berry",
-      "berries",
-      "strawberry",
-      "blueberry",
-      "avocado",
-      "lettuce",
-      "scallion",
-      "shallot",
-      "leek",
-      "eggplant",
-      "squash",
-      "fruit",
-      "vegetable",
+      'onion',
+      'garlic',
+      'tomato',
+      'potato',
+      'carrot',
+      'celery',
+      'lettuce',
+      'spinach',
+      'kale',
+      'pepper',
+      'bell pepper',
+      'cucumber',
+      'zucchini',
+      'mushroom',
+      'broccoli',
+      'cauliflower',
+      'cabbage',
+      'corn',
+      'peas',
+      'bean',
+      'beans',
+      'apple',
+      'banana',
+      'lemon',
+      'lime',
+      'orange',
+      'berry',
+      'berries',
+      'strawberry',
+      'blueberry',
+      'avocado',
+      'lettuce',
+      'scallion',
+      'shallot',
+      'leek',
+      'eggplant',
+      'squash',
+      'fruit',
+      'vegetable',
     ],
   },
   {
-    category: "Pantry",
+    category: 'Pantry',
     keywords: [
-      "flour",
-      "sugar",
-      "rice",
-      "pasta",
-      "noodle",
-      "oil",
-      "olive oil",
-      "vinegar",
-      "sauce",
-      "soy sauce",
-      "ketchup",
-      "mustard",
-      "mayonnaise",
-      "honey",
-      "syrup",
-      "oats",
-      "cereal",
-      "baking soda",
-      "baking powder",
-      "yeast",
-      "cornstarch",
-      "cocoa",
-      "chocolate",
-      "canned",
-      "can of",
-      "tomato paste",
-      "coconut milk",
-      "lentil",
-      "chickpea",
-      "nut",
-      "nuts",
-      "almond",
-      "walnut",
-      "peanut",
-      "peanut butter",
-      "raisin",
-      "cracker",
-      "breadcrumb",
-      "stock cube",
-      "bouillon",
-      "water",
+      'flour',
+      'sugar',
+      'rice',
+      'pasta',
+      'noodle',
+      'oil',
+      'olive oil',
+      'vinegar',
+      'sauce',
+      'soy sauce',
+      'ketchup',
+      'mustard',
+      'mayonnaise',
+      'honey',
+      'syrup',
+      'oats',
+      'cereal',
+      'baking soda',
+      'baking powder',
+      'yeast',
+      'cornstarch',
+      'cocoa',
+      'chocolate',
+      'canned',
+      'can of',
+      'tomato paste',
+      'coconut milk',
+      'lentil',
+      'chickpea',
+      'nut',
+      'nuts',
+      'almond',
+      'walnut',
+      'peanut',
+      'peanut butter',
+      'raisin',
+      'cracker',
+      'breadcrumb',
+      'stock cube',
+      'bouillon',
+      'water',
     ],
   },
 ];
 
 /** Escape a literal string for safe interpolation into a RegExp. */
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -403,11 +401,8 @@ function escapeRegExp(value: string): string {
  * "tomato" also matches "tomatoes".
  */
 function keywordMatcher(keyword: string): RegExp {
-  const body = escapeRegExp(keyword.trim().toLowerCase()).replace(
-    /\s+/g,
-    "\\s+",
-  );
-  return new RegExp(`(?<![a-z0-9])${body}(?:es|s)?(?![a-z0-9])`, "i");
+  const body = escapeRegExp(keyword.trim().toLowerCase()).replace(/\s+/g, '\\s+');
+  return new RegExp(`(?<![a-z0-9])${body}(?:es|s)?(?![a-z0-9])`, 'i');
 }
 
 type CompiledRule = {
@@ -437,8 +432,8 @@ const COMPILED_RULES: CompiledRule[] = CATEGORY_RULES.flatMap((rule, order) =>
 
 /** Categorize a free-text ingredient name into a grocery aisle. */
 export function categorize(item: string): ShoppingCategory {
-  const name = item.toLowerCase().trim().replace(/\s+/g, " ");
-  if (!name) return "Other";
+  const name = item.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (!name) return 'Other';
 
   let best: CompiledRule | null = null;
   for (const rule of COMPILED_RULES) {
@@ -451,7 +446,7 @@ export function categorize(item: string): ShoppingCategory {
       best = rule;
     }
   }
-  return best?.category ?? "Other";
+  return best?.category ?? 'Other';
 }
 
 // --- Pantry staples -----------------------------------------------------
@@ -467,37 +462,37 @@ export function categorize(item: string): ShoppingCategory {
  * garlic, onion) are excluded so a real produce purchase is never auto-hidden.
  */
 export const PANTRY_STAPLES = [
-  "salt",
-  "sea salt",
-  "kosher salt",
-  "table salt",
-  "pepper",
-  "black pepper",
-  "white pepper",
-  "peppercorn",
-  "water",
-  "cold water",
-  "warm water",
-  "hot water",
-  "oil",
-  "olive oil",
-  "extra virgin olive oil",
-  "vegetable oil",
-  "canola oil",
-  "sunflower oil",
-  "cooking oil",
-  "cooking spray",
-  "butter",
-  "garlic powder",
-  "onion powder",
-  "chili powder",
-  "paprika",
-  "cumin",
-  "cinnamon",
-  "cayenne",
-  "bay leaf",
-  "bay leaves",
-  "nutmeg",
+  'salt',
+  'sea salt',
+  'kosher salt',
+  'table salt',
+  'pepper',
+  'black pepper',
+  'white pepper',
+  'peppercorn',
+  'water',
+  'cold water',
+  'warm water',
+  'hot water',
+  'oil',
+  'olive oil',
+  'extra virgin olive oil',
+  'vegetable oil',
+  'canola oil',
+  'sunflower oil',
+  'cooking oil',
+  'cooking spray',
+  'butter',
+  'garlic powder',
+  'onion powder',
+  'chili powder',
+  'paprika',
+  'cumin',
+  'cinnamon',
+  'cayenne',
+  'bay leaf',
+  'bay leaves',
+  'nutmeg',
 ] as const;
 
 /**
@@ -510,39 +505,39 @@ export const PANTRY_STAPLES = [
  * list.
  */
 const STAPLE_QUALIFIERS = new Set<string>([
-  "ground",
-  "freshly",
-  "fresh",
-  "dried",
-  "whole",
-  "fine",
-  "finely",
-  "coarse",
-  "coarsely",
-  "flaky",
-  "kosher",
-  "sea",
-  "table",
-  "rock",
-  "black",
-  "white",
-  "extra",
-  "virgin",
-  "light",
-  "cooking",
-  "vegetable",
-  "canola",
-  "olive",
-  "sunflower",
-  "salted",
-  "unsalted",
-  "melted",
-  "softened",
-  "warm",
-  "hot",
-  "cold",
-  "boiling",
-  "iced",
+  'ground',
+  'freshly',
+  'fresh',
+  'dried',
+  'whole',
+  'fine',
+  'finely',
+  'coarse',
+  'coarsely',
+  'flaky',
+  'kosher',
+  'sea',
+  'table',
+  'rock',
+  'black',
+  'white',
+  'extra',
+  'virgin',
+  'light',
+  'cooking',
+  'vegetable',
+  'canola',
+  'olive',
+  'sunflower',
+  'salted',
+  'unsalted',
+  'melted',
+  'softened',
+  'warm',
+  'hot',
+  'cold',
+  'boiling',
+  'iced',
 ]);
 
 /**
@@ -551,34 +546,34 @@ const STAPLE_QUALIFIERS = new Set<string>([
  * these are always kept even if the allow-list ever grows carelessly.
  */
 const STAPLE_EXCEPTIONS = new Set<string>([
-  "bell pepper",
-  "red bell pepper",
-  "green bell pepper",
-  "yellow bell pepper",
-  "orange bell pepper",
-  "red pepper",
-  "green pepper",
-  "jalapeño pepper",
-  "jalapeno pepper",
-  "banana pepper",
-  "peanut butter",
-  "almond butter",
-  "apple butter",
-  "cocoa butter",
-  "cashew butter",
-  "coconut water",
-  "rose water",
-  "water chestnut",
-  "sesame oil",
-  "chili oil",
-  "truffle oil",
+  'bell pepper',
+  'red bell pepper',
+  'green bell pepper',
+  'yellow bell pepper',
+  'orange bell pepper',
+  'red pepper',
+  'green pepper',
+  'jalapeño pepper',
+  'jalapeno pepper',
+  'banana pepper',
+  'peanut butter',
+  'almond butter',
+  'apple butter',
+  'cocoa butter',
+  'cashew butter',
+  'coconut water',
+  'rose water',
+  'water chestnut',
+  'sesame oil',
+  'chili oil',
+  'truffle oil',
 ]);
 
 /** Staple phrases, normalized and ordered longest-first so a specific phrase
  * ("olive oil") is preferred over a broad head noun ("oil"). */
-const STAPLE_PHRASES: string[] = Array.from(
-  new Set(PANTRY_STAPLES.map(normalizeItemName)),
-).sort((a, b) => b.split(" ").length - a.split(" ").length);
+const STAPLE_PHRASES: string[] = Array.from(new Set(PANTRY_STAPLES.map(normalizeItemName))).sort(
+  (a, b) => b.split(' ').length - a.split(' ').length,
+);
 
 /**
  * True when `cleaned` is a staple whose head noun sits at the end of the name,
@@ -590,7 +585,7 @@ function matchesStaplePhrase(cleaned: string): boolean {
     if (cleaned === phrase) return true;
     if (cleaned.endsWith(` ${phrase}`)) {
       const prefix = cleaned.slice(0, cleaned.length - phrase.length - 1);
-      const prefixTokens = prefix.split(" ").filter(Boolean);
+      const prefixTokens = prefix.split(' ').filter(Boolean);
       if (prefixTokens.every((token) => STAPLE_QUALIFIERS.has(token))) {
         return true;
       }
@@ -614,23 +609,23 @@ export function isPantryStaple(item: string): boolean {
   // Defensive: drop a leading quantity/number ("2 eggs", "1/2 cup ...") so the
   // head-noun check sees the ingredient words. Item names are usually
   // quantity-free, but free-text entries aren't guaranteed to be.
-  const cleaned = name.replace(/^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/, "");
+  const cleaned = name.replace(/^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/, '');
   if (STAPLE_EXCEPTIONS.has(cleaned)) return false;
   if (matchesStaplePhrase(cleaned)) return true;
   // Tolerate a plural head noun ("peppercorns" → "peppercorn"). The prefix guard
   // still protects compounds ("bell peppers" keeps "bell" as an unknown word).
-  const singular = cleaned.replace(/s$/, "");
+  const singular = cleaned.replace(/s$/, '');
   return singular !== cleaned && matchesStaplePhrase(singular);
 }
 
 // --- Aggregation --------------------------------------------------------
 
 /** Metric canonical units, used to pick a display system for a combined line. */
-const METRIC_CANONICAL = new Set(["ml", "l", "g", "kg"]);
+const METRIC_CANONICAL = new Set(['ml', 'l', 'g', 'kg']);
 
 function baseUnitFor(dimension: Dimension): string | null {
-  if (dimension === "mass") return "g";
-  if (dimension === "volume") return "ml";
+  if (dimension === 'mass') return 'g';
+  if (dimension === 'volume') return 'ml';
   return null;
 }
 
@@ -647,7 +642,7 @@ export function scaleFactor(
 
 /** Collapse whitespace / casing so "Olive  Oil" and "olive oil" dedupe. */
 export function normalizeItemName(item: string): string {
-  return item.toLowerCase().trim().replace(/\s+/g, " ");
+  return item.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 type Bucket = {
@@ -658,12 +653,9 @@ type Bucket = {
   unit: string | null;
 };
 
-function bucketFor(
-  rawUnit: string | null | undefined,
-  customs: readonly CustomUnitDef[],
-): Bucket {
+function bucketFor(rawUnit: string | null | undefined, customs: readonly CustomUnitDef[]): Bucket {
   const unit = rawUnit?.trim();
-  if (!unit) return { id: "count", dimension: null, unit: null };
+  if (!unit) return { id: 'count', dimension: null, unit: null };
   const dimension = dimensionOf(unit, customs);
   const base = dimension ? baseUnitFor(dimension) : null;
   if (dimension && base && convertAmount(1, unit, base, customs) != null) {
@@ -714,11 +706,8 @@ export function mergeShoppingItems(
     const sourceUnit = hasPersistedBase ? input.requiredBaseUnit : input.unit;
     const bucket = bucketFor(sourceUnit, customs);
     const displayBucket = bucketFor(input.unit, customs);
-    const displayUnit =
-      displayBucket.id === bucket.id ? displayBucket.unit : bucket.unit;
-    const identity = input.foodId
-      ? `food:${input.foodId}`
-      : `text:${normalizeItemName(item)}`;
+    const displayUnit = displayBucket.id === bucket.id ? displayBucket.unit : bucket.unit;
+    const identity = input.foodId ? `food:${input.foodId}` : `text:${normalizeItemName(item)}`;
     const key = `${identity}\u0000${bucket.id}`;
 
     let acc = map.get(key);
@@ -729,9 +718,7 @@ export function mergeShoppingItems(
         foodIds: [],
         dimension: bucket.dimension,
         unit: displayUnit,
-        requiredBaseUnit: bucket.dimension
-          ? baseUnitFor(bucket.dimension)
-          : bucket.unit,
+        requiredBaseUnit: bucket.dimension ? baseUnitFor(bucket.dimension) : bucket.unit,
         min: 0,
         max: 0,
         hasQuantity: false,
@@ -744,9 +731,7 @@ export function mergeShoppingItems(
       map.set(key, acc);
     }
 
-    const quantity = hasPersistedBase
-      ? input.requiredBaseQuantity!
-      : (input.quantity ?? null);
+    const quantity = hasPersistedBase ? input.requiredBaseQuantity! : (input.quantity ?? null);
     const explicitQuantityMax = hasPersistedBase
       ? input.requiredBaseQuantityMax
       : input.quantityMax;
@@ -756,16 +741,9 @@ export function mergeShoppingItems(
       if (bucket.dimension) {
         const base = baseUnitFor(bucket.dimension);
         if (base) {
-          acc.min +=
-            convertAmountExact(quantity, sourceUnit ?? base, base, customs) ??
-            0;
+          acc.min += convertAmountExact(quantity, sourceUnit ?? base, base, customs) ?? 0;
           acc.max +=
-            convertAmountExact(
-              quantityMax ?? quantity,
-              sourceUnit ?? base,
-              base,
-              customs,
-            ) ?? 0;
+            convertAmountExact(quantityMax ?? quantity, sourceUnit ?? base, base, customs) ?? 0;
         }
       } else {
         acc.min += quantity;
@@ -802,18 +780,12 @@ function preferredMeasure(
   const prefs = options.unitPreferences;
 
   if (!prefs) {
-    const system = acc.unit && METRIC_CANONICAL.has(acc.unit) ? "metric" : "us";
+    const system = acc.unit && METRIC_CANONICAL.has(acc.unit) ? 'metric' : 'us';
     return toSystem(acc.min, base, system);
   }
 
   if (prefs?.autoConvert) {
-    return resolveDisplayMeasure(
-      acc.min,
-      base,
-      prefs,
-      customs,
-      volumeClassForItem(acc.item),
-    );
+    return resolveDisplayMeasure(acc.min, base, prefs, customs, volumeClassForItem(acc.item));
   }
 
   // With conversion disabled, preserve the first recipe unit where possible.
@@ -839,16 +811,14 @@ function findPackageRule(
   // without importing the substitutions knowledge base into the offline bundle.
   const routeNormalized = acc.item
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\([^)]*\)/g, " ")
-    .split(",")[0]!
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\([^)]*\)/g, ' ')
+    .split(',')[0]!
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
-  const normalized = routeNormalized.length
-    ? routeNormalized
-    : normalizeItemName(acc.item);
+  const normalized = routeNormalized.length ? routeNormalized : normalizeItemName(acc.item);
   return rules.find((rule) => rule.normalizedItem === normalized) ?? null;
 }
 
@@ -857,12 +827,12 @@ function packageResult(
   options: ShoppingAggregationOptions,
 ): Pick<
   AggregatedItem,
-  | "purchaseQuantity"
-  | "purchaseUnit"
-  | "packageCount"
-  | "packageAmount"
-  | "packageUnit"
-  | "packageLabel"
+  | 'purchaseQuantity'
+  | 'purchaseUnit'
+  | 'packageCount'
+  | 'packageAmount'
+  | 'packageUnit'
+  | 'packageLabel'
 > {
   const none = {
     purchaseQuantity: null,
@@ -875,19 +845,12 @@ function packageResult(
   const rule = findPackageRule(acc, options.packageRules ?? []);
   if (!rule || !acc.hasQuantity || !acc.requiredBaseUnit) return none;
 
-  const behavior = rule.packageRoundBehavior ?? "inherit";
+  const behavior = rule.packageRoundBehavior ?? 'inherit';
   const enabled =
-    behavior === "enable" ||
-    (behavior === "inherit" && (options.packageRounding ?? false));
+    behavior === 'enable' || (behavior === 'inherit' && (options.packageRounding ?? false));
   const amount = rule.packageAmount;
   const packageUnit = rule.packageUnit?.trim();
-  if (
-    !enabled ||
-    amount == null ||
-    !Number.isFinite(amount) ||
-    amount <= 0 ||
-    !packageUnit
-  ) {
+  if (!enabled || amount == null || !Number.isFinite(amount) || amount <= 0 || !packageUnit) {
     return none;
   }
 
@@ -907,11 +870,7 @@ function packageResult(
     return none;
   }
   const packageCount = Math.ceil(acc.max / packageBaseAmount);
-  if (
-    !Number.isSafeInteger(packageCount) ||
-    packageCount < 0 ||
-    packageCount > 2_147_483_647
-  ) {
+  if (!Number.isSafeInteger(packageCount) || packageCount < 0 || packageCount > 2_147_483_647) {
     return none;
   }
   const purchaseQuantity = roundNice(packageCount * amount);
@@ -930,10 +889,7 @@ function packageResult(
   };
 }
 
-function finalize(
-  acc: Accumulator,
-  options: ShoppingAggregationOptions,
-): AggregatedItem {
+function finalize(acc: Accumulator, options: ShoppingAggregationOptions): AggregatedItem {
   let quantity: number | null = null;
   let quantityMax: number | null = null;
   let unit = acc.unit;
@@ -981,8 +937,7 @@ function finalize(
 function sortItems(items: AggregatedItem[]): AggregatedItem[] {
   return [...items].sort((a, b) => {
     const byCategory =
-      (CATEGORY_INDEX.get(a.category) ?? 99) -
-      (CATEGORY_INDEX.get(b.category) ?? 99);
+      (CATEGORY_INDEX.get(a.category) ?? 99) - (CATEGORY_INDEX.get(b.category) ?? 99);
     if (byCategory !== 0) return byCategory;
     return a.item.localeCompare(b.item);
   });
@@ -994,9 +949,7 @@ export function groupByCategory(items: AggregatedItem[]): AggregatedGroup[] {
   for (const item of items) {
     // Any missing or non-canonical category falls back to "Other" so the item
     // is never silently dropped from the grouped view.
-    const category = CATEGORY_INDEX.has(item.category)
-      ? item.category
-      : "Other";
+    const category = CATEGORY_INDEX.has(item.category) ? item.category : 'Other';
     const list = groups.get(category) ?? [];
     list.push(item);
     groups.set(category, list);
@@ -1008,9 +961,7 @@ export function groupByCategory(items: AggregatedItem[]): AggregatedGroup[] {
 }
 
 /** Flatten recipes (scaling each) into individual contributions. */
-export function toShoppingItems(
-  recipe: ShoppingRecipeInput,
-): ShoppingItemInput[] {
+export function toShoppingItems(recipe: ShoppingRecipeInput): ShoppingItemInput[] {
   const factor = scaleFactor(recipe.servings, recipe.desiredServings);
   return recipe.ingredients.map((ing) => ({
     item: ing.item,
@@ -1039,26 +990,22 @@ export function aggregateShoppingList(
 
 /** Human-friendly quantity label for a line, e.g. "1½ cups" or "2–3 tbsp". */
 export function describeQuantity(
-  item: Pick<AggregatedItem, "quantity" | "quantityMax" | "unit">,
+  item: Pick<AggregatedItem, 'quantity' | 'quantityMax' | 'unit'>,
   locale?: string,
 ): string {
-  if (item.quantity == null) return "";
+  if (item.quantity == null) return '';
   const number =
     item.quantityMax != null
       ? `${formatQuantity(item.quantity, item.unit, locale)}–${formatQuantity(item.quantityMax, item.unit, locale)}`
       : formatQuantity(item.quantity, item.unit, locale);
-  const unit = displayUnit(
-    item.unit,
-    item.quantityMax ?? item.quantity,
-    locale,
-  );
+  const unit = displayUnit(item.unit, item.quantityMax ?? item.quantity, locale);
   return unit ? `${number} ${unit}` : number;
 }
 
 /** Minimal shape needed to render one list line as shareable text. */
 export type ShoppingTextItem = Pick<
   AggregatedItem,
-  "item" | "quantity" | "quantityMax" | "unit"
+  'item' | 'quantity' | 'quantityMax' | 'unit'
 > & {
   note?: string | null;
   category: ShoppingCategory;
@@ -1078,10 +1025,7 @@ export type FormatShoppingListOptions = {
   locale?: string;
 };
 
-export function formatShoppingListItemLine(
-  item: ShoppingTextItem,
-  locale?: string,
-): string {
+export function formatShoppingListItemLine(item: ShoppingTextItem, locale?: string): string {
   const amount = describeQuantity(item, locale);
   const base = amount ? `${amount} ${item.item}` : item.item;
   return item.note ? `${base}, ${item.note}` : base;
@@ -1105,13 +1049,11 @@ export function formatShoppingListText(
     locale,
   } = options;
   const visible = items.filter((item) => includeChecked || !item.checked);
-  if (visible.length === 0) return "";
+  if (visible.length === 0) return '';
 
   const byCategory = new Map<ShoppingCategory, ShoppingTextItem[]>();
   for (const item of visible) {
-    const category = CATEGORY_INDEX.has(item.category)
-      ? item.category
-      : "Other";
+    const category = CATEGORY_INDEX.has(item.category) ? item.category : 'Other';
     const list = byCategory.get(category) ?? [];
     list.push(item);
     byCategory.set(category, list);
@@ -1120,21 +1062,17 @@ export function formatShoppingListText(
   const lines: string[] = [];
   if (title?.trim()) lines.push(title.trim());
   if (subtitle?.trim()) lines.push(subtitle.trim());
-  if (lines.length > 0) lines.push("");
+  if (lines.length > 0) lines.push('');
 
   for (const category of SHOPPING_CATEGORIES) {
     const group = byCategory.get(category);
     if (!group || group.length === 0) continue;
     lines.push(`${categoryLabels[category]}:`);
-    for (const item of group
-      .slice()
-      .sort((a, b) => a.item.localeCompare(b.item, locale))) {
-      lines.push(
-        `- [${item.checked ? "x" : " "}] ${formatShoppingListItemLine(item, locale)}`,
-      );
+    for (const item of group.slice().sort((a, b) => a.item.localeCompare(b.item, locale))) {
+      lines.push(`- [${item.checked ? 'x' : ' '}] ${formatShoppingListItemLine(item, locale)}`);
     }
-    lines.push("");
+    lines.push('');
   }
 
-  return lines.join("\n").trimEnd();
+  return lines.join('\n').trimEnd();
 }

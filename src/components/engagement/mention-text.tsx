@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import type { Route } from "next";
+import * as React from 'react';
+import Link from 'next/link';
+import type { Route } from 'next';
 
-import { splitMentions, type MentionCandidate } from "~/lib/mentions";
+import { splitMentions, type MentionCandidate } from '~/lib/mentions';
 
 /**
  * Render comment/review text with resolved @mentions as links to the member's
@@ -19,19 +19,15 @@ export function MentionText({
   candidates: MentionCandidate[];
   className?: string;
 }) {
-  const segments = React.useMemo(
-    () => splitMentions(body, candidates),
-    [body, candidates],
-  );
+  const segments = React.useMemo(() => splitMentions(body, candidates), [body, candidates]);
 
   return (
     <span className={className}>
       {segments.map((segment, i) => {
-        if (segment.type === "text") {
+        if (segment.type === 'text') {
           return <React.Fragment key={i}>{segment.text}</React.Fragment>;
         }
-        const label =
-          segment.user.name ?? segment.user.handle ?? segment.handle;
+        const label = segment.user.name ?? segment.user.handle ?? segment.handle;
         return segment.user.handle ? (
           <Link
             key={i}

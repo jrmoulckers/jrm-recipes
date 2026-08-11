@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   AlertDialog,
@@ -12,7 +12,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./alert-dialog";
+} from './alert-dialog';
 
 export interface ConfirmOptions {
   /** Verb + what's affected. "Delete this recipe?" */
@@ -28,9 +28,9 @@ export interface ConfirmOptions {
 
 type Resolver = (confirmed: boolean) => void;
 
-const ConfirmContext = React.createContext<
-  ((options: ConfirmOptions) => Promise<boolean>) | null
->(null);
+const ConfirmContext = React.createContext<((options: ConfirmOptions) => Promise<boolean>) | null>(
+  null,
+);
 
 /**
  * Promise-based replacement for `window.confirm()` (#copy-standard).
@@ -42,7 +42,7 @@ const ConfirmContext = React.createContext<
  * restructuring the surrounding handler into declarative open state.
  */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
-  const t = useTranslations("common");
+  const t = useTranslations('common');
   const [options, setOptions] = React.useState<ConfirmOptions | null>(null);
   const resolverRef = React.useRef<Resolver | null>(null);
 
@@ -76,20 +76,18 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <AlertDialogHeader>
               <AlertDialogTitle>{options.title}</AlertDialogTitle>
               {options.description ? (
-                <AlertDialogDescription>
-                  {options.description}
-                </AlertDialogDescription>
+                <AlertDialogDescription>{options.description}</AlertDialogDescription>
               ) : null}
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => settle(false)}>
-                {options.cancelLabel ?? t("cancel")}
+                {options.cancelLabel ?? t('cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 destructive={options.destructive ?? true}
                 onClick={() => settle(true)}
               >
-                {options.confirmLabel ?? t("delete")}
+                {options.confirmLabel ?? t('delete')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -102,7 +100,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
 export function useConfirm() {
   const confirm = React.useContext(ConfirmContext);
   if (!confirm) {
-    throw new Error("useConfirm must be used within a ConfirmProvider");
+    throw new Error('useConfirm must be used within a ConfirmProvider');
   }
   return confirm;
 }

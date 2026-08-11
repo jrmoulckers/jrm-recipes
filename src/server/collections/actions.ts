@@ -1,9 +1,9 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
 import {
   addRecipeToCollection,
   createCollection,
@@ -14,8 +14,8 @@ import {
   shareCollectionWithGroup,
   toggleFavorite,
   unshareCollectionWithGroup,
-} from "./mutations";
-import { revalidateRecipeSlugPaths } from "~/server/recipes/revalidate";
+} from './mutations';
+import { revalidateRecipeSlugPaths } from '~/server/recipes/revalidate';
 import {
   collectionGroupShareInput,
   collectionInput,
@@ -27,30 +27,26 @@ import {
   type CollectionRecipeInput,
   type CollectionVisibilityValue,
   type ToggleFavoriteInput,
-} from "./validation";
+} from './validation';
 
 export type ActionResult =
-  | { ok: true }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+  { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
-export type ToggleFavoriteResult =
-  { ok: true; favorited: boolean } | { ok: false; error: string };
+export type ToggleFavoriteResult = { ok: true; favorited: boolean } | { ok: false; error: string };
 
 export type CreateCollectionResult =
-  | { ok: true; id: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+  { ok: true; id: string } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
-const NO_DB =
-  "Saving needs a database. Set DATABASE_URL (see .env.example) to start saving.";
+const NO_DB = 'Saving needs a database. Set DATABASE_URL (see .env.example) to start saving.';
 
 function messageFor(error: unknown): string {
-  const code = error instanceof Error ? error.message : "";
+  const code = error instanceof Error ? error.message : '';
   switch (code) {
-    case "UNAUTHENTICATED":
-      return "Sign in to save recipes.";
-    case "NOT_FOUND":
+    case 'UNAUTHENTICATED':
+      return 'Sign in to save recipes.';
+    case 'NOT_FOUND':
       return "We couldn't find that.";
-    case "CONFLICT":
+    case 'CONFLICT':
       return "That change couldn't be completed. Please refresh and try again.";
     default:
       return "We couldn't save that change.";
@@ -70,7 +66,7 @@ export async function toggleFavoriteAction(
   try {
     const user = await requireUser();
     const { favorited } = await toggleFavorite(parsed.data.recipeId, user);
-    revalidatePath("/collections");
+    revalidatePath('/collections');
     if (parsed.data.recipeSlug) {
       await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     }
@@ -89,7 +85,7 @@ export async function createCollectionAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -97,7 +93,7 @@ export async function createCollectionAction(
   try {
     const user = await requireUser();
     const collection = await createCollection(parsed.data, user);
-    revalidatePath("/collections");
+    revalidatePath('/collections');
     return { ok: true, id: collection.id };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -114,7 +110,7 @@ export async function renameCollectionAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -122,7 +118,7 @@ export async function renameCollectionAction(
   try {
     const user = await requireUser();
     await renameCollection(id, parsed.data, user);
-    revalidatePath("/collections");
+    revalidatePath('/collections');
     revalidatePath(`/collections/${id}`);
     return { ok: true };
   } catch (error) {
@@ -130,15 +126,13 @@ export async function renameCollectionAction(
   }
 }
 
-export async function deleteCollectionAction(
-  id: string,
-): Promise<ActionResult> {
+export async function deleteCollectionAction(id: string): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   try {
     const user = await requireUser();
     await deleteCollection(id, user);
-    revalidatePath("/collections");
+    revalidatePath('/collections');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -169,12 +163,8 @@ export async function setCollectionVisibilityAction(
 
   try {
     const user = await requireUser();
-    const row = await setCollectionVisibility(
-      parsed.data.id,
-      parsed.data.visibility,
-      user,
-    );
-    revalidatePath("/collections");
+    const row = await setCollectionVisibility(parsed.data.id, parsed.data.visibility, user);
+    revalidatePath('/collections');
     revalidatePath(`/collections/${id}`);
     return {
       ok: true,
@@ -198,12 +188,8 @@ export async function addRecipeToCollectionAction(
 
   try {
     const user = await requireUser();
-    await addRecipeToCollection(
-      parsed.data.collectionId,
-      parsed.data.recipeId,
-      user,
-    );
-    revalidatePath("/collections");
+    await addRecipeToCollection(parsed.data.collectionId, parsed.data.recipeId, user);
+    revalidatePath('/collections');
     revalidatePath(`/collections/${parsed.data.collectionId}`);
     return { ok: true };
   } catch (error) {
@@ -223,12 +209,8 @@ export async function removeRecipeFromCollectionAction(
 
   try {
     const user = await requireUser();
-    await removeRecipeFromCollection(
-      parsed.data.collectionId,
-      parsed.data.recipeId,
-      user,
-    );
-    revalidatePath("/collections");
+    await removeRecipeFromCollection(parsed.data.collectionId, parsed.data.recipeId, user);
+    revalidatePath('/collections');
     revalidatePath(`/collections/${parsed.data.collectionId}`);
     return { ok: true };
   } catch (error) {
@@ -248,12 +230,8 @@ export async function shareCollectionWithGroupAction(
 
   try {
     const user = await requireUser();
-    await shareCollectionWithGroup(
-      parsed.data.collectionId,
-      parsed.data.groupId,
-      user,
-    );
-    revalidatePath("/collections");
+    await shareCollectionWithGroup(parsed.data.collectionId, parsed.data.groupId, user);
+    revalidatePath('/collections');
     revalidatePath(`/collections/${parsed.data.collectionId}`);
     return { ok: true };
   } catch (error) {
@@ -273,12 +251,8 @@ export async function unshareCollectionWithGroupAction(
 
   try {
     const user = await requireUser();
-    await unshareCollectionWithGroup(
-      parsed.data.collectionId,
-      parsed.data.groupId,
-      user,
-    );
-    revalidatePath("/collections");
+    await unshareCollectionWithGroup(parsed.data.collectionId, parsed.data.groupId, user);
+    revalidatePath('/collections');
     revalidatePath(`/collections/${parsed.data.collectionId}`);
     return { ok: true };
   } catch (error) {

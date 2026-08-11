@@ -1,18 +1,11 @@
-import { type Metadata } from "next";
-import { type ReactNode } from "react";
-import Link from "next/link";
-import { getLocale, getTranslations } from "next-intl/server";
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Printer,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { type Metadata } from 'next';
+import { type ReactNode } from 'react';
+import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { CalendarDays, ChevronLeft, ChevronRight, Printer, UserRound, Users } from 'lucide-react';
 
-import { getCurrentUser, isAuthConfigured } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
 import {
   listEntriesInRange,
   listEntriesWithPrepText,
@@ -23,16 +16,16 @@ import {
   type PlannableRecipe,
   type PlannerEntry,
   type ViewerGroup,
-} from "~/server/planner/queries";
-import { recipeAllergenMap } from "~/server/recipes/queries";
-import { listMemberProfiles } from "~/server/dietary/queries";
-import { isAllergen, type Allergen } from "~/lib/allergens";
-import { type ActiveMemberOption } from "~/lib/dietary-match";
+} from '~/server/planner/queries';
+import { recipeAllergenMap } from '~/server/recipes/queries';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { isAllergen, type Allergen } from '~/lib/allergens';
+import { type ActiveMemberOption } from '~/lib/dietary-match';
 import {
   buildPrepAheadReminders,
   type PlannedPrepRecipe,
   type PrepAheadReminder,
-} from "~/lib/prep-ahead";
+} from '~/lib/prep-ahead';
 import {
   formatDayName,
   formatDayNumber,
@@ -46,23 +39,23 @@ import {
   toDateParam,
   todayParam,
   tomorrowParam,
-} from "~/server/planner/week";
-import { Button } from "~/components/ui/button";
-import { PrepAheadNote } from "~/components/planner/prep-ahead-note";
-import { CopyLastWeekButton } from "~/components/planner/copy-last-week-button";
-import { BuildShoppingListButton } from "~/components/planner/build-shopping-list-button";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+} from '~/server/planner/week';
+import { Button } from '~/components/ui/button';
+import { PrepAheadNote } from '~/components/planner/prep-ahead-note';
+import { CopyLastWeekButton } from '~/components/planner/copy-last-week-button';
+import { BuildShoppingListButton } from '~/components/planner/build-shopping-list-button';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 import {
   PlannerBoard,
   PlannerEmptyState,
   type BoardDay,
   type BoardEntry,
   type BoardRecipe,
-} from "~/components/planner/planner-board";
+} from '~/components/planner/planner-board';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
-  return { title: t("plan.title") };
+  const t = await getTranslations('metadata');
+  return { title: t('plan.title') };
 }
 
 async function PlanPage({
@@ -72,7 +65,7 @@ async function PlanPage({
 }) {
   const { week, scope } = await searchParams;
   const locale = await getLocale();
-  const t = await getTranslations("planner.page");
+  const t = await getTranslations('planner.page');
   const focusDate = parseDateParam(week);
   const { start, end, days } = getPlannerWeek(focusDate, locale);
   const startParam = toDateParam(start);
@@ -96,9 +89,7 @@ async function PlanPage({
     // a slug the viewer isn't a member of, falls back to the personal plane, so
     // membership is enforced here, not just hidden.
     activeGroup =
-      scope != null
-        ? (viewerGroups.find((group) => group.slug === scope) ?? null)
-        : null;
+      scope != null ? (viewerGroups.find((group) => group.slug === scope) ?? null) : null;
     const isGroupScope = activeGroup != null;
 
     const tomorrow = tomorrowParam();
@@ -108,9 +99,7 @@ async function PlanPage({
         : listEntriesInRange(user.id, startParam, endParam),
       listPlannableRecipes(user),
       listMemberProfiles(user.id),
-      isGroupScope
-        ? Promise.resolve([])
-        : listEntriesWithPrepText(user.id, tomorrow),
+      isGroupScope ? Promise.resolve([]) : listEntriesWithPrepText(user.id, tomorrow),
     ]);
     entries = entryRows ?? [];
     recipes = recipeRows;
@@ -141,9 +130,7 @@ async function PlanPage({
         dayLabel: tomorrowLabel,
         texts: [
           ...recipe.steps.map((step) => step.instruction),
-          ...recipe.ingredients.map((ing) =>
-            [ing.item, ing.note].filter(Boolean).join(" "),
-          ),
+          ...recipe.ingredients.map((ing) => [ing.item, ing.note].filter(Boolean).join(' ')),
         ],
       });
     }
@@ -168,8 +155,8 @@ async function PlanPage({
     servingsMade: entry.servingsMade,
     leftoverSourceId: entry.leftoverSourceId,
     author:
-      "user" in entry && entry.user
-        ? { id: entry.user.id, name: entry.user.name ?? t("familyMember") }
+      'user' in entry && entry.user
+        ? { id: entry.user.id, name: entry.user.name ?? t('familyMember') }
         : null,
     recipe: entry.recipe
       ? {
@@ -196,29 +183,21 @@ async function PlanPage({
       <header className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-primary">
           <CalendarDays className="size-5" aria-hidden="true" />
-          <span className="text-sm font-semibold uppercase tracking-wide">
-            {t("kicker")}
-          </span>
+          <span className="text-sm font-semibold uppercase tracking-wide">{t('kicker')}</span>
         </div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight">
               {formatWeekRange(start, end, locale)}
             </h1>
-            <p className="mt-1 text-muted-foreground">{t("description")}</p>
+            <p className="mt-1 text-muted-foreground">{t('description')}</p>
           </div>
-          <nav
-            className="flex flex-wrap items-center gap-2"
-            aria-label={t("a11y.weekNavigation")}
-          >
+          <nav className="flex flex-wrap items-center gap-2" aria-label={t('a11y.weekNavigation')}>
             {dbConfigured && user && (
               <CopyLastWeekButton week={startParam} groupId={activeGroup?.id} />
             )}
             {dbConfigured && user && (
-              <BuildShoppingListButton
-                week={startParam}
-                groupId={activeGroup?.id}
-              />
+              <BuildShoppingListButton week={startParam} groupId={activeGroup?.id} />
             )}
             {dbConfigured && user && (
               <Button asChild variant="outline">
@@ -229,16 +208,11 @@ async function PlanPage({
                       : `/plan/print?week=${startParam}`
                   }
                 >
-                  <Printer /> {t("printWeek")}
+                  <Printer /> {t('printWeek')}
                 </Link>
               </Button>
             )}
-            <Button
-              asChild
-              variant="outline"
-              size="icon"
-              aria-label={t("a11y.previousWeek")}
-            >
+            <Button asChild variant="outline" size="icon" aria-label={t('a11y.previousWeek')}>
               <Link
                 href={
                   activeGroup
@@ -257,15 +231,10 @@ async function PlanPage({
                     : `/plan?week=${todayParam()}`
                 }
               >
-                {t("thisWeek")}
+                {t('thisWeek')}
               </Link>
             </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="icon"
-              aria-label={t("a11y.nextWeek")}
-            >
+            <Button asChild variant="outline" size="icon" aria-label={t('a11y.nextWeek')}>
               <Link
                 href={
                   activeGroup
@@ -283,19 +252,11 @@ async function PlanPage({
           <div
             className="flex flex-wrap items-center gap-1.5"
             role="tablist"
-            aria-label={t("a11y.planScope")}
+            aria-label={t('a11y.planScope')}
           >
-            <Button
-              asChild
-              size="sm"
-              variant={isGroupScope ? "outline" : "default"}
-            >
-              <Link
-                href={`/plan?week=${startParam}`}
-                role="tab"
-                aria-selected={!isGroupScope}
-              >
-                <UserRound /> {t("myPlan")}
+            <Button asChild size="sm" variant={isGroupScope ? 'outline' : 'default'}>
+              <Link href={`/plan?week=${startParam}`} role="tab" aria-selected={!isGroupScope}>
+                <UserRound /> {t('myPlan')}
               </Link>
             </Button>
             {viewerGroups.map((group) => (
@@ -303,7 +264,7 @@ async function PlanPage({
                 key={group.id}
                 asChild
                 size="sm"
-                variant={activeGroup?.id === group.id ? "default" : "outline"}
+                variant={activeGroup?.id === group.id ? 'default' : 'outline'}
               >
                 <Link
                   href={`/plan?scope=${group.slug}&week=${startParam}`}
@@ -332,9 +293,7 @@ async function PlanPage({
             members={members}
             groupId={activeGroup?.id ?? null}
           />
-          {boardEntries.length === 0 && (
-            <PlannerEmptyState groupName={activeGroup?.name ?? null} />
-          )}
+          {boardEntries.length === 0 && <PlannerEmptyState groupName={activeGroup?.name ?? null} />}
         </>
       )}
     </div>
@@ -342,19 +301,15 @@ async function PlanPage({
 }
 
 async function ConnectDbNotice() {
-  const t = await getTranslations("dbNotice");
+  const t = await getTranslations('dbNotice');
   return (
     <div className="rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <p className="mx-auto max-w-md">
-        {t.rich("plan", {
+        {t.rich('plan', {
           code: (chunks: ReactNode) => (
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-              {chunks}
-            </code>
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{chunks}</code>
           ),
-          file: (chunks: ReactNode) => (
-            <code className="font-mono text-sm">{chunks}</code>
-          ),
+          file: (chunks: ReactNode) => <code className="font-mono text-sm">{chunks}</code>,
         })}
       </p>
     </div>
@@ -362,17 +317,15 @@ async function ConnectDbNotice() {
 }
 
 async function SignInNudge() {
-  const t = await getTranslations("planner.page.signIn");
+  const t = await getTranslations('planner.page.signIn');
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
       <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
         <CalendarDays className="size-7" aria-hidden="true" />
       </span>
       <div>
-        <h2 className="font-display text-2xl font-bold tracking-tight">
-          {t("title")}
-        </h2>
-        <p className="mt-2 text-muted-foreground">{t("body")}</p>
+        <h2 className="font-display text-2xl font-bold tracking-tight">{t('title')}</h2>
+        <p className="mt-2 text-muted-foreground">{t('body')}</p>
       </div>
     </div>
   );

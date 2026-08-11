@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
-import { LogIn, UserPlus, Users } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
+import { LogIn, UserPlus, Users } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import { acceptInviteLinkAction } from "~/server/groups/actions";
-import { track } from "~/lib/analytics";
-import { Button } from "~/components/ui/button";
+import { acceptInviteLinkAction } from '~/server/groups/actions';
+import { track } from '~/lib/analytics';
+import { Button } from '~/components/ui/button';
 
 /**
  * The interactive half of the `/join/[token]` page (issue #343).
@@ -34,9 +34,9 @@ export function JoinGroupPanel({
   authConfigured: boolean;
 }) {
   const router = useRouter();
-  const t = useTranslations("groups.join");
+  const t = useTranslations('groups.join');
   const searchParams = useSearchParams();
-  const shouldAutoJoin = searchParams.get("auto") === "1";
+  const shouldAutoJoin = searchParams.get('auto') === '1';
   const [isPending, startTransition] = React.useTransition();
   const autoJoined = React.useRef(false);
 
@@ -49,8 +49,8 @@ export function JoinGroupPanel({
         }
         toast.success(
           result.alreadyMember
-            ? t("toast.alreadyMember", { group: groupName })
-            : t("toast.joined", { group: groupName }),
+            ? t('toast.alreadyMember', { group: groupName })
+            : t('toast.joined', { group: groupName }),
         );
         router.push(`/groups/${result.slug}`);
       });
@@ -69,7 +69,7 @@ export function JoinGroupPanel({
     return (
       <Button size="lg" className="w-full" onClick={join} disabled={isPending}>
         <Users />
-        {isPending ? t("joining") : t("join", { group: groupName })}
+        {isPending ? t('joining') : t('join', { group: groupName })}
       </Button>
     );
   }
@@ -79,29 +79,21 @@ export function JoinGroupPanel({
   const returnTo = `/join/${token}?auto=1`;
 
   if (!authConfigured) {
-    return (
-      <p className="text-center text-sm text-muted-foreground">
-        {t("signInRequired")}
-      </p>
-    );
+    return <p className="text-center text-sm text-muted-foreground">{t('signInRequired')}</p>;
   }
 
   return (
     <div className="flex flex-col gap-2">
       <SignUpButton mode="modal" forceRedirectUrl={returnTo}>
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={() => track("signup_started", {})}
-        >
+        <Button size="lg" className="w-full" onClick={() => track('signup_started', {})}>
           <UserPlus />
-          {t("signUpAndJoin")}
+          {t('signUpAndJoin')}
         </Button>
       </SignUpButton>
       <SignInButton mode="modal" forceRedirectUrl={returnTo}>
         <Button size="lg" variant="outline" className="w-full">
           <LogIn />
-          {t("alreadyHaveAccount")}
+          {t('alreadyHaveAccount')}
         </Button>
       </SignInButton>
     </div>

@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { cookLogEntries, groupMembers, recipes } from "~/server/db/schema";
-import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
+import { db, isDbConfigured } from '~/server/db';
+import { cookLogEntries, groupMembers, recipes } from '~/server/db/schema';
+import { filterBlocked, getHiddenAuthorIds } from '~/server/moderation/blocks';
 
 /** A single cook-log entry, shaped for rendering a timeline row. */
 export type CookLogItem = {
@@ -36,10 +36,7 @@ export async function getRecipeCookLog(
 ): Promise<CookLogItem[]> {
   if (!isDbConfigured() || !userId) return [];
   const rows = await db.query.cookLogEntries.findMany({
-    where: and(
-      eq(cookLogEntries.recipeId, recipeId),
-      eq(cookLogEntries.userId, userId),
-    ),
+    where: and(eq(cookLogEntries.recipeId, recipeId), eq(cookLogEntries.userId, userId)),
     orderBy: [desc(cookLogEntries.cookedAt)],
     columns: {
       id: true,
@@ -53,28 +50,17 @@ export async function getRecipeCookLog(
 }
 
 /** How many times the viewer has cooked a recipe. */
-export async function getCookCount(
-  recipeId: string,
-  userId: string | null,
-): Promise<number> {
+export async function getCookCount(recipeId: string, userId: string | null): Promise<number> {
   if (!isDbConfigured() || !userId) return 0;
   const [row] = await db
     .select({ value: count() })
     .from(cookLogEntries)
-    .where(
-      and(
-        eq(cookLogEntries.recipeId, recipeId),
-        eq(cookLogEntries.userId, userId),
-      ),
-    );
+    .where(and(eq(cookLogEntries.recipeId, recipeId), eq(cookLogEntries.userId, userId)));
   return row?.value ?? 0;
 }
 
 /** The viewer's most recent cooks across every recipe (their journal feed). */
-export async function getMyRecentCooks(
-  userId: string,
-  limit = 24,
-): Promise<RecentCookItem[]> {
+export async function getMyRecentCooks(userId: string, limit = 24): Promise<RecentCookItem[]> {
   if (!isDbConfigured()) return [];
   const rows = await db.query.cookLogEntries.findMany({
     where: eq(cookLogEntries.userId, userId),
@@ -212,9 +198,7 @@ export type CookedRecipeOption = { id: string; title: string };
  * The distinct recipes the viewer has ever cooked, alphabetical, to populate
  * the journal recipe filter (#364).
  */
-export async function getCookedRecipeOptions(
-  userId: string,
-): Promise<CookedRecipeOption[]> {
+export async function getCookedRecipeOptions(userId: string): Promise<CookedRecipeOption[]> {
   if (!isDbConfigured()) return [];
   const rows = await db
     .select({ id: recipes.id, title: recipes.title })
@@ -258,10 +242,7 @@ export async function getShareableGroupForRecipe(
   if (!recipe?.groupId || !recipe.group) return null;
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, recipe.groupId),
-      eq(groupMembers.userId, userId),
-    ),
+    where: and(eq(groupMembers.groupId, recipe.groupId), eq(groupMembers.userId, userId)),
     columns: { id: true },
   });
   if (!membership) return null;
@@ -287,10 +268,7 @@ export async function getFamilyCooks(
   if (!recipe?.groupId) return [];
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, recipe.groupId),
-      eq(groupMembers.userId, userId),
-    ),
+    where: and(eq(groupMembers.groupId, recipe.groupId), eq(groupMembers.userId, userId)),
     columns: { id: true },
   });
   if (!membership) return [];
@@ -313,13 +291,11 @@ export async function getFamilyCooks(
   // Block filtering (#355): drop cooks shared by a member the viewer has
   // blocked (or who blocked them), mirroring getGroupActivity.
   const hiddenAuthorIds = await getHiddenAuthorIds(userId);
-  return filterBlocked(rows, (row) => row.user?.id, hiddenAuthorIds).map(
-    (row) => ({
-      id: row.id,
-      cookedAt: row.cookedAt,
-      note: row.note,
-      photoUrl: row.photoUrl,
-      cook: row.user ?? null,
-    }),
-  );
+  return filterBlocked(rows, (row) => row.user?.id, hiddenAuthorIds).map((row) => ({
+    id: row.id,
+    cookedAt: row.cookedAt,
+    note: row.note,
+    photoUrl: row.photoUrl,
+    cook: row.user ?? null,
+  }));
 }

@@ -1,13 +1,9 @@
-"use server";
+'use server';
 
-import { getCurrentUser } from "~/server/auth";
-import { parseRatingSort, type RatingSort } from "~/lib/ratings";
-import { type Paginated } from "./pagination";
-import {
-  listLibraryRecipeIds,
-  listPublicRecipes,
-  type PublicRecipeListItem,
-} from "./queries";
+import { getCurrentUser } from '~/server/auth';
+import { parseRatingSort, type RatingSort } from '~/lib/ratings';
+import { type Paginated } from './pagination';
+import { listLibraryRecipeIds, listPublicRecipes, type PublicRecipeListItem } from './queries';
 
 /**
  * Safety cap on how many raw discover pages a single "Load more" will pull while
@@ -34,7 +30,7 @@ const MAX_LOAD_MORE_PAGES = 20;
  */
 export async function loadMorePublicRecipesAction(
   offset: number,
-  sort: RatingSort = "recent",
+  sort: RatingSort = 'recent',
 ): Promise<Paginated<PublicRecipeListItem>> {
   const safeSort = parseRatingSort(sort);
   const user = await getCurrentUser();

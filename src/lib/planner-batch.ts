@@ -15,7 +15,7 @@ export type BatchMultiple = (typeof BATCH_MULTIPLES)[number];
 
 /** Matches the planner `note` column limit / Drizzle varchar(300). */
 const MAX_NOTE = 300;
-const LEFTOVERS_PREFIX = "Leftovers · ";
+const LEFTOVERS_PREFIX = 'Leftovers · ';
 const BATCH_SUFFIX = /\s·\s(\d+)×\sbatch$/;
 
 export type LeftoversInfo = { title: string; multiple: BatchMultiple };
@@ -31,19 +31,16 @@ export function normalizeBatchMultiple(value: number): BatchMultiple {
  * print/export) yet unambiguously parseable back into {title, multiple}.
  */
 export function formatLeftoversNote(title: string, multiple: number): string {
-  const clean = title.trim().replace(/\s+/g, " ") || "recipe";
+  const clean = title.trim().replace(/\s+/g, ' ') || 'recipe';
   const mult = normalizeBatchMultiple(multiple);
   const suffix = ` · ${mult}× batch`;
   const room = MAX_NOTE - LEFTOVERS_PREFIX.length - suffix.length;
-  const name =
-    clean.length > room ? clean.slice(0, Math.max(1, room)).trim() : clean;
+  const name = clean.length > room ? clean.slice(0, Math.max(1, room)).trim() : clean;
   return `${LEFTOVERS_PREFIX}${name}${suffix}`;
 }
 
 /** Parse a leftovers note back to its parts, or null if it isn't one. */
-export function parseLeftoversNote(
-  note: string | null | undefined,
-): LeftoversInfo | null {
+export function parseLeftoversNote(note: string | null | undefined): LeftoversInfo | null {
   if (!note?.startsWith(LEFTOVERS_PREFIX)) return null;
   const match = BATCH_SUFFIX.exec(note);
   if (!match) return null;

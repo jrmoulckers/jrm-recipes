@@ -13,7 +13,7 @@
  */
 
 /** Tag applied to every cached public recipe list entry (discover + library). */
-export const PUBLIC_RECIPES_TAG = "recipes:public";
+export const PUBLIC_RECIPES_TAG = 'recipes:public';
 
 /** Everything cached about a single recipe entity. */
 export function recipeTag(id: string): `recipe:${string}` {

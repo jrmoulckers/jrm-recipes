@@ -1,7 +1,7 @@
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -34,21 +34,21 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 function loadingSemantics(decorative: boolean, label: string) {
   return decorative
-    ? ({ "aria-hidden": true } as const)
-    : ({ role: "status", "aria-busy": true, "aria-label": label } as const);
+    ? ({ 'aria-hidden': true } as const)
+    : ({ role: 'status', 'aria-busy': true, 'aria-label': label } as const);
 }
 
 function Skeleton({
   className,
   shimmer = true,
   decorative = false,
-  label = "Loading…",
+  label = 'Loading…',
   ...props
 }: SkeletonProps) {
   return (
     <div
       {...loadingSemantics(decorative, label)}
-      className={cn("relative overflow-hidden rounded-lg bg-muted", className)}
+      className={cn('relative overflow-hidden rounded-lg bg-muted', className)}
       {...props}
     >
       {shimmer ? (
@@ -69,12 +69,12 @@ function Skeleton({
  * status on its root and marks its inner blocks decorative.
  */
 function RecipeCardSkeleton() {
-  const t = useTranslations("common");
+  const t = useTranslations('common');
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label={t("loadingRecipe")}
+      aria-label={t('loadingRecipe')}
       className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token"
     >
       <Skeleton decorative className="aspect-[16/10] w-full rounded-none" />
@@ -93,12 +93,12 @@ function RecipeCardSkeleton() {
 }
 
 function ListRowSkeleton() {
-  const t = useTranslations("common");
+  const t = useTranslations('common');
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label={t("loading")}
+      aria-label={t('loading')}
       className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-token"
     >
       <Skeleton decorative className="size-20 shrink-0 rounded-lg" />

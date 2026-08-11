@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Inbox, Plus, Search, Trash2 } from "lucide-react";
+import * as React from 'react';
+import { Inbox, Plus, Search, Trash2 } from 'lucide-react';
 
-import { useTheme } from "~/components/theme/theme-provider";
-import { ThemeSwitcher } from "~/components/theme/theme-switcher";
-import { ThemeSwatch } from "~/components/theme/theme-swatch";
-import { UI_THEMES } from "~/config/themes";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { useTheme } from '~/components/theme/theme-provider';
+import { ThemeSwitcher } from '~/components/theme/theme-switcher';
+import { ThemeSwatch } from '~/components/theme/theme-swatch';
+import { UI_THEMES } from '~/config/themes';
+import { Avatar, AvatarFallback } from '~/components/ui/avatar';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from '~/components/ui/card';
 import {
   Dialog,
   DialogClose,
@@ -27,7 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,41 +35,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { EmptyState } from "~/components/ui/empty-state";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/components/ui/dropdown-menu';
+import { EmptyState } from '~/components/ui/empty-state';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Separator } from "~/components/ui/separator";
-import {
-  ListRowSkeleton,
-  RecipeCardSkeleton,
-  Skeleton,
-} from "~/components/ui/skeleton";
-import { Slider } from "~/components/ui/slider";
-import { Spinner } from "~/components/ui/spinner";
-import { Switch } from "~/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Textarea } from "~/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
-import { Heading, Text } from "~/components/ui/typography";
-import { cn } from "~/lib/utils";
+} from '~/components/ui/select';
+import { Separator } from '~/components/ui/separator';
+import { ListRowSkeleton, RecipeCardSkeleton, Skeleton } from '~/components/ui/skeleton';
+import { Slider } from '~/components/ui/slider';
+import { Spinner } from '~/components/ui/spinner';
+import { Switch } from '~/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { Textarea } from '~/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
+import { Heading, Text } from '~/components/ui/typography';
+import { cn } from '~/lib/utils';
 
 /**
  * Design-system gallery (issue #83). A dev/reference route. Deliberately NOT
@@ -83,11 +70,9 @@ import { cn } from "~/lib/utils";
 /** Read a CSS custom property off <html>, re-reading when mode/scheme change. */
 function useCssVar(name: string): string {
   const { theme, resolvedScheme } = useTheme();
-  const [value, setValue] = React.useState("");
+  const [value, setValue] = React.useState('');
   React.useEffect(() => {
-    const raw = getComputedStyle(document.documentElement)
-      .getPropertyValue(name)
-      .trim();
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     setValue(raw);
   }, [name, theme, resolvedScheme]);
   return value;
@@ -97,7 +82,7 @@ function VarValue({ name }: { name: string }) {
   const value = useCssVar(name);
   return (
     <code className="block truncate font-mono text-xs text-muted-foreground">
-      {value || "\u00a0"}
+      {value || '\u00a0'}
     </code>
   );
 }
@@ -133,135 +118,135 @@ const COLOR_SWATCHES: {
   text: string;
 }[] = [
   {
-    label: "background",
-    varName: "--background",
-    box: "bg-background",
-    text: "text-foreground",
+    label: 'background',
+    varName: '--background',
+    box: 'bg-background',
+    text: 'text-foreground',
   },
   {
-    label: "foreground",
-    varName: "--foreground",
-    box: "bg-foreground",
-    text: "text-background",
+    label: 'foreground',
+    varName: '--foreground',
+    box: 'bg-foreground',
+    text: 'text-background',
   },
   {
-    label: "surface",
-    varName: "--surface",
-    box: "bg-surface",
-    text: "text-surface-foreground",
+    label: 'surface',
+    varName: '--surface',
+    box: 'bg-surface',
+    text: 'text-surface-foreground',
   },
   {
-    label: "surface-muted",
-    varName: "--surface-muted",
-    box: "bg-surface-muted",
-    text: "text-surface-foreground",
+    label: 'surface-muted',
+    varName: '--surface-muted',
+    box: 'bg-surface-muted',
+    text: 'text-surface-foreground',
   },
   {
-    label: "card",
-    varName: "--card",
-    box: "bg-card",
-    text: "text-card-foreground",
+    label: 'card',
+    varName: '--card',
+    box: 'bg-card',
+    text: 'text-card-foreground',
   },
   {
-    label: "popover",
-    varName: "--popover",
-    box: "bg-popover",
-    text: "text-popover-foreground",
+    label: 'popover',
+    varName: '--popover',
+    box: 'bg-popover',
+    text: 'text-popover-foreground',
   },
   {
-    label: "primary",
-    varName: "--primary",
-    box: "bg-primary",
-    text: "text-primary-foreground",
+    label: 'primary',
+    varName: '--primary',
+    box: 'bg-primary',
+    text: 'text-primary-foreground',
   },
   {
-    label: "secondary",
-    varName: "--secondary",
-    box: "bg-secondary",
-    text: "text-secondary-foreground",
+    label: 'secondary',
+    varName: '--secondary',
+    box: 'bg-secondary',
+    text: 'text-secondary-foreground',
   },
   {
-    label: "muted",
-    varName: "--muted",
-    box: "bg-muted",
-    text: "text-muted-foreground",
+    label: 'muted',
+    varName: '--muted',
+    box: 'bg-muted',
+    text: 'text-muted-foreground',
   },
   {
-    label: "accent",
-    varName: "--accent",
-    box: "bg-accent",
-    text: "text-accent-foreground",
+    label: 'accent',
+    varName: '--accent',
+    box: 'bg-accent',
+    text: 'text-accent-foreground',
   },
   {
-    label: "destructive",
-    varName: "--destructive",
-    box: "bg-destructive",
-    text: "text-destructive-foreground",
+    label: 'destructive',
+    varName: '--destructive',
+    box: 'bg-destructive',
+    text: 'text-destructive-foreground',
   },
   {
-    label: "success",
-    varName: "--success",
-    box: "bg-success",
-    text: "text-success-foreground",
+    label: 'success',
+    varName: '--success',
+    box: 'bg-success',
+    text: 'text-success-foreground',
   },
   {
-    label: "warning",
-    varName: "--warning",
-    box: "bg-warning",
-    text: "text-warning-foreground",
+    label: 'warning',
+    varName: '--warning',
+    box: 'bg-warning',
+    text: 'text-warning-foreground',
   },
   {
-    label: "info",
-    varName: "--info",
-    box: "bg-info",
-    text: "text-info-foreground",
+    label: 'info',
+    varName: '--info',
+    box: 'bg-info',
+    text: 'text-info-foreground',
   },
 ];
 
 const LINE_TOKENS: { label: string; varName: string; cls: string }[] = [
-  { label: "border", varName: "--border", cls: "border-4 border-border" },
-  { label: "input", varName: "--input", cls: "border-4 border-input" },
+  { label: 'border', varName: '--border', cls: 'border-4 border-border' },
+  { label: 'input', varName: '--input', cls: 'border-4 border-input' },
   {
-    label: "ring",
-    varName: "--ring",
-    cls: "ring-4 ring-ring ring-offset-2 ring-offset-background",
+    label: 'ring',
+    varName: '--ring',
+    cls: 'ring-4 ring-ring ring-offset-2 ring-offset-background',
   },
 ];
 
 const RADIUS_STEPS: { label: string; cls: string }[] = [
-  { label: "sm", cls: "rounded-sm" },
-  { label: "md", cls: "rounded-md" },
-  { label: "lg", cls: "rounded-lg" },
-  { label: "xl", cls: "rounded-xl" },
-  { label: "2xl", cls: "rounded-2xl" },
+  { label: 'sm', cls: 'rounded-sm' },
+  { label: 'md', cls: 'rounded-md' },
+  { label: 'lg', cls: 'rounded-lg' },
+  { label: 'xl', cls: 'rounded-xl' },
+  { label: '2xl', cls: 'rounded-2xl' },
 ];
 
 const ELEVATION_STEPS: { label: string; varName: string; cls: string }[] = [
-  { label: "token-sm", varName: "--shadow-sm", cls: "shadow-token-sm" },
-  { label: "token", varName: "--shadow", cls: "shadow-token" },
-  { label: "token-lg", varName: "--shadow-lg", cls: "shadow-token-lg" },
+  { label: 'token-sm', varName: '--shadow-sm', cls: 'shadow-token-sm' },
+  { label: 'token', varName: '--shadow', cls: 'shadow-token' },
+  { label: 'token-lg', varName: '--shadow-lg', cls: 'shadow-token-lg' },
 ];
 
 const BUTTON_VARIANTS = [
-  "default",
-  "secondary",
-  "accent",
-  "outline",
-  "ghost",
-  "destructive",
-  "link",
+  'default',
+  'secondary',
+  'accent',
+  'outline',
+  'ghost',
+  'destructive',
+  'link',
 ] as const;
 
 const BADGE_VARIANTS = [
-  "default",
-  "secondary",
-  "accent",
-  "success",
-  "warning",
-  "info",
-  "destructive",
-  "outline",
-  "muted",
+  'default',
+  'secondary',
+  'accent',
+  'success',
+  'warning',
+  'info',
+  'destructive',
+  'outline',
+  'muted',
 ] as const;
 
 export function DesignGallery() {
@@ -275,9 +260,8 @@ export function DesignGallery() {
             </Badge>
             <Heading level={1}>Design system</Heading>
             <Text variant="muted" className="max-w-2xl">
-              Every primitive and token in one place. Flip the mode and lighting
-              with the switcher to QA all five modes in light and dark. Nothing
-              here needs data, auth, or a database.
+              Every primitive and token in one place. Flip the mode and lighting with the switcher
+              to QA all five modes in light and dark. Nothing here needs data, auth, or a database.
             </Text>
           </div>
           <ThemeSwitcher />
@@ -297,7 +281,7 @@ export function DesignGallery() {
             >
               <div
                 className={cn(
-                  "flex h-16 items-center justify-center rounded-lg border border-border",
+                  'flex h-16 items-center justify-center rounded-lg border border-border',
                   t.box,
                   t.text,
                 )}
@@ -305,9 +289,7 @@ export function DesignGallery() {
                 <span className="text-sm font-medium">Aa</span>
               </div>
               <div className="px-1">
-                <p className="text-sm font-medium text-card-foreground">
-                  {t.label}
-                </p>
+                <p className="text-sm font-medium text-card-foreground">{t.label}</p>
                 <VarValue name={t.varName} />
               </div>
             </div>
@@ -320,14 +302,9 @@ export function DesignGallery() {
               key={t.label}
               className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3"
             >
-              <div
-                className={cn("h-12 rounded-lg bg-background", t.cls)}
-                aria-hidden="true"
-              />
+              <div className={cn('h-12 rounded-lg bg-background', t.cls)} aria-hidden="true" />
               <div>
-                <p className="text-sm font-medium text-card-foreground">
-                  {t.label}
-                </p>
+                <p className="text-sm font-medium text-card-foreground">{t.label}</p>
                 <VarValue name={t.varName} />
               </div>
             </div>
@@ -344,15 +321,10 @@ export function DesignGallery() {
           {RADIUS_STEPS.map((r) => (
             <div key={r.label} className="flex flex-col items-center gap-2">
               <div
-                className={cn(
-                  "bg-primary/12 size-20 border border-border",
-                  r.cls,
-                )}
+                className={cn('bg-primary/12 size-20 border border-border', r.cls)}
                 aria-hidden="true"
               />
-              <code className="font-mono text-xs text-muted-foreground">
-                rounded-{r.label}
-              </code>
+              <code className="font-mono text-xs text-muted-foreground">rounded-{r.label}</code>
             </div>
           ))}
         </div>
@@ -368,7 +340,7 @@ export function DesignGallery() {
             <div key={e.label} className="flex flex-col items-center gap-2">
               <div
                 className={cn(
-                  "flex size-24 items-center justify-center rounded-xl border border-border bg-card",
+                  'flex size-24 items-center justify-center rounded-xl border border-border bg-card',
                   e.cls,
                 )}
               >
@@ -401,11 +373,7 @@ export function DesignGallery() {
         </div>
       </Section>
 
-      <Section
-        id="buttons"
-        title="Buttons"
-        description="Variants, sizes, and states."
-      >
+      <Section id="buttons" title="Buttons" description="Variants, sizes, and states.">
         <div className="flex flex-wrap gap-3">
           {BUTTON_VARIANTS.map((v) => (
             <Button key={v} variant={v}>
@@ -434,11 +402,7 @@ export function DesignGallery() {
         </div>
       </Section>
 
-      <Section
-        id="badges"
-        title="Badges"
-        description="Status and emphasis variants."
-      >
+      <Section id="badges" title="Badges" description="Status and emphasis variants.">
         <div className="flex flex-wrap gap-2">
           {BADGE_VARIANTS.map((v) => (
             <Badge key={v} variant={v}>
@@ -453,14 +417,11 @@ export function DesignGallery() {
           <Card>
             <CardHeader>
               <CardTitle>Weeknight ragù</CardTitle>
-              <CardDescription>
-                Slow-simmered, freezer-friendly.
-              </CardDescription>
+              <CardDescription>Slow-simmered, freezer-friendly.</CardDescription>
             </CardHeader>
             <CardContent>
               <Text variant="muted">
-                Cards compose the Heading/Text primitives and tokenized
-                elevation.
+                Cards compose the Heading/Text primitives and tokenized elevation.
               </Text>
             </CardContent>
             <CardFooter className="gap-2">
@@ -484,11 +445,7 @@ export function DesignGallery() {
         </div>
       </Section>
 
-      <Section
-        id="forms"
-        title="Form controls"
-        description="Inputs, selects, and validation."
-      >
+      <Section id="forms" title="Form controls" description="Inputs, selects, and validation.">
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="dg-name">Name</Label>
@@ -498,11 +455,7 @@ export function DesignGallery() {
             <Label htmlFor="dg-search">With icon</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="dg-search"
-                className="ps-9"
-                placeholder="Search recipes"
-              />
+              <Input id="dg-search" className="ps-9" placeholder="Search recipes" />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -536,10 +489,7 @@ export function DesignGallery() {
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="dg-notes">Notes</Label>
-            <Textarea
-              id="dg-notes"
-              placeholder="Method, tweaks, family notes…"
-            />
+            <Textarea id="dg-notes" placeholder="Method, tweaks, family notes…" />
           </div>
         </div>
       </Section>
@@ -601,8 +551,7 @@ export function DesignGallery() {
               <DialogHeader>
                 <DialogTitle>Delete recipe?</DialogTitle>
                 <DialogDescription>
-                  This can&apos;t be undone. The recipe leaves every collection
-                  it&apos;s in.
+                  This can&apos;t be undone. The recipe leaves every collection it&apos;s in.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -658,17 +607,15 @@ export function DesignGallery() {
                 <TooltipTrigger asChild>
                   <Button variant="outline">Soft tip</Button>
                 </TooltipTrigger>
-                <TooltipContent variant="soft">
-                  A calmer surface-toned tooltip
-                </TooltipContent>
+                <TooltipContent variant="soft">A calmer surface-toned tooltip</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline">Multiline</Button>
                 </TooltipTrigger>
                 <TooltipContent multiline>
-                  A longer tooltip that wraps onto several lines to explain a
-                  control without truncating.
+                  A longer tooltip that wraps onto several lines to explain a control without
+                  truncating.
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -729,9 +676,7 @@ export function DesignGallery() {
           {UI_THEMES.map((t) => (
             <div key={t.id} className="flex flex-col items-center gap-2">
               <ThemeSwatch theme={t.id} size="lg" />
-              <code className="font-mono text-xs text-muted-foreground">
-                {t.id}
-              </code>
+              <code className="font-mono text-xs text-muted-foreground">{t.id}</code>
             </div>
           ))}
         </div>

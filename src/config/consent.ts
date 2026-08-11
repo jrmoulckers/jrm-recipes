@@ -8,13 +8,13 @@
  * runtime gate in `~/lib/analytics/consent`.
  */
 
-export const ANALYTICS_CONSENT_COOKIE = "heirloom-analytics-consent";
+export const ANALYTICS_CONSENT_COOKIE = 'heirloom-analytics-consent';
 
-export type ConsentStatus = "granted" | "denied" | "unset";
+export type ConsentStatus = 'granted' | 'denied' | 'unset';
 
 /** Parse a (decoded) cookie/localStorage value into a safe consent status. */
 export function parseConsent(raw: string | null | undefined): ConsentStatus {
-  return raw === "granted" || raw === "denied" ? raw : "unset";
+  return raw === 'granted' || raw === 'denied' ? raw : 'unset';
 }
 
 /** Serialize consent for the cookie/localStorage (round-trips with parseConsent). */

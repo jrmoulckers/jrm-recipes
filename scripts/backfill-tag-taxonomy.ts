@@ -13,9 +13,9 @@
  * Connection: prefers a direct (non-pooled) URL for the DML, mirroring
  * `scripts/migrate.mjs`.
  */
-import postgres from "postgres";
+import postgres from 'postgres';
 
-import { canonicalizeTag } from "../src/lib/tag-taxonomy";
+import { canonicalizeTag } from '../src/lib/tag-taxonomy';
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -23,7 +23,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[backfill-tags] No database URL set, nothing to do.");
+  console.log('[backfill-tags] No database URL set, nothing to do.');
   process.exit(0);
 }
 
@@ -84,7 +84,7 @@ main()
   .then(() => sql.end())
   .then(() => process.exit(0))
   .catch(async (error) => {
-    console.error("[backfill-tags] Failed:", error);
+    console.error('[backfill-tags] Failed:', error);
     await sql.end({ timeout: 5 }).catch(() => {});
     process.exit(1);
   });

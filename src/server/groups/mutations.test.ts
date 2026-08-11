@@ -1,26 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { transactionMock, getGroupSeatLimitMock } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
   getGroupSeatLimitMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: { transaction: transactionMock },
 }));
 
-vi.mock("~/server/billing/entitlements", () => ({
+vi.mock('~/server/billing/entitlements', () => ({
   getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
-import type { MemberRole, User } from "~/server/db/schema";
+import type { MemberRole, User } from '~/server/db/schema';
 import {
   addMember,
   deleteGroup,
   transferOwnership,
   updateGroup,
   updateMemberRole,
-} from "./mutations";
+} from './mutations';
 
 type Membership = {
   id: string;
@@ -29,7 +29,7 @@ type Membership = {
   groupId: string;
 } | null;
 
-const group = { id: "group_1", slug: "family", name: "Family" };
+const group = { id: 'group_1', slug: 'family', name: 'Family' };
 
 /**
  * Fake Drizzle transaction. `memberships` is consumed in call order for the
@@ -46,7 +46,7 @@ function fakeTx(opts: {
     set: vi.fn(() => chain),
     values: vi.fn(() => chain),
     where: vi.fn(() => chain),
-    returning: vi.fn(async () => [{ id: "row_1", slug: "family" }]),
+    returning: vi.fn(async () => [{ id: 'row_1', slug: 'family' }]),
   };
   const memberships = [...(opts.memberships ?? [])];
   return {
@@ -57,12 +57,12 @@ function fakeTx(opts: {
       },
       groupMembers: {
         findFirst: vi.fn(async (args?: { with?: unknown }) => {
-          if (args && "with" in args && args.with) {
+          if (args && 'with' in args && args.with) {
             return (
               opts.memberWithUser ?? {
-                id: "row_1",
-                role: "member",
-                user: { id: "u", name: "N", handle: "h", avatarUrl: null },
+                id: 'row_1',
+                role: 'member',
+                user: { id: 'u', name: 'N', handle: 'h', avatarUrl: null },
               }
             );
           }
@@ -91,219 +91,196 @@ beforeEach(() => {
   getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
-const owner = { id: "owner_1" } as unknown as User;
-const admin = { id: "admin_1" } as unknown as User;
-const targetUser = { id: "target_1", name: "Aunt Mary", handle: "aunt-mary" };
+const owner = { id: 'owner_1' } as unknown as User;
+const admin = { id: 'admin_1' } as unknown as User;
+const targetUser = { id: 'target_1', name: 'Aunt Mary', handle: 'aunt-mary' };
 
-describe("addMember role authorization (sp01)", () => {
-  it("lets an OWNER add a member directly as admin", async () => {
+describe('addMember role authorization (sp01)', () => {
+  it('lets an OWNER add a member directly as admin', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        null,
-      ],
+      memberships: [{ id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id }, null],
       targetUser,
       memberWithUser: {
-        id: "gm_new",
-        role: "admin",
+        id: 'gm_new',
+        role: 'admin',
         user: {
-          id: "target_1",
-          name: "Aunt Mary",
-          handle: "aunt-mary",
+          id: 'target_1',
+          name: 'Aunt Mary',
+          handle: 'aunt-mary',
           avatarUrl: null,
         },
       },
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, owner, "aunt-mary", "admin"),
-    ).resolves.toMatchObject({ role: "admin" });
+    await expect(addMember(group.slug, owner, 'aunt-mary', 'admin')).resolves.toMatchObject({
+      role: 'admin',
+    });
     expect(tx.insert).toHaveBeenCalled();
   });
 
-  it("forbids an ADMIN from minting a fellow admin", async () => {
+  it('forbids an ADMIN from minting a fellow admin', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }],
       targetUser,
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, admin, "aunt-mary", "admin"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(addMember(group.slug, admin, 'aunt-mary', 'admin')).rejects.toThrow('FORBIDDEN');
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("still lets an ADMIN add a regular member", async () => {
+  it('still lets an ADMIN add a regular member', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-        null,
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }, null],
       targetUser,
       memberWithUser: {
-        id: "gm_new",
-        role: "member",
+        id: 'gm_new',
+        role: 'member',
         user: {
-          id: "target_1",
-          name: "Aunt Mary",
-          handle: "aunt-mary",
+          id: 'target_1',
+          name: 'Aunt Mary',
+          handle: 'aunt-mary',
           avatarUrl: null,
         },
       },
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, admin, "aunt-mary", "member"),
-    ).resolves.toMatchObject({ role: "member" });
+    await expect(addMember(group.slug, admin, 'aunt-mary', 'member')).resolves.toMatchObject({
+      role: 'member',
+    });
     expect(tx.insert).toHaveBeenCalled();
   });
 });
 
-describe("addMember seat enforcement (#325)", () => {
-  it("blocks adding a member beyond the seat limit with SEAT_LIMIT_REACHED", async () => {
+describe('addMember seat enforcement (#325)', () => {
+  it('blocks adding a member beyond the seat limit with SEAT_LIMIT_REACHED', async () => {
     getGroupSeatLimitMock.mockResolvedValue(2);
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        null,
-      ],
+      memberships: [{ id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id }, null],
       targetUser,
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, owner, "aunt-mary", "member"),
-    ).rejects.toThrow("SEAT_LIMIT_REACHED");
+    await expect(addMember(group.slug, owner, 'aunt-mary', 'member')).rejects.toThrow(
+      'SEAT_LIMIT_REACHED',
+    );
     expect(tx.insert).not.toHaveBeenCalled();
   });
 
-  it("allows an add that stays within the seat limit", async () => {
+  it('allows an add that stays within the seat limit', async () => {
     getGroupSeatLimitMock.mockResolvedValue(5);
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        null,
-      ],
+      memberships: [{ id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id }, null],
       targetUser,
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
       memberWithUser: {
-        id: "gm_new",
-        role: "member",
+        id: 'gm_new',
+        role: 'member',
         user: {
-          id: "target_1",
-          name: "Aunt Mary",
-          handle: "aunt-mary",
+          id: 'target_1',
+          name: 'Aunt Mary',
+          handle: 'aunt-mary',
           avatarUrl: null,
         },
       },
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, owner, "aunt-mary", "member"),
-    ).resolves.toMatchObject({ role: "member" });
+    await expect(addMember(group.slug, owner, 'aunt-mary', 'member')).resolves.toMatchObject({
+      role: 'member',
+    });
     expect(tx.insert).toHaveBeenCalled();
   });
 
-  it("never counts a kid against seats, even at the limit", async () => {
+  it('never counts a kid against seats, even at the limit', async () => {
     getGroupSeatLimitMock.mockResolvedValue(2);
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        null,
-      ],
+      memberships: [{ id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id }, null],
       targetUser,
-      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      groupMemberRoles: [{ role: 'owner' }, { role: 'member' }],
       memberWithUser: {
-        id: "gm_kid",
-        role: "kid",
+        id: 'gm_kid',
+        role: 'kid',
         user: {
-          id: "target_1",
-          name: "Aunt Mary",
-          handle: "aunt-mary",
+          id: 'target_1',
+          name: 'Aunt Mary',
+          handle: 'aunt-mary',
           avatarUrl: null,
         },
       },
     });
     runWith(tx);
 
-    await expect(
-      addMember(group.slug, owner, "aunt-mary", "kid"),
-    ).resolves.toMatchObject({ role: "kid" });
+    await expect(addMember(group.slug, owner, 'aunt-mary', 'kid')).resolves.toMatchObject({
+      role: 'kid',
+    });
     expect(tx.insert).toHaveBeenCalled();
     // Kids ride free, so we don't even resolve the seat limit for them.
     expect(getGroupSeatLimitMock).not.toHaveBeenCalled();
   });
 });
 
-describe("updateMemberRole authorization (sp01)", () => {
-  it("lets an OWNER promote a member to admin", async () => {
+describe('updateMemberRole authorization (sp01)', () => {
+  it('lets an OWNER promote a member to admin', async () => {
     const tx = fakeTx({
       memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        { id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id },
         {
-          id: "gm_target",
-          role: "member",
-          userId: "target_1",
+          id: 'gm_target',
+          role: 'member',
+          userId: 'target_1',
           groupId: group.id,
         },
       ],
       memberWithUser: {
-        id: "gm_target",
-        role: "admin",
+        id: 'gm_target',
+        role: 'admin',
         user: {
-          id: "target_1",
-          name: "Aunt Mary",
-          handle: "aunt-mary",
+          id: 'target_1',
+          name: 'Aunt Mary',
+          handle: 'aunt-mary',
           avatarUrl: null,
         },
       },
     });
     runWith(tx);
 
-    await expect(
-      updateMemberRole(group.slug, owner, "target_1", "admin"),
-    ).resolves.toMatchObject({ role: "admin" });
+    await expect(updateMemberRole(group.slug, owner, 'target_1', 'admin')).resolves.toMatchObject({
+      role: 'admin',
+    });
   });
 
-  it("forbids an ADMIN from promoting anyone to admin", async () => {
+  it('forbids an ADMIN from promoting anyone to admin', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }],
     });
     runWith(tx);
 
-    await expect(
-      updateMemberRole(group.slug, admin, "target_1", "admin"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(updateMemberRole(group.slug, admin, 'target_1', 'admin')).rejects.toThrow(
+      'FORBIDDEN',
+    );
   });
 });
 
-describe("deleteGroup downgrades group recipes (sp03)", () => {
-  it("downgrades group-visibility recipes to private instead of orphaning them", async () => {
+describe('deleteGroup downgrades group recipes (sp03)', () => {
+  it('downgrades group-visibility recipes to private instead of orphaning them', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id }],
     });
     runWith(tx);
 
     await expect(deleteGroup(group.slug, owner)).resolves.toMatchObject({
-      slug: "family",
+      slug: 'family',
     });
 
     // The group's recipes are downgraded to private (and detached) in the same
     // transaction, before the group row is removed.
     expect(tx.update).toHaveBeenCalled();
     expect(tx.chain.set).toHaveBeenCalledWith({
-      visibility: "private",
+      visibility: 'private',
       groupId: null,
     });
     expect(tx.delete).toHaveBeenCalled();
@@ -316,52 +293,46 @@ describe("deleteGroup downgrades group recipes (sp03)", () => {
  * removed. The class of access-control regression that otherwise slips through
  * CI. Complements the positive role happy-paths above.
  */
-describe("group authz regression guards (i220)", () => {
-  it("forbids an OWNER from promoting anyone straight to owner (use transfer)", async () => {
+describe('group authz regression guards (i220)', () => {
+  it('forbids an OWNER from promoting anyone straight to owner (use transfer)', async () => {
     const tx = fakeTx({
       memberships: [
-        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        { id: 'gm_actor', role: 'owner', userId: owner.id, groupId: group.id },
         {
-          id: "gm_target",
-          role: "member",
-          userId: "target_1",
+          id: 'gm_target',
+          role: 'member',
+          userId: 'target_1',
           groupId: group.id,
         },
       ],
     });
     runWith(tx);
 
-    await expect(
-      updateMemberRole(group.slug, owner, "target_1", "owner"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(updateMemberRole(group.slug, owner, 'target_1', 'owner')).rejects.toThrow(
+      'FORBIDDEN',
+    );
     expect(tx.update).not.toHaveBeenCalled();
   });
 
   it("forbids an ADMIN from demoting/changing another member's role", async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }],
     });
     runWith(tx);
 
-    await expect(
-      updateMemberRole(group.slug, admin, "target_1", "member"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(updateMemberRole(group.slug, admin, 'target_1', 'member')).rejects.toThrow(
+      'FORBIDDEN',
+    );
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("forbids a NON-OWNER (admin) from transferring ownership", async () => {
+  it('forbids a NON-OWNER (admin) from transferring ownership', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }],
     });
     runWith(tx);
 
-    await expect(
-      transferOwnership(group.slug, admin, "target_1"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(transferOwnership(group.slug, admin, 'target_1')).rejects.toThrow('FORBIDDEN');
     expect(tx.update).not.toHaveBeenCalled();
   });
 
@@ -370,10 +341,10 @@ describe("group authz regression guards (i220)", () => {
     const tx = fakeTx({ memberships: [null] });
     runWith(tx);
 
-    const stranger = { id: "stranger_1" } as unknown as User;
-    await expect(
-      updateMemberRole(group.slug, stranger, "target_1", "admin"),
-    ).rejects.toThrow("FORBIDDEN");
+    const stranger = { id: 'stranger_1' } as unknown as User;
+    await expect(updateMemberRole(group.slug, stranger, 'target_1', 'admin')).rejects.toThrow(
+      'FORBIDDEN',
+    );
     expect(tx.update).not.toHaveBeenCalled();
   });
 });
@@ -383,63 +354,57 @@ describe("group authz regression guards (i220)", () => {
  * management action, not a membership one, so it stays behind `requireManager`:
  * a plain member with a valid image URL must still be refused.
  */
-describe("updateGroup avatar authorization (#659)", () => {
-  const AVATAR = "https://res.cloudinary.com/demo/image/upload/g.jpg";
+describe('updateGroup avatar authorization (#659)', () => {
+  const AVATAR = 'https://res.cloudinary.com/demo/image/upload/g.jpg';
 
-  it("lets an ADMIN change the group avatar", async () => {
+  it('lets an ADMIN change the group avatar', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_actor', role: 'admin', userId: admin.id, groupId: group.id }],
     });
     runWith(tx);
 
     await expect(
-      updateGroup(
-        group.slug,
-        { name: "Family", description: undefined, avatarUrl: AVATAR },
-        admin,
-      ),
+      updateGroup(group.slug, { name: 'Family', description: undefined, avatarUrl: AVATAR }, admin),
     ).resolves.toMatchObject({ slug: group.slug });
     expect(tx.update).toHaveBeenCalled();
   });
 
-  it("forbids a plain MEMBER from changing the group avatar", async () => {
+  it('forbids a plain MEMBER from changing the group avatar', async () => {
     const tx = fakeTx({
       memberships: [
         {
-          id: "gm_actor",
-          role: "member",
-          userId: "member_1",
+          id: 'gm_actor',
+          role: 'member',
+          userId: 'member_1',
           groupId: group.id,
         },
       ],
     });
     runWith(tx);
 
-    const member = { id: "member_1" } as unknown as User;
+    const member = { id: 'member_1' } as unknown as User;
     await expect(
       updateGroup(
         group.slug,
-        { name: "Family", description: undefined, avatarUrl: AVATAR },
+        { name: 'Family', description: undefined, avatarUrl: AVATAR },
         member,
       ),
-    ).rejects.toThrow("FORBIDDEN");
+    ).rejects.toThrow('FORBIDDEN');
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("forbids a NON-MEMBER from changing the group avatar", async () => {
+  it('forbids a NON-MEMBER from changing the group avatar', async () => {
     const tx = fakeTx({ memberships: [null] });
     runWith(tx);
 
-    const stranger = { id: "stranger_1" } as unknown as User;
+    const stranger = { id: 'stranger_1' } as unknown as User;
     await expect(
       updateGroup(
         group.slug,
-        { name: "Family", description: undefined, avatarUrl: AVATAR },
+        { name: 'Family', description: undefined, avatarUrl: AVATAR },
         stranger,
       ),
-    ).rejects.toThrow("FORBIDDEN");
+    ).rejects.toThrow('FORBIDDEN');
     expect(tx.update).not.toHaveBeenCalled();
   });
 });

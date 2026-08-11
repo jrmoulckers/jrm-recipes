@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, gte, inArray, or } from "drizzle-orm";
+import { and, eq, gte, inArray, or } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { groupMembers, recipes, users } from "~/server/db/schema";
-import { type DigestGroup, type DigestRecipe } from "./builder";
+import { db, isDbConfigured } from '~/server/db';
+import { groupMembers, recipes, users } from '~/server/db/schema';
+import { type DigestGroup, type DigestRecipe } from './builder';
 
 /** A user who has opted in to the weekly digest and can be emailed. */
 export interface DigestRecipient {

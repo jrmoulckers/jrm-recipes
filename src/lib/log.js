@@ -36,9 +36,9 @@ const LEVELS = { debug: 10, info: 20, warn: 30, error: 40, silent: 100 };
  * @returns {LogLevel}
  */
 function resolveLevel() {
-  const raw = (process.env.LOG_LEVEL ?? "").toLowerCase();
+  const raw = (process.env.LOG_LEVEL ?? '').toLowerCase();
   if (raw in LEVELS) return /** @type {LogLevel} */ (raw);
-  return process.env.NODE_ENV === "production" ? "info" : "debug";
+  return process.env.NODE_ENV === 'production' ? 'info' : 'debug';
 }
 
 /**
@@ -60,7 +60,7 @@ const SENSITIVE_VALUE = [
   /\beyJ[A-Za-z0-9._-]{10,}/g, // JWT-shaped tokens
 ];
 
-const REDACTED = "[REDACTED]";
+const REDACTED = '[REDACTED]';
 
 /**
  * Scrub secret-shaped substrings from a string value.
@@ -86,17 +86,17 @@ function scrubString(value) {
  */
 function redact(value, depth, seen) {
   if (value == null) return value;
-  if (typeof value === "string") return scrubString(value);
-  if (typeof value === "number" || typeof value === "boolean") return value;
-  if (typeof value === "bigint") return value.toString();
+  if (typeof value === 'string') return scrubString(value);
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (typeof value === 'bigint') return value.toString();
   if (value instanceof Error) {
     return { name: value.name, message: scrubString(value.message) };
   }
-  if (typeof value === "symbol") return value.toString();
-  if (typeof value === "function") return "[Function]";
-  if (typeof value !== "object") return "[Unserializable]";
-  if (depth >= 6) return "[Truncated]";
-  if (seen.has(value)) return "[Circular]";
+  if (typeof value === 'symbol') return value.toString();
+  if (typeof value === 'function') return '[Function]';
+  if (typeof value !== 'object') return '[Unserializable]';
+  if (depth >= 6) return '[Truncated]';
+  if (seen.has(value)) return '[Circular]';
   seen.add(value);
 
   if (Array.isArray(value)) {
@@ -106,9 +106,7 @@ function redact(value, depth, seen) {
   /** @type {Record<string, unknown>} */
   const out = {};
   for (const [key, val] of Object.entries(/** @type {object} */ (value))) {
-    out[key] = SENSITIVE_KEY.test(key)
-      ? REDACTED
-      : redact(val, depth + 1, seen);
+    out[key] = SENSITIVE_KEY.test(key) ? REDACTED : redact(val, depth + 1, seen);
   }
   return out;
 }
@@ -120,9 +118,7 @@ function redact(value, depth, seen) {
  * @returns {Record<string, unknown>}
  */
 export function redactFields(fields) {
-  return /** @type {Record<string, unknown>} */ (
-    redact(fields, 0, new WeakSet())
-  );
+  return /** @type {Record<string, unknown>} */ (redact(fields, 0, new WeakSet()));
 }
 
 /**
@@ -158,16 +154,16 @@ export function createLogger(base = {}) {
       ...boundBase,
       ...(fields ? redactFields(fields) : undefined),
     };
-    const line = JSON.stringify(entry) + "\n";
-    if (level === "warn" || level === "error") process.stderr.write(line);
+    const line = JSON.stringify(entry) + '\n';
+    if (level === 'warn' || level === 'error') process.stderr.write(line);
     else process.stdout.write(line);
   }
 
   return {
-    debug: (msg, fields) => emit("debug", msg, fields),
-    info: (msg, fields) => emit("info", msg, fields),
-    warn: (msg, fields) => emit("warn", msg, fields),
-    error: (msg, fields) => emit("error", msg, fields),
+    debug: (msg, fields) => emit('debug', msg, fields),
+    info: (msg, fields) => emit('info', msg, fields),
+    warn: (msg, fields) => emit('warn', msg, fields),
+    error: (msg, fields) => emit('error', msg, fields),
     child: (fields) => createLogger({ ...boundBase, ...fields }),
   };
 }

@@ -16,11 +16,7 @@
  * Deliberately dependency-free (no `next`, no DOM types) so it can be imported
  * from both server mutations and the WebWorker-typed service-worker bundle.
  */
-export const RESERVED_RECIPE_SLUGS: ReadonlySet<string> = new Set([
-  "new",
-  "cook-with",
-  "tags",
-]);
+export const RESERVED_RECIPE_SLUGS: ReadonlySet<string> = new Set(['new', 'cook-with', 'tags']);
 
 /** Whether `slug` collides with a non-recipe route under `/recipes/*`. */
 export function isReservedRecipeSlug(slug: string): boolean {

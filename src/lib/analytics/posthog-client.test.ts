@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Guards the privacy-relevant options passed to `posthog.init()` (#703).
@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const init = vi.fn();
 const analyticsKey = vi.fn<() => string | undefined>();
 
-vi.mock("posthog-js", () => ({
+vi.mock('posthog-js', () => ({
   default: {
     init,
     capture: vi.fn(),
@@ -33,16 +33,16 @@ vi.mock("posthog-js", () => ({
   },
 }));
 
-vi.mock("./config", () => ({
-  INGEST_PATH: "/ingest",
-  analyticsHost: () => "https://eu.posthog.com",
+vi.mock('./config', () => ({
+  INGEST_PATH: '/ingest',
+  analyticsHost: () => 'https://eu.posthog.com',
   analyticsKey: () => analyticsKey(),
 }));
 
 /** Re-import with fresh module state, since the module memoizes `initialized`. */
 async function initBackend() {
   vi.resetModules();
-  const { createPostHogBackend } = await import("./posthog-client");
+  const { createPostHogBackend } = await import('./posthog-client');
   return createPostHogBackend();
 }
 
@@ -54,15 +54,15 @@ async function initOptions(): Promise<Record<string, unknown>> {
 }
 
 beforeEach(() => {
-  analyticsKey.mockReturnValue("phc_test_key");
+  analyticsKey.mockReturnValue('phc_test_key');
 });
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("PostHog client. SDK-internal capture is off", () => {
-  it("disables autocapture explicitly, since it defaults to on (#703)", async () => {
+describe('PostHog client. SDK-internal capture is off', () => {
+  it('disables autocapture explicitly, since it defaults to on (#703)', async () => {
     const options = await initOptions();
 
     // Not `toBeFalsy()`: omitting the option leaves the vendor default of
@@ -70,56 +70,56 @@ describe("PostHog client. SDK-internal capture is off", () => {
     expect(options.autocapture).toBe(false);
   });
 
-  it("disables session recording explicitly", async () => {
+  it('disables session recording explicitly', async () => {
     const options = await initOptions();
 
     expect(options.disable_session_recording).toBe(true);
   });
 
-  it("emits pageviews manually rather than via the SDK", async () => {
+  it('emits pageviews manually rather than via the SDK', async () => {
     const options = await initOptions();
 
     expect(options.capture_pageview).toBe(false);
   });
 });
 
-describe("PostHog client. Privacy posture", () => {
-  it("keeps persistence in memory so no analytics cookies are set", async () => {
+describe('PostHog client. Privacy posture', () => {
+  it('keeps persistence in memory so no analytics cookies are set', async () => {
     const options = await initOptions();
 
-    expect(options.persistence).toBe("memory");
+    expect(options.persistence).toBe('memory');
   });
 
-  it("routes capture through the first-party ingest proxy", async () => {
+  it('routes capture through the first-party ingest proxy', async () => {
     const options = await initOptions();
 
-    expect(options.api_host).toBe("/ingest");
+    expect(options.api_host).toBe('/ingest');
   });
 
-  it("honors Do Not Track at the SDK level", async () => {
+  it('honors Do Not Track at the SDK level', async () => {
     const options = await initOptions();
 
     expect(options.respect_dnt).toBe(true);
   });
 
-  it("only creates person profiles once a user is identified", async () => {
+  it('only creates person profiles once a user is identified', async () => {
     const options = await initOptions();
 
-    expect(options.person_profiles).toBe("identified_only");
+    expect(options.person_profiles).toBe('identified_only');
   });
 });
 
-describe("PostHog client. Lifecycle", () => {
-  it("returns null and never loads the SDK when unconfigured", async () => {
+describe('PostHog client. Lifecycle', () => {
+  it('returns null and never loads the SDK when unconfigured', async () => {
     analyticsKey.mockReturnValue(undefined);
 
     await expect(initBackend()).resolves.toBeNull();
     expect(init).not.toHaveBeenCalled();
   });
 
-  it("initializes once even when called repeatedly", async () => {
+  it('initializes once even when called repeatedly', async () => {
     vi.resetModules();
-    const { createPostHogBackend } = await import("./posthog-client");
+    const { createPostHogBackend } = await import('./posthog-client');
 
     await createPostHogBackend();
     await createPostHogBackend();

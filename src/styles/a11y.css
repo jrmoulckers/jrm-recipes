@@ -15,10 +15,10 @@
   --a11y-text-mult: 1;
 }
 
-[data-text="large"] {
+[data-text='large'] {
   --a11y-text-mult: 1.15;
 }
-[data-text="xl"] {
+[data-text='xl'] {
   --a11y-text-mult: 1.32;
 }
 
@@ -26,11 +26,11 @@
  * High contrast. Push neutrals to the extremes, strengthen borders + rings.
  * Brand primary/accent are preserved on purpose (identity stays intact).
  * ------------------------------------------------------------------------- */
-[data-contrast="high"] {
+[data-contrast='high'] {
   --ring-width: 3px;
 }
 
-[data-contrast="high"]:not(.dark) {
+[data-contrast='high']:not(.dark) {
   --foreground: 0 0% 4%;
   --surface-foreground: 0 0% 4%;
   --card-foreground: 0 0% 4%;
@@ -41,7 +41,7 @@
   --ring: 0 0% 0%;
 }
 
-[data-contrast="high"].dark {
+[data-contrast='high'].dark {
   --foreground: 0 0% 100%;
   --surface-foreground: 0 0% 100%;
   --card-foreground: 0 0% 100%;
@@ -53,16 +53,16 @@
 }
 
 /* Make the (now stronger) border token actually show on every bordered box. */
-[data-contrast="high"] :where([class*="border"]) {
+[data-contrast='high'] :where([class*='border']) {
   border-color: hsl(var(--border));
 }
 
 /* ---------------------------------------------------------------------------
  * Reduced motion. User-forced, on top of the OS-level media query.
  * ------------------------------------------------------------------------- */
-[data-motion="reduced"] *,
-[data-motion="reduced"] *::before,
-[data-motion="reduced"] *::after {
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
@@ -76,21 +76,19 @@
  * with the app and works offline instead of relying on the reader having it
  * installed. The system-sans fallbacks cover the brief swap window.
  * ------------------------------------------------------------------------- */
-[data-reading="readable"] {
-  --font-body:
-    var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --font-display:
-    var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+[data-reading='readable'] {
+  --font-body: var(--font-atkinson), 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-atkinson), 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
 }
 
-[data-reading="readable"] body {
+[data-reading='readable'] body {
   letter-spacing: 0.012em;
   word-spacing: 0.08em;
   line-height: 1.75;
 }
 
-[data-reading="readable"] p,
-[data-reading="readable"] li {
+[data-reading='readable'] p,
+[data-reading='readable'] li {
   max-width: 68ch;
 }
 
@@ -112,11 +110,11 @@
  * ------------------------------------------------------------------------- */
 
 @media (prefers-contrast: more) {
-  :root:not([data-contrast="off"]) {
+  :root:not([data-contrast='off']) {
     --ring-width: 3px;
   }
 
-  :root:not([data-contrast="off"]):not(.dark) {
+  :root:not([data-contrast='off']):not(.dark) {
     --foreground: 0 0% 4%;
     --surface-foreground: 0 0% 4%;
     --card-foreground: 0 0% 4%;
@@ -127,7 +125,7 @@
     --ring: 0 0% 0%;
   }
 
-  :root:not([data-contrast="off"]).dark {
+  :root:not([data-contrast='off']).dark {
     --foreground: 0 0% 100%;
     --surface-foreground: 0 0% 100%;
     --card-foreground: 0 0% 100%;
@@ -138,7 +136,7 @@
     --ring: 0 0% 100%;
   }
 
-  :root:not([data-contrast="off"]) :where([class*="border"]) {
+  :root:not([data-contrast='off']) :where([class*='border']) {
     border-color: hsl(var(--border));
   }
 }
@@ -146,32 +144,32 @@
 @media (forced-colors: active) {
   /* Give every interactive control a boundary from the system palette. */
   button,
-  [role="button"],
+  [role='button'],
   a.btn,
   label.btn,
   input,
   select,
   textarea,
-  [role="switch"],
-  [role="slider"] {
+  [role='switch'],
+  [role='slider'] {
     border: 1px solid ButtonText;
   }
 
   /* Switch: keep on/off legible when the token track flattens. The thumb is the
      Radix Thumb child. the checked track leans on the selection color. */
-  [role="switch"] {
+  [role='switch'] {
     background-color: Canvas;
   }
-  [role="switch"] > * {
+  [role='switch'] > * {
     background-color: ButtonText;
     forced-color-adjust: none;
   }
-  [role="switch"][data-state="checked"] {
+  [role='switch'][data-state='checked'] {
     background-color: Highlight;
   }
 
   /* Slider: make the thumb a clear, filled system indicator. */
-  [role="slider"] {
+  [role='slider'] {
     background-color: Highlight;
   }
 
@@ -183,8 +181,8 @@
   select:focus-visible,
   textarea:focus-visible,
   [tabindex]:focus-visible,
-  [role="switch"]:focus-visible,
-  [role="slider"]:focus-visible {
+  [role='switch']:focus-visible,
+  [role='slider']:focus-visible {
     outline: 2px solid Highlight !important;
     outline-offset: 2px;
   }
@@ -195,11 +193,11 @@
      becomes indistinguishable from its siblings. Paint them with the system
      SELECTION pair so the state survives. Text + icons use currentColor, so
      setting `color` carries them along. forced-color-adjust lets it apply. */
-  [aria-pressed="true"],
-  [aria-selected="true"],
-  [aria-current]:not([aria-current="false"]),
-  [data-state="on"],
-  [data-state="active"] {
+  [aria-pressed='true'],
+  [aria-selected='true'],
+  [aria-current]:not([aria-current='false']),
+  [data-state='on'],
+  [data-state='active'] {
     forced-color-adjust: none;
     background-color: Highlight;
     color: HighlightText;
@@ -209,9 +207,9 @@
   /* Primary / emphasis buttons: a heavier system border marks the default
      action apart from ghost/outline/secondary buttons (which keep the 1px
      border above) now that brand fills (bg-primary) are ignored. */
-  button[data-variant="default"],
-  button[data-variant="accent"],
-  button[data-variant="destructive"] {
+  button[data-variant='default'],
+  button[data-variant='accent'],
+  button[data-variant='destructive'] {
     border-width: 2px;
   }
 }

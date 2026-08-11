@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { ErrorState } from "~/components/layout/error-state";
+import { ErrorState } from '~/components/layout/error-state';
 
 /**
  * Route-level error boundary. Renders inside the root layout, so it keeps the

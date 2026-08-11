@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Download, Share } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Download, Share } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { brand } from "~/config/brand";
-import { Button } from "~/components/ui/button";
-import { CloseButton } from "~/components/ui/close-button";
+import { cn } from '~/lib/utils';
+import { brand } from '~/config/brand';
+import { Button } from '~/components/ui/button';
+import { CloseButton } from '~/components/ui/close-button';
 import {
   notificationDescription,
   notificationIcon,
   notificationSurface,
   notificationTitle,
-} from "~/components/ui/notification";
-import { LogoMark } from "~/components/layout/logo";
+} from '~/components/ui/notification';
+import { LogoMark } from '~/components/layout/logo';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
+    outcome: 'accepted' | 'dismissed';
     platform: string;
   }>;
   prompt: () => Promise<void>;
 }
 
-const DISMISS_KEY = "heirloom:pwa-install-dismissed";
+const DISMISS_KEY = 'heirloom:pwa-install-dismissed';
 // Don't nag: once dismissed, stay quiet for two weeks.
 const DISMISS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 
@@ -41,26 +41,26 @@ function recentlyDismissed() {
 
 function isStandalone() {
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia('(display-mode: standalone)').matches ||
     // iOS Safari
     (window.navigator as { standalone?: boolean }).standalone === true
   );
 }
 
 const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "textarea:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
   "[tabindex]:not([tabindex='-1'])",
-].join(",");
+].join(',');
 
 /** Tabbable elements inside the dialog, in DOM order, for the focus trap. */
 function getFocusable(container: HTMLElement): HTMLElement[] {
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-  ).filter((el) => el.tabIndex !== -1 && !el.hasAttribute("disabled"));
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => el.tabIndex !== -1 && !el.hasAttribute('disabled'),
+  );
 }
 
 /**
@@ -70,17 +70,13 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
  * Chrome/Firefox iOS (CriOS/FxiOS), which lack the Share → Add flow, and never
  * when already installed / running standalone.
  */
-export function shouldShowIosInstallTip(
-  userAgent: string,
-  isStandaloneMode: boolean,
-): boolean {
+export function shouldShowIosInstallTip(userAgent: string, isStandaloneMode: boolean): boolean {
   if (isStandaloneMode) return false;
   const ua = userAgent.toLowerCase();
   const isIos = /iphone|ipod|ipad/.test(ua);
   if (!isIos) return false;
   // Third-party iOS browsers can't offer Add-to-Home-Screen. Only Safari can.
-  const isSafari =
-    ua.includes("safari") && !/(crios|fxios|edgios|opios|mercury)/.test(ua);
+  const isSafari = ua.includes('safari') && !/(crios|fxios|edgios|opios|mercury)/.test(ua);
   return isSafari;
 }
 
@@ -97,10 +93,10 @@ export function shouldShowIosInstallTip(
  * (WCAG 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 4.1.2).
  */
 export function InstallPrompt() {
-  const t = useTranslations("pwa.install");
+  const t = useTranslations('pwa.install');
   const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const [variant, setVariant] = React.useState<"prompt" | "ios" | null>(null);
+  const [variant, setVariant] = React.useState<'prompt' | 'ios' | null>(null);
   const [entered, setEntered] = React.useState(false);
 
   const labelId = React.useId();
@@ -111,25 +107,25 @@ export function InstallPrompt() {
 
     // iOS Safari never fires `beforeinstallprompt`, so nudge with a manual tip.
     if (shouldShowIosInstallTip(navigator.userAgent, isStandalone())) {
-      setVariant("ios");
+      setVariant('ios');
       return;
     }
 
     const onPrompt = (event: Event) => {
       event.preventDefault();
       promptRef.current = event as BeforeInstallPromptEvent;
-      setVariant("prompt");
+      setVariant('prompt');
     };
     const onInstalled = () => {
       setVariant(null);
       promptRef.current = null;
     };
 
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
@@ -176,12 +172,12 @@ export function InstallPrompt() {
     (getFocusable(container)[0] ?? container).focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         dismiss();
         return;
       }
-      if (event.key !== "Tab") return;
+      if (event.key !== 'Tab') return;
 
       const focusable = getFocusable(container);
       const first = focusable[0];
@@ -203,9 +199,9 @@ export function InstallPrompt() {
       }
     };
 
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener('keydown', onKeyDown);
       // Restore focus to whatever the user was on before the dialog opened.
       previouslyFocused?.focus?.();
     };
@@ -213,7 +209,7 @@ export function InstallPrompt() {
 
   if (!variant) return null;
 
-  const isIos = variant === "ios";
+  const isIos = variant === 'ios';
 
   return (
     <div
@@ -224,61 +220,51 @@ export function InstallPrompt() {
       aria-describedby={descriptionId}
       tabIndex={-1}
       className={cn(
-        "no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-none",
-        "bottom-[calc(theme(spacing.safe-b)+5rem)] md:bottom-6",
+        'no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-none',
+        'bottom-[calc(theme(spacing.safe-b)+5rem)] md:bottom-6',
       )}
     >
       <div
         className={cn(
           notificationSurface(),
-          "pe-2",
-          "transition-all duration-300 ease-out motion-reduce:transition-none",
+          'pe-2',
+          'transition-all duration-300 ease-out motion-reduce:transition-none',
           entered
-            ? "translate-y-0 opacity-100"
-            : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-3 opacity-0 motion-reduce:translate-y-0',
         )}
       >
-        <span className={notificationIcon({ tone: "brand", size: "md" })}>
+        <span className={notificationIcon({ tone: 'brand', size: 'md' })}>
           <LogoMark className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
           <p id={labelId} className={notificationTitle}>
-            {t("title", { brand: brand.name })}
+            {t('title', { brand: brand.name })}
           </p>
           {isIos ? (
             <p id={descriptionId} className={notificationDescription}>
-              {t.rich("iosTip", {
+              {t.rich('iosTip', {
                 share: () => (
                   <>
-                    <Share
-                      className="inline-block size-3.5 -translate-y-px"
-                      aria-hidden
-                    />
-                    <span className="sr-only">{t("iosShareLabel")}</span>
+                    <Share className="inline-block size-3.5 -translate-y-px" aria-hidden />
+                    <span className="sr-only">{t('iosShareLabel')}</span>
                   </>
                 ),
               })}
             </p>
           ) : (
-            <p
-              id={descriptionId}
-              className={cn(notificationDescription, "truncate")}
-            >
-              {t("body")}
+            <p id={descriptionId} className={cn(notificationDescription, 'truncate')}>
+              {t('body')}
             </p>
           )}
         </div>
         {!isIos && (
           <Button size="sm" onClick={install} className="shrink-0">
             <Download className="size-4" />
-            {t("action")}
+            {t('action')}
           </Button>
         )}
-        <CloseButton
-          onClick={dismiss}
-          label={t("dismiss")}
-          className="shrink-0"
-        />
+        <CloseButton onClick={dismiss} label={t('dismiss')} className="shrink-0" />
       </div>
     </div>
   );

@@ -1,25 +1,25 @@
-import * as React from "react";
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import * as React from 'react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-import { getAuthState } from "~/server/auth";
-import { Button } from "~/components/ui/button";
-import { Logo } from "~/components/layout/logo";
-import { MainNav } from "~/components/layout/main-nav";
-import { CommandMenu } from "~/components/layout/command-menu";
-import { HeaderSettingsMenu } from "~/components/layout/header-settings-menu";
-import { AuthControls } from "~/components/auth/auth-controls";
-import { NotificationBellServer } from "~/components/notifications/notification-bell-server";
+import { getAuthState } from '~/server/auth';
+import { Button } from '~/components/ui/button';
+import { Logo } from '~/components/layout/logo';
+import { MainNav } from '~/components/layout/main-nav';
+import { CommandMenu } from '~/components/layout/command-menu';
+import { HeaderSettingsMenu } from '~/components/layout/header-settings-menu';
+import { AuthControls } from '~/components/auth/auth-controls';
+import { NotificationBellServer } from '~/components/notifications/notification-bell-server';
 
 /** Sticky top header with brand, primary nav, theme switcher, and auth. */
 export async function SiteHeader() {
   const { isConfigured, user } = await getAuthState();
-  const t = await getTranslations("nav");
+  const t = await getTranslations('nav');
 
   return (
     <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 [@media(display-mode:standalone)]:pt-safe-t">
       <div className="container flex min-h-16 items-center gap-2 sm:gap-4">
-        <Link href="/" className="shrink-0" aria-label={t("homeLink")}>
+        <Link href="/" className="shrink-0" aria-label={t('homeLink')}>
           {/* Drop the wordmark on the very narrowest phones (<360px) so the
               action row stays a single clean line. The mark keeps brand
               presence (issue #536 follow-up). */}
@@ -33,7 +33,7 @@ export async function SiteHeader() {
         <div className="ms-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
           <CommandMenu />
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/recipes/new">{t("newRecipe")}</Link>
+            <Link href="/recipes/new">{t('newRecipe')}</Link>
           </Button>
           {/* All device-level utility controls (appearance, Kids mode, language,
               accessibility, offline storage) collapse into one Settings popover

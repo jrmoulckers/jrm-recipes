@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 
-import { createCoalescer } from "./food-graph-refresh";
+import { createCoalescer } from './food-graph-refresh';
 
 /** A promise whose resolve/reject are exposed, to drive run timing by hand. */
 function deferred<T = void>() {
@@ -13,8 +13,8 @@ function deferred<T = void>() {
   return { promise, resolve, reject };
 }
 
-describe("createCoalescer", () => {
-  it("runs the task once for a single schedule", async () => {
+describe('createCoalescer', () => {
+  it('runs the task once for a single schedule', async () => {
     const run = vi.fn().mockResolvedValue(undefined);
     const schedule = createCoalescer(run);
 
@@ -26,7 +26,7 @@ describe("createCoalescer", () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it("collapses a burst during an in-flight run into exactly one extra run", async () => {
+  it('collapses a burst during an in-flight run into exactly one extra run', async () => {
     const gates = [deferred(), deferred(), deferred()];
     let call = 0;
     const run = vi.fn().mockImplementation(() => gates[call++]!.promise);
@@ -58,7 +58,7 @@ describe("createCoalescer", () => {
     expect(run).toHaveBeenCalledTimes(2);
   });
 
-  it("starts a fresh run when scheduled after the queue has drained", async () => {
+  it('starts a fresh run when scheduled after the queue has drained', async () => {
     const run = vi.fn().mockResolvedValue(undefined);
     const schedule = createCoalescer(run);
 
@@ -73,19 +73,16 @@ describe("createCoalescer", () => {
     expect(run).toHaveBeenCalledTimes(2);
   });
 
-  it("routes a rejected run to onError and keeps accepting new work", async () => {
+  it('routes a rejected run to onError and keeps accepting new work', async () => {
     const onError = vi.fn();
-    const run = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("boom"))
-      .mockResolvedValue(undefined);
+    const run = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue(undefined);
     const schedule = createCoalescer(run, { onError });
 
     schedule();
     await Promise.resolve();
     await Promise.resolve();
     expect(onError).toHaveBeenCalledTimes(1);
-    expect((onError.mock.calls[0]![0] as Error).message).toBe("boom");
+    expect((onError.mock.calls[0]![0] as Error).message).toBe('boom');
 
     // A failure must not wedge the scheduler. The next trigger still runs.
     schedule();

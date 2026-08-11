@@ -1,32 +1,19 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  BookPlus,
-  CookingPot,
-  Lightbulb,
-  MessageCircle,
-  Star,
-  UserPlus,
-} from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { BookPlus, CookingPot, Lightbulb, MessageCircle, Star, UserPlus } from 'lucide-react';
 
-import type { ActivityEvent, ActivityKind } from "~/server/activity/queries";
-import {
-  loadGroupActivityAction,
-  loadPersonalActivityAction,
-} from "~/server/activity/actions";
-import { loadFollowingActivityAction } from "~/server/follows/actions";
-import { formatRelativeTime } from "~/lib/dates";
-import { useServerAction } from "~/lib/use-server-action";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
+import type { ActivityEvent, ActivityKind } from '~/server/activity/queries';
+import { loadGroupActivityAction, loadPersonalActivityAction } from '~/server/activity/actions';
+import { loadFollowingActivityAction } from '~/server/follows/actions';
+import { formatRelativeTime } from '~/lib/dates';
+import { useServerAction } from '~/lib/use-server-action';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
 
-const KIND_ICON: Record<
-  ActivityKind,
-  React.ComponentType<{ className?: string }>
-> = {
+const KIND_ICON: Record<ActivityKind, React.ComponentType<{ className?: string }>> = {
   recipe_added: BookPlus,
   cook_shared: CookingPot,
   review: Star,
@@ -38,14 +25,12 @@ const KIND_ICON: Record<
 type ActivityT = ReturnType<typeof useTranslations>;
 
 function actorName(event: ActivityEvent, t: ActivityT) {
-  return event.actor?.name ?? event.actor?.handle ?? t("fallbackActor");
+  return event.actor?.name ?? event.actor?.handle ?? t('fallbackActor');
 }
 
 /** The lead sentence for an event, e.g. "Grandma cooked Sunday Ragù". */
 function headline(event: ActivityEvent, t: ActivityT): React.ReactNode {
-  const who = (
-    <span className="font-medium text-foreground">{actorName(event, t)}</span>
-  );
+  const who = <span className="font-medium text-foreground">{actorName(event, t)}</span>;
   const recipe = event.recipe ? (
     <Link
       href={`/recipes/${event.recipe.slug}`}
@@ -56,47 +41,47 @@ function headline(event: ActivityEvent, t: ActivityT): React.ReactNode {
   ) : null;
 
   switch (event.kind) {
-    case "recipe_added":
+    case 'recipe_added':
       return (
         <>
-          {who} {t("headline.recipeAdded")} {recipe}
+          {who} {t('headline.recipeAdded')} {recipe}
         </>
       );
-    case "cook_shared":
+    case 'cook_shared':
       return (
         <>
-          {who} {t("headline.cookShared")} {recipe}
+          {who} {t('headline.cookShared')} {recipe}
         </>
       );
-    case "review":
+    case 'review':
       return (
         <>
-          {who} {t("headline.reviewed")} {recipe}
+          {who} {t('headline.reviewed')} {recipe}
         </>
       );
-    case "comment":
+    case 'comment':
       return (
         <>
-          {who} {t("headline.commented")} {recipe}
+          {who} {t('headline.commented')} {recipe}
         </>
       );
-    case "suggestion":
+    case 'suggestion':
       return (
         <>
-          {who} {t("headline.suggested")} {recipe}
+          {who} {t('headline.suggested')} {recipe}
         </>
       );
-    case "member_joined":
+    case 'member_joined':
       return (
         <>
-          {who} {t("headline.memberJoined")}
+          {who} {t('headline.memberJoined')}
         </>
       );
   }
 }
 
 function EventRow({ event }: { event: ActivityEvent }) {
-  const t = useTranslations("groups.activity");
+  const t = useTranslations('groups.activity');
   const locale = useLocale();
   const Icon = KIND_ICON[event.kind];
   const name = actorName(event, t);
@@ -104,9 +89,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
     <li className="flex gap-3 py-4">
       <div className="relative">
         <Avatar className="size-9">
-          {event.actor?.avatarUrl ? (
-            <AvatarImage src={event.actor.avatarUrl} alt={name} />
-          ) : null}
+          {event.actor?.avatarUrl ? <AvatarImage src={event.actor.avatarUrl} alt={name} /> : null}
           <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
         <span className="absolute -bottom-1 -end-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -114,10 +97,8 @@ function EventRow({ event }: { event: ActivityEvent }) {
         </span>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm leading-6 text-muted-foreground">
-          {headline(event, t)}
-        </p>
-        {event.kind === "review" && event.rating != null ? (
+        <p className="text-sm leading-6 text-muted-foreground">{headline(event, t)}</p>
+        {event.kind === 'review' && event.rating != null ? (
           <span className="mt-0.5 inline-flex items-center gap-0.5 text-xs text-amber-500">
             {Array.from({ length: event.rating }).map((_, i) => (
               <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
@@ -129,12 +110,12 @@ function EventRow({ event }: { event: ActivityEvent }) {
             {event.text}
           </p>
         ) : null}
-        {event.kind === "cook_shared" && event.photoUrl ? (
+        {event.kind === 'cook_shared' && event.photoUrl ? (
           <figure className="mt-2 overflow-hidden rounded-lg border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element -- member-supplied URL can't be pre-allowlisted for next/image */}
             <img
               src={event.photoUrl}
-              alt={t("cookPhotoAlt", { name })}
+              alt={t('cookPhotoAlt', { name })}
               className="max-h-56 w-full object-cover"
             />
           </figure>
@@ -153,9 +134,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
  * viewer's cross-group home feed (their own memberships re-resolved each call).
  */
 export type ActivityFeedSource =
-  | { kind: "group"; groupId: string }
-  | { kind: "personal" }
-  | { kind: "following" };
+  { kind: 'group'; groupId: string } | { kind: 'personal' } | { kind: 'following' };
 
 /**
  * The family activity feed (issue #349): warm, reverse-chronological events with
@@ -174,14 +153,11 @@ export function ActivityFeed({
   /** Overrides the default "No activity yet" empty state (e.g. personal feed). */
   emptyState?: React.ReactNode;
 }) {
-  const t = useTranslations("groups.activity");
+  const t = useTranslations('groups.activity');
   const [events, setEvents] = React.useState(initialEvents);
   const [cursor, setCursor] = React.useState(initialCursor);
 
-  const onSuccess = (result: {
-    events: ActivityEvent[];
-    nextCursor: string | null;
-  }) => {
+  const onSuccess = (result: { events: ActivityEvent[]; nextCursor: string | null }) => {
     setEvents((prev) => [...prev, ...result.events]);
     setCursor(result.nextCursor);
   };
@@ -200,16 +176,16 @@ export function ActivityFeed({
   });
 
   const pending =
-    source.kind === "group"
+    source.kind === 'group'
       ? loadGroup.pending
-      : source.kind === "following"
+      : source.kind === 'following'
         ? loadFollowing.pending
         : loadPersonal.pending;
   const loadMore = () => {
     if (!cursor) return;
-    if (source.kind === "group") {
+    if (source.kind === 'group') {
       loadGroup.run({ groupId: source.groupId, before: cursor });
-    } else if (source.kind === "following") {
+    } else if (source.kind === 'following') {
       loadFollowing.run({ before: cursor });
     } else {
       loadPersonal.run({ before: cursor });
@@ -221,8 +197,8 @@ export function ActivityFeed({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
         <CookingPot className="mx-auto mb-2 size-6" aria-hidden="true" />
-        <p className="font-medium text-foreground">{t("empty.title")}</p>
-        <p className="mt-1 text-sm">{t("empty.description")}</p>
+        <p className="font-medium text-foreground">{t('empty.title')}</p>
+        <p className="mt-1 text-sm">{t('empty.description')}</p>
       </div>
     );
   }
@@ -236,13 +212,8 @@ export function ActivityFeed({
       </ul>
       {cursor ? (
         <div className="mt-2 flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={loadMore}
-            disabled={pending}
-          >
-            {pending ? t("loading") : t("loadOlder")}
+          <Button variant="ghost" size="sm" onClick={loadMore} disabled={pending}>
+            {pending ? t('loading') : t('loadOlder')}
           </Button>
         </div>
       ) : null}

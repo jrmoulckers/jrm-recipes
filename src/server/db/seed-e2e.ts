@@ -19,12 +19,12 @@
  * fixture that pre-creates the relationship would let the tests pass while the
  * flow under test was broken.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import { DEV_CO_COOK, isE2eIdentity } from "~/server/auth/dev-user";
-import * as schema from "~/server/db/schema";
-import { users } from "~/server/db/schema";
+import { DEV_CO_COOK, isE2eIdentity } from '~/server/auth/dev-user';
+import * as schema from '~/server/db/schema';
+import { users } from '~/server/db/schema';
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -33,8 +33,8 @@ const connectionString =
 
 if (!connectionString) {
   throw new Error(
-    "db:seed:e2e requires DATABASE_URL (or DATABASE_URL_UNPOOLED / " +
-      "POSTGRES_URL_NON_POOLING) to be set.",
+    'db:seed:e2e requires DATABASE_URL (or DATABASE_URL_UNPOOLED / ' +
+      'POSTGRES_URL_NON_POOLING) to be set.',
   );
 }
 
@@ -44,7 +44,7 @@ async function main() {
   if (!isE2eIdentity(DEV_CO_COOK)) {
     throw new Error(
       `Refusing to seed ${DEV_CO_COOK.id}: it is not an E2E-only identity. ` +
-        "A fixture must not share an id with a demo persona (issue #783).",
+        'A fixture must not share an id with a demo persona (issue #783).',
     );
   }
 
@@ -53,7 +53,7 @@ async function main() {
   // camelCase and relies on this to map them to their snake_case database
   // names. Omitting it produces `column "clerkId" does not exist` at runtime,
   // which no unit test can reach because none of them touch a database.
-  const db = drizzle(client, { schema, casing: "snake_case" });
+  const db = drizzle(client, { schema, casing: 'snake_case' });
 
   try {
     await db
@@ -72,7 +72,7 @@ async function main() {
 
     console.log(
       `Seeded E2E identity ${DEV_CO_COOK.handle} (${DEV_CO_COOK.id}). ` +
-        "No recipe_creators rows created — tests must use the invite flow.",
+        'No recipe_creators rows created — tests must use the invite flow.',
     );
   } finally {
     await client.end();

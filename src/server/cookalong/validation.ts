@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Validation contract for cook-alongs (issue #353). Shared by the schedule
@@ -10,14 +10,14 @@ const idInput = z.string().trim().min(1);
 const optionalTitle = z
   .string()
   .trim()
-  .max(200, "Keep the title under 200 characters.")
+  .max(200, 'Keep the title under 200 characters.')
   .optional()
   .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
 const optionalNote = z
   .string()
   .trim()
-  .max(2000, "Keep your note under 2,000 characters.")
+  .max(2000, 'Keep your note under 2,000 characters.')
   .optional()
   .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
@@ -25,8 +25,8 @@ const optionalNote = z
 const scheduledFor = z
   .union([z.string(), z.date()])
   .transform((v) => (v instanceof Date ? v : new Date(v)))
-  .refine((d) => !Number.isNaN(d.getTime()), "Pick a valid date and time.")
-  .refine((d) => d.getTime() > Date.now(), "Pick a time in the future.");
+  .refine((d) => !Number.isNaN(d.getTime()), 'Pick a valid date and time.')
+  .refine((d) => d.getTime() > Date.now(), 'Pick a time in the future.');
 
 export const createCookAlongInput = z.object({
   groupId: idInput,
@@ -45,7 +45,7 @@ export const updateCookAlongInput = z.object({
 
 export const rsvpInput = z.object({
   cookAlongId: idInput,
-  status: z.enum(["going", "maybe", "declined"]),
+  status: z.enum(['going', 'maybe', 'declined']),
 });
 
 export const deleteCookAlongInput = z.object({

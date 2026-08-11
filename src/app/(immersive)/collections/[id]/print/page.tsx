@@ -1,21 +1,15 @@
-import { type Metadata } from "next";
-import { notFound } from "next/navigation";
+import { type Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-import { getCurrentUser } from "~/server/auth";
-import { getSharedCollection } from "~/server/collections/queries";
-import { getRecipe } from "~/server/recipes/queries";
-import { toPrintRecipe } from "~/server/recipes/serialize";
-import {
-  CookbookPrintView,
-  type CookbookPrintData,
-} from "~/components/print/cookbook-print-view";
-import type { PrintRecipe } from "~/components/print/types";
-import { parseKeepsakeMessage } from "~/lib/keepsake";
-import { withRouteMessages } from "~/components/i18n/route-messages";
-import {
-  parseCollectionParams,
-  type CollectionRouteParams,
-} from "~/lib/route-params";
+import { getCurrentUser } from '~/server/auth';
+import { getSharedCollection } from '~/server/collections/queries';
+import { getRecipe } from '~/server/recipes/queries';
+import { toPrintRecipe } from '~/server/recipes/serialize';
+import { CookbookPrintView, type CookbookPrintData } from '~/components/print/cookbook-print-view';
+import type { PrintRecipe } from '~/components/print/types';
+import { parseKeepsakeMessage } from '~/lib/keepsake';
+import { withRouteMessages } from '~/components/i18n/route-messages';
+import { parseCollectionParams, type CollectionRouteParams } from '~/lib/route-params';
 
 type PrintSearchParams = { dedication?: string | string[] };
 
@@ -28,7 +22,7 @@ export async function generateMetadata({
   const user = await getCurrentUser();
   const collection = await getSharedCollection(id, user);
   return {
-    title: collection ? `Print · ${collection.name}` : "Print cookbook",
+    title: collection ? `Print · ${collection.name}` : 'Print cookbook',
     robots: { index: false, follow: false },
   };
 }
@@ -60,9 +54,7 @@ async function CollectionPrintPage({
   // (which re-checks visibility) is belt-and-braces and yields the ingredients
   // and steps the card view omits. Runs in parallel. This is a rare, on-demand
   // action, never a hot path.
-  const full = await Promise.all(
-    collection.recipes.map((card) => getRecipe(card.id, user)),
-  );
+  const full = await Promise.all(collection.recipes.map((card) => getRecipe(card.id, user)));
   const recipes: PrintRecipe[] = full
     .filter((recipe): recipe is NonNullable<typeof recipe> => recipe != null)
     .map(toPrintRecipe);

@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { canManage } from "~/server/groups/queries";
+import { db, isDbConfigured } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { canManage } from '~/server/groups/queries';
 import {
   contentReports,
   groupMembers,
@@ -14,8 +14,8 @@ import {
   type ModerationTarget,
   type ReportReason,
   type User,
-} from "~/server/db/schema";
-import { resolveTarget } from "./targets";
+} from '~/server/db/schema';
+import { resolveTarget } from './targets';
 
 /** One aggregated item in a group's moderation queue (issue #357). */
 export type ModerationQueueItem = {
@@ -58,19 +58,13 @@ export async function getModerationQueue(
   if (!group) return null;
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, group.id),
-      eq(groupMembers.userId, viewer.id),
-    ),
+    where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, viewer.id)),
     columns: { role: true },
   });
-  if (!canManage(membership?.role)) throw new DomainError("FORBIDDEN");
+  if (!canManage(membership?.role)) throw new DomainError('FORBIDDEN');
 
   const reports = await db.query.contentReports.findMany({
-    where: and(
-      eq(contentReports.groupId, group.id),
-      eq(contentReports.status, "open"),
-    ),
+    where: and(eq(contentReports.groupId, group.id), eq(contentReports.status, 'open')),
     orderBy: [desc(contentReports.createdAt)],
     columns: {
       targetType: true,
@@ -157,10 +151,7 @@ export async function getOpenReportCount(
 ): Promise<number> {
   if (!isDbConfigured() || !canManage(viewerRole)) return 0;
   const rows = await db.query.contentReports.findMany({
-    where: and(
-      eq(contentReports.groupId, groupId),
-      eq(contentReports.status, "open"),
-    ),
+    where: and(eq(contentReports.groupId, groupId), eq(contentReports.status, 'open')),
     columns: { id: true },
   });
   return rows.length;

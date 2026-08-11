@@ -12,22 +12,22 @@
  */
 
 /** Cloudinary hosts: media delivery, the upload widget iframe, and its API. */
-const CLOUDINARY_DELIVERY = "https://res.cloudinary.com";
-const CLOUDINARY_UPLOAD_WIDGET = "https://upload-widget.cloudinary.com";
-const CLOUDINARY_API = "https://api.cloudinary.com";
+const CLOUDINARY_DELIVERY = 'https://res.cloudinary.com';
+const CLOUDINARY_UPLOAD_WIDGET = 'https://upload-widget.cloudinary.com';
+const CLOUDINARY_API = 'https://api.cloudinary.com';
 /** Clerk-served avatar host (only reachable when auth is configured). */
-const CLERK_IMG = "https://img.clerk.com";
+const CLERK_IMG = 'https://img.clerk.com';
 /**
  * Clerk *development* Frontend API origins (pk_test instances serve FAPI from a
  * shared `*.clerk.accounts.dev` host). Production (pk_live) uses a per-app custom
  * domain that we derive at runtime from the publishable key. See
  * {@link clerkFrontendApiHost}, so nothing is blocked on the real domain.
  */
-const CLERK_DEV_ORIGINS = ["https://*.clerk.accounts.dev"];
+const CLERK_DEV_ORIGINS = ['https://*.clerk.accounts.dev'];
 /** Cloudflare Turnstile. Clerk's bot-protection challenge widget. */
-const TURNSTILE = "https://challenges.cloudflare.com";
+const TURNSTILE = 'https://challenges.cloudflare.com';
 /** PostHog product-analytics hosts (capture is same-origin via /ingest). */
-const POSTHOG = ["https://*.posthog.com", "https://*.i.posthog.com"];
+const POSTHOG = ['https://*.posthog.com', 'https://*.i.posthog.com'];
 
 /**
  * Derive a Clerk instance's Frontend API host from its publishable key
@@ -41,14 +41,12 @@ const POSTHOG = ["https://*.posthog.com", "https://*.i.posthog.com"];
  * Returns `null` for an absent/malformed key (dev-bypass / e2e with no key), so
  * the policy simply omits the origin rather than emitting a broken token.
  */
-export function clerkFrontendApiHost(
-  publishableKey: string | undefined,
-): string | null {
+export function clerkFrontendApiHost(publishableKey: string | undefined): string | null {
   if (!publishableKey) return null;
-  const encoded = publishableKey.replace(/^pk_(test|live)_/, "");
+  const encoded = publishableKey.replace(/^pk_(test|live)_/, '');
   if (encoded === publishableKey) return null;
   try {
-    const host = atob(encoded).replace(/\$+$/, "");
+    const host = atob(encoded).replace(/\$+$/, '');
     // Guard against a malformed decode injecting extra CSP tokens/directives.
     return /^[a-z0-9.-]+$/i.test(host) ? host : null;
   } catch {
@@ -64,15 +62,9 @@ export function clerkFrontendApiHost(
  * works. Dev (pk_test) additionally keeps the shared `*.clerk.accounts.dev`
  * origins.
  */
-export function buildContentSecurityPolicy(
-  nonce: string,
-  publishableKey?: string,
-): string {
+export function buildContentSecurityPolicy(nonce: string, publishableKey?: string): string {
   const clerkHost = clerkFrontendApiHost(publishableKey);
-  const clerkConnectFrame = [
-    ...CLERK_DEV_ORIGINS,
-    ...(clerkHost ? [`https://${clerkHost}`] : []),
-  ];
+  const clerkConnectFrame = [...CLERK_DEV_ORIGINS, ...(clerkHost ? [`https://${clerkHost}`] : [])];
 
   // `next dev` compiles with webpack's `eval`-based devtool and drives HMR
   // through `eval()`, which `strict-dynamic` does NOT permit (it only relaxes
@@ -80,16 +72,16 @@ export function buildContentSecurityPolicy(
   // dev bundle throws a CSP violation before React can hydrate, leaving the
   // whole app non-interactive. Scoped to NODE_ENV==='development' so the
   // production build, which ships no `eval`, keeps its strict policy.
-  const isDev = process.env.NODE_ENV === "development";
+  const isDev = process.env.NODE_ENV === 'development';
 
   const directives: Record<string, string[]> = {
-    "default-src": ["'self'"],
-    "base-uri": ["'self'"],
-    "object-src": ["'none'"],
+    'default-src': ["'self'"],
+    'base-uri': ["'self'"],
+    'object-src': ["'none'"],
     // Belt-and-suspenders clickjacking defense alongside X-Frame-Options.
-    "frame-ancestors": ["'none'"],
-    "form-action": ["'self'"],
-    "script-src": [
+    'frame-ancestors': ["'none'"],
+    'form-action': ["'self'"],
+    'script-src': [
       "'self'",
       `'nonce-${nonce}'`,
       "'strict-dynamic'",
@@ -101,22 +93,22 @@ export function buildContentSecurityPolicy(
       CLOUDINARY_UPLOAD_WIDGET,
       ...(clerkHost ? [`https://${clerkHost}`] : []),
       // Ignored where strict-dynamic is honored. Fallback for old browsers.
-      "https:",
+      'https:',
       "'unsafe-inline'",
     ],
     // Tailwind + Next inject inline <style>. Hashing them per-build is brittle.
-    "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": [
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'img-src': [
       "'self'",
-      "data:",
-      "blob:",
+      'data:',
+      'blob:',
       CLOUDINARY_DELIVERY,
       CLERK_IMG,
       ...(clerkHost ? [`https://${clerkHost}`] : []),
     ],
-    "font-src": ["'self'", "data:"],
-    "media-src": ["'self'", "blob:", CLOUDINARY_DELIVERY],
-    "connect-src": [
+    'font-src': ["'self'", 'data:'],
+    'media-src': ["'self'", 'blob:', CLOUDINARY_DELIVERY],
+    'connect-src': [
       "'self'",
       CLOUDINARY_DELIVERY,
       CLOUDINARY_API,
@@ -124,23 +116,16 @@ export function buildContentSecurityPolicy(
       ...clerkConnectFrame,
       ...POSTHOG,
     ],
-    "worker-src": ["'self'", "blob:"],
-    "manifest-src": ["'self'"],
-    "frame-src": [
-      "'self'",
-      CLOUDINARY_UPLOAD_WIDGET,
-      ...clerkConnectFrame,
-      TURNSTILE,
-    ],
+    'worker-src': ["'self'", 'blob:'],
+    'manifest-src': ["'self'"],
+    'frame-src': ["'self'", CLOUDINARY_UPLOAD_WIDGET, ...clerkConnectFrame, TURNSTILE],
     // Auto-upgrade any stray http subresource to https in production.
-    "upgrade-insecure-requests": [],
+    'upgrade-insecure-requests': [],
   };
 
   return Object.entries(directives)
-    .map(([name, values]) =>
-      values.length > 0 ? `${name} ${values.join(" ")}` : name,
-    )
-    .join("; ");
+    .map(([name, values]) => (values.length > 0 ? `${name} ${values.join(' ')}` : name))
+    .join('; ');
 }
 
 /**
@@ -151,13 +136,12 @@ export function buildContentSecurityPolicy(
  */
 export function staticSecurityHeaders(): Record<string, string> {
   return {
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
-    "Permissions-Policy":
-      "camera=(), microphone=(), geolocation=(), browsing-topics=()",
-    "X-DNS-Prefetch-Control": "on",
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+    'X-DNS-Prefetch-Control': 'on',
   };
 }
 
@@ -166,7 +150,7 @@ export function staticSecurityHeaders(): Record<string, string> {
  * returns the same Headers object for convenience.
  */
 export function applySecurityHeaders(headers: Headers, csp: string): Headers {
-  headers.set("Content-Security-Policy", csp);
+  headers.set('Content-Security-Policy', csp);
   for (const [name, value] of Object.entries(staticSecurityHeaders())) {
     headers.set(name, value);
   }
@@ -177,7 +161,7 @@ export function applySecurityHeaders(headers: Headers, csp: string): Headers {
 export function generateNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
-  let binary = "";
+  let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary);
 }

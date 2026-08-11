@@ -14,14 +14,10 @@
  * back to it for any unknown tag, so callers can adopt them incrementally
  * without changing English output.
  */
-import {
-  format,
-  formatDistanceToNow,
-  type Locale as DateFnsLocale,
-} from "date-fns";
-import { ar, de, enUS, es } from "date-fns/locale";
+import { format, formatDistanceToNow, type Locale as DateFnsLocale } from 'date-fns';
+import { ar, de, enUS, es } from 'date-fns/locale';
 
-import { DEFAULT_LOCALE, type Locale } from "~/config/i18n";
+import { DEFAULT_LOCALE, type Locale } from '~/config/i18n';
 
 /** Days of the week as `date-fns` numbers them (0 = Sunday … 6 = Saturday). */
 export type WeekStartsOn = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -44,52 +40,33 @@ export function weekStartsOn(locale: string = DEFAULT_LOCALE): WeekStartsOn {
 }
 
 /** Format a date with a `date-fns` pattern in the active locale. */
-export function formatDate(
-  date: Date,
-  pattern: string,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function formatDate(date: Date, pattern: string, locale: string = DEFAULT_LOCALE): string {
   return format(date, pattern, { locale: dateFnsLocale(locale) });
 }
 
 /** Short weekday name, localized, e.g. "Sun" / "dom." / "Sa.". */
-export function formatDayName(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "EEE", locale);
+export function formatDayName(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'EEE', locale);
 }
 
 /** Day of month, localized numerals where the locale uses them. */
-export function formatDayNumber(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "d", locale);
+export function formatDayNumber(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'd', locale);
 }
 
 /** Full day label, localized, e.g. "Sunday, Jul 5". */
-export function formatFullDay(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "EEEE, MMM d", locale);
+export function formatFullDay(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'EEEE, MMM d', locale);
 }
 
 /** Full weekday name, localized, e.g. "Sunday" / "domingo" / "Sonntag". */
-export function formatWeekdayLong(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "EEEE", locale);
+export function formatWeekdayLong(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'EEEE', locale);
 }
 
 /** Month + day, localized, e.g. "Jul 5". */
-export function formatMonthDay(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "MMM d", locale);
+export function formatMonthDay(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'MMM d', locale);
 }
 
 /**
@@ -100,38 +77,28 @@ export function formatMonthDay(
  * idiomatically. Switching the whole module to `Intl.DateTimeFormat` styles
  * would fix that globally and is tracked separately.
  */
-export function formatEventDateTime(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
-  return formatDate(date, "EEE, MMM d · h:mm a", locale);
+export function formatEventDateTime(date: Date, locale: string = DEFAULT_LOCALE): string {
+  return formatDate(date, 'EEE, MMM d · h:mm a', locale);
 }
 
 /**
  * Human-friendly week range, collapsing shared month/year. E.g.
  * "Jul 5 – 11, 2026" or "Jun 29 – Jul 5, 2026", with localized month names.
  */
-export function formatWeekRange(
-  start: Date,
-  end: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function formatWeekRange(start: Date, end: Date, locale: string = DEFAULT_LOCALE): string {
   const sameMonth = start.getMonth() === end.getMonth();
   const sameYear = start.getFullYear() === end.getFullYear();
   if (sameYear && sameMonth) {
-    return `${formatDate(start, "MMM d", locale)} – ${formatDate(end, "d, yyyy", locale)}`;
+    return `${formatDate(start, 'MMM d', locale)} – ${formatDate(end, 'd, yyyy', locale)}`;
   }
   if (sameYear) {
-    return `${formatDate(start, "MMM d", locale)} – ${formatDate(end, "MMM d, yyyy", locale)}`;
+    return `${formatDate(start, 'MMM d', locale)} – ${formatDate(end, 'MMM d, yyyy', locale)}`;
   }
-  return `${formatDate(start, "MMM d, yyyy", locale)} – ${formatDate(end, "MMM d, yyyy", locale)}`;
+  return `${formatDate(start, 'MMM d, yyyy', locale)} – ${formatDate(end, 'MMM d, yyyy', locale)}`;
 }
 
 /** Relative time with a localized suffix, e.g. "3 days ago" / "hace 3 días". */
-export function formatRelativeTime(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function formatRelativeTime(date: Date, locale: string = DEFAULT_LOCALE): string {
   return formatDistanceToNow(date, {
     addSuffix: true,
     locale: dateFnsLocale(locale),

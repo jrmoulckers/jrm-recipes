@@ -1,25 +1,24 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-type WakeLockStatus =
-  "checking" | "active" | "released" | "unsupported" | "unavailable";
+type WakeLockStatus = 'checking' | 'active' | 'released' | 'unsupported' | 'unavailable';
 
 type ScreenWakeLockSentinel = {
   readonly released: boolean;
   release: () => Promise<void>;
-  addEventListener: (type: "release", listener: EventListener) => void;
-  removeEventListener: (type: "release", listener: EventListener) => void;
+  addEventListener: (type: 'release', listener: EventListener) => void;
+  removeEventListener: (type: 'release', listener: EventListener) => void;
 };
 
 type WakeLockCapableNavigator = Navigator & {
   wakeLock?: {
-    request: (type: "screen") => Promise<ScreenWakeLockSentinel>;
+    request: (type: 'screen') => Promise<ScreenWakeLockSentinel>;
   };
 };
 
 export function useScreenWakeLock() {
-  const [status, setStatus] = React.useState<WakeLockStatus>("checking");
+  const [status, setStatus] = React.useState<WakeLockStatus>('checking');
   const sentinelRef = React.useRef<ScreenWakeLockSentinel | null>(null);
   const releaseListenerRef = React.useRef<EventListener | null>(null);
 
@@ -34,7 +33,7 @@ export function useScreenWakeLock() {
 
       if (!sentinel) return;
       if (releaseListener) {
-        sentinel.removeEventListener("release", releaseListener);
+        sentinel.removeEventListener('release', releaseListener);
       }
       if (!sentinel.released) {
         void sentinel.release().catch(() => undefined);
@@ -42,22 +41,22 @@ export function useScreenWakeLock() {
     }
 
     function requestLock() {
-      if (typeof navigator === "undefined" || typeof document === "undefined") {
-        setStatus("unsupported");
+      if (typeof navigator === 'undefined' || typeof document === 'undefined') {
+        setStatus('unsupported');
         return;
       }
 
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== 'visible') return;
       if (sentinelRef.current && !sentinelRef.current.released) return;
 
       const wakeLock = (navigator as WakeLockCapableNavigator).wakeLock;
       if (!wakeLock?.request) {
-        setStatus("unsupported");
+        setStatus('unsupported');
         return;
       }
 
       void wakeLock
-        .request("screen")
+        .request('screen')
         .then((sentinel) => {
           if (cancelled) {
             if (!sentinel.released) {
@@ -67,32 +66,32 @@ export function useScreenWakeLock() {
           }
 
           const handleRelease: EventListener = () => {
-            sentinel.removeEventListener("release", handleRelease);
+            sentinel.removeEventListener('release', handleRelease);
             if (sentinelRef.current === sentinel) {
               sentinelRef.current = null;
               releaseListenerRef.current = null;
-              setStatus("released");
+              setStatus('released');
             }
           };
 
-          sentinel.addEventListener("release", handleRelease);
+          sentinel.addEventListener('release', handleRelease);
           clearSentinel();
           sentinelRef.current = sentinel;
           releaseListenerRef.current = handleRelease;
-          setStatus("active");
+          setStatus('active');
         })
         .catch(() => {
-          if (!cancelled) setStatus("unavailable");
+          if (!cancelled) setStatus('unavailable');
         });
     }
 
     requestLock();
 
     function handleVisibilityChange() {
-      if (document.visibilityState === "visible") requestLock();
+      if (document.visibilityState === 'visible') requestLock();
     }
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Some mobile browsers drop the wake-lock sentinel when the device rotates
     // between portrait and landscape, and a bfcache restore (navigating back
@@ -110,16 +109,16 @@ export function useScreenWakeLock() {
       if (event.persisted) requestLock();
     }
 
-    window.addEventListener("orientationchange", handleReacquire);
-    window.addEventListener("resize", handleReacquire);
-    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener('orientationchange', handleReacquire);
+    window.addEventListener('resize', handleReacquire);
+    window.addEventListener('pageshow', handlePageShow);
 
     return () => {
       cancelled = true;
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("orientationchange", handleReacquire);
-      window.removeEventListener("resize", handleReacquire);
-      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('orientationchange', handleReacquire);
+      window.removeEventListener('resize', handleReacquire);
+      window.removeEventListener('pageshow', handlePageShow);
       window.clearTimeout(resizeTimer);
       clearSentinel();
     };

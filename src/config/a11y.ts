@@ -20,11 +20,11 @@
  * Persisted in one cookie so the server can render them with no flash.
  */
 
-export const TEXT_SIZES = ["default", "large", "xl"] as const;
+export const TEXT_SIZES = ['default', 'large', 'xl'] as const;
 export type TextSize = (typeof TEXT_SIZES)[number];
 
 /** Explicit user choice for an OS-backed preference. undefined = follow the OS. */
-export type A11yTriState = "on" | "off";
+export type A11yTriState = 'on' | 'off';
 
 export type A11yPrefs = {
   /** Base font scale, on top of each theme's own --text-scale. */
@@ -38,13 +38,13 @@ export type A11yPrefs = {
 };
 
 export const DEFAULT_A11Y: A11yPrefs = {
-  textSize: "default",
+  textSize: 'default',
   // contrast + motion intentionally omitted: unset => follow the OS.
   reading: false,
 };
 
 /** One cookie holds the whole (small) object, URL-encoded JSON. */
-export const A11Y_COOKIE = "heirloom-a11y";
+export const A11Y_COOKIE = 'heirloom-a11y';
 
 /**
  * Snapshot of the a11y prefs that were active *before* Kids mode was switched
@@ -53,21 +53,18 @@ export const A11Y_COOKIE = "heirloom-a11y";
  * them (mirroring the theme-provider's "previous theme" cookie). Never holds a
  * snapshot while Kids mode is off.
  */
-export const A11Y_PREVIOUS_COOKIE = "heirloom-a11y-prev";
+export const A11Y_PREVIOUS_COOKIE = 'heirloom-a11y-prev';
 
 /** Every <html> attribute this system controls (used to clear before applying). */
 export const A11Y_MANAGED_ATTRS = [
-  "data-text",
-  "data-contrast",
-  "data-motion",
-  "data-reading",
+  'data-text',
+  'data-contrast',
+  'data-motion',
+  'data-reading',
 ] as const;
 
 export function isTextSize(value: unknown): value is TextSize {
-  return (
-    typeof value === "string" &&
-    (TEXT_SIZES as readonly string[]).includes(value)
-  );
+  return typeof value === 'string' && (TEXT_SIZES as readonly string[]).includes(value);
 }
 
 /**
@@ -80,18 +77,15 @@ export function isTextSize(value: unknown): value is TextSize {
  * a hard "off", preserving OS-follow behavior for existing visitors.
  */
 export function parseTriState(value: unknown): A11yTriState | undefined {
-  if (value === "on" || value === true) return "on";
-  if (value === "off") return "off";
+  if (value === 'on' || value === true) return 'on';
+  if (value === 'off') return 'off';
   return undefined;
 }
 
 /** Resolve a tri-state against the live OS signal: an explicit choice wins. */
-export function resolveTriState(
-  value: A11yTriState | undefined,
-  systemOn: boolean,
-): boolean {
-  if (value === "on") return true;
-  if (value === "off") return false;
+export function resolveTriState(value: A11yTriState | undefined, systemOn: boolean): boolean {
+  if (value === 'on') return true;
+  if (value === 'off') return false;
   return systemOn;
 }
 
@@ -101,9 +95,7 @@ export function parseA11y(raw: string | null | undefined): A11yPrefs {
   try {
     const data = JSON.parse(raw) as Partial<Record<keyof A11yPrefs, unknown>>;
     return {
-      textSize: isTextSize(data.textSize)
-        ? data.textSize
-        : DEFAULT_A11Y.textSize,
+      textSize: isTextSize(data.textSize) ? data.textSize : DEFAULT_A11Y.textSize,
       contrast: parseTriState(data.contrast),
       motion: parseTriState(data.motion),
       reading: data.reading === true,
@@ -120,20 +112,20 @@ export function serializeA11y(prefs: A11yPrefs): string {
 /** Map prefs to the <html> data-attributes to set (defaults/unset are omitted). */
 export function a11yAttributes(prefs: A11yPrefs): Record<string, string> {
   const attrs: Record<string, string> = {};
-  if (prefs.textSize !== "default") attrs["data-text"] = prefs.textSize;
+  if (prefs.textSize !== 'default') attrs['data-text'] = prefs.textSize;
   // "on"/"off" are explicit. undefined omits the attr so the OS media query wins.
-  if (prefs.contrast === "on") attrs["data-contrast"] = "high";
-  else if (prefs.contrast === "off") attrs["data-contrast"] = "off";
-  if (prefs.motion === "on") attrs["data-motion"] = "reduced";
-  else if (prefs.motion === "off") attrs["data-motion"] = "off";
-  if (prefs.reading) attrs["data-reading"] = "readable";
+  if (prefs.contrast === 'on') attrs['data-contrast'] = 'high';
+  else if (prefs.contrast === 'off') attrs['data-contrast'] = 'off';
+  if (prefs.motion === 'on') attrs['data-motion'] = 'reduced';
+  else if (prefs.motion === 'off') attrs['data-motion'] = 'off';
+  if (prefs.reading) attrs['data-reading'] = 'readable';
   return attrs;
 }
 
 /** True when any preference is explicitly set (drives the "active" badge in UI). */
 export function isA11yActive(prefs: A11yPrefs): boolean {
   return (
-    prefs.textSize !== "default" ||
+    prefs.textSize !== 'default' ||
     prefs.contrast !== undefined ||
     prefs.motion !== undefined ||
     prefs.reading
@@ -150,7 +142,7 @@ export function isA11yActive(prefs: A11yPrefs): boolean {
 export function kidModeDefaults(prefs: A11yPrefs): A11yPrefs {
   return {
     ...prefs,
-    textSize: prefs.textSize === "default" ? "large" : prefs.textSize,
+    textSize: prefs.textSize === 'default' ? 'large' : prefs.textSize,
     reading: true,
   };
 }

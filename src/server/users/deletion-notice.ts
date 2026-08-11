@@ -13,7 +13,7 @@
  * notice changes — a wording tidy does not need a bump, a change to what
  * survives does.
  */
-export const DELETION_NOTICE_VERSION = "2026-02-account-erasure-v1";
+export const DELETION_NOTICE_VERSION = '2026-02-account-erasure-v1';
 
 /** What the user must type. Matched case-insensitively after trimming. */
-export const DELETION_CONFIRM_PHRASE = "DELETE";
+export const DELETION_CONFIRM_PHRASE = 'DELETE';

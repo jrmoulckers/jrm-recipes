@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Pins the cache-busting of the rating actions (#215): a rating change re-ranks
@@ -23,7 +23,7 @@ const {
   findManyMock: vi.fn(),
 }));
 
-vi.mock("next/cache", () => ({
+vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
   revalidateTag: revalidateTagMock,
   unstable_cache:
@@ -31,8 +31,8 @@ vi.mock("next/cache", () => ({
     (...args: unknown[]) =>
       fn(...args),
 }));
-vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/auth', () => ({ requireUser: requireUserMock }));
+vi.mock('~/server/db', () => ({
   isDbConfigured: () => true,
   db: {
     query: {
@@ -42,7 +42,7 @@ vi.mock("~/server/db", () => ({
     },
   },
 }));
-vi.mock("./mutations", () => ({
+vi.mock('./mutations', () => ({
   createComment: vi.fn(),
   deleteComment: vi.fn(),
   removeRating: removeRatingMock,
@@ -51,41 +51,39 @@ vi.mock("./mutations", () => ({
   setRating: setRatingMock,
 }));
 
-import { removeRatingAction, setRatingAction } from "./actions";
-import { PUBLIC_RECIPES_TAG } from "../recipes/cache";
+import { removeRatingAction, setRatingAction } from './actions';
+import { PUBLIC_RECIPES_TAG } from '../recipes/cache';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  requireUserMock.mockResolvedValue({ id: "user_1" });
+  requireUserMock.mockResolvedValue({ id: 'user_1' });
   setRatingMock.mockResolvedValue(undefined);
   removeRatingMock.mockResolvedValue(undefined);
-  findManyMock.mockResolvedValue([
-    { id: "rec_1", slug: "apple-pie", author: { slug: "ada" } },
-  ]);
+  findManyMock.mockResolvedValue([{ id: 'rec_1', slug: 'apple-pie', author: { slug: 'ada' } }]);
 });
 
-describe("setRatingAction revalidation", () => {
-  it("busts the public feed tag and the recipe detail path", async () => {
+describe('setRatingAction revalidation', () => {
+  it('busts the public feed tag and the recipe detail path', async () => {
     const res = await setRatingAction({
-      recipeId: "rec_1",
-      recipeSlug: "apple-pie",
+      recipeId: 'rec_1',
+      recipeSlug: 'apple-pie',
       value: 5,
     });
 
     expect(res).toEqual({ ok: true });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+    expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/apple-pie');
     // A recipe also answers on its canonical namespaced URL, cached
     // independently by the App Router, so both have to be busted (#666).
-    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/ada/apple-pie");
+    expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/ada/apple-pie');
     expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
-  it("does not revalidate when the rating fails to persist", async () => {
-    setRatingMock.mockRejectedValue(new Error("NOT_FOUND"));
+  it('does not revalidate when the rating fails to persist', async () => {
+    setRatingMock.mockRejectedValue(new Error('NOT_FOUND'));
 
     const res = await setRatingAction({
-      recipeId: "rec_1",
-      recipeSlug: "apple-pie",
+      recipeId: 'rec_1',
+      recipeSlug: 'apple-pie',
       value: 5,
     });
 
@@ -94,25 +92,25 @@ describe("setRatingAction revalidation", () => {
   });
 });
 
-describe("removeRatingAction revalidation", () => {
-  it("busts the public feed tag and the recipe detail path", async () => {
+describe('removeRatingAction revalidation', () => {
+  it('busts the public feed tag and the recipe detail path', async () => {
     const res = await removeRatingAction({
-      recipeId: "rec_1",
-      recipeSlug: "apple-pie",
+      recipeId: 'rec_1',
+      recipeSlug: 'apple-pie',
     });
 
     expect(res).toEqual({ ok: true });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/ada/apple-pie");
+    expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/apple-pie');
+    expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/ada/apple-pie');
     expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
-  it("does not revalidate when the removal fails", async () => {
-    removeRatingMock.mockRejectedValue(new Error("FORBIDDEN"));
+  it('does not revalidate when the removal fails', async () => {
+    removeRatingMock.mockRejectedValue(new Error('FORBIDDEN'));
 
     const res = await removeRatingAction({
-      recipeId: "rec_1",
-      recipeSlug: "apple-pie",
+      recipeId: 'rec_1',
+      recipeSlug: 'apple-pie',
     });
 
     expect(res.ok).toBe(false);

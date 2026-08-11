@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { eq } from "drizzle-orm";
-import { z } from "zod";
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 
-import { db } from "~/server/db";
-import { users, type User } from "~/server/db/schema";
-import { mediaUrl } from "~/server/media/validation";
+import { db } from '~/server/db';
+import { users, type User } from '~/server/db/schema';
+import { mediaUrl } from '~/server/media/validation';
 
 /**
  * Profile mutations (issue #659, epic #655).
@@ -20,7 +20,7 @@ import { mediaUrl } from "~/server/media/validation";
  * hands ownership of the column back to Clerk.
  */
 export const avatarInput = z.object({
-  url: mediaUrl.optional().or(z.literal("").transform(() => undefined)),
+  url: mediaUrl.optional().or(z.literal('').transform(() => undefined)),
 });
 
 export type AvatarInput = z.infer<typeof avatarInput>;

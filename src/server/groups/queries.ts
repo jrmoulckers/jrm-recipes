@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   groupInviteLinks,
   groupMembers,
@@ -10,7 +10,7 @@ import {
   recipes,
   type MemberRole,
   type User,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 const ROLE_ORDER: Record<MemberRole, number> = {
   owner: 0,
@@ -21,12 +21,12 @@ const ROLE_ORDER: Record<MemberRole, number> = {
 
 export function canManage(role: MemberRole | null | undefined): boolean {
   if (!isDbConfigured()) return false;
-  return role === "owner" || role === "admin";
+  return role === 'owner' || role === 'admin';
 }
 
 export function isOwner(role: MemberRole | null | undefined): boolean {
   if (!isDbConfigured()) return false;
-  return role === "owner";
+  return role === 'owner';
 }
 
 /**
@@ -56,9 +56,9 @@ export function canListInGroupCookbook(
   if (recipe.deletedAt != null) return false;
   if (recipe.authorId === viewer?.id) return true;
   if (!isMember) {
-    return recipe.visibility === "public" && recipe.status === "published";
+    return recipe.visibility === 'public' && recipe.status === 'published';
   }
-  return recipe.visibility === "group" || recipe.visibility === "public";
+  return recipe.visibility === 'group' || recipe.visibility === 'public';
 }
 
 export async function listMyGroups(userId: string) {
@@ -86,19 +86,13 @@ export async function listMyGroups(userId: string) {
 
   const memberCounts = new Map<string, number>();
   for (const member of allMembers) {
-    memberCounts.set(
-      member.groupId,
-      (memberCounts.get(member.groupId) ?? 0) + 1,
-    );
+    memberCounts.set(member.groupId, (memberCounts.get(member.groupId) ?? 0) + 1);
   }
 
   const recipeCounts = new Map<string, number>();
   for (const recipe of groupRecipes) {
     if (!recipe.groupId) continue;
-    recipeCounts.set(
-      recipe.groupId,
-      (recipeCounts.get(recipe.groupId) ?? 0) + 1,
-    );
+    recipeCounts.set(recipe.groupId, (recipeCounts.get(recipe.groupId) ?? 0) + 1);
   }
 
   return memberships.map((membership) => ({
@@ -143,9 +137,7 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
     return a.createdAt.getTime() - b.createdAt.getTime();
   });
   const viewerRole =
-    viewer == null
-      ? null
-      : (members.find((member) => member.userId === viewer.id)?.role ?? null);
+    viewer == null ? null : (members.find((member) => member.userId === viewer.id)?.role ?? null);
   const isMember = viewerRole != null;
 
   // Fetch the group's live (non-tombstoned) recipes, then apply the same
@@ -199,15 +191,12 @@ export async function getMembership(groupId: string, userId: string) {
 
   return (
     (await db.query.groupMembers.findFirst({
-      where: and(
-        eq(groupMembers.groupId, groupId),
-        eq(groupMembers.userId, userId),
-      ),
+      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
     })) ?? null
   );
 }
 
-export type InviteLinkStatus = "active" | "expired" | "revoked" | "exhausted";
+export type InviteLinkStatus = 'active' | 'expired' | 'revoked' | 'exhausted';
 
 /**
  * Public-safe preview for the `/join/[token]` page (issue #343). Resolves a link
@@ -241,12 +230,12 @@ export async function getInviteLinkPreview(token: string) {
 
   const status: InviteLinkStatus =
     link.revokedAt != null
-      ? "revoked"
+      ? 'revoked'
       : link.expiresAt != null && link.expiresAt.getTime() <= Date.now()
-        ? "expired"
+        ? 'expired'
         : link.maxUses != null && link.useCount >= link.maxUses
-          ? "exhausted"
-          : "active";
+          ? 'exhausted'
+          : 'active';
 
   return {
     token,
@@ -257,11 +246,9 @@ export async function getInviteLinkPreview(token: string) {
   };
 }
 
-export type InviteLinkPreview = NonNullable<
-  Awaited<ReturnType<typeof getInviteLinkPreview>>
->;
+export type InviteLinkPreview = NonNullable<Awaited<ReturnType<typeof getInviteLinkPreview>>>;
 
 export type MyGroup = Awaited<ReturnType<typeof listMyGroups>>[number];
 export type FullGroup = NonNullable<Awaited<ReturnType<typeof getGroupBySlug>>>;
-export type FullGroupMember = FullGroup["members"][number];
-export type GroupRecipe = FullGroup["recipes"][number];
+export type FullGroupMember = FullGroup['members'][number];
+export type GroupRecipe = FullGroup['recipes'][number];

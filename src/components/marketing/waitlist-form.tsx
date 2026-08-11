@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Check, Loader2, Mail } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { Check, Loader2, Mail } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { track } from "~/lib/analytics";
-import { cn } from "~/lib/utils";
-import { joinWaitlistAction } from "~/server/waitlist/actions";
-import { type WaitlistSource } from "~/server/waitlist/validation";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+import { track } from '~/lib/analytics';
+import { cn } from '~/lib/utils';
+import { joinWaitlistAction } from '~/server/waitlist/actions';
+import { type WaitlistSource } from '~/server/waitlist/validation';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 
 /**
  * Landing-page email/waitlist capture (issue #351). A single accessible email
@@ -20,7 +20,7 @@ import { Label } from "~/components/ui/label";
  * friendly confirmation.
  */
 export function WaitlistForm({
-  source = "landing",
+  source = 'landing',
   className,
 }: {
   source?: WaitlistSource;
@@ -28,8 +28,8 @@ export function WaitlistForm({
 }) {
   const emailId = React.useId();
   const errorId = React.useId();
-  const t = useTranslations("marketing.waitlist");
-  const [email, setEmail] = React.useState("");
+  const t = useTranslations('marketing.waitlist');
+  const [email, setEmail] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
@@ -45,8 +45,8 @@ export function WaitlistForm({
           return;
         }
         setDone(true);
-        setEmail("");
-        track("waitlist_joined", { source, duplicate: result.duplicate });
+        setEmail('');
+        track('waitlist_joined', { source, duplicate: result.duplicate });
       });
     });
   }
@@ -56,29 +56,29 @@ export function WaitlistForm({
       <div
         role="status"
         className={cn(
-          "flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-foreground",
+          'flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-foreground',
           className,
         )}
       >
         <Check className="size-4 text-primary" aria-hidden />
-        {t("success")}
+        {t('success')}
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className={cn("w-full", className)}>
+    <form onSubmit={onSubmit} noValidate className={cn('w-full', className)}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="flex-1">
           <Label htmlFor={emailId} className="sr-only">
-            {t("emailLabel")}
+            {t('emailLabel')}
           </Label>
           <Input
             id={emailId}
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder={t("emailPlaceholder")}
+            placeholder={t('emailPlaceholder')}
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
@@ -89,14 +89,9 @@ export function WaitlistForm({
             disabled={isPending}
           />
         </div>
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isPending}
-          className="shrink-0"
-        >
+        <Button type="submit" size="lg" disabled={isPending} className="shrink-0">
           {isPending ? <Loader2 className="animate-spin" /> : <Mail />}
-          {isPending ? t("joining") : t("submit")}
+          {isPending ? t('joining') : t('submit')}
         </Button>
       </div>
       {error ? (

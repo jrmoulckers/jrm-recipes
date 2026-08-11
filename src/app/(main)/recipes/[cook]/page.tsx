@@ -1,12 +1,9 @@
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect } from 'next/navigation';
 
-import { recipeDetailPath } from "~/lib/recipe-path";
-import {
-  parseFlatRecipeParams,
-  type FlatRecipeRouteParams,
-} from "~/lib/route-params";
-import { getFlatRecipeForViewer } from "~/server/recipes/loaders";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { recipeDetailPath } from '~/lib/recipe-path';
+import { parseFlatRecipeParams, type FlatRecipeRouteParams } from '~/lib/route-params';
+import { getFlatRecipeForViewer } from '~/server/recipes/loaders';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 /**
  * Legacy flat recipe URL: `/recipes/<slug>` or `/recipes/<id>` (#666).
@@ -26,11 +23,7 @@ import { withRouteMessages } from "~/components/i18n/route-messages";
  * recipe-slug allocators reserve those words, so this route can never shadow
  * them.
  */
-async function LegacyRecipePage({
-  params,
-}: {
-  params: Promise<FlatRecipeRouteParams>;
-}) {
+async function LegacyRecipePage({ params }: { params: Promise<FlatRecipeRouteParams> }) {
   const { cook } = await parseFlatRecipeParams(params);
   const { recipe } = await getFlatRecipeForViewer(cook);
   if (!recipe) notFound();

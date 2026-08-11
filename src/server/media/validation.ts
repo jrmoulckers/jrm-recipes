@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { isAllowedMediaUrl } from "~/config/media-hosts";
+import { isAllowedMediaUrl } from '~/config/media-hosts';
 
 /**
  * Validation contracts for the media library (issue #657). Shared by the client
@@ -32,16 +32,13 @@ export const mediaPublicId = z
   .trim()
   .min(1)
   .max(255)
-  .regex(
-    /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/,
-    "Unsupported image reference.",
-  );
+  .regex(/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/, 'Unsupported image reference.');
 
 /** Alt text. Empty collapses to `undefined`, which clears the column. */
 export const mediaAltText = z
   .string()
   .trim()
-  .max(300, "Keep the description under 300 characters.")
+  .max(300, 'Keep the description under 300 characters.')
   .optional()
   .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
@@ -64,7 +61,7 @@ export const recordUploadInput = z.object({
     .string()
     .trim()
     .max(200)
-    .regex(/^heirloom(?:\/[a-zA-Z0-9_-]+)*$/, "Unsupported upload folder.")
+    .regex(/^heirloom(?:\/[a-zA-Z0-9_-]+)*$/, 'Unsupported upload folder.')
     .optional(),
 });
 

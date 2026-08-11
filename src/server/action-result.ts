@@ -1,4 +1,4 @@
-import type { ZodError } from "zod";
+import type { ZodError } from 'zod';
 
 /**
  * Shared Server Action result contract (#161).
@@ -37,9 +37,7 @@ export type ActionFailure = {
  * collapses to a bare `{ ok: true }`. The tuple wrapper (`[T] extends [void]`)
  * stops the conditional from distributing over a union `T`.
  */
-export type ActionSuccess<T = void> = [T] extends [void]
-  ? { ok: true }
-  : { ok: true } & T;
+export type ActionSuccess<T = void> = [T] extends [void] ? { ok: true } : { ok: true } & T;
 
 /** Discriminated union returned by every server action. */
 export type ActionResult<T = void> = ActionSuccess<T> | ActionFailure;
@@ -47,9 +45,7 @@ export type ActionResult<T = void> = ActionSuccess<T> | ActionFailure;
 /** Build a success result, optionally carrying a typed payload. */
 export function ok(): ActionResult<void>;
 export function ok<T extends object>(data: T): ActionResult<T>;
-export function ok<T extends object>(
-  data?: T,
-): ActionResult<T> | ActionResult<void> {
+export function ok<T extends object>(data?: T): ActionResult<T> | ActionResult<void> {
   return data === undefined ? { ok: true } : { ok: true, ...data };
 }
 
@@ -65,7 +61,7 @@ export function fail(error: string, fieldErrors?: FieldErrors): ActionFailure {
  */
 export function fromZodError(
   error: ZodError,
-  message = "Please fix the highlighted fields.",
+  message = 'Please fix the highlighted fields.',
 ): ActionFailure {
   // Zod's flattened `fieldErrors` types its values as `string[] | undefined`
   // (a key may be absent). Copy only the populated entries so the result is a

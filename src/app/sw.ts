@@ -1,36 +1,29 @@
 /// <reference lib="webworker" />
-import { defaultCache } from "@serwist/next/worker";
-import type {
-  PrecacheEntry,
-  RuntimeCaching,
-  SerwistGlobalConfig,
-} from "serwist";
+import { defaultCache } from '@serwist/next/worker';
+import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from 'serwist';
 import {
   CacheableResponsePlugin,
   CacheFirst,
   ExpirationPlugin,
   NetworkFirst,
   Serwist,
-} from "serwist";
+} from 'serwist';
 
-import { isOfflineFallbackRequest } from "../lib/offline-fallback";
-import { COOK_NOTIFICATION_TYPE, matchesCookClient } from "../lib/cook-notify";
-import {
-  isWarmCookBundleMessage,
-  type WarmCookBundleMessage,
-} from "../lib/cook-warm";
+import { isOfflineFallbackRequest } from '../lib/offline-fallback';
+import { COOK_NOTIFICATION_TYPE, matchesCookClient } from '../lib/cook-notify';
+import { isWarmCookBundleMessage, type WarmCookBundleMessage } from '../lib/cook-warm';
 import {
   isRecipeImageRequest,
   RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS,
   RECIPE_IMAGE_CACHE_MAX_ENTRIES,
   RECIPE_IMAGE_CACHE_NAME,
-} from "../lib/recipe-image-cache";
+} from '../lib/recipe-image-cache';
 import {
   isRecipePageRequest,
   RECIPE_PAGE_CACHE_MAX_AGE_SECONDS,
   RECIPE_PAGE_CACHE_MAX_ENTRIES,
   RECIPE_PAGE_CACHE_NAME,
-} from "../lib/recipe-page-cache";
+} from '../lib/recipe-page-cache';
 
 /**
  * Durable, offline-first cache for Cloudinary-backed recipe / cook-mode images.
@@ -85,7 +78,7 @@ const recipePageCache: RuntimeCaching = {
     isRecipePageRequest({
       url: url.href,
       destination: request.destination,
-      rscHeader: request.headers.get("RSC") === "1",
+      rscHeader: request.headers.get('RSC') === '1',
     }),
   handler: new NetworkFirst({
     cacheName: RECIPE_PAGE_CACHE_NAME,
@@ -135,7 +128,7 @@ const serwist = new Serwist({
         // Precached in next.config.js via `additionalPrecacheEntries`. Served
         // whenever a navigation can't be fulfilled from network or cache.
         // both hard document loads and soft (RSC) client-side navigations.
-        url: "/~offline",
+        url: '/~offline',
         matcher: ({ request }) => isOfflineFallbackRequest(request),
       },
     ],
@@ -163,7 +156,7 @@ const serwist = new Serwist({
  */
 serwist.setCatchHandler(async ({ request }) => {
   if (isOfflineFallbackRequest(request)) {
-    const offlineResponse = await serwist.matchPrecache("/~offline");
+    const offlineResponse = await serwist.matchPrecache('/~offline');
     if (offlineResponse) return offlineResponse;
   }
   return Response.error();
@@ -192,7 +185,7 @@ async function warmCookBundle(message: WarmCookBundleMessage): Promise<void> {
   ]);
 }
 
-self.addEventListener("message", (event) => {
+self.addEventListener('message', (event) => {
   if (isWarmCookBundleMessage(event.data)) {
     event.waitUntil(warmCookBundle(event.data));
   }
@@ -205,7 +198,7 @@ self.addEventListener("message", (event) => {
  */
 async function focusOrOpenCook(targetUrl: string): Promise<void> {
   const clientList = await self.clients.matchAll({
-    type: "window",
+    type: 'window',
     includeUncontrolled: true,
   });
   for (const client of clientList) {
@@ -217,12 +210,11 @@ async function focusOrOpenCook(targetUrl: string): Promise<void> {
   await self.clients.openWindow(targetUrl);
 }
 
-self.addEventListener("notificationclick", (event) => {
-  const data = event.notification.data as
-    { url?: string; type?: string } | undefined;
+self.addEventListener('notificationclick', (event) => {
+  const data = event.notification.data as { url?: string; type?: string } | undefined;
   // Only handle our cook-timer notifications. Leave any others to default.
   if (data?.type !== COOK_NOTIFICATION_TYPE) return;
   event.notification.close();
-  const targetUrl = new URL(data.url ?? "/", self.location.origin).href;
+  const targetUrl = new URL(data.url ?? '/', self.location.origin).href;
   event.waitUntil(focusOrOpenCook(targetUrl));
 });

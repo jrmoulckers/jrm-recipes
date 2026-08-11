@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
@@ -14,25 +14,25 @@ const { dbMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
 }));
 
-import type { User } from "~/server/db/schema";
-import { getRecipe, getRecipeByShareToken } from "./queries";
-import { generateShareToken } from "./share-token";
+import type { User } from '~/server/db/schema';
+import { getRecipe, getRecipeByShareToken } from './queries';
+import { generateShareToken } from './share-token';
 
-const author = { id: "author_1" } as User;
-const stranger = { id: "stranger_1" } as User;
+const author = { id: 'author_1' } as User;
+const stranger = { id: 'stranger_1' } as User;
 
 const unlisted = {
-  id: "rec_1",
-  slug: "grandmas-apple-pie",
+  id: 'rec_1',
+  slug: 'grandmas-apple-pie',
   authorId: author.id,
-  visibility: "unlisted",
+  visibility: 'unlisted',
   groupId: null,
-  shareToken: "tok_secret_123456789012",
+  shareToken: 'tok_secret_123456789012',
   shareLinkEnabled: true,
   ratings: [],
 };
@@ -42,64 +42,58 @@ beforeEach(() => {
   dbMock.query.groupMembers.findMany.mockResolvedValue([]);
 });
 
-describe("unlisted share-token access (#204/#207)", () => {
-  it("returns 404 (null) when an anonymous viewer guesses the slug", async () => {
+describe('unlisted share-token access (#204/#207)', () => {
+  it('returns 404 (null) when an anonymous viewer guesses the slug', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
     // No token: slug guess must not resolve an unlisted recipe.
-    await expect(getRecipe("grandmas-apple-pie", null)).resolves.toBeNull();
+    await expect(getRecipe('grandmas-apple-pie', null)).resolves.toBeNull();
   });
 
-  it("returns 404 for a signed-in non-owner guessing the slug", async () => {
+  it('returns 404 for a signed-in non-owner guessing the slug', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
-    await expect(getRecipe("grandmas-apple-pie", stranger)).resolves.toBeNull();
+    await expect(getRecipe('grandmas-apple-pie', stranger)).resolves.toBeNull();
   });
 
-  it("still lets the owner reach their unlisted recipe by slug", async () => {
+  it('still lets the owner reach their unlisted recipe by slug', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
-    await expect(getRecipe("grandmas-apple-pie", author)).resolves.toBe(
+    await expect(getRecipe('grandmas-apple-pie', author)).resolves.toBe(unlisted);
+  });
+
+  it('grants access when the valid share token is presented', async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
+    await expect(getRecipe('grandmas-apple-pie', null, 'tok_secret_123456789012')).resolves.toBe(
       unlisted,
     );
   });
 
-  it("grants access when the valid share token is presented", async () => {
+  it('rejects a wrong token', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
-    await expect(
-      getRecipe("grandmas-apple-pie", null, "tok_secret_123456789012"),
-    ).resolves.toBe(unlisted);
+    await expect(getRecipe('grandmas-apple-pie', null, 'wrong-token')).resolves.toBeNull();
   });
 
-  it("rejects a wrong token", async () => {
-    dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
-    await expect(
-      getRecipe("grandmas-apple-pie", null, "wrong-token"),
-    ).resolves.toBeNull();
-  });
-
-  it("rejects the token when the share link is disabled (#207)", async () => {
+  it('rejects the token when the share link is disabled (#207)', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue({
       ...unlisted,
       shareLinkEnabled: false,
     });
     await expect(
-      getRecipe("grandmas-apple-pie", null, "tok_secret_123456789012"),
+      getRecipe('grandmas-apple-pie', null, 'tok_secret_123456789012'),
     ).resolves.toBeNull();
   });
 
-  it("getRecipeByShareToken resolves a live token", async () => {
+  it('getRecipeByShareToken resolves a live token', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(unlisted);
-    await expect(
-      getRecipeByShareToken("tok_secret_123456789012"),
-    ).resolves.toBe(unlisted);
+    await expect(getRecipeByShareToken('tok_secret_123456789012')).resolves.toBe(unlisted);
   });
 
-  it("getRecipeByShareToken returns null for an empty token", async () => {
-    await expect(getRecipeByShareToken("")).resolves.toBeNull();
+  it('getRecipeByShareToken returns null for an empty token', async () => {
+    await expect(getRecipeByShareToken('')).resolves.toBeNull();
     expect(dbMock.query.recipes.findFirst).not.toHaveBeenCalled();
   });
 });
 
-describe("generateShareToken", () => {
-  it("produces a URL-safe, base64url token with no padding", () => {
+describe('generateShareToken', () => {
+  it('produces a URL-safe, base64url token with no padding', () => {
     for (let i = 0; i < 50; i++) {
       const token = generateShareToken();
       // Only base64url chars. Never +, /, or = padding.
@@ -107,11 +101,11 @@ describe("generateShareToken", () => {
     }
   });
 
-  it("carries ~256 bits of entropy (32 bytes → 43 chars)", () => {
+  it('carries ~256 bits of entropy (32 bytes → 43 chars)', () => {
     expect(generateShareToken()).toHaveLength(43);
   });
 
-  it("does not repeat across many draws (CSPRNG, not Math.random)", () => {
+  it('does not repeat across many draws (CSPRNG, not Math.random)', () => {
     const tokens = new Set<string>();
     for (let i = 0; i < 1000; i++) tokens.add(generateShareToken());
     expect(tokens.size).toBe(1000);

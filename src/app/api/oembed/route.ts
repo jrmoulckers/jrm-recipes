@@ -1,11 +1,11 @@
-import { buildRecipeOembed, recipeRefFromUrl } from "~/lib/oembed";
-import { getPublicRecipeCard } from "~/server/recipes/queries";
-import { resolveNamespacedRecipe } from "~/server/recipes/resolve";
+import { buildRecipeOembed, recipeRefFromUrl } from '~/lib/oembed';
+import { getPublicRecipeCard } from '~/server/recipes/queries';
+import { resolveNamespacedRecipe } from '~/server/recipes/resolve';
 
 // Reuses the pooled Postgres query, so keep it on the Node runtime. Always
 // resolved per-request (a recipe can be unpublished/made private at any time).
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 function numberParam(value: string | null): number | null {
   if (value == null) return null;
@@ -23,25 +23,19 @@ function numberParam(value: string | null): number | null {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  const url = searchParams.get("url");
+  const url = searchParams.get('url');
   if (!url) {
-    return Response.json(
-      { error: "Missing required 'url' parameter." },
-      { status: 400 },
-    );
+    return Response.json({ error: "Missing required 'url' parameter." }, { status: 400 });
   }
 
-  const format = searchParams.get("format");
-  if (format && format.toLowerCase() !== "json") {
-    return Response.json(
-      { error: "Only the json format is supported." },
-      { status: 501 },
-    );
+  const format = searchParams.get('format');
+  if (format && format.toLowerCase() !== 'json') {
+    return Response.json({ error: 'Only the json format is supported.' }, { status: 501 });
   }
 
   const ref = recipeRefFromUrl(url);
   if (!ref) {
-    return Response.json({ error: "Not found." }, { status: 404 });
+    return Response.json({ error: 'Not found.' }, { status: 404 });
   }
 
   // A namespaced URL is resolved through the cook's namespace (which also
@@ -51,20 +45,20 @@ export async function GET(request: Request) {
     ? ((await resolveNamespacedRecipe(ref.cook, ref.recipe))?.recipeId ?? null)
     : ref.recipe;
   if (!lookup) {
-    return Response.json({ error: "Not found." }, { status: 404 });
+    return Response.json({ error: 'Not found.' }, { status: 404 });
   }
 
   const recipe = await getPublicRecipeCard(lookup);
   if (!recipe) {
-    return Response.json({ error: "Not found." }, { status: 404 });
+    return Response.json({ error: 'Not found.' }, { status: 404 });
   }
 
   const payload = buildRecipeOembed(recipe, {
-    maxwidth: numberParam(searchParams.get("maxwidth")),
-    maxheight: numberParam(searchParams.get("maxheight")),
+    maxwidth: numberParam(searchParams.get('maxwidth')),
+    maxheight: numberParam(searchParams.get('maxheight')),
   });
 
   return Response.json(payload, {
-    headers: { "cache-control": "public, max-age=3600, s-maxage=3600" },
+    headers: { 'cache-control': 'public, max-age=3600, s-maxage=3600' },
   });
 }

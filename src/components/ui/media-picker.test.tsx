@@ -1,55 +1,45 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-import * as React from "react";
-import {
-  act,
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as React from 'react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { IntlWrapper } from "~/test/intl";
-import esMessages from "~/messages/es.json";
+import { IntlWrapper } from '~/test/intl';
+import esMessages from '~/messages/es.json';
 
 // Cloudinary configured, so all three tabs render.
-vi.mock("~/env", () => ({
+vi.mock('~/env', () => ({
   env: {
-    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "demo",
-    NEXT_PUBLIC_CLOUDINARY_API_KEY: "key",
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: 'demo',
+    NEXT_PUBLIC_CLOUDINARY_API_KEY: 'key',
   },
 }));
 
 // The real widget loads a remote script; the picker only needs the render-prop
 // contract, so stand in for it.
-vi.mock("next-cloudinary", () => ({
-  CldUploadWidget: ({
-    children,
-  }: {
-    children: (arg: { open: () => void }) => React.ReactNode;
-  }) => <>{children({ open: () => undefined })}</>,
+vi.mock('next-cloudinary', () => ({
+  CldUploadWidget: ({ children }: { children: (arg: { open: () => void }) => React.ReactNode }) => (
+    <>{children({ open: () => undefined })}</>
+  ),
 }));
 
 // Hoisted so the `vi.mock` factory (which is lifted above the imports) can
 // reference these without a temporal-dead-zone error.
-const { listAssetsAction, recordUploadAction, updateAltTextAction } =
-  vi.hoisted(() => ({
-    listAssetsAction: vi.fn(),
-    recordUploadAction: vi.fn(),
-    updateAltTextAction: vi.fn(),
-  }));
+const { listAssetsAction, recordUploadAction, updateAltTextAction } = vi.hoisted(() => ({
+  listAssetsAction: vi.fn(),
+  recordUploadAction: vi.fn(),
+  updateAltTextAction: vi.fn(),
+}));
 
-vi.mock("~/server/media/actions", () => ({
+vi.mock('~/server/media/actions', () => ({
   listAssetsAction,
   recordUploadAction,
   updateAltTextAction,
 }));
 
-import { MediaPicker } from "./media-picker";
+import { MediaPicker } from './media-picker';
 
 /**
  * Rendered in Spanish on purpose: an English assertion would still pass if the
@@ -73,13 +63,7 @@ function asset(id: string, altText: string | null) {
 
 function renderPicker(onChange = vi.fn()) {
   render(
-    <MediaPicker
-      open
-      onOpenChange={vi.fn()}
-      value=""
-      onChange={onChange}
-      folder="heirloom"
-    />,
+    <MediaPicker open onOpenChange={vi.fn()} value="" onChange={onChange} folder="heirloom" />,
     { wrapper: SpanishWrapper },
   );
   return onChange;
@@ -87,8 +71,8 @@ function renderPicker(onChange = vi.fn()) {
 
 /** Open "Your photos" and wait for the grid to settle. */
 async function openLibrary(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("tab", { name: "Tus fotos" }));
-  return await screen.findByRole("radiogroup", { name: "Tus fotos" });
+  await user.click(screen.getByRole('tab', { name: 'Tus fotos' }));
+  return await screen.findByRole('radiogroup', { name: 'Tus fotos' });
 }
 
 beforeEach(() => {
@@ -98,7 +82,7 @@ beforeEach(() => {
   listAssetsAction.mockResolvedValue({
     ok: true,
     page: {
-      assets: [asset("a1", "Pan de plátano"), asset("a2", null)],
+      assets: [asset('a1', 'Pan de plátano'), asset('a2', null)],
       nextCursor: null,
     },
   });
@@ -107,8 +91,8 @@ beforeEach(() => {
 
 afterEach(() => cleanup());
 
-describe("media picker library tab (#656)", () => {
-  it("does not load the library until the tab is opened", async () => {
+describe('media picker library tab (#656)', () => {
+  it('does not load the library until the tab is opened', async () => {
     const user = userEvent.setup();
     renderPicker();
 
@@ -118,111 +102,103 @@ describe("media picker library tab (#656)", () => {
     expect(listAssetsAction).toHaveBeenCalledTimes(1);
   });
 
-  it("selects an existing photo without uploading anything", async () => {
+  it('selects an existing photo without uploading anything', async () => {
     const user = userEvent.setup();
     const onChange = renderPicker();
     const grid = await openLibrary(user);
 
-    await user.click(
-      within(grid).getByRole("radio", { name: "Pan de plátano" }),
-    );
+    await user.click(within(grid).getByRole('radio', { name: 'Pan de plátano' }));
 
     expect(onChange).toHaveBeenCalledWith({
-      url: "https://res.cloudinary.com/demo/image/upload/a1.jpg",
-      assetId: "a1",
+      url: 'https://res.cloudinary.com/demo/image/upload/a1.jpg',
+      assetId: 'a1',
     });
     expect(recordUploadAction).not.toHaveBeenCalled();
   });
 
-  it("names every thumbnail, falling back when a photo has no description", async () => {
+  it('names every thumbnail, falling back when a photo has no description', async () => {
     const user = userEvent.setup();
     renderPicker();
     const grid = await openLibrary(user);
 
-    expect(
-      within(grid).getByRole("radio", { name: "Foto sin descripción" }),
-    ).toBeInTheDocument();
+    expect(within(grid).getByRole('radio', { name: 'Foto sin descripción' })).toBeInTheDocument();
   });
 
-  it("moves between thumbnails with the arrow keys", async () => {
+  it('moves between thumbnails with the arrow keys', async () => {
     const user = userEvent.setup();
     renderPicker();
     const grid = await openLibrary(user);
 
-    const [first, second] = within(grid).getAllByRole("radio");
+    const [first, second] = within(grid).getAllByRole('radio');
     // Focus moves the roving tabindex, which is a state update.
     act(() => first!.focus());
     expect(first).toHaveFocus();
 
-    await user.keyboard("{ArrowRight}");
+    await user.keyboard('{ArrowRight}');
     expect(second).toHaveFocus();
 
-    await user.keyboard("{ArrowLeft}");
+    await user.keyboard('{ArrowLeft}');
     expect(first).toHaveFocus();
   });
 });
 
-describe("media picker alt text (#125)", () => {
+describe('media picker alt text (#125)', () => {
   it("round-trips the selected photo's description to the library", async () => {
     const user = userEvent.setup();
     renderPicker();
     const grid = await openLibrary(user);
 
-    await user.click(
-      within(grid).getByRole("radio", { name: "Pan de plátano" }),
-    );
+    await user.click(within(grid).getByRole('radio', { name: 'Pan de plátano' }));
 
-    const field = screen.getByLabelText("Descripción de la foto");
+    const field = screen.getByLabelText('Descripción de la foto');
     // The chosen photo's stored description is what the field starts from.
-    expect(field).toHaveValue("Pan de plátano");
+    expect(field).toHaveValue('Pan de plátano');
 
     await user.clear(field);
-    await user.type(field, "Pan tibio");
-    await user.click(
-      screen.getByRole("button", { name: "Guardar descripción" }),
-    );
+    await user.type(field, 'Pan tibio');
+    await user.click(screen.getByRole('button', { name: 'Guardar descripción' }));
 
     await waitFor(() =>
       expect(updateAltTextAction).toHaveBeenCalledWith({
-        id: "a1",
-        altText: "Pan tibio",
+        id: 'a1',
+        altText: 'Pan tibio',
       }),
     );
-    expect(screen.getByText("Descripción guardada")).toBeInTheDocument();
+    expect(screen.getByText('Descripción guardada')).toBeInTheDocument();
   });
 
-  it("keeps the description field unavailable until a stored photo is chosen", () => {
+  it('keeps the description field unavailable until a stored photo is chosen', () => {
     renderPicker();
-    expect(screen.getByLabelText("Descripción de la foto")).toBeDisabled();
+    expect(screen.getByLabelText('Descripción de la foto')).toBeDisabled();
   });
 });
 
-describe("media picker link tab", () => {
-  it("accepts a pasted URL with no library asset behind it", async () => {
+describe('media picker link tab', () => {
+  it('accepts a pasted URL with no library asset behind it', async () => {
     const user = userEvent.setup();
     const onChange = renderPicker();
 
-    await user.click(screen.getByRole("tab", { name: "Enlace" }));
-    await user.type(screen.getByLabelText("URL de la imagen"), "h");
+    await user.click(screen.getByRole('tab', { name: 'Enlace' }));
+    await user.type(screen.getByLabelText('URL de la imagen'), 'h');
 
-    expect(onChange).toHaveBeenLastCalledWith({ url: "h", assetId: null });
+    expect(onChange).toHaveBeenLastCalledWith({ url: 'h', assetId: null });
   });
 });
 
-describe("media picker upload tab", () => {
+describe('media picker upload tab', () => {
+  // Quote style is a formatter choice, so normalize it and keep the assertions below
+  // written with double quotes.
   const src = readFileSync(
-    resolve(process.cwd(), "src/components/ui/media-picker.tsx"),
-    "utf8",
-  );
+    resolve(process.cwd(), 'src/components/ui/media-picker.tsx'),
+    'utf8',
+  ).replace(/'/g, '"');
 
-  it("keeps the Cloudinary widget in its own async chunk (#201)", () => {
+  it('keeps the Cloudinary widget in its own async chunk (#201)', () => {
     expect(src).toMatch(/dynamic\(\s*\(\)\s*=>\s*import\("next-cloudinary"\)/);
-    expect(src).not.toMatch(
-      /import\s*\{[^}]*CldUploadWidget[^}]*\}\s*from\s*"next-cloudinary"/,
-    );
+    expect(src).not.toMatch(/import\s*\{[^}]*CldUploadWidget[^}]*\}\s*from\s*"next-cloudinary"/);
   });
 
-  it("records the upload once and never meters storage twice", () => {
+  it('records the upload once and never meters storage twice', () => {
     // `recordUploadAction` meters storage itself, so the old direct
     // `recordStorageUsageAction` call must be gone or the cap is billed twice.
     //
@@ -232,10 +208,10 @@ describe("media picker upload tab", () => {
     // does not remove `recordUploadAction(`; coexisting is precisely the bug.
     // So anchor the literal against the module that really exports it: if the
     // name is misspelled here, this fails loudly instead of going quiet.
-    const forbidden = "recordStorageUsageAction";
+    const forbidden = 'recordStorageUsageAction';
     const usageActions = readFileSync(
-      resolve(process.cwd(), "src/server/billing/usage-actions.ts"),
-      "utf8",
+      resolve(process.cwd(), 'src/server/billing/usage-actions.ts'),
+      'utf8',
     );
     expect(
       usageActions,

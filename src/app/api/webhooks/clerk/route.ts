@@ -1,10 +1,10 @@
-import { env } from "~/env";
+import { env } from '~/env';
 import {
   handleClerkEvent,
   type ClerkEventOutcome,
   type ClerkWebhookEvent,
-} from "~/server/auth/clerk-webhook";
-import { verifySvixSignature } from "~/server/auth/svix";
+} from '~/server/auth/clerk-webhook';
+import { verifySvixSignature } from '~/server/auth/svix';
 
 /**
  * Clerk webhook (issue #217). The channel that keeps our `users` table in sync
@@ -19,15 +19,12 @@ import { verifySvixSignature } from "~/server/auth/svix";
  * the secret is absent. The handlers are idempotent, so Clerk's
  * at-least-once retries are safe.
  */
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
 export async function POST(request: Request): Promise<Response> {
   const secret = env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    return Response.json(
-      { error: "Clerk webhook is not configured." },
-      { status: 501 },
-    );
+    return Response.json({ error: 'Clerk webhook is not configured.' }, { status: 501 });
   }
 
   // Read the raw body. Verification is an HMAC over these exact bytes.
@@ -36,21 +33,21 @@ export async function POST(request: Request): Promise<Response> {
   const verified = verifySvixSignature(
     secret,
     {
-      id: request.headers.get("svix-id"),
-      timestamp: request.headers.get("svix-timestamp"),
-      signature: request.headers.get("svix-signature"),
+      id: request.headers.get('svix-id'),
+      timestamp: request.headers.get('svix-timestamp'),
+      signature: request.headers.get('svix-signature'),
     },
     rawBody,
   );
   if (!verified) {
-    return Response.json({ error: "Invalid signature." }, { status: 400 });
+    return Response.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
   let event: ClerkWebhookEvent;
   try {
     event = JSON.parse(rawBody) as ClerkWebhookEvent;
   } catch {
-    return Response.json({ error: "Invalid payload." }, { status: 400 });
+    return Response.json({ error: 'Invalid payload.' }, { status: 400 });
   }
 
   let outcome: ClerkEventOutcome;
@@ -58,10 +55,7 @@ export async function POST(request: Request): Promise<Response> {
     outcome = await handleClerkEvent(event);
   } catch {
     // Return 5xx so Clerk retries. Handlers are idempotent, so replay is safe.
-    return Response.json(
-      { error: "Webhook processing failed." },
-      { status: 500 },
-    );
+    return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
   }
 
   // A held erasure (#694) is accepted and durably recorded, but not performed.
@@ -69,9 +63,9 @@ export async function POST(request: Request): Promise<Response> {
   // reporting a deletion that did not happen. Deliberately not a 5xx — retrying
   // cannot help until a remedy ships, so an error here would be an endless
   // redelivery loop against a request we are intentionally holding.
-  if (outcome === "held") {
+  if (outcome === 'held') {
     return Response.json(
-      { received: true, status: "held", reason: "co_created_entanglement" },
+      { received: true, status: 'held', reason: 'co_created_entanglement' },
       { status: 202 },
     );
   }

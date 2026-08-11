@@ -1,17 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { AlertTriangle, X } from "lucide-react";
+import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { AlertTriangle, X } from 'lucide-react';
 
-import {
-  ALLERGEN_LABELS,
-  summarizeAllergens,
-  summarizeHiddenAllergens,
-} from "~/lib/allergens";
-import { formatList } from "~/lib/i18n-format";
-import { Button } from "~/components/ui/button";
-import { type CookRecipe } from "./types";
+import { ALLERGEN_LABELS, summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
+import { formatList } from '~/lib/i18n-format';
+import { Button } from '~/components/ui/button';
+import { type CookRecipe } from './types';
 
 /**
  * A last, glanceable allergen safety check shown as Cook Mode starts (issue
@@ -32,7 +28,7 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
   const hidden = React.useMemo(() => summarizeHiddenAllergens(items), [items]);
   const [acknowledged, setAcknowledged] = React.useState(false);
   const locale = useLocale();
-  const t = useTranslations("cook.allergens");
+  const t = useTranslations('cook.allergens');
 
   if ((allergens.length === 0 && hidden.length === 0) || acknowledged) {
     return null;
@@ -44,7 +40,7 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
   return (
     <div
       role="region"
-      aria-label={t("region")}
+      aria-label={t('region')}
       className="border-b border-warning/50 bg-warning/15 text-foreground motion-safe:animate-fade-in"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-3 py-3 sm:px-5 sm:py-4">
@@ -52,17 +48,16 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
         <div className="min-w-0 flex-1 space-y-0.5">
           {labels.length > 0 && (
             <p className="text-lg font-semibold leading-tight sm:text-xl">
-              <span className="font-bold">{t("contains")}</span>{" "}
-              {formatList(labels, locale)}
+              <span className="font-bold">{t('contains')}</span> {formatList(labels, locale)}
             </p>
           )}
           {hiddenLabels.length > 0 && (
             <p className="text-sm font-medium leading-tight sm:text-base">
-              <span className="font-semibold">{t("mayContain")}</span>{" "}
+              <span className="font-semibold">{t('mayContain')}</span>{' '}
               {formatList(hiddenLabels, locale)}
             </p>
           )}
-          <p className="text-xs font-normal opacity-80">{t("disclaimer")}</p>
+          <p className="text-xs font-normal opacity-80">{t('disclaimer')}</p>
         </div>
         <Button
           type="button"
@@ -72,7 +67,7 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
           onClick={() => setAcknowledged(true)}
         >
           <X className="size-5" />
-          {t("gotIt")}
+          {t('gotIt')}
         </Button>
       </div>
     </div>

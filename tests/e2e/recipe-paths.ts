@@ -1,10 +1,10 @@
-import { type Page } from "@playwright/test";
+import { type Page } from '@playwright/test';
 
 /**
  * A public, published recipe from the seed (`src/server/db/seed.ts`), owned by
  * the local dev user. The e2e CI job seeds Postgres so it has content.
  */
-export const SEEDED_RECIPE_SLUG = "nonnas-sunday-gravy";
+export const SEEDED_RECIPE_SLUG = 'nonnas-sunday-gravy';
 
 /** The flat pre-namespacing URL, which now 308s to the canonical one (#666). */
 export const SEEDED_RECIPE_FLAT_PATH = `/recipes/${SEEDED_RECIPE_SLUG}`;

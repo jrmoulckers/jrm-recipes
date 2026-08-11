@@ -6,20 +6,20 @@
  * defaults to {@link DEFAULT_LOCALE} so existing callers are unaffected.
  */
 
-import { DEFAULT_LOCALE } from "~/config/i18n";
+import { DEFAULT_LOCALE } from '~/config/i18n';
 
 const VULGAR: Array<[number, string]> = [
-  [1 / 8, "⅛"],
-  [1 / 6, "⅙"],
-  [1 / 4, "¼"],
-  [1 / 3, "⅓"],
-  [3 / 8, "⅜"],
-  [1 / 2, "½"],
-  [5 / 8, "⅝"],
-  [2 / 3, "⅔"],
-  [3 / 4, "¾"],
-  [5 / 6, "⅚"],
-  [7 / 8, "⅞"],
+  [1 / 8, '⅛'],
+  [1 / 6, '⅙'],
+  [1 / 4, '¼'],
+  [1 / 3, '⅓'],
+  [3 / 8, '⅜'],
+  [1 / 2, '½'],
+  [5 / 8, '⅝'],
+  [2 / 3, '⅔'],
+  [3 / 4, '¾'],
+  [5 / 6, '⅚'],
+  [7 / 8, '⅞'],
 ];
 
 /** Round to a sensible cooking precision (avoids 0.30000000004). */
@@ -39,11 +39,11 @@ const VULGAR_VALUES: Record<string, number> = Object.fromEntries(
  * numbering-qualified Arabic like `ar-EG`) passes through unchanged.
  */
 function numberingLocale(locale: string): string {
-  return locale === "ar" ? "ar-u-nu-arab" : locale;
+  return locale === 'ar' ? 'ar-u-nu-arab' : locale;
 }
 
 function escapedForRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function normalizeLocaleAmount(input: string, locale: string): string | null {
@@ -55,14 +55,11 @@ function normalizeLocaleAmount(input: string, locale: string): string | null {
   }
 
   const parts = numberFormat.formatToParts(12345.6);
-  const decimal = parts.find((part) => part.type === "decimal")?.value ?? ".";
-  const group = parts.find((part) => part.type === "group")?.value;
-  const digitFormat = new Intl.NumberFormat(
-    numberFormat.resolvedOptions().locale,
-    {
-      useGrouping: false,
-    },
-  );
+  const decimal = parts.find((part) => part.type === 'decimal')?.value ?? '.';
+  const group = parts.find((part) => part.type === 'group')?.value;
+  const digitFormat = new Intl.NumberFormat(numberFormat.resolvedOptions().locale, {
+    useGrouping: false,
+  });
   const digits = new Map<string, string>();
   for (let digit = 0; digit <= 9; digit += 1) {
     digits.set(digitFormat.format(digit), String(digit));
@@ -70,8 +67,8 @@ function normalizeLocaleAmount(input: string, locale: string): string | null {
 
   let normalized = Array.from(input)
     .map((character) => digits.get(character) ?? character)
-    .join("")
-    .replace(/[\u061c\u200e\u200f]/g, "");
+    .join('')
+    .replace(/[\u061c\u200e\u200f]/g, '');
 
   if (group && normalized.includes(group)) {
     const escapedGroup = escapedForRegExp(group);
@@ -80,20 +77,17 @@ function normalizeLocaleAmount(input: string, locale: string): string | null {
       `^[+-]?\\d{1,3}(?:${escapedGroup}\\d{3})+(?:${escapedDecimal}\\d+)?$`,
     );
     if (groupedNumber.test(normalized)) {
-      normalized = normalized.split(group).join("");
-    } else if (
-      !normalized.includes(decimal) &&
-      normalized.split(group).length === 2
-    ) {
+      normalized = normalized.split(group).join('');
+    } else if (!normalized.includes(decimal) && normalized.split(group).length === 2) {
       // Accept the other common decimal key only when it cannot be a valid
       // locale grouping, preserving existing cook-entered comma decimals.
-      normalized = normalized.replace(group, ".");
+      normalized = normalized.replace(group, '.');
     } else {
       return null;
     }
   }
 
-  if (decimal !== ".") normalized = normalized.split(decimal).join(".");
+  if (decimal !== '.') normalized = normalized.split(decimal).join('.');
   return normalized;
 }
 
@@ -104,24 +98,20 @@ function normalizeLocaleAmount(input: string, locale: string): string | null {
  * or unparseable input so callers can distinguish "no amount" from zero. Used by
  * the editor's native amount entry and the unit-conversion affordance.
  */
-export function parseAmount(
-  input: string | null | undefined,
-  locale?: string,
-): number | null {
+export function parseAmount(input: string | null | undefined, locale?: string): number | null {
   if (input == null) return null;
   const trimmed = input.trim();
-  const s =
-    locale == null ? trimmed : (normalizeLocaleAmount(trimmed, locale) ?? "");
-  if (s === "") return null;
+  const s = locale == null ? trimmed : (normalizeLocaleAmount(trimmed, locale) ?? '');
+  if (s === '') return null;
 
   // Vulgar glyph, optionally preceded by a whole number ("1½", "1 ½", "½").
   const glyph = /[⅛⅙¼⅓⅜½⅝⅔¾⅚⅞]/.exec(s)?.[0];
   if (glyph) {
     const frac = VULGAR_VALUES[glyph];
     if (frac == null) return null;
-    const rest = s.replace(glyph, " ").trim();
-    if (rest === "") return roundNice(frac);
-    const whole = Number(rest.replace(",", "."));
+    const rest = s.replace(glyph, ' ').trim();
+    if (rest === '') return roundNice(frac);
+    const whole = Number(rest.replace(',', '.'));
     return Number.isFinite(whole) ? roundNice(whole + frac) : null;
   }
 
@@ -136,7 +126,7 @@ export function parseAmount(
   }
 
   // Plain decimal. Tolerate a comma decimal separator (de/es keyboards).
-  const n = Number(s.replace(",", "."));
+  const n = Number(s.replace(',', '.'));
   return Number.isFinite(n) ? roundNice(n) : null;
 }
 
@@ -170,8 +160,8 @@ export function formatQuantity(
   unit?: string | null,
   locale: string = DEFAULT_LOCALE,
 ): string {
-  if (value == null || Number.isNaN(value)) return "";
-  if (isMetricUnit(unit) || unitDimension(unit) === "temperature")
+  if (value == null || Number.isNaN(value)) return '';
+  if (isMetricUnit(unit) || unitDimension(unit) === 'temperature')
     return formatMetricQuantity(value, locale);
   const n = roundNice(value);
   if (n === 0) return formatDecimal(0, locale);
@@ -185,9 +175,7 @@ export function formatQuantity(
     if (diff < 0.03 && (!best || diff < best.diff)) best = { glyph, diff };
   }
   if (best) {
-    return whole > 0
-      ? `${formatDecimal(whole, locale)}${best.glyph}`
-      : best.glyph;
+    return whole > 0 ? `${formatDecimal(whole, locale)}${best.glyph}` : best.glyph;
   }
 
   const rounded = Math.round(n * 100) / 100;
@@ -209,29 +197,23 @@ const METRIC_WHOLE_THRESHOLD = 50;
  * small doses keep one decimal place so measurable precision isn't rounded away
  * (#403). A value that lands on a whole number renders without a trailing `.0`.
  */
-export function formatMetricQuantity(
-  value: number,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function formatMetricQuantity(value: number, locale: string = DEFAULT_LOCALE): string {
   const n = roundNice(value);
   if (n === 0) return formatDecimal(0, locale);
-  const rounded =
-    Math.abs(n) >= METRIC_WHOLE_THRESHOLD
-      ? Math.round(n)
-      : Math.round(n * 10) / 10;
+  const rounded = Math.abs(n) >= METRIC_WHOLE_THRESHOLD ? Math.round(n) : Math.round(n * 10) / 10;
   return formatDecimal(rounded, locale);
 }
 
 // --- Units --------------------------------------------------------------
 
-export type Dimension = "volume" | "mass" | "count" | "temperature";
+export type Dimension = 'volume' | 'mass' | 'count' | 'temperature';
 
 type UnitDef = {
   canonical: string;
   dimension: Dimension;
   /** Amount of the dimension's base unit (ml for volume, g for mass). */
   base: number;
-  system: "us" | "metric" | "any";
+  system: 'us' | 'metric' | 'any';
   aliases: string[];
   plural?: string;
 };
@@ -239,128 +221,128 @@ type UnitDef = {
 // Base: volume in milliliters, mass in grams.
 const UNIT_DEFS: UnitDef[] = [
   {
-    canonical: "tsp",
-    dimension: "volume",
+    canonical: 'tsp',
+    dimension: 'volume',
     base: 4.92892,
-    system: "us",
-    aliases: ["teaspoon", "teaspoons", "t"],
+    system: 'us',
+    aliases: ['teaspoon', 'teaspoons', 't'],
   },
   {
-    canonical: "tbsp",
-    dimension: "volume",
+    canonical: 'tbsp',
+    dimension: 'volume',
     base: 14.7868,
-    system: "us",
-    aliases: ["tablespoon", "tablespoons", "T", "tbs", "tbl"],
+    system: 'us',
+    aliases: ['tablespoon', 'tablespoons', 'T', 'tbs', 'tbl'],
   },
   {
-    canonical: "fl oz",
-    dimension: "volume",
+    canonical: 'fl oz',
+    dimension: 'volume',
     base: 29.5735,
-    system: "us",
-    aliases: ["fluid ounce", "fluid ounces", "floz"],
+    system: 'us',
+    aliases: ['fluid ounce', 'fluid ounces', 'floz'],
   },
   {
-    canonical: "cup",
-    dimension: "volume",
+    canonical: 'cup',
+    dimension: 'volume',
     base: 236.588,
-    system: "us",
-    aliases: ["cups", "c"],
-    plural: "cups",
+    system: 'us',
+    aliases: ['cups', 'c'],
+    plural: 'cups',
   },
   {
-    canonical: "pint",
-    dimension: "volume",
+    canonical: 'pint',
+    dimension: 'volume',
     base: 473.176,
-    system: "us",
-    aliases: ["pints", "pt"],
-    plural: "pints",
+    system: 'us',
+    aliases: ['pints', 'pt'],
+    plural: 'pints',
   },
   {
-    canonical: "quart",
-    dimension: "volume",
+    canonical: 'quart',
+    dimension: 'volume',
     base: 946.353,
-    system: "us",
-    aliases: ["quarts", "qt"],
-    plural: "quarts",
+    system: 'us',
+    aliases: ['quarts', 'qt'],
+    plural: 'quarts',
   },
   {
-    canonical: "gallon",
-    dimension: "volume",
+    canonical: 'gallon',
+    dimension: 'volume',
     base: 3785.41,
-    system: "us",
-    aliases: ["gallons", "gal"],
-    plural: "gallons",
+    system: 'us',
+    aliases: ['gallons', 'gal'],
+    plural: 'gallons',
   },
   {
-    canonical: "ml",
-    dimension: "volume",
+    canonical: 'ml',
+    dimension: 'volume',
     base: 1,
-    system: "metric",
-    aliases: ["milliliter", "milliliters", "millilitre", "millilitres", "cc"],
+    system: 'metric',
+    aliases: ['milliliter', 'milliliters', 'millilitre', 'millilitres', 'cc'],
   },
   {
-    canonical: "l",
-    dimension: "volume",
+    canonical: 'l',
+    dimension: 'volume',
     base: 1000,
-    system: "metric",
-    aliases: ["liter", "liters", "litre", "litres"],
+    system: 'metric',
+    aliases: ['liter', 'liters', 'litre', 'litres'],
   },
   {
-    canonical: "oz",
-    dimension: "mass",
+    canonical: 'oz',
+    dimension: 'mass',
     base: 28.3495,
-    system: "us",
-    aliases: ["ounce", "ounces"],
+    system: 'us',
+    aliases: ['ounce', 'ounces'],
   },
   {
-    canonical: "lb",
-    dimension: "mass",
+    canonical: 'lb',
+    dimension: 'mass',
     base: 453.592,
-    system: "us",
-    aliases: ["pound", "pounds", "lbs"],
-    plural: "lb",
+    system: 'us',
+    aliases: ['pound', 'pounds', 'lbs'],
+    plural: 'lb',
   },
   {
-    canonical: "g",
-    dimension: "mass",
+    canonical: 'g',
+    dimension: 'mass',
     base: 1,
-    system: "metric",
-    aliases: ["gram", "grams", "gramme", "grammes"],
+    system: 'metric',
+    aliases: ['gram', 'grams', 'gramme', 'grammes'],
   },
   {
-    canonical: "kg",
-    dimension: "mass",
+    canonical: 'kg',
+    dimension: 'mass',
     base: 1000,
-    system: "metric",
-    aliases: ["kilogram", "kilograms", "kilo", "kilos"],
+    system: 'metric',
+    aliases: ['kilogram', 'kilograms', 'kilo', 'kilos'],
   },
   // Temperature is affine (offset + scale), so `base` is unused. Conversion
   // goes through convertTemperature. The bare "c" alias is intentionally
   // omitted: it already means "cup", and a recipe's "2 c" is far more likely
   // cups than Celsius. Callers wanting Celsius should use "°C"/"celsius".
   {
-    canonical: "°F",
-    dimension: "temperature",
+    canonical: '°F',
+    dimension: 'temperature',
     base: 1,
-    system: "us",
-    aliases: ["f", "fahrenheit"],
+    system: 'us',
+    aliases: ['f', 'fahrenheit'],
   },
   {
-    canonical: "°C",
-    dimension: "temperature",
+    canonical: '°C',
+    dimension: 'temperature',
     base: 1,
-    system: "metric",
-    aliases: ["celsius", "centigrade"],
+    system: 'metric',
+    aliases: ['celsius', 'centigrade'],
   },
   // Kelvin: an explicit-choice option (never an auto system default), bridged
   // through Celsius by convertTemperature. Only "kelvin"/"K" are added as
   // aliases. No extra ambiguous recipe tokens.
   {
-    canonical: "K",
-    dimension: "temperature",
+    canonical: 'K',
+    dimension: 'temperature',
     base: 1,
-    system: "any",
-    aliases: ["kelvin"],
+    system: 'any',
+    aliases: ['kelvin'],
   },
 ];
 
@@ -377,9 +359,7 @@ export function normalizeUnit(raw: string | null | undefined): string | null {
   return UNIT_INDEX.get(key)?.canonical ?? raw.trim();
 }
 
-export function unitDimension(
-  raw: string | null | undefined,
-): Dimension | null {
+export function unitDimension(raw: string | null | undefined): Dimension | null {
   if (!raw) return null;
   return UNIT_INDEX.get(raw.trim().toLowerCase())?.dimension ?? null;
 }
@@ -387,21 +367,16 @@ export function unitDimension(
 /** True when the unit is a metric weight/volume (g, kg, ml, l, and aliases). */
 function isMetricUnit(raw: string | null | undefined): boolean {
   if (!raw) return false;
-  return UNIT_INDEX.get(raw.trim().toLowerCase())?.system === "metric";
+  return UNIT_INDEX.get(raw.trim().toLowerCase())?.system === 'metric';
 }
 
 /** Convert a quantity between two compatible units. Null if not convertible. */
-export function convertUnit(
-  quantity: number,
-  from: string,
-  to: string,
-): number | null {
+export function convertUnit(quantity: number, from: string, to: string): number | null {
   const a = UNIT_INDEX.get(from.trim().toLowerCase());
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!a || !b) return null;
   if (a.dimension !== b.dimension) return null;
-  if (a.dimension === "temperature")
-    return convertTemperature(quantity, a.canonical, b.canonical);
+  if (a.dimension === 'temperature') return convertTemperature(quantity, a.canonical, b.canonical);
   return roundNice((quantity * a.base) / b.base);
 }
 
@@ -412,36 +387,27 @@ export function convertUnit(
  * the precision recipes and ovens actually use. Returns null unless both units
  * are temperatures.
  */
-export function convertTemperature(
-  value: number,
-  from: string,
-  to: string,
-): number | null {
+export function convertTemperature(value: number, from: string, to: string): number | null {
   const a = UNIT_INDEX.get(from.trim().toLowerCase());
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!a || !b) return null;
-  if (a.dimension !== "temperature" || b.dimension !== "temperature")
-    return null;
+  if (a.dimension !== 'temperature' || b.dimension !== 'temperature') return null;
   if (a.canonical === b.canonical) return Math.round(value);
   const celsius =
-    a.canonical === "°F"
-      ? ((value - 32) * 5) / 9
-      : a.canonical === "K"
-        ? value - 273.15
-        : value;
+    a.canonical === '°F' ? ((value - 32) * 5) / 9 : a.canonical === 'K' ? value - 273.15 : value;
   const result =
-    b.canonical === "°F"
+    b.canonical === '°F'
       ? (celsius * 9) / 5 + 32
-      : b.canonical === "K"
+      : b.canonical === 'K'
         ? celsius + 273.15
         : celsius;
   return Math.round(result);
 }
 
-const VOLUME_LADDER_US = ["tsp", "tbsp", "cup", "quart", "gallon"];
-const VOLUME_LADDER_METRIC = ["ml", "l"];
-const MASS_LADDER_US = ["oz", "lb"];
-const MASS_LADDER_METRIC = ["g", "kg"];
+const VOLUME_LADDER_US = ['tsp', 'tbsp', 'cup', 'quart', 'gallon'];
+const VOLUME_LADDER_METRIC = ['ml', 'l'];
+const MASS_LADDER_US = ['oz', 'lb'];
+const MASS_LADDER_METRIC = ['g', 'kg'];
 
 /**
  * Volume splits into three "classes" so a viewer can prefer different units for
@@ -451,38 +417,32 @@ const MASS_LADDER_METRIC = ["g", "kg"];
  * expects. Fluids in fl oz/cups, dry goods in cups, seasonings capped at
  * teaspoons/tablespoons rather than scaling up to cups.
  */
-export type VolumeClass = "liquid" | "dry" | "small";
+export type VolumeClass = 'liquid' | 'dry' | 'small';
 
-export const VOLUME_CLASSES = ["liquid", "dry", "small"] as const;
+export const VOLUME_CLASSES = ['liquid', 'dry', 'small'] as const;
 
-const VOLUME_CLASS_LADDERS: Record<
-  VolumeClass,
-  { us: string[]; metric: string[] }
-> = {
+const VOLUME_CLASS_LADDERS: Record<VolumeClass, { us: string[]; metric: string[] }> = {
   liquid: {
-    us: ["fl oz", "cup", "pint", "quart", "gallon"],
-    metric: ["ml", "l"],
+    us: ['fl oz', 'cup', 'pint', 'quart', 'gallon'],
+    metric: ['ml', 'l'],
   },
-  dry: { us: ["tsp", "tbsp", "cup", "quart"], metric: ["ml", "l"] },
-  small: { us: ["tsp", "tbsp"], metric: ["ml"] },
+  dry: { us: ['tsp', 'tbsp', 'cup', 'quart'], metric: ['ml', 'l'] },
+  small: { us: ['tsp', 'tbsp'], metric: ['ml'] },
 };
 
-function ladderFor(dimension: Dimension, system: "us" | "metric"): string[] {
-  if (dimension === "volume")
-    return system === "us" ? VOLUME_LADDER_US : VOLUME_LADDER_METRIC;
-  if (dimension === "mass")
-    return system === "us" ? MASS_LADDER_US : MASS_LADDER_METRIC;
+function ladderFor(dimension: Dimension, system: 'us' | 'metric'): string[] {
+  if (dimension === 'volume') return system === 'us' ? VOLUME_LADDER_US : VOLUME_LADDER_METRIC;
+  if (dimension === 'mass') return system === 'us' ? MASS_LADDER_US : MASS_LADDER_METRIC;
   return [];
 }
 
 /** The ladder for a measure, refined by volume class when one is known. */
 function ladderForContext(
   dimension: Dimension,
-  system: "us" | "metric",
+  system: 'us' | 'metric',
   volumeClass?: VolumeClass | null,
 ): string[] {
-  if (dimension === "volume" && volumeClass)
-    return VOLUME_CLASS_LADDERS[volumeClass][system];
+  if (dimension === 'volume' && volumeClass) return VOLUME_CLASS_LADDERS[volumeClass][system];
   return ladderFor(dimension, system);
 }
 
@@ -494,18 +454,18 @@ function ladderForContext(
  */
 export function defaultUnitFor(
   dimension: Dimension,
-  system: "us" | "metric",
+  system: 'us' | 'metric',
   volumeClass?: VolumeClass | null,
 ): string {
-  if (dimension === "mass") return system === "us" ? "oz" : "g";
-  if (dimension === "temperature") return system === "us" ? "°F" : "°C";
-  if (dimension === "volume") {
-    if (system === "metric") return "ml";
-    if (volumeClass === "small") return "tbsp";
-    if (volumeClass === "liquid") return "fl oz";
-    return "cup"; // dry / unspecified
+  if (dimension === 'mass') return system === 'us' ? 'oz' : 'g';
+  if (dimension === 'temperature') return system === 'us' ? '°F' : '°C';
+  if (dimension === 'volume') {
+    if (system === 'metric') return 'ml';
+    if (volumeClass === 'small') return 'tbsp';
+    if (volumeClass === 'liquid') return 'fl oz';
+    return 'cup'; // dry / unspecified
   }
-  return "";
+  return '';
 }
 
 export type Measure = { quantity: number; unit: string };
@@ -518,23 +478,22 @@ export type Measure = { quantity: number; unit: string };
 export function toSystem(
   quantity: number,
   unit: string | null | undefined,
-  system: "us" | "metric",
+  system: 'us' | 'metric',
   volumeClass?: VolumeClass | null,
 ): Measure | null {
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
-  if (!def || def.dimension === "count") {
+  if (!def || def.dimension === 'count') {
     return unit ? { quantity: roundNice(quantity), unit } : null;
   }
-  if (def.dimension === "temperature") {
-    const target = system === "us" ? "°F" : "°C";
+  if (def.dimension === 'temperature') {
+    const target = system === 'us' ? '°F' : '°C';
     const converted = convertTemperature(quantity, def.canonical, target);
     return converted == null
       ? { quantity: roundNice(quantity), unit: def.canonical }
       : { quantity: converted, unit: target };
   }
   const ladder = ladderForContext(def.dimension, system, volumeClass);
-  if (ladder.length === 0)
-    return { quantity: roundNice(quantity), unit: def.canonical };
+  if (ladder.length === 0) return { quantity: roundNice(quantity), unit: def.canonical };
 
   const baseAmount = quantity * def.base;
   let chosen = ladder[0]!;
@@ -563,7 +522,7 @@ export function toSystemRange(
   min: number,
   max: number | null | undefined,
   unit: string | null | undefined,
-  system: "us" | "metric",
+  system: 'us' | 'metric',
 ): MeasureRange | null {
   const low = toSystem(min, unit, system);
   if (!low) return null;
@@ -576,10 +535,7 @@ export function toSystemRange(
 }
 
 /** Scale a nullable quantity by a factor, preserving null. */
-export function scaleQuantity(
-  quantity: number | null | undefined,
-  factor: number,
-): number | null {
+export function scaleQuantity(quantity: number | null | undefined, factor: number): number | null {
   if (quantity == null) return null;
   return roundNice(quantity * factor);
 }
@@ -632,31 +588,31 @@ export function deriveScaleFactor(
 type DensityEntry = { gPerMl: number; phrases: string[] };
 
 const INGREDIENT_DENSITIES: DensityEntry[] = [
-  { gPerMl: 1.0, phrases: ["water"] },
-  { gPerMl: 1.03, phrases: ["milk", "buttermilk"] },
-  { gPerMl: 1.0, phrases: ["cream", "heavy cream", "sour cream"] },
-  { gPerMl: 1.03, phrases: ["yogurt", "yoghurt"] },
+  { gPerMl: 1.0, phrases: ['water'] },
+  { gPerMl: 1.03, phrases: ['milk', 'buttermilk'] },
+  { gPerMl: 1.0, phrases: ['cream', 'heavy cream', 'sour cream'] },
+  { gPerMl: 1.03, phrases: ['yogurt', 'yoghurt'] },
   {
     gPerMl: 0.53,
-    phrases: ["flour", "all purpose flour", "plain flour", "bread flour"],
+    phrases: ['flour', 'all purpose flour', 'plain flour', 'bread flour'],
   },
-  { gPerMl: 0.55, phrases: ["whole wheat flour", "wholemeal flour"] },
-  { gPerMl: 0.85, phrases: ["sugar", "granulated sugar", "caster sugar"] },
-  { gPerMl: 0.9, phrases: ["brown sugar"] },
+  { gPerMl: 0.55, phrases: ['whole wheat flour', 'wholemeal flour'] },
+  { gPerMl: 0.85, phrases: ['sugar', 'granulated sugar', 'caster sugar'] },
+  { gPerMl: 0.9, phrases: ['brown sugar'] },
   {
     gPerMl: 0.5,
-    phrases: ["powdered sugar", "confectioners sugar", "icing sugar"],
+    phrases: ['powdered sugar', 'confectioners sugar', 'icing sugar'],
   },
-  { gPerMl: 0.96, phrases: ["butter"] },
+  { gPerMl: 0.96, phrases: ['butter'] },
   {
     gPerMl: 0.92,
-    phrases: ["oil", "olive oil", "vegetable oil", "canola oil"],
+    phrases: ['oil', 'olive oil', 'vegetable oil', 'canola oil'],
   },
-  { gPerMl: 1.42, phrases: ["honey"] },
-  { gPerMl: 1.37, phrases: ["maple syrup"] },
-  { gPerMl: 0.45, phrases: ["cocoa", "cocoa powder"] },
-  { gPerMl: 0.54, phrases: ["cornstarch", "corn starch", "cornflour"] },
-  { gPerMl: 1.2, phrases: ["salt"] },
+  { gPerMl: 1.42, phrases: ['honey'] },
+  { gPerMl: 1.37, phrases: ['maple syrup'] },
+  { gPerMl: 0.45, phrases: ['cocoa', 'cocoa powder'] },
+  { gPerMl: 0.54, phrases: ['cornstarch', 'corn starch', 'cornflour'] },
+  { gPerMl: 1.2, phrases: ['salt'] },
 ];
 
 /**
@@ -668,11 +624,11 @@ const INGREDIENT_DENSITIES: DensityEntry[] = [
 function densityTokens(item: string | null | undefined): string[] {
   if (!item) return [];
   let s = item.toLowerCase();
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  s = s.replace(/\([^)]*\)/g, " ");
-  s = s.split(",")[0] ?? s;
-  s = s.replace(/[^a-z0-9]+/g, " ");
-  return s.split(" ").filter(Boolean);
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  s = s.replace(/\([^)]*\)/g, ' ');
+  s = s.split(',')[0] ?? s;
+  s = s.replace(/[^a-z0-9]+/g, ' ');
+  return s.split(' ').filter(Boolean);
 }
 
 /** True when `phrase` appears as a contiguous run of whole words in `haystack`. */
@@ -694,7 +650,7 @@ function containsWholePhrase(haystack: string[], phrase: string[]): boolean {
 const DENSITY_INDEX = INGREDIENT_DENSITIES.flatMap((entry) =>
   entry.phrases.map((phrase) => ({
     gPerMl: entry.gPerMl,
-    tokens: phrase.split(" "),
+    tokens: phrase.split(' '),
   })),
 );
 
@@ -709,8 +665,7 @@ export function densityForItem(item: string | null | undefined): number | null {
   let best: { gPerMl: number; len: number } | null = null;
   for (const { gPerMl, tokens: phrase } of DENSITY_INDEX) {
     if (!containsWholePhrase(tokens, phrase)) continue;
-    if (!best || phrase.length > best.len)
-      best = { gPerMl, len: phrase.length };
+    if (!best || phrase.length > best.len) best = { gPerMl, len: phrase.length };
   }
   return best ? best.gPerMl : null;
 }
@@ -730,11 +685,11 @@ export function toWeight(
   if (quantity == null || Number.isNaN(quantity)) return null;
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
   if (!def) return null;
-  if (def.dimension === "mass") {
+  if (def.dimension === 'mass') {
     // `base` is grams for mass units, so this also converts oz/lb/kg → g.
     return roundNice(quantity * def.base);
   }
-  if (def.dimension === "volume") {
+  if (def.dimension === 'volume') {
     const density = densityForItem(item);
     if (density == null) return null;
     // `base` is millilitres for volume units.
@@ -770,13 +725,9 @@ export function displayUnit(
   quantity: number | null | undefined,
   locale: string = DEFAULT_LOCALE,
 ): string {
-  if (!unit) return "";
+  if (!unit) return '';
   const def = UNIT_INDEX.get(unit.trim().toLowerCase());
-  if (
-    def?.plural &&
-    quantity != null &&
-    pluralCategory(quantity, locale) !== "one"
-  ) {
+  if (def?.plural && quantity != null && pluralCategory(quantity, locale) !== 'one') {
     return def.plural;
   }
   return def?.canonical ?? unit;
@@ -801,9 +752,9 @@ export function decomposeMeasure(
     return null;
   }
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
-  if (def?.dimension !== "volume" || def.system !== "us") return null;
+  if (def?.dimension !== 'volume' || def.system !== 'us') return null;
 
-  const tspBase = UNIT_INDEX.get("tsp")!.base;
+  const tspBase = UNIT_INDEX.get('tsp')!.base;
   // Snap to the nearest measuring-spoon quarter-teaspoon up front so float dust
   // (a "clean" 2 cups arriving as 95.999… tsp) can't leak an extra measure.
   let remaining = Math.round(((quantity * def.base) / tspBase) * 4) / 4;
@@ -820,15 +771,13 @@ export function decomposeMeasure(
 
   const parts: string[] = [];
   if (cups >= 1) {
-    parts.push(
-      `${formatDecimal(cups, locale)} ${displayUnit("cup", cups, locale)}`,
-    );
+    parts.push(`${formatDecimal(cups, locale)} ${displayUnit('cup', cups, locale)}`);
   }
   if (tbsp >= 1) parts.push(`${formatDecimal(tbsp, locale)} tbsp`);
   if (tsp > 0) parts.push(`${formatQuantity(tsp, undefined, locale)} tsp`);
 
   // Only worth showing when it decomposes into more than one practical measure.
-  return parts.length >= 2 ? parts.join(" + ") : null;
+  return parts.length >= 2 ? parts.join(' + ') : null;
 }
 // A display layer only: spoken-style fraction words + spelled-out units for
 // Kids mode. It reuses the same scaled/measured values as the compact display
@@ -844,80 +793,71 @@ type KidFractionWords = {
 };
 
 const KID_FRACTIONS: Array<[number, KidFractionWords]> = [
-  [
-    1 / 8,
-    { combined: "an eighth", withUnit: "an eighth of a", bare: "an eighth" },
-  ],
-  [1 / 6, { combined: "a sixth", withUnit: "a sixth of a", bare: "a sixth" }],
-  [
-    1 / 4,
-    { combined: "a quarter", withUnit: "a quarter of a", bare: "a quarter" },
-  ],
-  [1 / 3, { combined: "a third", withUnit: "a third of a", bare: "a third" }],
+  [1 / 8, { combined: 'an eighth', withUnit: 'an eighth of a', bare: 'an eighth' }],
+  [1 / 6, { combined: 'a sixth', withUnit: 'a sixth of a', bare: 'a sixth' }],
+  [1 / 4, { combined: 'a quarter', withUnit: 'a quarter of a', bare: 'a quarter' }],
+  [1 / 3, { combined: 'a third', withUnit: 'a third of a', bare: 'a third' }],
   [
     3 / 8,
     {
-      combined: "three-eighths",
-      withUnit: "three-eighths of a",
-      bare: "three-eighths",
+      combined: 'three-eighths',
+      withUnit: 'three-eighths of a',
+      bare: 'three-eighths',
     },
   ],
-  [1 / 2, { combined: "a half", withUnit: "half a", bare: "half" }],
+  [1 / 2, { combined: 'a half', withUnit: 'half a', bare: 'half' }],
   [
     5 / 8,
     {
-      combined: "five-eighths",
-      withUnit: "five-eighths of a",
-      bare: "five-eighths",
+      combined: 'five-eighths',
+      withUnit: 'five-eighths of a',
+      bare: 'five-eighths',
     },
   ],
-  [
-    2 / 3,
-    { combined: "two-thirds", withUnit: "two-thirds of a", bare: "two-thirds" },
-  ],
+  [2 / 3, { combined: 'two-thirds', withUnit: 'two-thirds of a', bare: 'two-thirds' }],
   [
     3 / 4,
     {
-      combined: "three-quarters",
-      withUnit: "three-quarters of a",
-      bare: "three-quarters",
+      combined: 'three-quarters',
+      withUnit: 'three-quarters of a',
+      bare: 'three-quarters',
     },
   ],
   [
     5 / 6,
     {
-      combined: "five-sixths",
-      withUnit: "five-sixths of a",
-      bare: "five-sixths",
+      combined: 'five-sixths',
+      withUnit: 'five-sixths of a',
+      bare: 'five-sixths',
     },
   ],
   [
     7 / 8,
     {
-      combined: "seven-eighths",
-      withUnit: "seven-eighths of a",
-      bare: "seven-eighths",
+      combined: 'seven-eighths',
+      withUnit: 'seven-eighths of a',
+      bare: 'seven-eighths',
     },
   ],
 ];
 
 /** Canonical unit → [singular, plural] spoken word. */
 const KID_UNIT_WORDS: Record<string, [string, string]> = {
-  tsp: ["teaspoon", "teaspoons"],
-  tbsp: ["tablespoon", "tablespoons"],
-  "fl oz": ["fluid ounce", "fluid ounces"],
-  cup: ["cup", "cups"],
-  pint: ["pint", "pints"],
-  quart: ["quart", "quarts"],
-  gallon: ["gallon", "gallons"],
-  ml: ["milliliter", "milliliters"],
-  l: ["liter", "liters"],
-  oz: ["ounce", "ounces"],
-  lb: ["pound", "pounds"],
-  g: ["gram", "grams"],
-  kg: ["kilogram", "kilograms"],
-  "°F": ["degree", "degrees"],
-  "°C": ["degree", "degrees"],
+  tsp: ['teaspoon', 'teaspoons'],
+  tbsp: ['tablespoon', 'tablespoons'],
+  'fl oz': ['fluid ounce', 'fluid ounces'],
+  cup: ['cup', 'cups'],
+  pint: ['pint', 'pints'],
+  quart: ['quart', 'quarts'],
+  gallon: ['gallon', 'gallons'],
+  ml: ['milliliter', 'milliliters'],
+  l: ['liter', 'liters'],
+  oz: ['ounce', 'ounces'],
+  lb: ['pound', 'pounds'],
+  g: ['gram', 'grams'],
+  kg: ['kilogram', 'kilograms'],
+  '°F': ['degree', 'degrees'],
+  '°C': ['degree', 'degrees'],
 };
 
 /**
@@ -930,7 +870,7 @@ export function expandKidUnit(
   quantity: number | null | undefined,
   locale: string = DEFAULT_LOCALE,
 ): string {
-  if (!unit) return "";
+  if (!unit) return '';
   const def = UNIT_INDEX.get(unit.trim().toLowerCase());
   const canonical = def?.canonical ?? unit;
   const words = KID_UNIT_WORDS[canonical];
@@ -952,12 +892,12 @@ export function formatKidAmount(
   locale: string = DEFAULT_LOCALE,
 ): { number: string; unit: string } {
   if (value == null || Number.isNaN(value)) {
-    return { number: "", unit: expandKidUnit(unit, null, locale) };
+    return { number: '', unit: expandKidUnit(unit, null, locale) };
   }
   const unitWord = expandKidUnit(unit, value, locale);
 
   // Metric weights/volumes + temperature: keep the precise decimal.
-  if (isMetricUnit(unit) || unitDimension(unit) === "temperature") {
+  if (isMetricUnit(unit) || unitDimension(unit) === 'temperature') {
     return { number: formatQuantity(value, unit, locale), unit: unitWord };
   }
 
@@ -992,7 +932,7 @@ export function formatKidAmount(
 }
 
 /** Regions that still cook in US customary / imperial units. */
-const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
+const US_CUSTOMARY_REGIONS = new Set(['US', 'LR', 'MM']);
 
 /**
  * The measurement system a locale most likely expects, used as cook mode's
@@ -1001,14 +941,14 @@ const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
  * `"metric"`. The locale is maximized first, so a region-less id like `en`
  * resolves to its likely region (`en` → US → `"us"`, `de` → DE → `"metric"`).
  */
-export function defaultSystemForLocale(locale: string): "us" | "metric" {
+export function defaultSystemForLocale(locale: string): 'us' | 'metric' {
   let region: string | undefined;
   try {
     region = new Intl.Locale(locale).maximize().region ?? undefined;
   } catch {
     region = undefined;
   }
-  return region && US_CUSTOMARY_REGIONS.has(region) ? "us" : "metric";
+  return region && US_CUSTOMARY_REGIONS.has(region) ? 'us' : 'metric';
 }
 
 // --- Public unit catalog + custom units (interchangeable units) ----------
@@ -1023,7 +963,7 @@ export type UnitInfo = {
   /** Canonical id. What's stored and passed to {@link convertUnit}. */
   id: string;
   dimension: Dimension;
-  system: "us" | "metric" | "any";
+  system: 'us' | 'metric' | 'any';
   aliases: string[];
   plural?: string;
 };
@@ -1084,9 +1024,7 @@ function findCustom(
   const key = unit.trim().toLowerCase();
   return (
     customs.find(
-      (c) =>
-        c.name.trim().toLowerCase() === key ||
-        c.abbreviation?.trim().toLowerCase() === key,
+      (c) => c.name.trim().toLowerCase() === key || c.abbreviation?.trim().toLowerCase() === key,
     ) ?? null
   );
 }
@@ -1123,15 +1061,11 @@ function reduceToCanonical(
   return null;
 }
 
-function convertBuiltInExact(
-  quantity: number,
-  from: string,
-  to: string,
-): number | null {
+function convertBuiltInExact(quantity: number, from: string, to: string): number | null {
   const source = UNIT_INDEX.get(from.trim().toLowerCase());
   const target = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!source || source.dimension !== target?.dimension) return null;
-  if (source.dimension === "temperature") {
+  if (source.dimension === 'temperature') {
     return convertTemperature(quantity, source.canonical, target.canonical);
   }
   return (quantity * source.base) / target.base;
@@ -1157,11 +1091,7 @@ export function convertAmountExact(
   }
   const target = findCustom(to, customs);
   if (target?.baseUnit != null && target.baseAmount != null) {
-    const inBase = convertBuiltInExact(
-      reduced.quantity,
-      reduced.unit,
-      target.baseUnit,
-    );
+    const inBase = convertBuiltInExact(reduced.quantity, reduced.unit, target.baseUnit);
     return inBase == null ? null : inBase / target.baseAmount;
   }
   return null;
@@ -1190,7 +1120,7 @@ export function convertAmount(
  * friendly ladder. `autoConvert` off means "always show the author's original".
  */
 export type UnitPrefs = {
-  defaultSystem: "us" | "metric";
+  defaultSystem: 'us' | 'metric';
   /** General volume fallback (legacy/unclassified). Class prefs below win when set. */
   volumeUnit?: string | null;
   /** Per-volume-class overrides: pourable liquids, scoopable dry goods, seasonings. */
@@ -1204,7 +1134,7 @@ export type UnitPrefs = {
 
 /** Sensible built-in defaults: metric, no per-dimension overrides, auto-convert on. */
 export const DEFAULT_UNIT_PREFS: UnitPrefs = {
-  defaultSystem: "metric",
+  defaultSystem: 'metric',
   volumeUnit: null,
   liquidVolumeUnit: null,
   dryVolumeUnit: null,
@@ -1215,16 +1145,13 @@ export const DEFAULT_UNIT_PREFS: UnitPrefs = {
 };
 
 /** The volume override a viewer wants for a given class, falling back to the general slot. */
-function volumeOverrideFor(
-  prefs: UnitPrefs,
-  volumeClass?: VolumeClass | null,
-): string | null {
+function volumeOverrideFor(prefs: UnitPrefs, volumeClass?: VolumeClass | null): string | null {
   const byClass =
-    volumeClass === "liquid"
+    volumeClass === 'liquid'
       ? prefs.liquidVolumeUnit
-      : volumeClass === "small"
+      : volumeClass === 'small'
         ? prefs.smallVolumeUnit
-        : volumeClass === "dry"
+        : volumeClass === 'dry'
           ? prefs.dryVolumeUnit
           : null;
   return byClass ?? prefs.volumeUnit ?? null;
@@ -1235,9 +1162,9 @@ function overrideFor(
   dimension: Dimension,
   volumeClass?: VolumeClass | null,
 ): string | null {
-  if (dimension === "volume") return volumeOverrideFor(prefs, volumeClass);
-  if (dimension === "mass") return prefs.massUnit ?? null;
-  if (dimension === "temperature") return prefs.temperatureUnit ?? null;
+  if (dimension === 'volume') return volumeOverrideFor(prefs, volumeClass);
+  if (dimension === 'mass') return prefs.massUnit ?? null;
+  if (dimension === 'temperature') return prefs.temperatureUnit ?? null;
   return null;
 }
 
@@ -1265,7 +1192,7 @@ export function resolveDisplayMeasure(
 ): Measure | null {
   if (!unit) return null;
   const dim = dimensionOf(unit, customs);
-  if (!prefs.autoConvert || dim == null || dim === "count") {
+  if (!prefs.autoConvert || dim == null || dim === 'count') {
     return { quantity: roundNice(quantity), unit };
   }
 

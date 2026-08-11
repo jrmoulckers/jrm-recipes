@@ -1,14 +1,10 @@
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { AlertTriangle, Eye, ShieldCheck } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { AlertTriangle, Eye, ShieldCheck } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { Badge } from "~/components/ui/badge";
-import {
-  ALLERGEN_LABELS,
-  summarizeAllergens,
-  summarizeHiddenAllergens,
-} from "~/lib/allergens";
+import { cn } from '~/lib/utils';
+import { Badge } from '~/components/ui/badge';
+import { ALLERGEN_LABELS, summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
 
 /**
  * A compact, server-rendered "Contains" allergen summary for a recipe. Rolls
@@ -31,7 +27,7 @@ export function AllergenSummary({
   /** Optional id so an outer heading can label the region. */
   headingId?: string;
 }) {
-  const t = useTranslations("allergenSummary");
+  const t = useTranslations('allergenSummary');
   const allergens = summarizeAllergens(items);
   const hidden = summarizeHiddenAllergens(items);
   const hiddenNotes = [...new Set(hidden.map((warning) => warning.note))];
@@ -40,15 +36,12 @@ export function AllergenSummary({
     return (
       <div
         className={cn(
-          "flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground",
+          'flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground',
           className,
         )}
       >
-        <ShieldCheck
-          className="mt-0.5 size-4 shrink-0 text-success"
-          aria-hidden
-        />
-        <p>{t("none")}</p>
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+        <p>{t('none')}</p>
       </div>
     );
   }
@@ -56,11 +49,8 @@ export function AllergenSummary({
   return (
     <section
       aria-labelledby={headingId}
-      aria-label={headingId ? undefined : t("aria")}
-      className={cn(
-        "rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5",
-        className,
-      )}
+      aria-label={headingId ? undefined : t('aria')}
+      className={cn('rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5', className)}
     >
       {allergens.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -69,9 +59,9 @@ export function AllergenSummary({
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground"
           >
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
-            {t("contains")}
+            {t('contains')}
           </span>
-          <ul className="flex flex-wrap gap-1.5" aria-label={t("containsList")}>
+          <ul className="flex flex-wrap gap-1.5" aria-label={t('containsList')}>
             {allergens.map((allergen) => (
               <li key={allergen}>
                 <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>
@@ -84,20 +74,18 @@ export function AllergenSummary({
       {hidden.length > 0 && (
         <div
           className={cn(
-            "flex flex-wrap items-center gap-x-2 gap-y-1.5",
-            allergens.length > 0 && "mt-2 border-t border-warning/25 pt-2",
+            'flex flex-wrap items-center gap-x-2 gap-y-1.5',
+            allergens.length > 0 && 'mt-2 border-t border-warning/25 pt-2',
           )}
         >
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
             <Eye className="size-4 shrink-0" aria-hidden />
-            {t("oftenHides")}
+            {t('oftenHides')}
           </span>
-          <ul className="flex flex-wrap gap-1.5" aria-label={t("hiddenList")}>
+          <ul className="flex flex-wrap gap-1.5" aria-label={t('hiddenList')}>
             {hidden.map((warning) => (
               <li key={warning.allergen}>
-                <Badge variant="outline">
-                  {ALLERGEN_LABELS[warning.allergen]}
-                </Badge>
+                <Badge variant="outline">{ALLERGEN_LABELS[warning.allergen]}</Badge>
               </li>
             ))}
           </ul>
@@ -112,7 +100,7 @@ export function AllergenSummary({
         </ul>
       )}
 
-      <p className="mt-1.5 text-xs text-muted-foreground">{t("disclaimer")}</p>
+      <p className="mt-1.5 text-xs text-muted-foreground">{t('disclaimer')}</p>
     </section>
   );
 }

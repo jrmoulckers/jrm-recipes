@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Shared validation for the moderation surface: personal blocks (#355), content
@@ -9,7 +9,7 @@ import { z } from "zod";
 const idInput = z.string().trim().min(1);
 
 /** What a report / hide action targets. Mirrors the `moderation_target` enum. */
-export const moderationTargetInput = z.enum(["comment", "review", "cook_log"]);
+export const moderationTargetInput = z.enum(['comment', 'review', 'cook_log']);
 
 export const blockUserInput = z.object({
   blockedId: idInput,
@@ -22,11 +22,11 @@ export const unblockUserInput = z.object({
 export const reportContentInput = z.object({
   targetType: moderationTargetInput,
   targetId: idInput,
-  reason: z.enum(["spam", "harassment", "inappropriate", "other"]),
+  reason: z.enum(['spam', 'harassment', 'inappropriate', 'other']),
   detail: z
     .string()
     .trim()
-    .max(1000, "Keep the detail under 1,000 characters.")
+    .max(1000, 'Keep the detail under 1,000 characters.')
     .optional()
     .transform((v) => (v && v.length > 0 ? v : undefined)),
 });

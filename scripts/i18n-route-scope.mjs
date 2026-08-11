@@ -10,16 +10,16 @@
  * cost of adding copy is visible in review: a PR that gives a route a new
  * namespace has to show that namespace entering that route's payload.
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { format, resolveConfig } from "prettier";
+import { format, resolveConfig } from 'prettier';
 
-import { analyzeRoutes } from "./lib/i18n-route-scope.mjs";
-import { repoRoot } from "./lib/walk-source.mjs";
+import { analyzeRoutes } from './lib/i18n-route-scope.mjs';
+import { repoRoot } from './lib/walk-source.mjs';
 
-const TARGET = join(repoRoot, "src", "i18n", "route-namespaces.ts");
+const TARGET = join(repoRoot, 'src', 'i18n', 'route-namespaces.ts');
 
 const HEADER = `/**
  * GENERATED FILE — do not edit by hand.
@@ -40,16 +40,14 @@ const HEADER = `/**
 `;
 
 export async function renderManifest(analysis) {
-  const shell = analysis.shell
-    .map((ns) => `  ${JSON.stringify(ns)},`)
-    .join("\n");
+  const shell = analysis.shell.map((ns) => `  ${JSON.stringify(ns)},`).join('\n');
   const routes = analysis.routes
     .map(([pattern, namespaces]) => {
       if (namespaces.length === 0) return `  ${JSON.stringify(pattern)}: [],`;
-      const list = namespaces.map((ns) => `${JSON.stringify(ns)}`).join(", ");
+      const list = namespaces.map((ns) => `${JSON.stringify(ns)}`).join(', ');
       return `  ${JSON.stringify(pattern)}: [${list}],`;
     })
-    .join("\n");
+    .join('\n');
 
   const source = `${HEADER}
 /**
@@ -77,7 +75,7 @@ ${routes}
   // compare rendered output against the committed file directly.
   return format(source, {
     ...(await resolveConfig(TARGET)),
-    parser: "typescript",
+    parser: 'typescript',
   });
 }
 
@@ -86,8 +84,8 @@ async function main() {
 
   if (analysis.dynamic.length > 0) {
     console.error(
-      "i18n route scope: cannot statically resolve these `useTranslations` " +
-        "namespaces, so the route-scoped payload cannot be proven complete:",
+      'i18n route scope: cannot statically resolve these `useTranslations` ' +
+        'namespaces, so the route-scoped payload cannot be proven complete:',
     );
     for (const { file, site } of analysis.dynamic) {
       console.error(`  ${file}: ${site}`);
@@ -96,38 +94,31 @@ async function main() {
   }
 
   const rendered = await renderManifest(analysis);
-  const check = process.argv.includes("--check");
+  const check = process.argv.includes('--check');
   const current = (() => {
     try {
-      return readFileSync(TARGET, "utf8");
+      return readFileSync(TARGET, 'utf8');
     } catch {
       return null;
     }
   })();
 
   if (check) {
-    if (current?.replace(/\r\n/g, "\n") !== rendered) {
+    if (current?.replace(/\r\n/g, '\n') !== rendered) {
       console.error(
-        "i18n route scope: src/i18n/route-namespaces.ts is out of date.\n" +
-          "Run `pnpm i18n:route-scope` and commit the result.",
+        'i18n route scope: src/i18n/route-namespaces.ts is out of date.\n' +
+          'Run `pnpm i18n:route-scope` and commit the result.',
       );
       process.exit(1);
     }
-    console.log(
-      `i18n route scope: manifest current (${analysis.routes.length} routes).`,
-    );
+    console.log(`i18n route scope: manifest current (${analysis.routes.length} routes).`);
     return;
   }
 
-  writeFileSync(TARGET, rendered, "utf8");
-  console.log(
-    `i18n route scope: wrote ${analysis.routes.length} routes to ${TARGET}.`,
-  );
+  writeFileSync(TARGET, rendered, 'utf8');
+  console.log(`i18n route scope: wrote ${analysis.routes.length} routes to ${TARGET}.`);
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }

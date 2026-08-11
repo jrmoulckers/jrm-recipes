@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
-import { Bell } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { Bell } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { formatRelativeTime } from "~/lib/dates";
-import { notificationSentence } from "~/lib/notifications";
-import { useServerAction } from "~/lib/use-server-action";
-import type { NotificationItem } from "~/server/notifications/queries";
+import { cn } from '~/lib/utils';
+import { formatRelativeTime } from '~/lib/dates';
+import { notificationSentence } from '~/lib/notifications';
+import { useServerAction } from '~/lib/use-server-action';
+import type { NotificationItem } from '~/server/notifications/queries';
 import {
   loadNotificationsAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
-} from "~/server/notifications/actions";
-import { Button } from "~/components/ui/button";
-import { EmptyState } from "~/components/ui/empty-state";
+} from '~/server/notifications/actions';
+import { Button } from '~/components/ui/button';
+import { EmptyState } from '~/components/ui/empty-state';
 
 type Props = {
   initialItems: NotificationItem[];
@@ -25,7 +25,7 @@ type Props = {
 
 /** Full-page notification inbox (#348): the "View all" destination. */
 export function NotificationInbox({ initialItems, initialCursor }: Props) {
-  const t = useTranslations("notifications");
+  const t = useTranslations('notifications');
   const locale = useLocale();
   const [items, setItems] = React.useState(initialItems);
   const [cursor, setCursor] = React.useState(initialCursor);
@@ -43,26 +43,18 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
 
   const onOpenItem = (item: NotificationItem) => {
     if (item.readAt) return;
-    setItems((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, readAt: new Date() } : n)),
-    );
+    setItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, readAt: new Date() } : n)));
     markOne.run({ notificationId: item.id });
   };
 
   const onMarkAll = () => {
-    setItems((prev) =>
-      prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })),
-    );
+    setItems((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })));
     markAll.run({});
   };
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        icon={<Bell />}
-        title={t("empty.title")}
-        description={t("empty.description")}
-      />
+      <EmptyState icon={<Bell />} title={t('empty.title')} description={t('empty.description')} />
     );
   }
 
@@ -75,22 +67,20 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
           onClick={onMarkAll}
           disabled={!unread || markAll.pending}
         >
-          {t("markAllRead")}
+          {t('markAllRead')}
         </Button>
       </div>
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
         {items.map((item) => {
           const sentence = notificationSentence(
             item.type,
-            item.actor?.name ?? item.actor?.handle ?? t("someone"),
+            item.actor?.name ?? item.actor?.handle ?? t('someone'),
             item.context,
           );
           const body = (
             <>
               <span className="flex-1">
-                <span className="block text-sm text-foreground">
-                  {sentence}
-                </span>
+                <span className="block text-sm text-foreground">{sentence}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
                   {formatRelativeTime(item.createdAt, locale)}
                 </span>
@@ -98,29 +88,25 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
               {!item.readAt ? (
                 <span
                   className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-                  aria-label={t("unread")}
+                  aria-label={t('unread')}
                 />
               ) : null}
             </>
           );
           const rowClass = cn(
-            "flex items-start gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/60",
-            !item.readAt && "bg-muted/30",
+            'flex items-start gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/60',
+            !item.readAt && 'bg-muted/30',
           );
           return (
             <li key={item.id}>
               {item.href ? (
-                <Link
-                  href={item.href}
-                  className={rowClass}
-                  onClick={() => onOpenItem(item)}
-                >
+                <Link href={item.href} className={rowClass} onClick={() => onOpenItem(item)}>
                   {body}
                 </Link>
               ) : (
                 <button
                   type="button"
-                  className={cn(rowClass, "w-full")}
+                  className={cn(rowClass, 'w-full')}
                   onClick={() => onOpenItem(item)}
                 >
                   {body}
@@ -137,7 +123,7 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
             onClick={() => loadMore.run({ cursor })}
             disabled={loadMore.pending}
           >
-            {loadMore.pending ? t("loading") : t("loadOlder")}
+            {loadMore.pending ? t('loading') : t('loadOlder')}
           </Button>
         </div>
       ) : null}

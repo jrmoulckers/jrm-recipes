@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { AlertTriangle, Check, Info, Minus, Plus, Users } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import * as React from 'react';
+import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
-import { HAPTICS, vibrate } from "~/lib/haptics";
+import { cn } from '~/lib/utils';
+import { HAPTICS, vibrate } from '~/lib/haptics';
 import {
   convertAmount,
   decomposeMeasure,
@@ -21,42 +21,31 @@ import {
   toWeight,
   type CustomUnitDef,
   type UnitPrefs,
-} from "~/lib/units";
-import { computeBakersFormula, computeBatchYield } from "~/lib/bakers-math";
-import { volumeClassForItem } from "~/lib/food-units";
-import { type UnitSystem } from "~/lib/cook-state";
-import { formatList } from "~/lib/i18n-format";
-import {
-  scalingNudge,
-  DIETARY_TAG_LABELS,
-  type DietaryTag,
-} from "~/lib/substitutions";
-import {
-  detectAllergensForSafety,
-  ALLERGEN_LABELS,
-  type Allergen,
-} from "~/lib/allergens";
+} from '~/lib/units';
+import { computeBakersFormula, computeBatchYield } from '~/lib/bakers-math';
+import { volumeClassForItem } from '~/lib/food-units';
+import { type UnitSystem } from '~/lib/cook-state';
+import { formatList } from '~/lib/i18n-format';
+import { scalingNudge, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import { detectAllergensForSafety, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
 import {
   detectIngredientConflict,
   isIngredientConflict,
   type MemberNeeds,
-} from "~/lib/dietary-match";
-import { useActiveMemberStore } from "~/lib/active-member-store";
-import { ingredientIcon } from "~/lib/ingredient-icons";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
-import { useUnitPrefsContext } from "~/components/recipe/unit-prefs-context";
-import {
-  NutritionPanel,
-  type CalorieMember,
-} from "~/components/recipe/nutrition-panel";
-import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
-import { hasNutrition, type Nutrition } from "~/lib/nutrition";
-import { estimatePerServingNutrition } from "~/lib/food-nutrition";
-import { type AnchoredSuggestion } from "~/server/engagement/queries";
+} from '~/lib/dietary-match';
+import { useActiveMemberStore } from '~/lib/active-member-store';
+import { ingredientIcon } from '~/lib/ingredient-icons';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions';
+import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
+import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
+import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
+import { hasNutrition, type Nutrition } from '~/lib/nutrition';
+import { estimatePerServingNutrition } from '~/lib/food-nutrition';
+import { type AnchoredSuggestion } from '~/server/engagement/queries';
 
 /**
  * Serializable payload for the per-ingredient anchored-suggestion slot (#346).
@@ -105,7 +94,7 @@ export type DietaryMember = CalorieMember & {
 type System = UnitSystem;
 
 /** Toggle order for the measurement-system switch. */
-const SYSTEM_OPTIONS = ["original", "us", "metric", "grams"] as const;
+const SYSTEM_OPTIONS = ['original', 'us', 'metric', 'grams'] as const;
 
 /**
  * Optional controlled-state hook-up. When provided (e.g. by cook mode) the panel
@@ -128,7 +117,7 @@ export type IngredientsPanelControls = {
  * per-dimension overrides + custom units, but with `defaultSystem` pinned to the
  * system the panel toggle currently shows so switching us↔metric still works.
  */
-function effectivePrefs(prefs: UnitPrefs, system: "us" | "metric"): UnitPrefs {
+function effectivePrefs(prefs: UnitPrefs, system: 'us' | 'metric'): UnitPrefs {
   return {
     defaultSystem: system,
     volumeUnit: prefs.volumeUnit,
@@ -146,13 +135,13 @@ function measure(
   prefs?: UnitPrefs,
   customs?: readonly CustomUnitDef[],
 ) {
-  if (q == null) return { q: null as number | null, unit: unit ?? "" };
-  if (system === "original" || !unit) return { q, unit: unit ?? "" };
-  if (system === "grams") {
+  if (q == null) return { q: null as number | null, unit: unit ?? '' };
+  if (system === 'original' || !unit) return { q, unit: unit ?? '' };
+  if (system === 'grams') {
     // Weigh-based cooking (#385): render convertible volumes/masses in grams,
     // leaving count/unknown ingredients (e.g. "1 egg", "pinch") untouched.
     const grams = toWeight(q, unit, item);
-    return grams != null ? { q: grams, unit: "g" } : { q, unit };
+    return grams != null ? { q: grams, unit: 'g' } : { q, unit };
   }
   // us/metric: honor the viewer's per-dimension defaults + custom units when we
   // have their prefs. Otherwise fall back to the friendly-ladder default. The
@@ -168,9 +157,7 @@ function measure(
     return m ? { q: m.quantity, unit: m.unit } : { q, unit };
   }
   const converted = toSystem(q, unit, system);
-  return converted
-    ? { q: converted.quantity, unit: converted.unit }
-    : { q, unit };
+  return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
 
 /**
@@ -190,13 +177,13 @@ function measureRange(
   prefs?: UnitPrefs,
   customs?: readonly CustomUnitDef[],
 ): { q: number | null; qMax: number | null; unit: string } {
-  if (q == null) return { q: null, qMax: null, unit: unit ?? "" };
-  if (system === "original" || !unit) return { q, qMax, unit: unit ?? "" };
-  if (system === "grams") {
+  if (q == null) return { q: null, qMax: null, unit: unit ?? '' };
+  if (system === 'original' || !unit) return { q, qMax, unit: unit ?? '' };
+  if (system === 'grams') {
     const grams = toWeight(q, unit, item);
     if (grams == null) return { q, qMax, unit };
     const gramsMax = qMax != null ? toWeight(qMax, unit, item) : null;
-    return { q: grams, qMax: gramsMax, unit: "g" };
+    return { q: grams, qMax: gramsMax, unit: 'g' };
   }
   // us/metric with the viewer's prefs: resolve the low end to the target unit,
   // then bring the high end onto that same unit so the range stays coherent.
@@ -209,8 +196,7 @@ function measureRange(
       volumeClassForItem(item),
     );
     if (!low) return { q, qMax, unit };
-    const hi =
-      qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
+    const hi = qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
     return {
       q: low.quantity,
       qMax: qMax != null ? (hi ?? qMax) : null,
@@ -239,10 +225,8 @@ function amountLabel(
   const mMax = m.qMax != null ? { q: m.qMax, unit: m.unit } : null;
   if (m.q == null) {
     return {
-      number: "",
-      unit: kid
-        ? expandKidUnit(ing.unit, null, locale)
-        : displayUnit(ing.unit, null, locale),
+      number: '',
+      unit: kid ? expandKidUnit(ing.unit, null, locale) : displayUnit(ing.unit, null, locale),
     };
   }
   if (kid) {
@@ -316,18 +300,14 @@ export function IngredientsPanel({
   const ctxPrefs = useUnitPrefsContext();
   const prefs = unitPrefs ?? ctxPrefs.prefs;
   const customs = customUnits ?? ctxPrefs.customs;
-  const [servingsInternal, setServingsInternal] = React.useState(
-    baseServings ?? 1,
-  );
+  const [servingsInternal, setServingsInternal] = React.useState(baseServings ?? 1);
   // Seed the display system from the viewer's saved preference so amounts
   // auto-convert on open; "original" preserves the author's units when the
   // viewer opts out of auto-conversion.
   const [systemInternal, setSystemInternal] = React.useState<System>(
-    prefs?.autoConvert ? prefs.defaultSystem : "original",
+    prefs?.autoConvert ? prefs.defaultSystem : 'original',
   );
-  const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
-    new Set(),
-  );
+  const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(new Set());
   // Gate check-off animations to post-mount so pre-checked items (e.g. a
   // resumed cook session) render statically instead of animating on load.
   const [mounted, setMounted] = React.useState(false);
@@ -336,19 +316,19 @@ export function IngredientsPanel({
   // "Scale to…" (#390): pin one ingredient to a target amount and derive the
   // scale factor from it, then feed it back through the normal servings lever.
   const [scaleToOpen, setScaleToOpen] = React.useState(false);
-  const [pinId, setPinId] = React.useState<string>("");
-  const [pinAmount, setPinAmount] = React.useState<string>("");
-  const [pinUnit, setPinUnit] = React.useState<string>("");
+  const [pinId, setPinId] = React.useState<string>('');
+  const [pinAmount, setPinAmount] = React.useState<string>('');
+  const [pinUnit, setPinUnit] = React.useState<string>('');
 
   // Baker's percentages (#384). Surfaces only when weights are derivable.
   const [bakersView, setBakersView] = React.useState(false);
   // Batch-weight math (#418): total + per-piece portioning.
-  const [pieceCount, setPieceCount] = React.useState<string>("");
+  const [pieceCount, setPieceCount] = React.useState<string>('');
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
-  const t = useTranslations("ingredientsPanel");
+  const t = useTranslations('ingredientsPanel');
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
@@ -357,8 +337,7 @@ export function IngredientsPanel({
   // chosen a member. So the list stays clean by default (issue #429).
   const activeMember = memberList.find((m) => m.id === activeMemberId) ?? null;
   const memberNeeds: MemberNeeds | null =
-    activeMember &&
-    (activeMember.allergens.length > 0 || activeMember.diets.length > 0)
+    activeMember && (activeMember.allergens.length > 0 || activeMember.diets.length > 0)
       ? { allergens: activeMember.allergens, diets: activeMember.diets }
       : null;
   const cookingForId = React.useId();
@@ -416,7 +395,7 @@ export function IngredientsPanel({
   const sections = React.useMemo(() => {
     const map = new Map<string, PanelIngredient[]>();
     for (const ing of ingredients) {
-      const key = ing.section ?? "";
+      const key = ing.section ?? '';
       const list = map.get(key) ?? [];
       list.push(ing);
       map.set(key, list);
@@ -428,21 +407,11 @@ export function IngredientsPanel({
   // set that changed since the last render so only recomputed rows flash.
   const amounts = React.useMemo(() => {
     const map = new Map<string, { number: string; unit: string }>();
-    const formatRange = (low: string, high: string) =>
-      t("rangeTo", { low, high });
+    const formatRange = (low: string, high: string) => t('rangeTo', { low, high });
     for (const ing of ingredients) {
       map.set(
         ing.id,
-        amountLabel(
-          ing,
-          factor,
-          system,
-          locale,
-          formatRange,
-          kidSafe,
-          prefs,
-          customs,
-        ),
+        amountLabel(ing, factor, system, locale, formatRange, kidSafe, prefs, customs),
       );
     }
     return map;
@@ -468,10 +437,8 @@ export function IngredientsPanel({
   );
   // A countable yield (e.g. "12 rolls") seeds the divide-into piece count.
   const countableYield =
-    servingsNoun && Number.isFinite(servings) && servings > 0
-      ? Math.round(servings)
-      : null;
-  const pieces = pieceCount.trim() === "" ? countableYield : Number(pieceCount);
+    servingsNoun && Number.isFinite(servings) && servings > 0 ? Math.round(servings) : null;
+  const pieces = pieceCount.trim() === '' ? countableYield : Number(pieceCount);
   const batchYield = React.useMemo(
     () => computeBatchYield(weighed, factor, pieces),
     [weighed, factor, pieces],
@@ -481,11 +448,7 @@ export function IngredientsPanel({
     const map = new Map<string, number>();
     if (!bakersFormula || bakersFormula.totalFlour <= 0) return map;
     for (const ing of ingredients) {
-      const grams = toWeight(
-        scaleQuantity(ing.quantity, factor),
-        ing.unit,
-        ing.item,
-      );
+      const grams = toWeight(scaleQuantity(ing.quantity, factor), ing.unit, ing.item);
       if (grams != null && grams > 0) {
         map.set(ing.id, (grams / bakersFormula.totalFlour) * 100);
       }
@@ -499,7 +462,7 @@ export function IngredientsPanel({
     for (const [id, { number, unit }] of amounts) {
       const key = `${number}\u0000${unit}`;
       const before = prev.get(id);
-      if (before !== undefined && before !== key && number !== "") {
+      if (before !== undefined && before !== key && number !== '') {
         changed.add(id);
       }
     }
@@ -548,29 +511,25 @@ export function IngredientsPanel({
     () => ingredients.filter((i) => i.quantity != null && i.quantity > 0),
     [ingredients],
   );
-  const pinIngredient =
-    pinnable.find((i) => i.id === pinId) ?? pinnable[0] ?? null;
+  const pinIngredient = pinnable.find((i) => i.id === pinId) ?? pinnable[0] ?? null;
   const pinFactor = pinIngredient
     ? deriveScaleFactor(
         pinIngredient.quantity,
-        pinAmount.trim() === "" ? null : Number(pinAmount),
+        pinAmount.trim() === '' ? null : Number(pinAmount),
         pinIngredient.unit,
-        pinUnit.trim() === "" ? pinIngredient.unit : pinUnit,
+        pinUnit.trim() === '' ? pinIngredient.unit : pinUnit,
       )
     : null;
   const pinServings =
     pinFactor != null && canScale && baseServings
-      ? Math.min(
-          1000,
-          Math.max(1, Math.round(baseServings * pinFactor * 100) / 100),
-        )
+      ? Math.min(1000, Math.max(1, Math.round(baseServings * pinFactor * 100) / 100))
       : null;
 
   function openScaleTo() {
     const seed = pinnable[0] ?? null;
-    setPinId(seed?.id ?? "");
-    setPinUnit(seed?.unit ?? "");
-    setPinAmount("");
+    setPinId(seed?.id ?? '');
+    setPinUnit(seed?.unit ?? '');
+    setPinAmount('');
     setScaleToOpen(true);
   }
 
@@ -603,7 +562,7 @@ export function IngredientsPanel({
               type="button"
               size="icon"
               variant="outline"
-              aria-label={t("fewerServings")}
+              aria-label={t('fewerServings')}
               onClick={() => updateServings(Math.max(1, servings - 1))}
             >
               <Minus />
@@ -612,23 +571,20 @@ export function IngredientsPanel({
               <div className="overflow-hidden font-display text-xl font-semibold tabular-nums">
                 <span
                   key={servings}
-                  className={cn(
-                    "inline-block",
-                    mounted && "motion-safe:animate-number-roll",
-                  )}
+                  className={cn('inline-block', mounted && 'motion-safe:animate-number-roll')}
                 >
                   {formatQuantity(servings, undefined, locale)}
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
-                {servingsNoun ?? t("servingsNoun")}
+                {servingsNoun ?? t('servingsNoun')}
               </div>
             </div>
             <Button
               type="button"
               size="icon"
               variant="outline"
-              aria-label={t("moreServings")}
+              aria-label={t('moreServings')}
               onClick={() => updateServings(Math.min(1000, servings + 1))}
             >
               <Plus />
@@ -640,7 +596,7 @@ export function IngredientsPanel({
                 variant="ghost"
                 onClick={() => updateServings(baseServings)}
               >
-                {t("reset")}
+                {t('reset')}
               </Button>
             )}
             {pinnable.length > 0 && (
@@ -649,33 +605,29 @@ export function IngredientsPanel({
                 size="sm"
                 variant="ghost"
                 aria-expanded={scaleToOpen}
-                onClick={() =>
-                  scaleToOpen ? setScaleToOpen(false) : openScaleTo()
-                }
+                onClick={() => (scaleToOpen ? setScaleToOpen(false) : openScaleTo())}
               >
-                {t("scaleTo")}
+                {t('scaleTo')}
               </Button>
             )}
             {bakersFormula && (
               <Button
                 type="button"
                 size="sm"
-                variant={bakersView ? "secondary" : "ghost"}
+                variant={bakersView ? 'secondary' : 'ghost'}
                 aria-pressed={bakersView}
                 onClick={() => setBakersView((v) => !v)}
               >
-                {t("bakersPercent")}
+                {t('bakersPercent')}
               </Button>
             )}
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground">
-            {t("ingredients")}
-          </span>
+          <span className="text-sm text-muted-foreground">{t('ingredients')}</span>
         )}
 
         <ToggleGroup
-          aria-label={t("systemAria")}
+          aria-label={t('systemAria')}
           className="text-sm"
           value={system}
           onValueChange={(next) => updateSystem(next as System)}
@@ -697,13 +649,13 @@ export function IngredientsPanel({
           }}
         >
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            {t("ingredient")}
+            {t('ingredient')}
             <select
               value={pinIngredient.id}
               onChange={(e) => {
                 const next = pinnable.find((i) => i.id === e.target.value);
                 setPinId(e.target.value);
-                setPinUnit(next?.unit ?? "");
+                setPinUnit(next?.unit ?? '');
               }}
               className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
@@ -715,7 +667,7 @@ export function IngredientsPanel({
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            {t("targetAmount")}
+            {t('targetAmount')}
             <input
               type="number"
               inputMode="decimal"
@@ -723,17 +675,13 @@ export function IngredientsPanel({
               step="any"
               value={pinAmount}
               onChange={(e) => setPinAmount(e.target.value)}
-              placeholder={formatQuantity(
-                pinIngredient.quantity ?? 0,
-                undefined,
-                locale,
-              )}
+              placeholder={formatQuantity(pinIngredient.quantity ?? 0, undefined, locale)}
               className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
             />
           </label>
           {pinIngredient.unit && (
             <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-              {t("unit")}
+              {t('unit')}
               <input
                 type="text"
                 value={pinUnit}
@@ -743,25 +691,22 @@ export function IngredientsPanel({
             </label>
           )}
           <Button type="submit" size="sm" disabled={pinServings == null}>
-            {t("apply")}
+            {t('apply')}
           </Button>
-          <p
-            className="w-full text-xs text-muted-foreground"
-            aria-live="polite"
-          >
-            {pinAmount.trim() === ""
-              ? t("pinHint")
+          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+            {pinAmount.trim() === ''
+              ? t('pinHint')
               : pinFactor != null && pinServings != null
                 ? servingsNoun
-                  ? t("scaleFactorWithServings", {
+                  ? t('scaleFactorWithServings', {
                       factor: formatQuantity(pinFactor, undefined, locale),
                       servings: formatQuantity(pinServings, undefined, locale),
                       noun: servingsNoun,
                     })
-                  : t("scaleFactor", {
+                  : t('scaleFactor', {
                       factor: formatQuantity(pinFactor, undefined, locale),
                     })
-                : t("cannotConvert")}
+                : t('cannotConvert')}
           </p>
         </form>
       )}
@@ -771,14 +716,14 @@ export function IngredientsPanel({
           {bakersView && bakersFormula && (
             <>
               <span className="font-medium">
-                {t("totalFlour")}{" "}
+                {t('totalFlour')}{' '}
                 <span className="tabular-nums">
                   {formatGrams(bakersFormula.totalFlour, locale)}
                 </span>
               </span>
               {bakersFormula.hydration != null && (
                 <span className="text-muted-foreground">
-                  {t("hydration")}{" "}
+                  {t('hydration')}{' '}
                   <span className="tabular-nums text-foreground">
                     {`${Math.round(bakersFormula.hydration)}%`}
                   </span>
@@ -789,13 +734,13 @@ export function IngredientsPanel({
           {batchYield && (
             <>
               <span className="text-muted-foreground">
-                {t("batchWeight")}{" "}
+                {t('batchWeight')}{' '}
                 <span className="tabular-nums text-foreground">
                   {formatGrams(batchYield.totalWeight, locale)}
                 </span>
               </span>
               <label className="flex items-center gap-1.5 text-muted-foreground">
-                {t("divideInto")}
+                {t('divideInto')}
                 <input
                   type="number"
                   inputMode="numeric"
@@ -803,15 +748,13 @@ export function IngredientsPanel({
                   step="1"
                   value={pieceCount}
                   onChange={(e) => setPieceCount(e.target.value)}
-                  placeholder={
-                    countableYield != null ? String(countableYield) : "N"
-                  }
-                  aria-label={t("pieceCountAria")}
+                  placeholder={countableYield != null ? String(countableYield) : 'N'}
+                  aria-label={t('pieceCountAria')}
                   className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
                 />
                 {batchYield.perUnit != null && (
                   <span className="tabular-nums text-foreground">
-                    {t("each", {
+                    {t('each', {
                       weight: formatGrams(batchYield.perUnit, locale),
                     })}
                   </span>
@@ -825,25 +768,22 @@ export function IngredientsPanel({
       {scaledToHousehold && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Users className="size-3.5 text-primary" aria-hidden="true" />
-          {t("scaledToHousehold", { count: householdSize })}
+          {t('scaledToHousehold', { count: householdSize })}
         </p>
       )}
 
       {memberList.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2">
-          <label
-            htmlFor={cookingForId}
-            className="text-xs font-medium text-muted-foreground"
-          >
-            {t("cookingFor")}
+          <label htmlFor={cookingForId} className="text-xs font-medium text-muted-foreground">
+            {t('cookingFor')}
           </label>
           <select
             id={cookingForId}
-            value={activeMember?.id ?? ""}
+            value={activeMember?.id ?? ''}
             onChange={(e) => setActiveMemberId(e.target.value || null)}
             className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <option value="">{t("everyone")}</option>
+            <option value="">{t('everyone')}</option>
             {memberList.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -853,11 +793,11 @@ export function IngredientsPanel({
           {activeMember &&
             (memberNeeds ? (
               <span className="text-xs text-muted-foreground">
-                {t("flagging", { name: activeMember.name })}
+                {t('flagging', { name: activeMember.name })}
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">
-                {t("noRestrictions", { name: activeMember.name })}
+                {t('noRestrictions', { name: activeMember.name })}
               </span>
             ))}
         </div>
@@ -865,7 +805,7 @@ export function IngredientsPanel({
 
       <ul className="flex flex-col gap-1">
         {sections.map(([section, items]) => (
-          <li key={section || "default"}>
+          <li key={section || 'default'}>
             {section && (
               <h3 className="mb-1 mt-3 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 {section}
@@ -874,19 +814,15 @@ export function IngredientsPanel({
             <ul className="flex flex-col">
               {items.map((ing) => {
                 const { number, unit } = amounts.get(ing.id) ?? {
-                  number: "",
-                  unit: "",
+                  number: '',
+                  unit: '',
                 };
                 const amountChanged = changedAmountIds.has(ing.id);
                 const isChecked = checked.has(ing.id);
                 const justChecked = justCheckedIds.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
-                    ? scalingNudge(
-                        scaleQuantity(ing.quantity, factor),
-                        ing.unit,
-                        ing.item,
-                      )
+                    ? scalingNudge(scaleQuantity(ing.quantity, factor), ing.unit, ing.item)
                     : null;
                 // Practical decomposition of a messy US-volume amount (#391),
                 // e.g. "≈ 1 tbsp + 1 tsp". Uses the displayed (scaled + system-
@@ -905,39 +841,33 @@ export function IngredientsPanel({
                 const breakdown = displayed
                   ? decomposeMeasure(displayed.q, displayed.unit, locale)
                   : null;
-                const ingredientAllergens =
-                  ing.allergens ?? detectAllergensForSafety(ing.item);
+                const ingredientAllergens = ing.allergens ?? detectAllergensForSafety(ing.item);
                 const conflict = memberNeeds
                   ? detectIngredientConflict(ingredientAllergens, memberNeeds)
                   : null;
-                const flagged =
-                  conflict != null && isIngredientConflict(conflict);
+                const flagged = conflict != null && isIngredientConflict(conflict);
                 const reason = flagged
                   ? [
                       conflict.allergens.length > 0
-                        ? t("reasonContains", {
+                        ? t('reasonContains', {
                             list: formatList(
-                              conflict.allergens.map((a) =>
-                                ALLERGEN_LABELS[a].toLowerCase(),
-                              ),
+                              conflict.allergens.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
                               locale,
                             ),
                           })
                         : null,
                       conflict.diets.length > 0
-                        ? t("reasonNot", {
+                        ? t('reasonNot', {
                             list: formatList(
-                              conflict.diets.map((d) =>
-                                DIETARY_TAG_LABELS[d].toLowerCase(),
-                              ),
+                              conflict.diets.map((d) => DIETARY_TAG_LABELS[d].toLowerCase()),
                               locale,
                             ),
                           })
                         : null,
                     ]
                       .filter(Boolean)
-                      .join(" · ")
-                  : "";
+                      .join(' · ')
+                  : '';
                 return (
                   <li key={ing.id} className="flex flex-col">
                     <div className="flex items-center gap-1">
@@ -949,23 +879,21 @@ export function IngredientsPanel({
                       >
                         <span
                           className={cn(
-                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 transition-colors",
+                            'flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 transition-colors',
                             isChecked
-                              ? "border-primary bg-primary text-primary-foreground"
+                              ? 'border-primary bg-primary text-primary-foreground'
                               : flagged
-                                ? "border-warning"
-                                : "border-border",
-                            justChecked &&
-                              isChecked &&
-                              "motion-safe:animate-check-box-pop",
+                                ? 'border-warning'
+                                : 'border-border',
+                            justChecked && isChecked && 'motion-safe:animate-check-box-pop',
                           )}
                           aria-hidden
                         >
                           {isChecked && (
                             <Check
                               className={cn(
-                                "size-3.5",
-                                justChecked && "motion-safe:animate-check-pop",
+                                'size-3.5',
+                                justChecked && 'motion-safe:animate-check-pop',
                               )}
                               strokeWidth={3}
                             />
@@ -981,8 +909,8 @@ export function IngredientsPanel({
                         )}
                         <span
                           className={cn(
-                            "relative flex-1 text-[0.95rem] [overflow-wrap:anywhere]",
-                            isChecked && "text-muted-foreground",
+                            'relative flex-1 text-[0.95rem] [overflow-wrap:anywhere]',
+                            isChecked && 'text-muted-foreground',
                           )}
                         >
                           {isChecked && (
@@ -992,69 +920,50 @@ export function IngredientsPanel({
                             >
                               <span
                                 className={cn(
-                                  "h-px w-full origin-left bg-current",
-                                  justChecked &&
-                                    "motion-safe:animate-strike-in",
+                                  'h-px w-full origin-left bg-current',
+                                  justChecked && 'motion-safe:animate-strike-in',
                                 )}
                               />
                             </span>
                           )}
                           {(number || unit) && (
                             <span
-                              key={
-                                amountChanged
-                                  ? `amt-${servings}-${system}`
-                                  : "amt"
-                              }
+                              key={amountChanged ? `amt-${servings}-${system}` : 'amt'}
                               className={cn(
-                                "font-semibold tabular-nums",
+                                'font-semibold tabular-nums',
                                 amountChanged &&
-                                  "-mx-1 rounded px-1 motion-safe:animate-amount-flash",
+                                  '-mx-1 rounded px-1 motion-safe:animate-amount-flash',
                               )}
                             >
                               {number}
-                              {unit ? ` ${unit}` : ""}{" "}
+                              {unit ? ` ${unit}` : ''}{' '}
                             </span>
                           )}
                           {ing.item}
                           {ing.prep && (
-                            <Badge
-                              variant="secondary"
-                              className="ms-2 align-middle"
-                            >
+                            <Badge variant="secondary" className="ms-2 align-middle">
                               {ing.prep}
                             </Badge>
                           )}
                           {ing.note && (
                             <span className="text-muted-foreground">
-                              {", "}
+                              {', '}
                               {ing.note}
                             </span>
                           )}
                           {ing.stepPosition != null && (
-                            <Badge
-                              variant="muted"
-                              className="ms-2 align-middle"
-                            >
-                              {t("step", { position: ing.stepPosition })}
+                            <Badge variant="muted" className="ms-2 align-middle">
+                              {t('step', { position: ing.stepPosition })}
                             </Badge>
                           )}
                           {ing.optional && (
-                            <Badge
-                              variant="muted"
-                              className="ms-2 align-middle"
-                            >
-                              {t("optional")}
+                            <Badge variant="muted" className="ms-2 align-middle">
+                              {t('optional')}
                             </Badge>
                           )}
                           {bakersView && bakersPercentById.has(ing.id) && (
-                            <Badge
-                              variant="secondary"
-                              className="ms-2 align-middle tabular-nums"
-                            >
-                              {formatBakersPercent(
-                                bakersPercentById.get(ing.id)!,
-                              )}
+                            <Badge variant="secondary" className="ms-2 align-middle tabular-nums">
+                              {formatBakersPercent(bakersPercentById.get(ing.id)!)}
                             </Badge>
                           )}
                           {ingredientAllergens.map((allergen) => (
@@ -1062,12 +971,11 @@ export function IngredientsPanel({
                               key={allergen}
                               variant="muted"
                               className="ms-2 align-middle"
-                              title={t("containsTitle", {
-                                allergen:
-                                  ALLERGEN_LABELS[allergen].toLowerCase(),
+                              title={t('containsTitle', {
+                                allergen: ALLERGEN_LABELS[allergen].toLowerCase(),
                               })}
                             >
-                              <span className="sr-only">{t("containsSr")}</span>
+                              <span className="sr-only">{t('containsSr')}</span>
                               {ALLERGEN_LABELS[allergen]}
                             </Badge>
                           ))}
@@ -1084,9 +992,7 @@ export function IngredientsPanel({
                       <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
-                          <span className="sr-only">
-                            {t("dietaryWarningSr")}
-                          </span>
+                          <span className="sr-only">{t('dietaryWarningSr')}</span>
                           {`${activeMember?.name}: ${reason}.`}
                         </span>
                       </p>
@@ -1101,8 +1007,7 @@ export function IngredientsPanel({
                       <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         <span>
-                          <span className="sr-only">{t("measureAsSr")}</span>≈{" "}
-                          {breakdown}
+                          <span className="sr-only">{t('measureAsSr')}</span>≈ {breakdown}
                         </span>
                       </p>
                     )}
@@ -1115,9 +1020,7 @@ export function IngredientsPanel({
                           anchorId={ing.id}
                           anchorLabel={ing.item}
                           canInteract={ingredientSuggestions.canInteract}
-                          suggestions={
-                            ingredientSuggestions.byIngredientId[ing.id] ?? []
-                          }
+                          suggestions={ingredientSuggestions.byIngredientId[ing.id] ?? []}
                         />
                       </div>
                     )}

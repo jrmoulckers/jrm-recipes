@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import type { Route } from "next";
-import { useTranslations } from "next-intl";
-import { ArrowLeft, CalendarDays, Link2, Printer, Repeat } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import Link from 'next/link';
+import type { Route } from 'next';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, CalendarDays, Link2, Printer, Repeat } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { brand } from "~/config/brand";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import type { WeekMenuDay } from "~/lib/week-menu";
+import { brand } from '~/config/brand';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import type { WeekMenuDay } from '~/lib/week-menu';
 
 const printStyles = `
 @media print {
@@ -59,15 +59,15 @@ export function WeekMenuPrintView({
   days: WeekMenuDay[];
   backHref: Route;
 }) {
-  const t = useTranslations("print.week");
+  const t = useTranslations('print.week');
 
   function copyLink() {
-    const url = typeof window === "undefined" ? "" : window.location.href;
+    const url = typeof window === 'undefined' ? '' : window.location.href;
     if (!url) return;
     void navigator.clipboard
       .writeText(url)
-      .then(() => toast.success(t("toasts.linkCopied")))
-      .catch(() => toast.error(t("toasts.copyLinkFailed")));
+      .then(() => toast.success(t('toasts.linkCopied')))
+      .catch(() => toast.error(t('toasts.copyLinkFailed')));
   }
 
   return (
@@ -79,29 +79,21 @@ export function WeekMenuPrintView({
           <div className="flex min-w-0 items-center gap-3">
             <Button asChild variant="ghost" size="sm" className="-ml-2">
               <Link href={backHref}>
-                <ArrowLeft /> {t("back")}
+                <ArrowLeft /> {t('back')}
               </Link>
             </Button>
             <div className="min-w-0">
-              <h1 className="truncate font-display text-xl font-bold">
-                {t("title")}
-              </h1>
-              <p className="truncate text-sm text-muted-foreground">
-                {weekLabel}
-              </p>
+              <h1 className="truncate font-display text-xl font-bold">{t('title')}</h1>
+              <p className="truncate text-sm text-muted-foreground">{weekLabel}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              onClick={() => window.print()}
-              className="shrink-0"
-            >
-              <Printer /> {t("print")}
+            <Button type="button" onClick={() => window.print()} className="shrink-0">
+              <Printer /> {t('print')}
             </Button>
             <Button type="button" variant="outline" onClick={copyLink}>
-              <Link2 /> {t("copyLink")}
+              <Link2 /> {t('copyLink')}
             </Button>
           </div>
         </div>
@@ -113,9 +105,7 @@ export function WeekMenuPrintView({
             <span className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               <CalendarDays className="size-4" aria-hidden /> {brand.name}
             </span>
-            <h2 className="font-display text-3xl font-bold tracking-tight">
-              {t("heading")}
-            </h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight">{t('heading')}</h2>
             <p className="text-muted-foreground">{weekLabel}</p>
           </header>
 
@@ -128,8 +118,8 @@ export function WeekMenuPrintView({
                 <div className="w-28 shrink-0">
                   <p
                     className={cn(
-                      "font-display text-lg font-semibold leading-tight",
-                      day.isToday && "text-primary",
+                      'font-display text-lg font-semibold leading-tight',
+                      day.isToday && 'text-primary',
                     )}
                   >
                     {day.weekday}
@@ -151,16 +141,13 @@ export function WeekMenuPrintView({
                         >
                           <span
                             className={cn(
-                              "text-base font-medium",
+                              'text-base font-medium',
                               dinner.leftovers &&
-                                "inline-flex items-center gap-1 italic text-muted-foreground",
+                                'inline-flex items-center gap-1 italic text-muted-foreground',
                             )}
                           >
                             {dinner.leftovers && (
-                              <Repeat
-                                className="size-3.5 shrink-0"
-                                aria-hidden
-                              />
+                              <Repeat className="size-3.5 shrink-0" aria-hidden />
                             )}
                             {dinner.title}
                           </span>

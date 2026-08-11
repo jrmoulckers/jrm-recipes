@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   Tooltip,
@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
   tooltipVariants,
-} from "./tooltip";
+} from './tooltip';
 
 // Radix's arrow measures itself via ResizeObserver, which jsdom doesn't provide.
 beforeAll(() => {
@@ -26,34 +26,34 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
-describe("tooltipVariants", () => {
-  it("keeps the default single-line chip unchanged in size and weight", () => {
+describe('tooltipVariants', () => {
+  it('keeps the default single-line chip unchanged in size and weight', () => {
     const base = tooltipVariants();
-    expect(base).toContain("bg-foreground");
-    expect(base).toContain("text-background");
-    expect(base).toContain("text-xs");
-    expect(base).toContain("font-medium");
-    expect(base).toContain("px-2.5");
-    expect(base).toContain("py-1.5");
+    expect(base).toContain('bg-foreground');
+    expect(base).toContain('text-background');
+    expect(base).toContain('text-xs');
+    expect(base).toContain('font-medium');
+    expect(base).toContain('px-2.5');
+    expect(base).toContain('py-1.5');
   });
 
-  it("offers a softer popover surface variant", () => {
-    const soft = tooltipVariants({ variant: "soft" });
-    expect(soft).toContain("bg-popover");
-    expect(soft).toContain("text-popover-foreground");
-    expect(soft).toContain("border");
+  it('offers a softer popover surface variant', () => {
+    const soft = tooltipVariants({ variant: 'soft' });
+    expect(soft).toContain('bg-popover');
+    expect(soft).toContain('text-popover-foreground');
+    expect(soft).toContain('border');
   });
 
-  it("wraps multiline content at a sensible max width with readable leading", () => {
+  it('wraps multiline content at a sensible max width with readable leading', () => {
     const multi = tooltipVariants({ multiline: true });
-    expect(multi).toContain("max-w-xs");
-    expect(multi).toContain("leading-relaxed");
-    expect(multi).toContain("text-pretty");
+    expect(multi).toContain('max-w-xs');
+    expect(multi).toContain('leading-relaxed');
+    expect(multi).toContain('text-pretty');
   });
 });
 
-describe("TooltipContent", () => {
-  it("renders a color-matched arrow for the default surface", () => {
+describe('TooltipContent', () => {
+  it('renders a color-matched arrow for the default surface', () => {
     render(
       <TooltipProvider>
         <Tooltip open>
@@ -62,11 +62,11 @@ describe("TooltipContent", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    const arrow = document.querySelector("svg.fill-foreground");
+    const arrow = document.querySelector('svg.fill-foreground');
     expect(arrow).not.toBeNull();
   });
 
-  it("color-matches the arrow to the soft surface", () => {
+  it('color-matches the arrow to the soft surface', () => {
     render(
       <TooltipProvider>
         <Tooltip open>
@@ -77,8 +77,8 @@ describe("TooltipContent", () => {
         </Tooltip>
       </TooltipProvider>,
     );
-    expect(document.querySelector("svg.fill-popover")).not.toBeNull();
+    expect(document.querySelector('svg.fill-popover')).not.toBeNull();
     const content = screen.getAllByText(/longer, multiline explanation/)[0]!;
-    expect(content.className).toContain("max-w-xs");
+    expect(content.className).toContain('max-w-xs');
   });
 });

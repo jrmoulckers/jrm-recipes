@@ -1,10 +1,10 @@
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
-import { headers } from "next/headers";
-import type { ReactNode } from "react";
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+import { headers } from 'next/headers';
+import type { ReactNode } from 'react';
 
-import { PATHNAME_HEADER } from "~/config/i18n";
-import { namespacesForPathname, pickMessages } from "~/i18n/messages";
+import { PATHNAME_HEADER } from '~/config/i18n';
+import { namespacesForPathname, pickMessages } from '~/i18n/messages';
 
 /**
  * Route-scoped message provider (#674).
@@ -28,19 +28,12 @@ import { namespacesForPathname, pickMessages } from "~/i18n/messages";
  * global namespaces.
  */
 export async function RouteMessages({ children }: { children: ReactNode }) {
-  const [headerList, locale, messages] = await Promise.all([
-    headers(),
-    getLocale(),
-    getMessages(),
-  ]);
+  const [headerList, locale, messages] = await Promise.all([headers(), getLocale(), getMessages()]);
 
   const namespaces = namespacesForPathname(headerList.get(PATHNAME_HEADER));
 
   return (
-    <NextIntlClientProvider
-      locale={locale}
-      messages={pickMessages(messages, namespaces)}
-    >
+    <NextIntlClientProvider locale={locale} messages={pickMessages(messages, namespaces)}>
       {children}
     </NextIntlClientProvider>
   );
@@ -70,6 +63,6 @@ export function withRouteMessages<P extends object>(
     );
   }
 
-  RouteScopedPage.displayName = `withRouteMessages(${Page.name || "Page"})`;
+  RouteScopedPage.displayName = `withRouteMessages(${Page.name || 'Page'})`;
   return RouteScopedPage;
 }

@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql } from 'drizzle-orm';
 import {
   check,
   index,
@@ -10,11 +10,11 @@ import {
   unique,
   varchar,
   type AnyPgColumn,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
 
 /**
  * The food knowledge graph (issue: interchangeable units → live food graph, see
@@ -37,7 +37,7 @@ import { recipes } from "./recipes";
  * categorization, analytics) enrich those defaults with live crowd data.
  */
 export const foodItems = pgTable(
-  "food_items",
+  'food_items',
   {
     id: pk(),
     /** Stable, unique key derived from the food name. Also the seed id source. */
@@ -53,10 +53,10 @@ export const foodItems = pgTable(
      * parent cascades to its varieties.
      */
     parentId: fk().references((): AnyPgColumn => foodItems.id, {
-      onDelete: "cascade",
+      onDelete: 'cascade',
     }),
     /** Provenance: `curated` (static seed) or `mined` (crowd corpus). */
-    source: varchar({ length: 16 }).notNull().default("curated"),
+    source: varchar({ length: 16 }).notNull().default('curated'),
     /**
      * Canonical {@link import("~/lib/allergens").Allergen} tokens this food
      * inherently carries (e.g. Cheese → `["dairy"]`), curated in
@@ -74,9 +74,9 @@ export const foodItems = pgTable(
     ...timestamps(),
   },
   (t) => [
-    index("food_items_category_idx").on(t.category),
-    index("food_items_parent_idx").on(t.parentId),
-    check("food_items_recipe_count_check", sql`${t.recipeCount} >= 0`),
+    index('food_items_category_idx').on(t.category),
+    index('food_items_parent_idx').on(t.parentId),
+    check('food_items_recipe_count_check', sql`${t.recipeCount} >= 0`),
   ],
 );
 
@@ -88,21 +88,21 @@ export const foodItems = pgTable(
  * `normalizeFoodText`) and indexed for resolution lookups.
  */
 export const foodAliases = pgTable(
-  "food_aliases",
+  'food_aliases',
   {
     id: pk(),
     foodId: fk()
       .notNull()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     alias: varchar({ length: 160 }).notNull(),
-    source: varchar({ length: 16 }).notNull().default("mined"),
+    source: varchar({ length: 16 }).notNull().default('mined'),
     useCount: integer().notNull().default(0),
     ...timestamps(),
   },
   (t) => [
-    unique("food_aliases_food_alias_uq").on(t.foodId, t.alias),
-    index("food_aliases_alias_idx").on(t.alias),
-    check("food_aliases_use_count_check", sql`${t.useCount} >= 0`),
+    unique('food_aliases_food_alias_uq').on(t.foodId, t.alias),
+    index('food_aliases_alias_idx').on(t.alias),
+    check('food_aliases_use_count_check', sql`${t.useCount} >= 0`),
   ],
 );
 
@@ -113,11 +113,11 @@ export const foodAliases = pgTable(
  * pre-fill a typical quantity. Composite PK (`foodId`, `unit`).
  */
 export const foodUnitStats = pgTable(
-  "food_unit_stats",
+  'food_unit_stats',
   {
     foodId: fk()
       .notNull()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     unit: varchar({ length: 40 }).notNull(),
     useCount: integer().notNull().default(0),
     /** Quantity distribution for this (food, unit): 10th/50th/90th percentile. */
@@ -128,8 +128,8 @@ export const foodUnitStats = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.foodId, t.unit] }),
-    index("food_unit_stats_food_idx").on(t.foodId),
-    check("food_unit_stats_use_count_check", sql`${t.useCount} >= 0`),
+    index('food_unit_stats_food_idx').on(t.foodId),
+    check('food_unit_stats_use_count_check', sql`${t.useCount} >= 0`),
   ],
 );
 
@@ -138,19 +138,19 @@ export const foodUnitStats = pgTable(
  * `recipe_ingredients.prep` column. Composite PK (`foodId`, `prep`).
  */
 export const foodPrepStats = pgTable(
-  "food_prep_stats",
+  'food_prep_stats',
   {
     foodId: fk()
       .notNull()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     prep: varchar({ length: 200 }).notNull(),
     useCount: integer().notNull().default(0),
     ...timestamps(),
   },
   (t) => [
     primaryKey({ columns: [t.foodId, t.prep] }),
-    index("food_prep_stats_food_idx").on(t.foodId),
-    check("food_prep_stats_use_count_check", sql`${t.useCount} >= 0`),
+    index('food_prep_stats_food_idx').on(t.foodId),
+    check('food_prep_stats_use_count_check', sql`${t.useCount} >= 0`),
   ],
 );
 
@@ -163,24 +163,24 @@ export const foodPrepStats = pgTable(
  * lookups. Composite PK (`foodAId`, `foodBId`).
  */
 export const foodPairs = pgTable(
-  "food_pairs",
+  'food_pairs',
   {
     foodAId: fk()
       .notNull()
-      .references((): AnyPgColumn => foodItems.id, { onDelete: "cascade" }),
+      .references((): AnyPgColumn => foodItems.id, { onDelete: 'cascade' }),
     foodBId: fk()
       .notNull()
-      .references((): AnyPgColumn => foodItems.id, { onDelete: "cascade" }),
+      .references((): AnyPgColumn => foodItems.id, { onDelete: 'cascade' }),
     coCount: integer().notNull().default(0),
     lift: real(),
     ...timestamps(),
   },
   (t) => [
     primaryKey({ columns: [t.foodAId, t.foodBId] }),
-    index("food_pairs_a_idx").on(t.foodAId),
-    index("food_pairs_b_idx").on(t.foodBId),
-    check("food_pairs_order_check", sql`${t.foodAId} < ${t.foodBId}`),
-    check("food_pairs_co_count_check", sql`${t.coCount} >= 0`),
+    index('food_pairs_a_idx').on(t.foodAId),
+    index('food_pairs_b_idx').on(t.foodBId),
+    check('food_pairs_order_check', sql`${t.foodAId} < ${t.foodBId}`),
+    check('food_pairs_co_count_check', sql`${t.coCount} >= 0`),
   ],
 );
 
@@ -193,19 +193,19 @@ export const foodPairs = pgTable(
  * are mined. The miner leaves it NULL until then.
  */
 export const userFoodPrefs = pgTable(
-  "user_food_prefs",
+  'user_food_prefs',
   {
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     foodId: fk()
       .notNull()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     /** The unit this user most often measures this food in (canonical token). */
     preferredUnit: varchar({ length: 40 }),
     /** The variety this user reaches for (yellow onion), or NULL. */
     preferredVariantId: fk().references((): AnyPgColumn => foodItems.id, {
-      onDelete: "set null",
+      onDelete: 'set null',
     }),
     /** The prep this user most often applies (diced), or NULL. */
     preferredPrep: varchar({ length: 200 }),
@@ -215,9 +215,9 @@ export const userFoodPrefs = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.foodId] }),
-    index("user_food_prefs_user_idx").on(t.userId),
-    index("user_food_prefs_food_idx").on(t.foodId),
-    check("user_food_prefs_use_count_check", sql`${t.useCount} >= 0`),
+    index('user_food_prefs_user_idx').on(t.userId),
+    index('user_food_prefs_food_idx').on(t.foodId),
+    check('user_food_prefs_use_count_check', sql`${t.useCount} >= 0`),
   ],
 );
 
@@ -231,21 +231,21 @@ export const userFoodPrefs = pgTable(
  * (`foodId`, `recipeId`) plus a `recipeId` index support the reverse lookup.
  */
 export const foodRecipeLinks = pgTable(
-  "food_recipe_links",
+  'food_recipe_links',
   {
     foodId: fk()
       .notNull()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     useCount: integer().notNull().default(1),
     ...timestamps(),
   },
   (t) => [
     primaryKey({ columns: [t.foodId, t.recipeId] }),
-    index("food_recipe_links_recipe_idx").on(t.recipeId),
-    check("food_recipe_links_use_count_check", sql`${t.useCount} >= 1`),
+    index('food_recipe_links_recipe_idx').on(t.recipeId),
+    check('food_recipe_links_use_count_check', sql`${t.useCount} >= 1`),
   ],
 );
 
@@ -261,11 +261,11 @@ export const foodRecipeLinks = pgTable(
  * "unknown", not zero.
  */
 export const foodNutrition = pgTable(
-  "food_nutrition",
+  'food_nutrition',
   {
     foodId: fk()
       .primaryKey()
-      .references(() => foodItems.id, { onDelete: "cascade" }),
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
     /** Energy in kilocalories per 100 g. */
     kcal: real().notNull(),
     /** Protein in grams per 100 g. */
@@ -285,11 +285,11 @@ export const foodNutrition = pgTable(
     ...timestamps(),
   },
   (t) => [
-    index("food_nutrition_source_idx").on(t.sourceRef),
-    check("food_nutrition_kcal_check", sql`${t.kcal} >= 0`),
-    check("food_nutrition_protein_check", sql`${t.proteinG} >= 0`),
-    check("food_nutrition_carbs_check", sql`${t.carbsG} >= 0`),
-    check("food_nutrition_fat_check", sql`${t.fatG} >= 0`),
+    index('food_nutrition_source_idx').on(t.sourceRef),
+    check('food_nutrition_kcal_check', sql`${t.kcal} >= 0`),
+    check('food_nutrition_protein_check', sql`${t.proteinG} >= 0`),
+    check('food_nutrition_carbs_check', sql`${t.carbsG} >= 0`),
+    check('food_nutrition_fat_check', sql`${t.fatG} >= 0`),
   ],
 );
 

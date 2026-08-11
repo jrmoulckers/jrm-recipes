@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { ChefHat, UtensilsCrossed } from "lucide-react";
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { ChefHat, UtensilsCrossed } from 'lucide-react';
 
-import { useFeatureFlag } from "~/components/analytics/flags-provider";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
-import { Button } from "~/components/ui/button";
-import { pickKidCopy } from "~/config/kid-copy";
+import { useFeatureFlag } from '~/components/analytics/flags-provider';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
+import { Button } from '~/components/ui/button';
+import { pickKidCopy } from '~/config/kid-copy';
 
 /** Feature-flag key for the empty-library CTA experiment (issue #336). */
-export const EMPTY_LIBRARY_CTA_FLAG = "empty-library-cta";
+export const EMPTY_LIBRARY_CTA_FLAG = 'empty-library-cta';
 
 type EmptyLibraryCopy = { heading: string; body: string; cta: string };
 type EmptyLibraryCopyKey = { heading: string; body: string; cta: string };
@@ -23,33 +23,33 @@ type EmptyLibraryCopyKey = { heading: string; body: string; cta: string };
  */
 const VARIANTS: Record<string, EmptyLibraryCopy> = {
   control: {
-    heading: "No recipes yet",
-    body: "Add the dish everyone always asks you to make. It only takes a minute.",
-    cta: "Create your first recipe",
+    heading: 'No recipes yet',
+    body: 'Add the dish everyone always asks you to make. It only takes a minute.',
+    cta: 'Create your first recipe',
   },
   benefit: {
     heading: "Save your family's first recipe",
-    body: "Keep the dishes everyone loves in one place. Start with the one they always ask you to make.",
-    cta: "Save your first recipe",
+    body: 'Keep the dishes everyone loves in one place. Start with the one they always ask you to make.',
+    cta: 'Save your first recipe',
   },
 };
 
 const VARIANT_KEYS: Record<string, EmptyLibraryCopyKey> = {
   control: {
-    heading: "emptyLibrary.control.heading",
-    body: "emptyLibrary.control.body",
-    cta: "emptyLibrary.control.cta",
+    heading: 'emptyLibrary.control.heading',
+    body: 'emptyLibrary.control.body',
+    cta: 'emptyLibrary.control.cta',
   },
   benefit: {
-    heading: "emptyLibrary.benefit.heading",
-    body: "emptyLibrary.benefit.body",
-    cta: "emptyLibrary.benefit.cta",
+    heading: 'emptyLibrary.benefit.heading',
+    body: 'emptyLibrary.benefit.body',
+    cta: 'emptyLibrary.benefit.cta',
   },
 };
 
 /** Resolve a flag value to a copy variant, defaulting to control. */
 export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
-  if (typeof variant === "string" && variant in VARIANTS) {
+  if (typeof variant === 'string' && variant in VARIANTS) {
     return VARIANTS[variant]!;
   }
   return VARIANTS.control!;
@@ -64,11 +64,11 @@ export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
  * is `first_recipe_created`.
  */
 export function EmptyLibraryCta() {
-  const t = useTranslations("recipe");
-  const variant = useFeatureFlag(EMPTY_LIBRARY_CTA_FLAG, "control");
+  const t = useTranslations('recipe');
+  const variant = useFeatureFlag(EMPTY_LIBRARY_CTA_FLAG, 'control');
   const { kidSafe } = useThemeBehavior();
   const key =
-    typeof variant === "string" && variant in VARIANT_KEYS
+    typeof variant === 'string' && variant in VARIANT_KEYS
       ? VARIANT_KEYS[variant]!
       : VARIANT_KEYS.control!;
   const base = {
@@ -78,9 +78,9 @@ export function EmptyLibraryCta() {
   };
   // Kids mode overrides the A/B copy with simpler words, regardless of variant.
   const copy = {
-    heading: pickKidCopy(kidSafe, "empty.recipes.title", base.heading),
-    body: pickKidCopy(kidSafe, "empty.recipes.body", base.body),
-    cta: pickKidCopy(kidSafe, "cta.create", base.cta),
+    heading: pickKidCopy(kidSafe, 'empty.recipes.title', base.heading),
+    body: pickKidCopy(kidSafe, 'empty.recipes.body', base.body),
+    cta: pickKidCopy(kidSafe, 'cta.create', base.cta),
   };
 
   return (

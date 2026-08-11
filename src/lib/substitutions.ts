@@ -7,7 +7,7 @@
  * `units`), so it works offline, needs no database, and is easy to unit-test.
  */
 
-import { formatQuantity, roundNice } from "./units";
+import { formatQuantity, roundNice } from './units';
 
 /**
  * The canonical dietary tags, in display order. This is the single source of
@@ -15,16 +15,16 @@ import { formatQuantity, roundNice } from "./units";
  * self-declaration (issue #404), so the two can never drift.
  */
 export const DIETARY_TAGS = [
-  "vegan",
-  "vegetarian",
-  "dairy-free",
-  "gluten-free",
-  "egg-free",
-  "nut-free",
-  "soy-free",
-  "shellfish-free",
-  "fish-free",
-  "sesame-free",
+  'vegan',
+  'vegetarian',
+  'dairy-free',
+  'gluten-free',
+  'egg-free',
+  'nut-free',
+  'soy-free',
+  'shellfish-free',
+  'fish-free',
+  'sesame-free',
 ] as const;
 
 /** Dietary badges surfaced alongside a suggested swap. */
@@ -32,16 +32,16 @@ export type DietaryTag = (typeof DIETARY_TAGS)[number];
 
 /** Human-friendly labels for the dietary tags. */
 export const DIETARY_TAG_LABELS: Record<DietaryTag, string> = {
-  vegan: "Vegan",
-  vegetarian: "Vegetarian",
-  "dairy-free": "Dairy-free",
-  "gluten-free": "Gluten-free",
-  "egg-free": "Egg-free",
-  "nut-free": "Nut-free",
-  "soy-free": "Soy-free",
-  "shellfish-free": "Shellfish-free",
-  "fish-free": "Fish-free",
-  "sesame-free": "Sesame-free",
+  vegan: 'Vegan',
+  vegetarian: 'Vegetarian',
+  'dairy-free': 'Dairy-free',
+  'gluten-free': 'Gluten-free',
+  'egg-free': 'Egg-free',
+  'nut-free': 'Nut-free',
+  'soy-free': 'Soy-free',
+  'shellfish-free': 'Shellfish-free',
+  'fish-free': 'Fish-free',
+  'sesame-free': 'Sesame-free',
 };
 
 const DIETARY_TAG_SET: ReadonlySet<string> = new Set(DIETARY_TAGS);
@@ -81,164 +81,153 @@ export type SubstitutionEntry = {
  */
 export const SUBSTITUTIONS: SubstitutionEntry[] = [
   {
-    name: "Buttermilk",
-    aliases: ["buttermilk"],
+    name: 'Buttermilk',
+    aliases: ['buttermilk'],
     substitutions: [
       {
-        substitute: "Milk + acid",
-        ratioOrNotes:
-          "1 cup milk + 1 tbsp lemon juice or white vinegar. Rest 5 min until curdled.",
+        substitute: 'Milk + acid',
+        ratioOrNotes: '1 cup milk + 1 tbsp lemon juice or white vinegar. Rest 5 min until curdled.',
       },
       {
-        substitute: "Plain yogurt",
-        ratioOrNotes: "1:1. Thin with a splash of milk if needed.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Plain yogurt',
+        ratioOrNotes: '1:1. Thin with a splash of milk if needed.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Plant milk + acid",
-        ratioOrNotes:
-          "1 cup soy or almond milk + 1 tbsp lemon juice. Rest 5 min.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Plant milk + acid',
+        ratioOrNotes: '1 cup soy or almond milk + 1 tbsp lemon juice. Rest 5 min.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Butter",
-    aliases: ["butter", "unsalted butter", "salted butter"],
+    name: 'Butter',
+    aliases: ['butter', 'unsalted butter', 'salted butter'],
     substitutions: [
       {
-        substitute: "Neutral or olive oil",
-        ratioOrNotes:
-          "Use about ¾ cup oil per 1 cup butter (baking results vary).",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Neutral or olive oil',
+        ratioOrNotes: 'Use about ¾ cup oil per 1 cup butter (baking results vary).',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Coconut oil",
-        ratioOrNotes: "1:1 measured solid. Great for baking.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Coconut oil',
+        ratioOrNotes: '1:1 measured solid. Great for baking.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Unsweetened applesauce",
-        ratioOrNotes: "Replace up to half the butter for lower-fat baking.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Unsweetened applesauce',
+        ratioOrNotes: 'Replace up to half the butter for lower-fat baking.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Egg",
-    aliases: ["egg", "eggs", "large egg", "large eggs"],
+    name: 'Egg',
+    aliases: ['egg', 'eggs', 'large egg', 'large eggs'],
     substitutions: [
       {
-        substitute: "Flax egg",
-        ratioOrNotes:
-          "1 tbsp ground flax + 3 tbsp water per egg. Rest 5 min to gel.",
-        dietaryTags: ["vegan", "egg-free", "dairy-free"],
+        substitute: 'Flax egg',
+        ratioOrNotes: '1 tbsp ground flax + 3 tbsp water per egg. Rest 5 min to gel.',
+        dietaryTags: ['vegan', 'egg-free', 'dairy-free'],
       },
       {
-        substitute: "Unsweetened applesauce",
-        ratioOrNotes: "¼ cup per egg for binding in baked goods.",
-        dietaryTags: ["vegan", "egg-free", "dairy-free"],
+        substitute: 'Unsweetened applesauce',
+        ratioOrNotes: '¼ cup per egg for binding in baked goods.',
+        dietaryTags: ['vegan', 'egg-free', 'dairy-free'],
       },
       {
-        substitute: "Mashed banana",
-        ratioOrNotes: "¼ cup (about ½ banana) per egg. Adds a little flavor.",
-        dietaryTags: ["vegan", "egg-free", "dairy-free"],
+        substitute: 'Mashed banana',
+        ratioOrNotes: '¼ cup (about ½ banana) per egg. Adds a little flavor.',
+        dietaryTags: ['vegan', 'egg-free', 'dairy-free'],
       },
       {
-        substitute: "Commercial egg replacer",
-        ratioOrNotes: "Whisk per package directions, one portion per egg.",
-        dietaryTags: ["vegan", "egg-free"],
+        substitute: 'Commercial egg replacer',
+        ratioOrNotes: 'Whisk per package directions, one portion per egg.',
+        dietaryTags: ['vegan', 'egg-free'],
       },
     ],
   },
   {
-    name: "Sour cream",
-    aliases: ["sour cream"],
+    name: 'Sour cream',
+    aliases: ['sour cream'],
     substitutions: [
       {
-        substitute: "Plain Greek yogurt",
-        ratioOrNotes: "1:1. The closest everyday swap.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Plain Greek yogurt',
+        ratioOrNotes: '1:1. The closest everyday swap.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Blended cottage cheese",
-        ratioOrNotes: "Blend smooth and use 1:1.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Blended cottage cheese',
+        ratioOrNotes: 'Blend smooth and use 1:1.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Cashew or coconut sour cream",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Cashew or coconut sour cream',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Heavy cream",
-    aliases: [
-      "heavy cream",
-      "heavy whipping cream",
-      "whipping cream",
-      "double cream",
-      "cream",
-    ],
+    name: 'Heavy cream',
+    aliases: ['heavy cream', 'heavy whipping cream', 'whipping cream', 'double cream', 'cream'],
     substitutions: [
       {
-        substitute: "Milk + melted butter",
-        ratioOrNotes:
-          "¾ cup milk + ¼ cup melted butter per cup (for cooking, not whipping).",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Milk + melted butter',
+        ratioOrNotes: '¾ cup milk + ¼ cup melted butter per cup (for cooking, not whipping).',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Evaporated milk",
+        substitute: 'Evaporated milk',
         ratioOrNotes: "1:1 for cooking. It won't whip.",
-        dietaryTags: ["vegetarian"],
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Chilled coconut cream",
-        ratioOrNotes: "1:1. Whips when cold.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Half-and-half",
-    aliases: ["half and half", "half half"],
-    substitutions: [
-      {
-        substitute: "Milk + cream",
-        ratioOrNotes: "¾ cup milk + ¼ cup heavy cream per cup.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Whole milk + butter",
-        ratioOrNotes: "1 cup whole milk + 1 tbsp melted butter.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Evaporated milk",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Chilled coconut cream',
+        ratioOrNotes: '1:1. Whips when cold.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Milk",
-    aliases: ["milk", "whole milk", "skim milk"],
+    name: 'Half-and-half',
+    aliases: ['half and half', 'half half'],
     substitutions: [
       {
-        substitute: "Plant milk",
-        ratioOrNotes: "1:1 soy, oat, or almond milk.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Milk + cream',
+        ratioOrNotes: '¾ cup milk + ¼ cup heavy cream per cup.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Evaporated milk + water",
-        ratioOrNotes: "½ cup evaporated milk + ½ cup water per cup.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Whole milk + butter',
+        ratioOrNotes: '1 cup whole milk + 1 tbsp melted butter.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Water or broth",
-        ratioOrNotes: "1:1 in savory cooking. Slightly thinner and less rich.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Evaporated milk',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegetarian'],
+      },
+    ],
+  },
+  {
+    name: 'Milk',
+    aliases: ['milk', 'whole milk', 'skim milk'],
+    substitutions: [
+      {
+        substitute: 'Plant milk',
+        ratioOrNotes: '1:1 soy, oat, or almond milk.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+      {
+        substitute: 'Evaporated milk + water',
+        ratioOrNotes: '½ cup evaporated milk + ½ cup water per cup.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Water or broth',
+        ratioOrNotes: '1:1 in savory cooking. Slightly thinner and less rich.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
@@ -246,719 +235,692 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     // Plant milks are already vegan and dairy-free, so they must not inherit the
     // cow-milk swaps from the "Milk" entry (#59). Guidance here helps cooks swap
     // between plant milks. E.g. Away from a nut milk for an allergy.
-    name: "Plant milk",
+    name: 'Plant milk',
     aliases: [
-      "plant milk",
-      "plant based milk",
-      "non dairy milk",
-      "nondairy milk",
-      "almond milk",
-      "oat milk",
-      "soy milk",
-      "soya milk",
-      "rice milk",
-      "cashew milk",
-      "coconut milk",
-      "hemp milk",
-      "pea milk",
-      "hazelnut milk",
+      'plant milk',
+      'plant based milk',
+      'non dairy milk',
+      'nondairy milk',
+      'almond milk',
+      'oat milk',
+      'soy milk',
+      'soya milk',
+      'rice milk',
+      'cashew milk',
+      'coconut milk',
+      'hemp milk',
+      'pea milk',
+      'hazelnut milk',
     ],
     substitutions: [
       {
-        substitute: "Any other unsweetened plant milk",
-        ratioOrNotes:
-          "1:1 oat, soy, almond, or rice. Choose one that suits the eater's allergies.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Any other unsweetened plant milk',
+        ratioOrNotes: "1:1 oat, soy, almond, or rice. Choose one that suits the eater's allergies.",
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Oat or soy milk (nut-free)",
-        ratioOrNotes:
-          "1:1. Closest body to dairy milk and safe for nut allergies.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Oat or soy milk (nut-free)',
+        ratioOrNotes: '1:1. Closest body to dairy milk and safe for nut allergies.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Dairy milk",
-        ratioOrNotes: "1:1 if dairy is fine. Richer, but not vegan.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Dairy milk',
+        ratioOrNotes: '1:1 if dairy is fine. Richer, but not vegan.',
+        dietaryTags: ['vegetarian'],
       },
     ],
   },
   {
     // Coconut cream is dairy-free, so it must not fall through to the "Heavy
     // cream" cow-dairy swaps (#59).
-    name: "Coconut cream",
-    aliases: ["coconut cream"],
+    name: 'Coconut cream',
+    aliases: ['coconut cream'],
     substitutions: [
       {
-        substitute: "Chilled full-fat coconut milk",
+        substitute: 'Chilled full-fat coconut milk',
+        ratioOrNotes: 'Refrigerate a can overnight and scoop the thick top. Whips when cold.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+      {
+        substitute: 'Cashew cream',
+        ratioOrNotes: 'Blend soaked cashews with a little water until thick. 1:1.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+      {
+        substitute: 'Heavy cream',
+        ratioOrNotes: '1:1 if dairy is fine. Not vegan and without coconut flavor.',
+        dietaryTags: ['vegetarian'],
+      },
+    ],
+  },
+  {
+    name: 'Crème fraîche',
+    aliases: ['creme fraiche'],
+    substitutions: [
+      {
+        substitute: 'Sour cream',
+        ratioOrNotes: '1:1. A touch tangier.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Heavy cream + buttermilk',
+        ratioOrNotes: '1 cup cream + 2 tbsp buttermilk. Rest 12–24h to thicken.',
+        dietaryTags: ['vegetarian'],
+      },
+    ],
+  },
+  {
+    name: 'Yogurt',
+    aliases: ['yogurt', 'greek yogurt', 'plain yogurt'],
+    substitutions: [
+      {
+        substitute: 'Sour cream',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Buttermilk',
+        ratioOrNotes: 'In baking use ¾ cup per cup and reduce other liquid.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Coconut or soy yogurt',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Cream cheese',
+    aliases: ['cream cheese'],
+    substitutions: [
+      {
+        substitute: 'Mascarpone',
+        ratioOrNotes: '1:1. Richer with less tang.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Blended cottage cheese + yogurt',
+        ratioOrNotes: 'Blend smooth and use 1:1.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Cashew cream cheese',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Ricotta',
+    aliases: ['ricotta'],
+    substitutions: [
+      {
+        substitute: 'Blended cottage cheese',
+        ratioOrNotes: 'Blend smooth and use 1:1.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Mascarpone',
+        ratioOrNotes: '1:1 in sweet dishes. Richer.',
+        dietaryTags: ['vegetarian'],
+      },
+    ],
+  },
+  {
+    name: 'Mascarpone',
+    aliases: ['mascarpone'],
+    substitutions: [
+      {
+        substitute: 'Cream cheese + cream',
+        ratioOrNotes: '8 oz cream cheese + 2–3 tbsp heavy cream, beaten smooth.',
+        dietaryTags: ['vegetarian'],
+      },
+    ],
+  },
+  {
+    name: 'Parmesan',
+    aliases: ['parmesan', 'parmigiano reggiano', 'parmigiano'],
+    substitutions: [
+      {
+        substitute: 'Pecorino or Grana Padano',
+        ratioOrNotes: '1:1 (pecorino is saltier).',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Nutritional yeast',
+        ratioOrNotes: 'Sprinkle to taste for a savory, cheesy note.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Mayonnaise',
+    aliases: ['mayonnaise', 'mayo'],
+    substitutions: [
+      {
+        substitute: 'Plain Greek yogurt',
+        ratioOrNotes: '1:1. Lighter and tangier.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Sour cream',
+        ratioOrNotes: '1:1 in dressings and dips.',
+        dietaryTags: ['vegetarian'],
+      },
+      {
+        substitute: 'Vegan mayo',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'egg-free', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'All-purpose flour',
+    aliases: ['all purpose flour', 'plain flour', 'ap flour', 'white flour', 'flour'],
+    substitutions: [
+      {
+        substitute: 'Cake + bread flour',
+        ratioOrNotes: 'A 50/50 blend approximates all-purpose.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+      {
+        substitute: 'Gluten-free 1:1 blend',
+        ratioOrNotes: 'Use a measure-for-measure GF baking blend.',
+        dietaryTags: ['gluten-free', 'vegan'],
+      },
+      {
+        substitute: 'Whole wheat flour',
+        ratioOrNotes: 'Swap up to half. Expect a denser, nuttier result.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Self-rising flour',
+    aliases: ['self rising flour', 'self raising flour'],
+    substitutions: [
+      {
+        substitute: 'All-purpose + leavening',
+        ratioOrNotes: '1 cup AP flour + 1½ tsp baking powder + ¼ tsp salt per cup.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Cake flour',
+    aliases: ['cake flour'],
+    substitutions: [
+      {
+        substitute: 'AP flour + cornstarch',
+        ratioOrNotes: '1 cup = ¾ cup + 2 tbsp AP flour + 2 tbsp cornstarch, sifted.',
+        dietaryTags: ['vegan', 'dairy-free'],
+      },
+    ],
+  },
+  {
+    name: 'Bread flour',
+    aliases: ['bread flour'],
+    substitutions: [
+      {
+        substitute: 'All-purpose flour',
         ratioOrNotes:
-          "Refrigerate a can overnight and scoop the thick top. Whips when cold.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-      {
-        substitute: "Cashew cream",
-        ratioOrNotes:
-          "Blend soaked cashews with a little water until thick. 1:1.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-      {
-        substitute: "Heavy cream",
-        ratioOrNotes:
-          "1:1 if dairy is fine. Not vegan and without coconut flavor.",
-        dietaryTags: ["vegetarian"],
+          '1:1. Slightly less chew. Add 1 tsp vital wheat gluten per cup if you have it.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Crème fraîche",
-    aliases: ["creme fraiche"],
+    name: 'Cornstarch',
+    aliases: ['cornstarch', 'corn starch', 'cornflour'],
     substitutions: [
       {
-        substitute: "Sour cream",
-        ratioOrNotes: "1:1. A touch tangier.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'All-purpose flour',
+        ratioOrNotes: 'Use 2 tbsp flour per 1 tbsp cornstarch for thickening.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Heavy cream + buttermilk",
-        ratioOrNotes:
-          "1 cup cream + 2 tbsp buttermilk. Rest 12–24h to thicken.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Arrowroot or tapioca',
+        ratioOrNotes: '1:1 (arrowroot) for a clear, glossy finish.',
+        dietaryTags: ['gluten-free', 'vegan'],
       },
     ],
   },
   {
-    name: "Yogurt",
-    aliases: ["yogurt", "greek yogurt", "plain yogurt"],
+    name: 'Baking powder',
+    aliases: ['baking powder'],
     substitutions: [
       {
-        substitute: "Sour cream",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Buttermilk",
-        ratioOrNotes: "In baking use ¾ cup per cup and reduce other liquid.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Coconut or soy yogurt",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Baking soda + cream of tartar',
+        ratioOrNotes: '¼ tsp baking soda + ½ tsp cream of tartar per 1 tsp.',
+        dietaryTags: ['vegan', 'gluten-free', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Cream cheese",
-    aliases: ["cream cheese"],
+    name: 'Baking soda',
+    aliases: ['baking soda', 'bicarbonate of soda', 'bicarb'],
     substitutions: [
       {
-        substitute: "Mascarpone",
-        ratioOrNotes: "1:1. Richer with less tang.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Blended cottage cheese + yogurt",
-        ratioOrNotes: "Blend smooth and use 1:1.",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Cashew cream cheese",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Baking powder',
+        ratioOrNotes: 'Use about 3× the baking soda amount. Consider reducing added salt.',
+        dietaryTags: ['vegan', 'gluten-free', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Ricotta",
-    aliases: ["ricotta"],
+    name: 'Brown sugar',
+    aliases: ['brown sugar', 'light brown sugar', 'dark brown sugar'],
     substitutions: [
       {
-        substitute: "Blended cottage cheese",
-        ratioOrNotes: "Blend smooth and use 1:1.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'White sugar + molasses',
+        ratioOrNotes: '1 cup sugar + 1 tbsp molasses (2 tbsp for dark).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Mascarpone",
-        ratioOrNotes: "1:1 in sweet dishes. Richer.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'White sugar',
+        ratioOrNotes: '1:1 in a pinch. Slightly less moisture.',
+        dietaryTags: ['vegan', 'gluten-free'],
+      },
+      {
+        substitute: 'Coconut sugar',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Mascarpone",
-    aliases: ["mascarpone"],
+    name: 'Granulated sugar',
+    aliases: ['white sugar', 'granulated sugar', 'caster sugar', 'sugar'],
     substitutions: [
       {
-        substitute: "Cream cheese + cream",
-        ratioOrNotes:
-          "8 oz cream cheese + 2–3 tbsp heavy cream, beaten smooth.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Brown sugar',
+        ratioOrNotes: '1:1. Adds moisture and a little color.',
+        dietaryTags: ['vegan', 'gluten-free'],
+      },
+      {
+        substitute: 'Honey',
+        ratioOrNotes: '¾ cup per cup. Reduce other liquid by 2 tbsp and lower oven 25°F.',
+        dietaryTags: ['vegetarian', 'gluten-free'],
+      },
+      {
+        substitute: 'Coconut sugar',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Parmesan",
-    aliases: ["parmesan", "parmigiano reggiano", "parmigiano"],
+    name: 'Powdered sugar',
+    aliases: ['powdered sugar', 'confectioners sugar', 'icing sugar'],
     substitutions: [
       {
-        substitute: "Pecorino or Grana Padano",
-        ratioOrNotes: "1:1 (pecorino is saltier).",
-        dietaryTags: ["vegetarian"],
-      },
-      {
-        substitute: "Nutritional yeast",
-        ratioOrNotes: "Sprinkle to taste for a savory, cheesy note.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Blended sugar + cornstarch',
+        ratioOrNotes: '1 cup granulated sugar + 1 tbsp cornstarch, blended fine.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Mayonnaise",
-    aliases: ["mayonnaise", "mayo"],
+    name: 'Honey',
+    aliases: ['honey'],
     substitutions: [
       {
-        substitute: "Plain Greek yogurt",
-        ratioOrNotes: "1:1. Lighter and tangier.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Maple syrup',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Sour cream",
-        ratioOrNotes: "1:1 in dressings and dips.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Sugar + water',
+        ratioOrNotes: '1¼ cup sugar + ¼ cup water per cup of honey.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Vegan mayo",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "egg-free", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "All-purpose flour",
-    aliases: [
-      "all purpose flour",
-      "plain flour",
-      "ap flour",
-      "white flour",
-      "flour",
-    ],
-    substitutions: [
-      {
-        substitute: "Cake + bread flour",
-        ratioOrNotes: "A 50/50 blend approximates all-purpose.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-      {
-        substitute: "Gluten-free 1:1 blend",
-        ratioOrNotes: "Use a measure-for-measure GF baking blend.",
-        dietaryTags: ["gluten-free", "vegan"],
-      },
-      {
-        substitute: "Whole wheat flour",
-        ratioOrNotes: "Swap up to half. Expect a denser, nuttier result.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Self-rising flour",
-    aliases: ["self rising flour", "self raising flour"],
-    substitutions: [
-      {
-        substitute: "All-purpose + leavening",
-        ratioOrNotes:
-          "1 cup AP flour + 1½ tsp baking powder + ¼ tsp salt per cup.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Cake flour",
-    aliases: ["cake flour"],
-    substitutions: [
-      {
-        substitute: "AP flour + cornstarch",
-        ratioOrNotes:
-          "1 cup = ¾ cup + 2 tbsp AP flour + 2 tbsp cornstarch, sifted.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Bread flour",
-    aliases: ["bread flour"],
-    substitutions: [
-      {
-        substitute: "All-purpose flour",
-        ratioOrNotes:
-          "1:1. Slightly less chew. Add 1 tsp vital wheat gluten per cup if you have it.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Cornstarch",
-    aliases: ["cornstarch", "corn starch", "cornflour"],
-    substitutions: [
-      {
-        substitute: "All-purpose flour",
-        ratioOrNotes: "Use 2 tbsp flour per 1 tbsp cornstarch for thickening.",
-        dietaryTags: ["vegan", "dairy-free"],
-      },
-      {
-        substitute: "Arrowroot or tapioca",
-        ratioOrNotes: "1:1 (arrowroot) for a clear, glossy finish.",
-        dietaryTags: ["gluten-free", "vegan"],
-      },
-    ],
-  },
-  {
-    name: "Baking powder",
-    aliases: ["baking powder"],
-    substitutions: [
-      {
-        substitute: "Baking soda + cream of tartar",
-        ratioOrNotes: "¼ tsp baking soda + ½ tsp cream of tartar per 1 tsp.",
-        dietaryTags: ["vegan", "gluten-free", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Baking soda",
-    aliases: ["baking soda", "bicarbonate of soda", "bicarb"],
-    substitutions: [
-      {
-        substitute: "Baking powder",
-        ratioOrNotes:
-          "Use about 3× the baking soda amount. Consider reducing added salt.",
-        dietaryTags: ["vegan", "gluten-free", "dairy-free"],
-      },
-    ],
-  },
-  {
-    name: "Brown sugar",
-    aliases: ["brown sugar", "light brown sugar", "dark brown sugar"],
-    substitutions: [
-      {
-        substitute: "White sugar + molasses",
-        ratioOrNotes: "1 cup sugar + 1 tbsp molasses (2 tbsp for dark).",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-      {
-        substitute: "White sugar",
-        ratioOrNotes: "1:1 in a pinch. Slightly less moisture.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-      {
-        substitute: "Coconut sugar",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-    ],
-  },
-  {
-    name: "Granulated sugar",
-    aliases: ["white sugar", "granulated sugar", "caster sugar", "sugar"],
-    substitutions: [
-      {
-        substitute: "Brown sugar",
-        ratioOrNotes: "1:1. Adds moisture and a little color.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-      {
-        substitute: "Honey",
-        ratioOrNotes:
-          "¾ cup per cup. Reduce other liquid by 2 tbsp and lower oven 25°F.",
-        dietaryTags: ["vegetarian", "gluten-free"],
-      },
-      {
-        substitute: "Coconut sugar",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-    ],
-  },
-  {
-    name: "Powdered sugar",
-    aliases: ["powdered sugar", "confectioners sugar", "icing sugar"],
-    substitutions: [
-      {
-        substitute: "Blended sugar + cornstarch",
-        ratioOrNotes:
-          "1 cup granulated sugar + 1 tbsp cornstarch, blended fine.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-    ],
-  },
-  {
-    name: "Honey",
-    aliases: ["honey"],
-    substitutions: [
-      {
-        substitute: "Maple syrup",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-      {
-        substitute: "Sugar + water",
-        ratioOrNotes: "1¼ cup sugar + ¼ cup water per cup of honey.",
-        dietaryTags: ["vegan", "gluten-free"],
-      },
-      {
-        substitute: "Agave nectar",
+        substitute: 'Agave nectar',
         ratioOrNotes: "Use about ⅔–¾ cup per cup. It's sweeter.",
-        dietaryTags: ["vegan", "gluten-free"],
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Maple syrup",
-    aliases: ["maple syrup"],
+    name: 'Maple syrup',
+    aliases: ['maple syrup'],
     substitutions: [
       {
-        substitute: "Honey",
-        ratioOrNotes: "1:1 (not vegan).",
-        dietaryTags: ["vegetarian", "gluten-free"],
+        substitute: 'Honey',
+        ratioOrNotes: '1:1 (not vegan).',
+        dietaryTags: ['vegetarian', 'gluten-free'],
       },
       {
-        substitute: "Sugar + water",
-        ratioOrNotes: "¾ cup sugar dissolved in ¼ cup water per cup.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Sugar + water',
+        ratioOrNotes: '¾ cup sugar dissolved in ¼ cup water per cup.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Corn syrup",
-    aliases: ["corn syrup", "light corn syrup"],
+    name: 'Corn syrup',
+    aliases: ['corn syrup', 'light corn syrup'],
     substitutions: [
       {
-        substitute: "Sugar syrup",
-        ratioOrNotes:
-          "1¼ cup sugar dissolved in ¼ cup water per cup (not for hard candy).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Sugar syrup',
+        ratioOrNotes: '1¼ cup sugar dissolved in ¼ cup water per cup (not for hard candy).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Honey or golden syrup",
-        ratioOrNotes: "1:1. Flavor will differ.",
-        dietaryTags: ["vegetarian", "gluten-free"],
+        substitute: 'Honey or golden syrup',
+        ratioOrNotes: '1:1. Flavor will differ.',
+        dietaryTags: ['vegetarian', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Molasses",
-    aliases: ["molasses", "treacle"],
+    name: 'Molasses',
+    aliases: ['molasses', 'treacle'],
     substitutions: [
       {
-        substitute: "Dark brown sugar",
-        ratioOrNotes: "¾ cup packed per cup. Add a splash of liquid.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Dark brown sugar',
+        ratioOrNotes: '¾ cup packed per cup. Add a splash of liquid.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Maple syrup or honey",
-        ratioOrNotes: "1:1. Milder flavor.",
-        dietaryTags: ["vegetarian", "gluten-free"],
+        substitute: 'Maple syrup or honey',
+        ratioOrNotes: '1:1. Milder flavor.',
+        dietaryTags: ['vegetarian', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Cocoa powder",
-    aliases: ["cocoa powder", "cocoa", "unsweetened cocoa"],
+    name: 'Cocoa powder',
+    aliases: ['cocoa powder', 'cocoa', 'unsweetened cocoa'],
     substitutions: [
       {
-        substitute: "Unsweetened baking chocolate",
-        ratioOrNotes: "1 oz per 3 tbsp cocoa. Cut fat elsewhere by 1 tbsp.",
-        dietaryTags: ["vegetarian", "gluten-free"],
+        substitute: 'Unsweetened baking chocolate',
+        ratioOrNotes: '1 oz per 3 tbsp cocoa. Cut fat elsewhere by 1 tbsp.',
+        dietaryTags: ['vegetarian', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Vanilla extract",
-    aliases: ["vanilla extract", "vanilla"],
+    name: 'Vanilla extract',
+    aliases: ['vanilla extract', 'vanilla'],
     substitutions: [
       {
-        substitute: "Vanilla bean paste or seeds",
-        ratioOrNotes: "1:1 paste, or the seeds of ½ bean per tsp.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Vanilla bean paste or seeds',
+        ratioOrNotes: '1:1 paste, or the seeds of ½ bean per tsp.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Maple syrup or bourbon",
-        ratioOrNotes: "1:1 in a pinch.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Maple syrup or bourbon',
+        ratioOrNotes: '1:1 in a pinch.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Breadcrumbs",
-    aliases: ["breadcrumbs", "bread crumbs", "panko"],
+    name: 'Breadcrumbs',
+    aliases: ['breadcrumbs', 'bread crumbs', 'panko'],
     substitutions: [
       {
-        substitute: "Crushed crackers or cornflakes",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Crushed crackers or cornflakes',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Rolled oats",
-        ratioOrNotes: "Use about ¾ cup per cup as a binder in meatballs.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Rolled oats',
+        ratioOrNotes: 'Use about ¾ cup per cup as a binder in meatballs.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Gluten-free crumbs or almond meal",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["gluten-free", "vegetarian"],
+        substitute: 'Gluten-free crumbs or almond meal',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['gluten-free', 'vegetarian'],
       },
     ],
   },
   {
-    name: "Vegetable oil",
-    aliases: [
-      "vegetable oil",
-      "canola oil",
-      "neutral oil",
-      "cooking oil",
-      "oil",
-    ],
+    name: 'Vegetable oil',
+    aliases: ['vegetable oil', 'canola oil', 'neutral oil', 'cooking oil', 'oil'],
     substitutions: [
       {
-        substitute: "Melted butter",
-        ratioOrNotes: "1:1. Adds flavor (not dairy-free).",
-        dietaryTags: ["vegetarian"],
+        substitute: 'Melted butter',
+        ratioOrNotes: '1:1. Adds flavor (not dairy-free).',
+        dietaryTags: ['vegetarian'],
       },
       {
-        substitute: "Unsweetened applesauce",
-        ratioOrNotes: "1:1 in baking to cut fat.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Unsweetened applesauce',
+        ratioOrNotes: '1:1 in baking to cut fat.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
       {
-        substitute: "Another neutral oil",
-        ratioOrNotes: "Sunflower, grapeseed, or light olive oil 1:1.",
-        dietaryTags: ["vegan", "dairy-free"],
+        substitute: 'Another neutral oil',
+        ratioOrNotes: 'Sunflower, grapeseed, or light olive oil 1:1.',
+        dietaryTags: ['vegan', 'dairy-free'],
       },
     ],
   },
   {
-    name: "Lemon juice",
-    aliases: ["lemon juice"],
+    name: 'Lemon juice',
+    aliases: ['lemon juice'],
     substitutions: [
       {
-        substitute: "Lime juice",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Lime juice',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "White wine vinegar",
-        ratioOrNotes: "Use half the amount for acidity (no citrus aroma).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'White wine vinegar',
+        ratioOrNotes: 'Use half the amount for acidity (no citrus aroma).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Garlic",
-    aliases: ["garlic", "garlic clove", "garlic cloves"],
+    name: 'Garlic',
+    aliases: ['garlic', 'garlic clove', 'garlic cloves'],
     substitutions: [
       {
-        substitute: "Garlic powder",
-        ratioOrNotes: "⅛ tsp per clove.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Garlic powder',
+        ratioOrNotes: '⅛ tsp per clove.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Jarred minced garlic",
-        ratioOrNotes: "½ tsp per clove.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Jarred minced garlic',
+        ratioOrNotes: '½ tsp per clove.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Onion",
-    aliases: ["onion", "onions", "yellow onion", "white onion", "red onion"],
+    name: 'Onion',
+    aliases: ['onion', 'onions', 'yellow onion', 'white onion', 'red onion'],
     substitutions: [
       {
-        substitute: "Onion powder",
-        ratioOrNotes: "1 tbsp per medium onion.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Onion powder',
+        ratioOrNotes: '1 tbsp per medium onion.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Shallots or leeks",
-        ratioOrNotes: "1:1 by volume. Milder and a touch sweeter.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Shallots or leeks',
+        ratioOrNotes: '1:1 by volume. Milder and a touch sweeter.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Shallot",
-    aliases: ["shallot", "shallots"],
+    name: 'Shallot',
+    aliases: ['shallot', 'shallots'],
     substitutions: [
       {
-        substitute: "Onion + a little garlic",
-        ratioOrNotes: "About ½ small onion + a pinch of garlic per shallot.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Onion + a little garlic',
+        ratioOrNotes: 'About ½ small onion + a pinch of garlic per shallot.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Tomato paste",
-    aliases: ["tomato paste"],
+    name: 'Tomato paste',
+    aliases: ['tomato paste'],
     substitutions: [
       {
-        substitute: "Reduced tomato sauce",
-        ratioOrNotes: "2–3 tbsp sauce per 1 tbsp paste. Simmer to thicken.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Reduced tomato sauce',
+        ratioOrNotes: '2–3 tbsp sauce per 1 tbsp paste. Simmer to thicken.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Ketchup",
+        substitute: 'Ketchup',
         ratioOrNotes: "1:1 in a pinch. It's sweeter and tangier.",
-        dietaryTags: ["vegan", "gluten-free"],
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Dijon mustard",
-    aliases: ["dijon mustard", "dijon"],
+    name: 'Dijon mustard',
+    aliases: ['dijon mustard', 'dijon'],
     substitutions: [
       {
-        substitute: "Yellow or stone-ground mustard",
-        ratioOrNotes: "1:1. Yellow is milder, stone-ground is grainier.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Yellow or stone-ground mustard',
+        ratioOrNotes: '1:1. Yellow is milder, stone-ground is grainier.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Soy sauce",
-    aliases: ["soy sauce"],
+    name: 'Soy sauce',
+    aliases: ['soy sauce'],
     substitutions: [
       {
-        substitute: "Tamari",
-        ratioOrNotes: "1:1.",
-        dietaryTags: ["gluten-free", "vegan"],
+        substitute: 'Tamari',
+        ratioOrNotes: '1:1.',
+        dietaryTags: ['gluten-free', 'vegan'],
       },
       {
-        substitute: "Coconut aminos",
-        ratioOrNotes: "Use about 1.25×. Milder and less salty.",
-        dietaryTags: ["gluten-free", "vegan"],
+        substitute: 'Coconut aminos',
+        ratioOrNotes: 'Use about 1.25×. Milder and less salty.',
+        dietaryTags: ['gluten-free', 'vegan'],
       },
     ],
   },
   {
-    name: "Red wine",
-    aliases: ["red wine", "dry red wine"],
+    name: 'Red wine',
+    aliases: ['red wine', 'dry red wine'],
     substitutions: [
       {
-        substitute: "Broth + red wine vinegar",
-        ratioOrNotes:
-          "1 cup beef or vegetable broth + 1 tbsp red wine vinegar.",
-        dietaryTags: ["gluten-free"],
+        substitute: 'Broth + red wine vinegar',
+        ratioOrNotes: '1 cup beef or vegetable broth + 1 tbsp red wine vinegar.',
+        dietaryTags: ['gluten-free'],
       },
       {
-        substitute: "Grape juice + vinegar",
-        ratioOrNotes: "1 cup grape juice + 1 tbsp vinegar (non-alcoholic).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Grape juice + vinegar',
+        ratioOrNotes: '1 cup grape juice + 1 tbsp vinegar (non-alcoholic).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "White wine",
-    aliases: ["white wine", "dry white wine"],
+    name: 'White wine',
+    aliases: ['white wine', 'dry white wine'],
     substitutions: [
       {
-        substitute: "Broth + lemon",
-        ratioOrNotes: "1 cup chicken or vegetable broth + a squeeze of lemon.",
-        dietaryTags: ["gluten-free"],
+        substitute: 'Broth + lemon',
+        ratioOrNotes: '1 cup chicken or vegetable broth + a squeeze of lemon.',
+        dietaryTags: ['gluten-free'],
       },
       {
-        substitute: "White grape juice + vinegar",
-        ratioOrNotes:
-          "1 cup juice + 1 tbsp white wine vinegar (non-alcoholic).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'White grape juice + vinegar',
+        ratioOrNotes: '1 cup juice + 1 tbsp white wine vinegar (non-alcoholic).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Basil",
-    aliases: ["basil", "fresh basil", "dried basil"],
+    name: 'Basil',
+    aliases: ['basil', 'fresh basil', 'dried basil'],
     substitutions: [
       {
-        substitute: "Swap fresh ↔ dried",
-        ratioOrNotes: "1 tbsp fresh = 1 tsp dried (about 1:3).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Swap fresh ↔ dried',
+        ratioOrNotes: '1 tbsp fresh = 1 tsp dried (about 1:3).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Oregano or thyme",
-        ratioOrNotes: "1:1 as a substitute. Flavor differs.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Oregano or thyme',
+        ratioOrNotes: '1:1 as a substitute. Flavor differs.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Parsley",
-    aliases: ["parsley", "fresh parsley", "dried parsley"],
+    name: 'Parsley',
+    aliases: ['parsley', 'fresh parsley', 'dried parsley'],
     substitutions: [
       {
-        substitute: "Swap fresh ↔ dried",
-        ratioOrNotes: "1 tbsp fresh = 1 tsp dried (about 1:3).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Swap fresh ↔ dried',
+        ratioOrNotes: '1 tbsp fresh = 1 tsp dried (about 1:3).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Cilantro or chervil",
-        ratioOrNotes: "1:1 for color. Flavor differs.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Cilantro or chervil',
+        ratioOrNotes: '1:1 for color. Flavor differs.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Cilantro",
-    aliases: ["cilantro", "fresh cilantro", "coriander leaves"],
+    name: 'Cilantro',
+    aliases: ['cilantro', 'fresh cilantro', 'coriander leaves'],
     substitutions: [
       {
-        substitute: "Fresh parsley + lime",
-        ratioOrNotes: "1:1 parsley for color, with a squeeze of lime.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Fresh parsley + lime',
+        ratioOrNotes: '1:1 parsley for color, with a squeeze of lime.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Oregano",
-    aliases: ["oregano", "fresh oregano", "dried oregano"],
+    name: 'Oregano',
+    aliases: ['oregano', 'fresh oregano', 'dried oregano'],
     substitutions: [
       {
-        substitute: "Swap fresh ↔ dried",
-        ratioOrNotes: "1 tbsp fresh = 1 tsp dried (about 1:3).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Swap fresh ↔ dried',
+        ratioOrNotes: '1 tbsp fresh = 1 tsp dried (about 1:3).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Marjoram or basil",
-        ratioOrNotes: "1:1. Marjoram is closest.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Marjoram or basil',
+        ratioOrNotes: '1:1. Marjoram is closest.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Thyme",
-    aliases: ["thyme", "fresh thyme", "dried thyme"],
+    name: 'Thyme',
+    aliases: ['thyme', 'fresh thyme', 'dried thyme'],
     substitutions: [
       {
-        substitute: "Swap fresh ↔ dried",
-        ratioOrNotes: "1 tbsp fresh = 1 tsp dried (about 1:3).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Swap fresh ↔ dried',
+        ratioOrNotes: '1 tbsp fresh = 1 tsp dried (about 1:3).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Oregano or marjoram",
-        ratioOrNotes: "1:1. Flavor differs.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Oregano or marjoram',
+        ratioOrNotes: '1:1. Flavor differs.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
   {
-    name: "Rosemary",
-    aliases: ["rosemary", "fresh rosemary", "dried rosemary"],
+    name: 'Rosemary',
+    aliases: ['rosemary', 'fresh rosemary', 'dried rosemary'],
     substitutions: [
       {
-        substitute: "Swap fresh ↔ dried",
-        ratioOrNotes: "1 tbsp fresh = 1 tsp dried (about 1:3).",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Swap fresh ↔ dried',
+        ratioOrNotes: '1 tbsp fresh = 1 tsp dried (about 1:3).',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
       {
-        substitute: "Thyme or sage",
-        ratioOrNotes: "1:1. Use a little less sage.",
-        dietaryTags: ["vegan", "gluten-free"],
+        substitute: 'Thyme or sage',
+        ratioOrNotes: '1:1. Use a little less sage.',
+        dietaryTags: ['vegan', 'gluten-free'],
       },
     ],
   },
@@ -972,17 +934,17 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
  * prep note), and reduce punctuation/hyphens to single spaces.
  */
 export function normalizeIngredient(item: string | null | undefined): string {
-  if (!item) return "";
+  if (!item) return '';
   let s = item.toLowerCase();
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // strip accents
-  s = s.replace(/\([^)]*\)/g, " "); // drop parentheticals
-  s = s.split(",")[0] ?? s; // keep the part before the first comma
-  s = s.replace(/[^a-z0-9]+/g, " "); // punctuation & hyphens -> space
-  return s.replace(/\s+/g, " ").trim();
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
+  s = s.replace(/\([^)]*\)/g, ' '); // drop parentheticals
+  s = s.split(',')[0] ?? s; // keep the part before the first comma
+  s = s.replace(/[^a-z0-9]+/g, ' '); // punctuation & hyphens -> space
+  return s.replace(/\s+/g, ' ').trim();
 }
 
 function tokenize(value: string): string[] {
-  return value.split(" ").filter(Boolean);
+  return value.split(' ').filter(Boolean);
 }
 
 /** Index where `phrase` first appears as a contiguous run of whole words in
@@ -1009,27 +971,27 @@ function phraseIndex(haystack: string[], phrase: string[]): number {
  * swaps is wrong (#59). Guarding these lets the dedicated plant entries win.
  */
 const PLANT_DAIRY_QUALIFIERS = new Set([
-  "almond",
-  "oat",
-  "soy",
-  "soya",
-  "rice",
-  "cashew",
-  "cashews",
-  "coconut",
-  "hemp",
-  "pea",
-  "hazelnut",
-  "macadamia",
-  "flax",
-  "walnut",
+  'almond',
+  'oat',
+  'soy',
+  'soya',
+  'rice',
+  'cashew',
+  'cashews',
+  'coconut',
+  'hemp',
+  'pea',
+  'hazelnut',
+  'macadamia',
+  'flax',
+  'walnut',
 ]);
 
 /**
  * Head nouns that turn a leading "egg"/"eggs" into a modifier for a different
  * dish rather than the whole-egg staple, e.g. "egg noodles" (#59).
  */
-const EGG_COMPOUND_HEADS = new Set(["noodle", "noodles"]);
+const EGG_COMPOUND_HEADS = new Set(['noodle', 'noodles']);
 
 /**
  * Reject an otherwise-valid alias hit when a generic dairy/egg head noun is used
@@ -1037,18 +999,14 @@ const EGG_COMPOUND_HEADS = new Set(["noodle", "noodles"]);
  * "coconut cream", "egg noodles". Only bare single-token aliases are guarded, so
  * full phrases (their own entries, or "whole milk") are unaffected.
  */
-function isCompoundMismatch(
-  haystack: string[],
-  phrase: string[],
-  at: number,
-): boolean {
+function isCompoundMismatch(haystack: string[], phrase: string[], at: number): boolean {
   if (phrase.length !== 1) return false;
   const word = phrase[0];
-  if (word === "milk" || word === "cream") {
+  if (word === 'milk' || word === 'cream') {
     const prev = at > 0 ? haystack[at - 1] : undefined;
     return prev != null && PLANT_DAIRY_QUALIFIERS.has(prev);
   }
-  if (word === "egg" || word === "eggs") {
+  if (word === 'egg' || word === 'eggs') {
     const next = haystack[at + 1];
     return next != null && EGG_COMPOUND_HEADS.has(next);
   }
@@ -1059,12 +1017,10 @@ type IndexedEntry = { entry: SubstitutionEntry; aliasTokens: string[][] };
 
 const INDEX: IndexedEntry[] = SUBSTITUTIONS.map((entry) => ({
   entry,
-  aliasTokens: entry.aliases.map((alias) =>
-    tokenize(normalizeIngredient(alias)),
-  ),
+  aliasTokens: entry.aliases.map((alias) => tokenize(normalizeIngredient(alias))),
 }));
 
-export type IngredientMatchConfidence = "high" | "medium" | "low";
+export type IngredientMatchConfidence = 'high' | 'medium' | 'low';
 
 export type DetailedIngredientMatch = {
   entry: SubstitutionEntry;
@@ -1073,10 +1029,10 @@ export type DetailedIngredientMatch = {
 };
 
 function confidenceForAlias(phrase: string[]): IngredientMatchConfidence {
-  if (phrase.length > 1) return "high";
+  if (phrase.length > 1) return 'high';
   const [onlyToken] = phrase;
-  if (onlyToken && onlyToken.length >= 6) return "medium";
-  return "low";
+  if (onlyToken && onlyToken.length >= 6) return 'medium';
+  return 'low';
 }
 
 function hasAllDietaryTags(sub: Substitution, required: DietaryTag[]): boolean {
@@ -1125,7 +1081,7 @@ export function matchIngredientDetailed(
       const at = phraseIndex(tokens, phrase);
       if (at < 0) continue;
       if (isCompoundMismatch(tokens, phrase, at)) continue;
-      const score = phrase.length * 100 + phrase.join(" ").length;
+      const score = phrase.length * 100 + phrase.join(' ').length;
       if (!best || score > best.score) {
         best = { entry, score, confidence: confidenceForAlias(phrase) };
       }
@@ -1134,9 +1090,7 @@ export function matchIngredientDetailed(
   return best;
 }
 
-export function matchIngredient(
-  item: string | null | undefined,
-): SubstitutionEntry | null {
+export function matchIngredient(item: string | null | undefined): SubstitutionEntry | null {
   return matchIngredientDetailed(item)?.entry ?? null;
 }
 
@@ -1147,10 +1101,7 @@ export function getSubstitutions(
 ): Substitution[] {
   const substitutions = matchIngredient(item)?.substitutions ?? [];
   if (required.length === 0) return substitutions;
-  return filterSubstitutionsByDiet(
-    orderSubstitutionsByDiet(substitutions, required),
-    required,
-  );
+  return filterSubstitutionsByDiet(orderSubstitutionsByDiet(substitutions, required), required);
 }
 
 // --- Scaling nudge -------------------------------------------------------
@@ -1167,7 +1118,7 @@ export function scalingNudge(
   item: string | null | undefined,
 ): string | null {
   if (quantity == null || Number.isNaN(quantity)) return null;
-  if (unit && unit.trim() !== "") return null; // measured units scale fine
+  if (unit && unit.trim() !== '') return null; // measured units scale fine
 
   const value = roundNice(quantity);
   if (value <= 0) return null;

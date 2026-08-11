@@ -10,7 +10,7 @@
  */
 
 /** One cookie holds the household size as a bare integer string. */
-export const HOUSEHOLD_COOKIE = "heirloom-household";
+export const HOUSEHOLD_COOKIE = 'heirloom-household';
 
 /** Sensible seed for the stepper when nothing is set yet. */
 export const DEFAULT_HOUSEHOLD = 4;
@@ -33,7 +33,7 @@ export function clampHouseholdSize(value: number): number {
 export function parseHousehold(raw: string | null | undefined): number | null {
   if (raw == null) return null;
   const trimmed = raw.trim();
-  if (trimmed === "") return null;
+  if (trimmed === '') return null;
   const n = Number(trimmed);
   if (!Number.isFinite(n) || n <= 0) return null;
   return clampHouseholdSize(n);

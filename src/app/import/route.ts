@@ -1,9 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import { type NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
 
-import { env } from "~/env";
-import { getCurrentUser } from "~/server/auth";
-import { isShareableImage, pickSharedUrl } from "~/lib/share-target";
+import { env } from '~/env';
+import { getCurrentUser } from '~/server/auth';
+import { isShareableImage, pickSharedUrl } from '~/lib/share-target';
 
 /**
  * PWA share-target handler (see `share_target` in app/manifest.ts). The
@@ -18,10 +18,10 @@ import { isShareableImage, pickSharedUrl } from "~/lib/share-target";
  *
  * The Cloudinary SDK needs Node crypto, so this stays on the Node runtime.
  */
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
 function newRecipeUrl(origin: string, params?: Record<string, string>): URL {
-  const target = new URL("/recipes/new", origin);
+  const target = new URL('/recipes/new', origin);
   for (const [key, value] of Object.entries(params ?? {})) {
     target.searchParams.set(key, value);
   }
@@ -29,7 +29,7 @@ function newRecipeUrl(origin: string, params?: Record<string, string>): URL {
 }
 
 function asString(value: FormDataEntryValue | null): string | null {
-  return typeof value === "string" ? value : null;
+  return typeof value === 'string' ? value : null;
 }
 
 /**
@@ -46,13 +46,13 @@ async function uploadSharedImage(file: File): Promise<string | null> {
 
   try {
     const bytes = Buffer.from(await file.arrayBuffer());
-    const dataUri = `data:${file.type};base64,${bytes.toString("base64")}`;
+    const dataUri = `data:${file.type};base64,${bytes.toString('base64')}`;
     const result = await cloudinary.uploader.upload(dataUri, {
       cloud_name: cloudName,
       api_key: apiKey,
       api_secret: apiSecret,
-      folder: "heirloom/shared",
-      resource_type: "image",
+      folder: 'heirloom/shared',
+      resource_type: 'image',
     });
     return result.secure_url ?? null;
   } catch {
@@ -63,11 +63,7 @@ async function uploadSharedImage(file: File): Promise<string | null> {
 /** GET share target: forward a shared link/text into the importer. */
 export function GET(request: NextRequest): NextResponse {
   const params = request.nextUrl.searchParams;
-  const shared = pickSharedUrl(
-    params.get("url"),
-    params.get("text"),
-    params.get("title"),
-  );
+  const shared = pickSharedUrl(params.get('url'), params.get('text'), params.get('title'));
   const target = shared
     ? newRecipeUrl(request.nextUrl.origin, { import: shared })
     : newRecipeUrl(request.nextUrl.origin);
@@ -92,7 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // local + e2e share-target flows are unaffected.
   const user = await getCurrentUser();
   if (!user) {
-    return new NextResponse("Unauthorized", { status: 401 });
+    return new NextResponse('Unauthorized', { status: 401 });
   }
 
   let form: FormData;
@@ -102,25 +98,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(newRecipeUrl(origin), 303);
   }
 
-  const file = form.get("photo");
+  const file = form.get('photo');
   if (file instanceof File && isShareableImage(file)) {
     const coverUrl = await uploadSharedImage(file);
     if (coverUrl) {
-      return NextResponse.redirect(
-        newRecipeUrl(origin, { cover: coverUrl }),
-        303,
-      );
+      return NextResponse.redirect(newRecipeUrl(origin, { cover: coverUrl }), 303);
     }
     // Upload unavailable/failed. Fall through to any shared link/text.
   }
 
   const shared = pickSharedUrl(
-    asString(form.get("url")),
-    asString(form.get("text")),
-    asString(form.get("title")),
+    asString(form.get('url')),
+    asString(form.get('text')),
+    asString(form.get('title')),
   );
-  const target = shared
-    ? newRecipeUrl(origin, { import: shared })
-    : newRecipeUrl(origin);
+  const target = shared ? newRecipeUrl(origin, { import: shared }) : newRecipeUrl(origin);
   return NextResponse.redirect(target, 303);
 }

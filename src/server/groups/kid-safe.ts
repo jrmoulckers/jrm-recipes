@@ -1,5 +1,5 @@
-import { DomainError } from "~/server/errors";
-import type { MemberRole } from "~/server/db/schema";
+import { DomainError } from '~/server/errors';
+import type { MemberRole } from '~/server/db/schema';
 
 /**
  * Kid-safe capability model (issue #345).
@@ -16,17 +16,17 @@ import type { MemberRole } from "~/server/db/schema";
 /** A gated capability a kid-role member must never be able to exercise. */
 export type KidRestrictedCapability =
   /** Delete a recipe. */
-  | "delete_recipe"
+  | 'delete_recipe'
   /** Delete a comment/suggestion (their own or anyone's). */
-  | "delete_comment"
+  | 'delete_comment'
   /** Change a recipe's visibility to `public` (publish to the open web). */
-  | "make_recipe_public"
+  | 'make_recipe_public'
   /** Invite, remove, or re-role group members. */
-  | "manage_members"
+  | 'manage_members'
   /** Report content or open the moderation queue (adult-facing safety tools). */
-  | "moderate_content"
+  | 'moderate_content'
   /** See content hidden/flagged by moderation, or reactions/who-reacted on it. */
-  | "see_moderated_content";
+  | 'see_moderated_content';
 
 /**
  * Everything a kid is NOT allowed to do. Membership in this set is the whole
@@ -34,17 +34,17 @@ export type KidRestrictedCapability =
  * guards and the UI follow automatically.
  */
 const KID_RESTRICTED: ReadonlySet<KidRestrictedCapability> = new Set([
-  "delete_recipe",
-  "delete_comment",
-  "make_recipe_public",
-  "manage_members",
-  "moderate_content",
-  "see_moderated_content",
+  'delete_recipe',
+  'delete_comment',
+  'make_recipe_public',
+  'manage_members',
+  'moderate_content',
+  'see_moderated_content',
 ]);
 
 /** Is this member (by role) the restricted kid role? */
 export function isKid(role: MemberRole | null | undefined): boolean {
-  return role === "kid";
+  return role === 'kid';
 }
 
 /**
@@ -73,6 +73,6 @@ export function assertKidAllowed(
   capability: KidRestrictedCapability,
 ): void {
   if (!roleCan(role, capability)) {
-    throw new DomainError("FORBIDDEN");
+    throw new DomainError('FORBIDDEN');
   }
 }

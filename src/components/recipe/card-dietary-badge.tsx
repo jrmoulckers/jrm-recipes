@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale } from "next-intl";
-import { AlertTriangle, ShieldCheck } from "lucide-react";
+import * as React from 'react';
+import { useLocale } from 'next-intl';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
-import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
-import { allergenConflicts } from "~/lib/dietary-match";
-import { useActiveMemberStore } from "~/lib/active-member-store";
-import { formatList } from "~/lib/i18n-format";
-import { Badge } from "~/components/ui/badge";
+import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { allergenConflicts } from '~/lib/dietary-match';
+import { useActiveMemberStore } from '~/lib/active-member-store';
+import { formatList } from '~/lib/i18n-format';
+import { Badge } from '~/components/ui/badge';
 
 /** The active-member data a card needs to render its safe-for badge. */
 export type CardDietaryMember = {
@@ -17,8 +17,7 @@ export type CardDietaryMember = {
   allergens: Allergen[];
 };
 
-const DISCLAIMER =
-  "Best-effort from ingredient text. Always double-check labels and brands.";
+const DISCLAIMER = 'Best-effort from ingredient text. Always double-check labels and brands.';
 
 /**
  * At-a-glance "safe for my family" signal on a recipe card (issue #431). When a

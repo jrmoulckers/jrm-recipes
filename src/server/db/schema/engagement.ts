@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations, sql } from 'drizzle-orm';
 import {
   check,
   index,
@@ -11,73 +11,68 @@ import {
   unique,
   varchar,
   type AnyPgColumn,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
 
 /** Functional classification used by recipe discovery and presentation. */
-export const tagCategory = pgEnum("tag_category", [
-  "meal",
-  "cuisine",
-  "dietary",
-  "general",
-]);
+export const tagCategory = pgEnum('tag_category', ['meal', 'cuisine', 'dietary', 'general']);
 
 /** Shared recipe classifications with a stable, case-insensitive slug identity. */
 export const tags = pgTable(
-  "tags",
+  'tags',
   {
     id: pk(),
     slug: varchar({ length: 80 }).notNull().unique(),
     name: varchar({ length: 80 }).notNull(),
-    category: tagCategory().notNull().default("general"),
+    category: tagCategory().notNull().default('general'),
   },
-  (t) => [index("tags_category_name_idx").on(t.category, t.name)],
+  (t) => [index('tags_category_name_idx').on(t.category, t.name)],
 );
 
 export const recipeTags = pgTable(
-  "recipe_tags",
+  'recipe_tags',
   {
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     tagId: fk()
       .notNull()
-      .references(() => tags.id, { onDelete: "cascade" }),
+      .references(() => tags.id, { onDelete: 'cascade' }),
   },
   (t) => [
     primaryKey({ columns: [t.recipeId, t.tagId] }),
-    index("recipe_tags_tag_idx").on(t.tagId, t.recipeId),
+    index('recipe_tags_tag_idx').on(t.tagId, t.recipeId),
   ],
 );
 
 /** A 1–5 star rating. One per user per recipe. */
 export const ratings = pgTable(
-  "ratings",
+  'ratings',
   {
     id: pk(),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     value: integer().notNull(),
     ...timestamps(),
   },
   (t) => [
-    unique("ratings_recipe_user_uq").on(t.recipeId, t.userId),
-    index("ratings_recipe_idx").on(t.recipeId),
+    unique('ratings_recipe_user_uq').on(t.recipeId, t.userId),
+    index('ratings_recipe_idx').on(t.recipeId),
     // Covering index for the userId foreign key (issue #153). The composite
     // unique above is recipeId-first, so it can't serve a userId-first lookup or
     // the `ON DELETE cascade` when a user is removed. This keeps both index-fast.
-    index("ratings_user_idx").on(t.userId),
+    index('ratings_user_idx').on(t.userId),
     // DB backstop for the 1–5 star range enforced in Zod (`ratingInput.value`
     // in src/server/engagement/validation.ts). Guards writes that bypass the
     // action path (seed, imports, admin/raw SQL) from persisting 0/6/negative.
-    check("ratings_value_range_check", sql`${t.value} between 1 and 5`),
+    check('ratings_value_range_check', sql`${t.value} between 1 and 5`),
   ],
 );
 
@@ -85,37 +80,34 @@ export const ratings = pgTable(
  * The kind of a thread entry: a plain `comment`, or a `suggestion`. A proposed
  * change the recipe owner can mark resolved (Phase 2 suggestions/reviews).
  */
-export const commentKind = pgEnum("comment_kind", ["comment", "suggestion"]);
+export const commentKind = pgEnum('comment_kind', ['comment', 'suggestion']);
 
 /**
  * What a suggestion is anchored to (issue #346). NULL for a whole-recipe comment
  * or suggestion. Set to `ingredient`/`step` when a member suggests an edit tied
  * to a specific ingredient row or method step.
  */
-export const commentAnchorType = pgEnum("comment_anchor_type", [
-  "ingredient",
-  "step",
-]);
+export const commentAnchorType = pgEnum('comment_anchor_type', ['ingredient', 'step']);
 
 /** Threaded comments / suggestions on a recipe. */
 export const comments = pgTable(
-  "comments",
+  'comments',
   {
     id: pk(),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     // Self-referential thread link. `cascade` so deleting a parent comment also
     // removes its replies (thread hygiene). Prevents orphaned threads rooted at
     // a missing parent. Uses the `AnyPgColumn` self-reference pattern from
     // recipes.forkedFromId / recipeEvents.relatedRecipeId.
     parentId: fk().references((): AnyPgColumn => comments.id, {
-      onDelete: "cascade",
+      onDelete: 'cascade',
     }),
-    kind: commentKind().notNull().default("comment"),
+    kind: commentKind().notNull().default('comment'),
     body: text().notNull(),
     // Anchored suggestions (issue #346): the ingredient/step the suggestion
     // refers to, plus a snapshot label so it still reads sensibly if the target
@@ -131,17 +123,17 @@ export const comments = pgTable(
     // (and always kid) views. `hiddenBy` records the actioning moderator.
     hiddenAt: timestamp({ withTimezone: true }),
     hiddenBy: fk().references((): AnyPgColumn => users.id, {
-      onDelete: "set null",
+      onDelete: 'set null',
     }),
     ...timestamps(),
   },
   (t) => [
-    index("comments_recipe_idx").on(t.recipeId),
-    index("comments_parent_idx").on(t.parentId),
+    index('comments_recipe_idx').on(t.recipeId),
+    index('comments_parent_idx').on(t.parentId),
     // Covering index for the userId foreign key (issue #153): backs "comments by
     // user" reads and the `ON DELETE cascade` when a user is removed, both of
     // which otherwise sequentially scan the table.
-    index("comments_user_idx").on(t.userId),
+    index('comments_user_idx').on(t.userId),
   ],
 );
 
@@ -183,9 +175,9 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
   parent: one(comments, {
     fields: [comments.parentId],
     references: [comments.id],
-    relationName: "thread",
+    relationName: 'thread',
   }),
-  replies: many(comments, { relationName: "thread" }),
+  replies: many(comments, { relationName: 'thread' }),
 }));
 
 export type Tag = typeof tags.$inferSelect;

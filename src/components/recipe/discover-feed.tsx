@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { loadMorePublicRecipesAction } from "~/server/recipes/discover-actions";
-import { type RatingSort } from "~/lib/ratings";
-import { Button } from "~/components/ui/button";
-import { RecipeCard, type CardRecipe } from "~/components/recipe/recipe-card";
+import { loadMorePublicRecipesAction } from '~/server/recipes/discover-actions';
+import { type RatingSort } from '~/lib/ratings';
+import { Button } from '~/components/ui/button';
+import { RecipeCard, type CardRecipe } from '~/components/recipe/recipe-card';
 
 /**
  * Client-side discover list with a "Load more" button.
@@ -19,7 +19,7 @@ import { RecipeCard, type CardRecipe } from "~/components/recipe/recipe-card";
 export function DiscoverFeed({
   initialItems,
   initialNextOffset,
-  sort = "recent",
+  sort = 'recent',
   canFavorite = false,
   favoritedIds = [],
   priorityCount = 0,
@@ -36,16 +36,11 @@ export function DiscoverFeed({
    */
   priorityCount?: number;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
-  const [nextOffset, setNextOffset] = React.useState<number | null>(
-    initialNextOffset,
-  );
+  const [nextOffset, setNextOffset] = React.useState<number | null>(initialNextOffset);
   const [pending, startTransition] = React.useTransition();
-  const favoritedSet = React.useMemo(
-    () => new Set(favoritedIds),
-    [favoritedIds],
-  );
+  const favoritedSet = React.useMemo(() => new Set(favoritedIds), [favoritedIds]);
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
@@ -75,14 +70,8 @@ export function DiscoverFeed({
       </div>
       {nextOffset != null && (
         <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onLoadMore}
-            disabled={pending}
-          >
-            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
+          <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>
+            {pending ? t('common.loading') : t('common.loadMoreRecipes')}
           </Button>
         </div>
       )}

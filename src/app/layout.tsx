@@ -1,19 +1,13 @@
-import "~/styles/globals.css";
+import '~/styles/globals.css';
 
-import { type Metadata, type Viewport } from "next";
-import { cookies, headers } from "next/headers";
-import { ClerkProvider } from "@clerk/nextjs";
-import {
-  Fraunces,
-  Nunito,
-  Inter,
-  Baloo_2,
-  JetBrains_Mono,
-} from "next/font/google";
+import { type Metadata, type Viewport } from 'next';
+import { cookies, headers } from 'next/headers';
+import { ClerkProvider } from '@clerk/nextjs';
+import { Fraunces, Nunito, Inter, Baloo_2, JetBrains_Mono } from 'next/font/google';
 
-import { brand } from "~/config/brand";
-import { clerkAppearance } from "~/config/clerk-appearance";
-import { env } from "~/env";
+import { brand } from '~/config/brand';
+import { clerkAppearance } from '~/config/clerk-appearance';
+import { env } from '~/env';
 import {
   DEFAULT_COLOR_SCHEME,
   DEFAULT_UI_THEME,
@@ -21,27 +15,27 @@ import {
   THEME_COOKIE,
   isColorScheme,
   isUITheme,
-} from "~/config/themes";
-import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
-import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
-import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
-import { analyticsRequiresConsent } from "~/lib/analytics/config";
-import { getAllFlags } from "~/lib/analytics/server";
-import { atkinson } from "~/fonts/atkinson";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+} from '~/config/themes';
+import { A11Y_COOKIE, a11yAttributes, parseA11y } from '~/config/a11y';
+import { HOUSEHOLD_COOKIE, parseHousehold } from '~/config/household';
+import { ANALYTICS_CONSENT_COOKIE, parseConsent } from '~/config/consent';
+import { analyticsRequiresConsent } from '~/lib/analytics/config';
+import { getAllFlags } from '~/lib/analytics/server';
+import { atkinson } from '~/fonts/atkinson';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
-import { SHELL_NAMESPACES } from "~/i18n/route-namespaces";
-import { pickMessages } from "~/i18n/messages";
+import { SHELL_NAMESPACES } from '~/i18n/route-namespaces';
+import { pickMessages } from '~/i18n/messages';
 
-import { localeDirection, openGraphLocale } from "~/config/i18n";
-import { iosStartupImages } from "~/config/ios-splash";
-import { preconnectOrigins } from "~/config/resource-hints";
-import { isAuthConfigured, getCurrentUser } from "~/server/auth";
-import { cn } from "~/lib/utils";
-import { Providers } from "~/app/providers";
-import { ThemeScript } from "~/components/theme/theme-script";
-import { A11yScript } from "~/components/a11y/a11y-script";
+import { localeDirection, openGraphLocale } from '~/config/i18n';
+import { iosStartupImages } from '~/config/ios-splash';
+import { preconnectOrigins } from '~/config/resource-hints';
+import { isAuthConfigured, getCurrentUser } from '~/server/auth';
+import { cn } from '~/lib/utils';
+import { Providers } from '~/app/providers';
+import { ThemeScript } from '~/components/theme/theme-script';
+import { A11yScript } from '~/components/a11y/a11y-script';
 
 // Font loading is tuned for the multi-theme setup (#182). Only ONE family is
 // preloaded: the shared body font (Nunito), because it paints on the default and
@@ -53,43 +47,43 @@ import { A11yScript } from "~/components/a11y/a11y-script";
 // all five. Every family gets a size-matched `fallback` stack + `adjustFontFallback`
 // so the swap-in stays within CLS budget.
 const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
   preload: false,
-  fallback: ["ui-serif", "Georgia", "serif"],
+  fallback: ['ui-serif', 'Georgia', 'serif'],
   adjustFontFallback: true,
 });
 const nunito = Nunito({
-  subsets: ["latin"],
-  variable: "--font-nunito",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-nunito',
+  display: 'swap',
   preload: true,
-  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
   adjustFontFallback: true,
 });
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
   preload: false,
-  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
   adjustFontFallback: true,
 });
 const baloo = Baloo_2({
-  subsets: ["latin"],
-  variable: "--font-baloo",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-baloo',
+  display: 'swap',
   preload: false,
-  fallback: ["ui-rounded", "Segoe UI", "sans-serif"],
+  fallback: ['ui-rounded', 'Segoe UI', 'sans-serif'],
   adjustFontFallback: true,
 });
 const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
   preload: false,
-  fallback: ["ui-monospace", "monospace"],
+  fallback: ['ui-monospace', 'monospace'],
   adjustFontFallback: true,
 });
 
@@ -98,9 +92,9 @@ export async function generateMetadata(): Promise<Metadata> {
   // i18n request config). Title/description/OpenGraph read from the catalog. The
   // brand wordmark, colors, and URLs stay in the single brand/env config.
   const locale = await getLocale();
-  const t = await getTranslations({ locale, namespace: "metadata" });
-  const title = `${brand.name} · ${t("tagline")}`;
-  const description = t("description");
+  const t = await getTranslations({ locale, namespace: 'metadata' });
+  const title = `${brand.name} · ${t('tagline')}`;
+  const description = t('description');
 
   return {
     applicationName: brand.name,
@@ -109,29 +103,29 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s · ${brand.name}`,
     },
     description,
-    manifest: "/manifest.webmanifest",
-    metadataBase: new URL(env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+    manifest: '/manifest.webmanifest',
+    metadataBase: new URL(env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
     appleWebApp: {
       capable: true,
-      statusBarStyle: "default",
+      statusBarStyle: 'default',
       title: brand.name,
       // Branded iOS launch screens (one per device × orientation) so an
       // installed app never shows a blank white launch (#187).
       startupImage: iosStartupImages(),
     },
     icons: {
-      icon: "/favicon.ico",
+      icon: '/favicon.ico',
       // 180×180 opaque home-screen glyph iOS uses instead of the manifest icon.
       apple: [
         {
-          url: "/icons/apple-touch-icon.png",
-          sizes: "180x180",
-          type: "image/png",
+          url: '/icons/apple-touch-icon.png',
+          sizes: '180x180',
+          type: 'image/png',
         },
       ],
     },
     openGraph: {
-      type: "website",
+      type: 'website',
       title,
       description,
       siteName: brand.name,
@@ -141,35 +135,27 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
-  viewportFit: "cover",
+  viewportFit: 'cover',
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: brand.backgroundColor },
-    { media: "(prefers-color-scheme: dark)", color: "#161310" },
+    { media: '(prefers-color-scheme: light)', color: brand.backgroundColor },
+    { media: '(prefers-color-scheme: dark)', color: '#161310' },
   ],
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   // Per-request CSP nonce minted by the middleware (issue #212) so the inline
   // no-flash theme/a11y scripts below execute under a strict script-src.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   const themeCookie = cookieStore.get(THEME_COOKIE)?.value;
   const schemeCookie = cookieStore.get(SCHEME_COOKIE)?.value;
   const theme = isUITheme(themeCookie) ? themeCookie : DEFAULT_UI_THEME;
-  const scheme = isColorScheme(schemeCookie)
-    ? schemeCookie
-    : DEFAULT_COLOR_SCHEME;
+  const scheme = isColorScheme(schemeCookie) ? schemeCookie : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
   const household = parseHousehold(cookieStore.get(HOUSEHOLD_COOKIE)?.value);
-  const consent = parseConsent(
-    cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
-  );
+  const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
   const locale = await getLocale();
   // Only the namespaces the *persistent* shell uses. This provider lives in a
   // layout, so it is not re-rendered on client-side navigation and its payload
@@ -179,7 +165,7 @@ export default async function RootLayout({
   const currentUser = await getCurrentUser();
   // SSR-evaluate feature flags for the identified user so client variants don't
   // flicker on load (#335). Returns {} (all control) when analytics is off.
-  const flags = await getAllFlags(currentUser?.id ?? "anonymous");
+  const flags = await getAllFlags(currentUser?.id ?? 'anonymous');
 
   const authConfigured = isAuthConfigured();
 
@@ -196,18 +182,14 @@ export default async function RootLayout({
         baloo.variable,
         jetbrains.variable,
         atkinson.variable,
-        scheme === "dark" && "dark",
+        scheme === 'dark' && 'dark',
       )}
       suppressHydrationWarning
     >
       <head>
         {preconnectOrigins(authConfigured).flatMap((origin) => [
           <link key={`preconnect-${origin}`} rel="preconnect" href={origin} />,
-          <link
-            key={`dns-prefetch-${origin}`}
-            rel="dns-prefetch"
-            href={origin}
-          />,
+          <link key={`dns-prefetch-${origin}`} rel="dns-prefetch" href={origin} />,
         ])}
         <ThemeScript nonce={nonce} />
         <A11yScript nonce={nonce} />
@@ -232,9 +214,5 @@ export default async function RootLayout({
   );
 
   // Only mount ClerkProvider when auth is actually configured.
-  return authConfigured ? (
-    <ClerkProvider appearance={clerkAppearance}>{tree}</ClerkProvider>
-  ) : (
-    tree
-  );
+  return authConfigured ? <ClerkProvider appearance={clerkAppearance}>{tree}</ClerkProvider> : tree;
 }

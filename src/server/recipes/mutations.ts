@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
 import {
   groupMembers,
   recipeCreators,
@@ -18,31 +18,31 @@ import {
   users,
   type RecipeEventType,
   type User,
-} from "~/server/db/schema";
-import { canonicalizeTag } from "~/lib/tag-taxonomy";
-import { deriveDietaryTags } from "~/lib/dietary-derive";
-import { AuditAction, recordAudit } from "~/server/audit";
-import { assertKidAllowed } from "~/server/groups/kid-safe";
-import { resolveFoodIds } from "~/server/db/resolve-food";
-import { isReservedRecipeSlug } from "~/lib/recipe-reserved-slugs";
-import { recipeSlug, type RecipeInput } from "./validation";
-import { generateShareToken } from "./share-token";
-import { parseSnapshot } from "./queries";
-import { buildAdaptationInput } from "./timeline";
+} from '~/server/db/schema';
+import { canonicalizeTag } from '~/lib/tag-taxonomy';
+import { deriveDietaryTags } from '~/lib/dietary-derive';
+import { AuditAction, recordAudit } from '~/server/audit';
+import { assertKidAllowed } from '~/server/groups/kid-safe';
+import { resolveFoodIds } from '~/server/db/resolve-food';
+import { isReservedRecipeSlug } from '~/lib/recipe-reserved-slugs';
+import { recipeSlug, type RecipeInput } from './validation';
+import { generateShareToken } from './share-token';
+import { parseSnapshot } from './queries';
+import { buildAdaptationInput } from './timeline';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Postgres `unique_violation` SQLSTATE. */
-const PG_UNIQUE_VIOLATION = "23505";
+const PG_UNIQUE_VIOLATION = '23505';
 
 /**
  * DB-level unique constraints that make a recipe slug unique within its author's
  * namespace (see schema/recipes.ts). Both matter, because an alias counts as
  * occupied.
  */
-const RECIPES_SLUG_CONSTRAINT = "recipes_author_slug_uq";
-const RECIPE_SLUG_ALIAS_CONSTRAINT = "recipe_slug_aliases_owner_slug_uq";
-const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
+const RECIPES_SLUG_CONSTRAINT = 'recipes_author_slug_uq';
+const RECIPE_SLUG_ALIAS_CONSTRAINT = 'recipe_slug_aliases_owner_slug_uq';
+const RECIPE_CREATOR_SLUG_CONSTRAINT = 'recipe_creators_user_slug_uq';
 
 /**
  * Advisory-lock class for per-namespace slug allocation (issue #668).
@@ -145,7 +145,7 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
 const SLUG_NAMESPACE_LOCK_CLASS = 668;
 
 /** DB-level unique constraint on `recipe_versions (recipe_id, version_number)`. */
-const RECIPE_VERSIONS_VERSION_CONSTRAINT = "recipe_versions_recipe_version_uq";
+const RECIPE_VERSIONS_VERSION_CONSTRAINT = 'recipe_versions_recipe_version_uq';
 
 /** Max attempts for a create/fork that races another writer for the same slug. */
 const MAX_SLUG_ATTEMPTS = 5;
@@ -160,7 +160,7 @@ const MAX_VERSION_ATTEMPTS = 5;
  * intermediate layer rewraps the driver error.
  */
 function matchesUniqueViolation(err: unknown, constraint: string): boolean {
-  if (typeof err !== "object" || err === null) return false;
+  if (typeof err !== 'object' || err === null) return false;
   const e = err as {
     code?: unknown;
     constraint?: unknown;
@@ -171,12 +171,10 @@ function matchesUniqueViolation(err: unknown, constraint: string): boolean {
   if (e.code === PG_UNIQUE_VIOLATION) {
     const name = e.constraint ?? e.constraint_name;
     if (name === constraint) return true;
-    if (name == null && typeof e.message === "string")
-      return e.message.includes(constraint);
+    if (name == null && typeof e.message === 'string') return e.message.includes(constraint);
     return false;
   }
-  if (e.cause != null && e.cause !== err)
-    return matchesUniqueViolation(e.cause, constraint);
+  if (e.cause != null && e.cause !== err) return matchesUniqueViolation(e.cause, constraint);
   return false;
 }
 
@@ -210,9 +208,7 @@ export function isVersionConflict(err: unknown): boolean {
  * transaction, the retry re-runs {@link uniqueSlug} against newly-committed
  * rows, so the DB constraint, not the app-side loop, is the source of truth.
  */
-export async function withSlugConflictRetry<T>(
-  op: () => Promise<T>,
-): Promise<T> {
+export async function withSlugConflictRetry<T>(op: () => Promise<T>): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await op();
@@ -314,9 +310,7 @@ async function slugTaken(
     where: and(
       eq(recipeSlugAliases.ownerId, ownerId),
       eq(recipeSlugAliases.slug, candidate),
-      ignoreRecipeId
-        ? ne(recipeSlugAliases.recipeId, ignoreRecipeId)
-        : undefined,
+      ignoreRecipeId ? ne(recipeSlugAliases.recipeId, ignoreRecipeId) : undefined,
     ),
     columns: { id: true },
   });
@@ -329,7 +323,7 @@ async function slugTaken(
     where: and(
       eq(recipeCreators.userId, ownerId),
       eq(recipeCreators.slug, candidate),
-      eq(recipeCreators.status, "accepted"),
+      eq(recipeCreators.status, 'accepted'),
       ignoreRecipeId ? ne(recipeCreators.recipeId, ignoreRecipeId) : undefined,
     ),
     columns: { id: true },
@@ -371,8 +365,7 @@ export async function uniqueSlug(
 ): Promise<string> {
   let candidate = base;
   for (let i = 0; i < 50; i++) {
-    if (!(await slugTaken(tx, ownerId, candidate, ignoreRecipeId)))
-      return candidate;
+    if (!(await slugTaken(tx, ownerId, candidate, ignoreRecipeId))) return candidate;
     candidate = `${base}-${(i + 2).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   }
   return `${base}-${Date.now().toString(36)}`;
@@ -387,12 +380,7 @@ export async function uniqueSlug(
  * alias that happens to equal its own recipe's current live slug is harmless —
  * resolution checks live slugs first, so it never produces a redirect loop.
  */
-async function retireSlug(
-  tx: Tx,
-  ownerId: string,
-  recipeId: string,
-  slug: string,
-): Promise<void> {
+async function retireSlug(tx: Tx, ownerId: string, recipeId: string, slug: string): Promise<void> {
   await tx
     .insert(recipeSlugAliases)
     .values({ ownerId, recipeId, slug })
@@ -427,22 +415,19 @@ export async function resolveGroupId(
   if (!groupId) return null;
 
   const membership = await tx.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, author.id),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, author.id)),
     columns: { id: true, role: true },
   });
   if (membership) {
     // Kid-safe (issue #345): a kid-role member can keep a recipe inside the
     // family group but must never publish it to the open web.
-    if (input.visibility === "public") {
-      assertKidAllowed(membership.role, "make_recipe_public");
+    if (input.visibility === 'public') {
+      assertKidAllowed(membership.role, 'make_recipe_public');
     }
     return groupId;
   }
 
-  if (input.visibility === "group") throw new DomainError("FORBIDDEN");
+  if (input.visibility === 'group') throw new DomainError('FORBIDDEN');
   return null;
 }
 
@@ -450,16 +435,14 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
   // Derived "-free" dietary tags, recomputed from ingredients on every write
   // (issue #273). Stored NULL when nothing is derivable (no ingredients / no
   // "-free" tag holds), mirroring the other optional array columns.
-  const derivedDietaryTags = deriveDietaryTags(
-    input.ingredients.map((ing) => ing.item),
-  );
+  const derivedDietaryTags = deriveDietaryTags(input.ingredients.map((ing) => ing.item));
   return {
     title: input.title,
     description: input.description ?? null,
     coverImageUrl: input.coverImageUrl ?? null,
     coverImageAlt: input.coverImageAlt ?? null,
     servings: input.servings ?? null,
-    servingsNoun: input.servingsNoun ?? "servings",
+    servingsNoun: input.servingsNoun ?? 'servings',
     prepMinutes: input.prepMinutes ?? null,
     cookMinutes: input.cookMinutes ?? null,
     totalMinutes:
@@ -476,9 +459,9 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     // join rows are the source of truth for multi-cuisine recipes.
     cuisine:
       input.cuisines[0] != null
-        ? canonicalizeTag(input.cuisines[0], "cuisine").name
+        ? canonicalizeTag(input.cuisines[0], 'cuisine').name
         : input.cuisine != null
-          ? canonicalizeTag(input.cuisine, "cuisine").name
+          ? canonicalizeTag(input.cuisine, 'cuisine').name
           : null,
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
     // "safe for" filtering has a trustworthy, structured source (issue #404).
@@ -563,14 +546,11 @@ async function syncTags(tx: Tx, recipeId: string, input: RecipeInput) {
   // the same spelling appears in more than one input group. Known vocabulary
   // always resolves to its curated category regardless of the hint.
   const sources = [
-    ...input.tags.map((name) => ({ name, category: "general" as const })),
-    ...input.mealTypes.map((name) => ({ name, category: "meal" as const })),
-    ...(input.cuisines.length > 0
-      ? input.cuisines
-      : input.cuisine
-        ? [input.cuisine]
-        : []
-    ).map((name) => ({ name, category: "cuisine" as const })),
+    ...input.tags.map((name) => ({ name, category: 'general' as const })),
+    ...input.mealTypes.map((name) => ({ name, category: 'meal' as const })),
+    ...(input.cuisines.length > 0 ? input.cuisines : input.cuisine ? [input.cuisine] : []).map(
+      (name) => ({ name, category: 'cuisine' as const }),
+    ),
   ];
   const bySlug = new Map<string, ReturnType<typeof canonicalizeTag>>();
   for (const source of sources) {
@@ -661,13 +641,10 @@ function canForkSource(
   author: User,
   groupIds: string[],
 ) {
-  if (source.visibility === "public" || source.visibility === "unlisted")
-    return true;
+  if (source.visibility === 'public' || source.visibility === 'unlisted') return true;
   if (source.authorId === author.id) return true;
   return (
-    source.visibility === "group" &&
-    source.groupId != null &&
-    groupIds.includes(source.groupId)
+    source.visibility === 'group' && source.groupId != null && groupIds.includes(source.groupId)
   );
 }
 
@@ -695,9 +672,8 @@ async function applyRecipeInput(
   ownerId: string,
   groupId: string | null,
 ) {
-  const nowPublished = input.status === "published";
-  const publishedAt =
-    nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
+  const nowPublished = input.status === 'published';
+  const publishedAt = nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
   const slug = await reslug(tx, id, input.title, ownerId, current);
 
   await tx
@@ -715,7 +691,7 @@ async function applyRecipeInput(
   // Mint a share token the first time a recipe becomes unlisted (issue #204).
   // Guarded by `share_token IS NULL` so an existing token (and its enabled /
   // rotated state, #207) is preserved across edits and never regenerated here.
-  if (input.visibility === "unlisted") {
+  if (input.visibility === 'unlisted') {
     await tx
       .update(recipes)
       .set({ shareToken: generateShareToken() })
@@ -765,25 +741,24 @@ export async function createRecipe(input: RecipeInput, author: User) {
           authorId: author.id,
           // A recipe created directly as unlisted needs its share token up front
           // so `/r/<token>` works immediately (issue #204).
-          shareToken:
-            input.visibility === "unlisted" ? generateShareToken() : null,
-          publishedAt: input.status === "published" ? new Date() : null,
+          shareToken: input.visibility === 'unlisted' ? generateShareToken() : null,
+          publishedAt: input.status === 'published' ? new Date() : null,
         })
         .returning({ id: recipes.id, slug: recipes.slug });
       const recipe = row!;
       await insertChildren(tx, recipe.id, input);
       await syncTags(tx, recipe.id, input);
-      await journal(tx, recipe.id, author.id, input, "Created");
+      await journal(tx, recipe.id, author.id, input, 'Created');
       await recordEvent(tx, {
         recipeId: recipe.id,
         actorId: author.id,
-        type: "created",
+        type: 'created',
       });
-      if (input.status === "published") {
+      if (input.status === 'published') {
         await recordEvent(tx, {
           recipeId: recipe.id,
           actorId: author.id,
-          type: "published",
+          type: 'published',
         });
       }
       return recipe;
@@ -808,8 +783,8 @@ export async function createRecipe(input: RecipeInput, author: User) {
 function pinOwnerOnlyFields(
   input: RecipeInput,
   current: {
-    visibility: RecipeInput["visibility"];
-    status: RecipeInput["status"];
+    visibility: RecipeInput['visibility'];
+    status: RecipeInput['status'];
   },
 ): RecipeInput {
   return {
@@ -841,11 +816,11 @@ async function assertRecipeEditAccess(
     where: and(
       eq(recipeCreators.recipeId, recipeId),
       eq(recipeCreators.userId, actorId),
-      eq(recipeCreators.status, "accepted"),
+      eq(recipeCreators.status, 'accepted'),
     ),
     columns: { id: true },
   });
-  if (!creator) throw new DomainError("NOT_FOUND");
+  if (!creator) throw new DomainError('NOT_FOUND');
 }
 
 /**
@@ -855,11 +830,7 @@ async function assertRecipeEditAccess(
  * revalidate the canonical `/recipes/<cook>/<slug>` path and the editor is not
  * necessarily the cook that path names.
  */
-export async function updateRecipe(
-  id: string,
-  input: RecipeInput,
-  actor: User,
-) {
+export async function updateRecipe(id: string, input: RecipeInput, actor: User) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       // Deliberately *not* filtered by `authorId`: the owner check moved into
@@ -878,7 +849,7 @@ export async function updateRecipe(
         },
         with: { author: { columns: { slug: true } } },
       });
-      if (!current) throw new DomainError("NOT_FOUND");
+      if (!current) throw new DomainError('NOT_FOUND');
       await assertRecipeEditAccess(tx, id, actor.id, current.authorId);
 
       const isOwner = current.authorId === actor.id;
@@ -886,32 +857,29 @@ export async function updateRecipe(
       // Only the owner can move a recipe between groups, so only their input is
       // vetted for membership. A co-creator's save keeps the stored placement,
       // which the owner's own membership already justified.
-      const groupId = isOwner
-        ? await resolveGroupId(tx, effective, actor)
-        : current.groupId;
+      const groupId = isOwner ? await resolveGroupId(tx, effective, actor) : current.groupId;
 
       const result = await applyRecipeInput(
         tx,
         id,
         effective,
         actor,
-        "Edited",
+        'Edited',
         current,
         current.authorId,
         groupId,
       );
-      const newlyPublished =
-        effective.status === "published" && current.status !== "published";
+      const newlyPublished = effective.status === 'published' && current.status !== 'published';
       await recordEvent(tx, {
         recipeId: id,
         actorId: actor.id,
-        type: newlyPublished ? "published" : "updated",
+        type: newlyPublished ? 'published' : 'updated',
       });
       if (effective.visibility !== current.visibility) {
         await recordAudit(tx, {
           actorId: actor.id,
           action: AuditAction.RecipeVisibilityChanged,
-          targetType: "recipe",
+          targetType: 'recipe',
           targetId: id,
           metadata: { from: current.visibility, to: effective.visibility },
         });
@@ -922,18 +890,11 @@ export async function updateRecipe(
   return result;
 }
 
-export async function forkRecipe(
-  sourceIdOrSlug: string,
-  author: User,
-  forkNote?: string,
-) {
+export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?: string) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       const source = await tx.query.recipes.findFirst({
-        where: or(
-          eq(recipes.id, sourceIdOrSlug),
-          eq(recipes.slug, sourceIdOrSlug),
-        ),
+        where: or(eq(recipes.id, sourceIdOrSlug), eq(recipes.slug, sourceIdOrSlug)),
         // Recipe slugs are only unique per author now (issue #666), so a bare
         // slug can match more than one row. Resolve deterministically: an exact
         // id always wins, then the oldest holder of that slug — which is the
@@ -949,14 +910,10 @@ export async function forkRecipe(
         },
       });
 
-      if (!source) throw new DomainError("NOT_FOUND");
+      if (!source) throw new DomainError('NOT_FOUND');
 
-      const groupIds =
-        source.visibility === "group"
-          ? await viewerGroupIds(tx, author.id)
-          : [];
-      if (!canForkSource(source, author, groupIds))
-        throw new DomainError("NOT_FOUND");
+      const groupIds = source.visibility === 'group' ? await viewerGroupIds(tx, author.id) : [];
+      if (!canForkSource(source, author, groupIds)) throw new DomainError('NOT_FOUND');
 
       const input = buildAdaptationInput(source);
 
@@ -973,34 +930,28 @@ export async function forkRecipe(
           authorId: author.id,
           forkedFromId: source.id,
           forkNote: trimmedNote,
-          publishedAt: input.status === "published" ? new Date() : null,
+          publishedAt: input.status === 'published' ? new Date() : null,
         })
         .returning({ id: recipes.id, slug: recipes.slug });
 
       const recipe = row!;
       await insertChildren(tx, recipe.id, input);
       await syncTags(tx, recipe.id, input);
-      await journal(
-        tx,
-        recipe.id,
-        author.id,
-        input,
-        `Adapted from "${source.title}"`,
-      );
+      await journal(tx, recipe.id, author.id, input, `Adapted from "${source.title}"`);
 
       // Record both halves of the fork so it shows on each recipe's timeline:
       // the adaptation's origin, and a new descendant on the source.
       await recordEvent(tx, {
         recipeId: recipe.id,
         actorId: author.id,
-        type: "adapted",
+        type: 'adapted',
         note: trimmedNote ?? `Adapted from "${source.title}"`,
         relatedRecipeId: source.id,
       });
       await recordEvent(tx, {
         recipeId: source.id,
         actorId: author.id,
-        type: "adapted",
+        type: 'adapted',
         note: trimmedNote,
         relatedRecipeId: recipe.id,
       });
@@ -1024,11 +975,7 @@ export async function forkRecipe(
   return result;
 }
 
-export async function revertRecipe(
-  id: string,
-  versionNumber: number,
-  author: User,
-) {
+export async function revertRecipe(id: string, versionNumber: number, author: User) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       // Owner-only, unlike {@link updateRecipe}: reverting rewrites history for
@@ -1044,7 +991,7 @@ export async function revertRecipe(
           groupId: true,
         },
       });
-      if (!current) throw new DomainError("NOT_FOUND");
+      if (!current) throw new DomainError('NOT_FOUND');
 
       const version = await tx.query.recipeVersions.findFirst({
         where: and(
@@ -1053,10 +1000,10 @@ export async function revertRecipe(
         ),
         columns: { snapshot: true },
       });
-      if (!version) throw new DomainError("NOT_FOUND");
+      if (!version) throw new DomainError('NOT_FOUND');
 
       const input = parseSnapshot(version.snapshot);
-      if (!input) throw new DomainError("BAD_SNAPSHOT");
+      if (!input) throw new DomainError('BAD_SNAPSHOT');
 
       const result = await applyRecipeInput(
         tx,
@@ -1071,7 +1018,7 @@ export async function revertRecipe(
       await recordEvent(tx, {
         recipeId: id,
         actorId: author.id,
-        type: "updated",
+        type: 'updated',
         note: `Reverted to v${versionNumber}`,
       });
       return result;
@@ -1102,31 +1049,22 @@ export async function deleteRecipe(id: string, author: User) {
   });
   if (target?.groupId) {
     const membership = await db.query.groupMembers.findFirst({
-      where: and(
-        eq(groupMembers.groupId, target.groupId),
-        eq(groupMembers.userId, author.id),
-      ),
+      where: and(eq(groupMembers.groupId, target.groupId), eq(groupMembers.userId, author.id)),
       columns: { role: true },
     });
-    if (membership) assertKidAllowed(membership.role, "delete_recipe");
+    if (membership) assertKidAllowed(membership.role, 'delete_recipe');
   }
 
   const [row] = await db
     .update(recipes)
     .set({ deletedAt: new Date(), deletedBy: author.id })
-    .where(
-      and(
-        eq(recipes.id, id),
-        eq(recipes.authorId, author.id),
-        isNull(recipes.deletedAt),
-      ),
-    )
+    .where(and(eq(recipes.id, id), eq(recipes.authorId, author.id), isNull(recipes.deletedAt)))
     .returning({ id: recipes.id });
-  if (!row) throw new DomainError("NOT_FOUND");
+  if (!row) throw new DomainError('NOT_FOUND');
   await recordAudit(db, {
     actorId: author.id,
     action: AuditAction.RecipeDeleted,
-    targetType: "recipe",
+    targetType: 'recipe',
     targetId: id,
   });
   return row;
@@ -1141,15 +1079,9 @@ export async function restoreRecipe(id: string, author: User) {
   const [row] = await db
     .update(recipes)
     .set({ deletedAt: null, deletedBy: null })
-    .where(
-      and(
-        eq(recipes.id, id),
-        eq(recipes.authorId, author.id),
-        isNotNull(recipes.deletedAt),
-      ),
-    )
+    .where(and(eq(recipes.id, id), eq(recipes.authorId, author.id), isNotNull(recipes.deletedAt)))
     .returning({ id: recipes.id, slug: recipes.slug });
-  if (!row) throw new DomainError("NOT_FOUND");
+  if (!row) throw new DomainError('NOT_FOUND');
   return row;
 }
 
@@ -1182,18 +1114,14 @@ export async function setShareLinkState(
 ): Promise<ShareLinkState> {
   return db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
-      where: and(
-        eq(recipes.id, id),
-        eq(recipes.authorId, author.id),
-        isNull(recipes.deletedAt),
-      ),
+      where: and(eq(recipes.id, id), eq(recipes.authorId, author.id), isNull(recipes.deletedAt)),
       columns: {
         shareToken: true,
         shareLinkEnabled: true,
         shareTokenRotatedAt: true,
       },
     });
-    if (!current) throw new DomainError("NOT_FOUND");
+    if (!current) throw new DomainError('NOT_FOUND');
 
     const next: Partial<ShareLinkState> = {};
     if (change.rotate) {
@@ -1207,21 +1135,17 @@ export async function setShareLinkState(
 
     if (Object.keys(next).length === 0) return current;
 
-    const [updated] = await tx
-      .update(recipes)
-      .set(next)
-      .where(eq(recipes.id, id))
-      .returning({
-        shareToken: recipes.shareToken,
-        shareLinkEnabled: recipes.shareLinkEnabled,
-        shareTokenRotatedAt: recipes.shareTokenRotatedAt,
-      });
-    if (!updated) throw new DomainError("NOT_FOUND");
+    const [updated] = await tx.update(recipes).set(next).where(eq(recipes.id, id)).returning({
+      shareToken: recipes.shareToken,
+      shareLinkEnabled: recipes.shareLinkEnabled,
+      shareTokenRotatedAt: recipes.shareTokenRotatedAt,
+    });
+    if (!updated) throw new DomainError('NOT_FOUND');
 
     await recordAudit(tx, {
       actorId: author.id,
       action: AuditAction.RecipeShareLinkChanged,
-      targetType: "recipe",
+      targetType: 'recipe',
       targetId: id,
       metadata: {
         rotated: Boolean(change.rotate),

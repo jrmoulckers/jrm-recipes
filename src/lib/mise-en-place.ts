@@ -34,9 +34,7 @@ export type PrepTask = {
  * appear and the order of items within each section. Ungrouped ingredients
  * (null section) keep their own bucket.
  */
-export function groupIngredientsBySection(
-  ingredients: readonly MiseIngredient[],
-): MiseSection[] {
+export function groupIngredientsBySection(ingredients: readonly MiseIngredient[]): MiseSection[] {
   const order: (string | null)[] = [];
   const buckets = new Map<string | null, MiseIngredient[]>();
 
@@ -60,9 +58,7 @@ export function groupIngredientsBySection(
  * `prep` note (e.g. "diced", "softened"), in recipe order. Ingredients without
  * prep are skipped so the list stays focused on actual knife/prep work.
  */
-export function derivePrepTasks(
-  ingredients: readonly MiseIngredient[],
-): PrepTask[] {
+export function derivePrepTasks(ingredients: readonly MiseIngredient[]): PrepTask[] {
   const tasks: PrepTask[] = [];
   for (const ingredient of ingredients) {
     const prep = ingredient.prep?.trim();
@@ -78,8 +74,6 @@ export function derivePrepTasks(
 }
 
 /** Whether a recipe has anything to gather (i.e. a mise en place is useful). */
-export function hasMiseEnPlace(
-  ingredients: readonly MiseIngredient[],
-): boolean {
+export function hasMiseEnPlace(ingredients: readonly MiseIngredient[]): boolean {
   return ingredients.length > 0;
 }

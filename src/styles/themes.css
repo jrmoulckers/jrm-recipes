@@ -21,8 +21,7 @@
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
   --shadow-sm: 0 1px 2px hsl(24 30% 20% / 0.05);
-  --shadow:
-    0 1px 2px hsl(24 30% 20% / 0.06), 0 8px 24px -12px hsl(24 40% 20% / 0.18);
+  --shadow: 0 1px 2px hsl(24 30% 20% / 0.06), 0 8px 24px -12px hsl(24 40% 20% / 0.18);
   --shadow-lg: 0 14px 44px -14px hsl(24 40% 20% / 0.26);
   --ring-width: 2px;
   --text-scale: 1;
@@ -55,26 +54,10 @@
    * Blend % is the minimum that clears WCAG AA (>=4.5:1, verified >=4.7:1)
    * over every badge surface. Light-only hues (amber/accent) can't reach it and
    * use text-foreground directly in badge.tsx instead. */
-  --badge-ink-primary: color-mix(
-    in oklab,
-    hsl(var(--primary)),
-    hsl(var(--foreground)) 35%
-  );
-  --badge-ink-success: color-mix(
-    in oklab,
-    hsl(var(--success)),
-    hsl(var(--foreground)) 50%
-  );
-  --badge-ink-info: color-mix(
-    in oklab,
-    hsl(var(--info)),
-    hsl(var(--foreground)) 50%
-  );
-  --badge-ink-destructive: color-mix(
-    in oklab,
-    hsl(var(--destructive)),
-    hsl(var(--foreground)) 50%
-  );
+  --badge-ink-primary: color-mix(in oklab, hsl(var(--primary)), hsl(var(--foreground)) 35%);
+  --badge-ink-success: color-mix(in oklab, hsl(var(--success)), hsl(var(--foreground)) 50%);
+  --badge-ink-info: color-mix(in oklab, hsl(var(--info)), hsl(var(--foreground)) 50%);
+  --badge-ink-destructive: color-mix(in oklab, hsl(var(--destructive)), hsl(var(--foreground)) 50%);
 
   color-scheme: light;
 }
@@ -83,8 +66,7 @@
   color-scheme: dark;
   /* Dark shadows are essentially black glows across every mode. */
   --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.32);
-  --shadow:
-    0 2px 4px hsl(0 0% 0% / 0.35), 0 12px 32px -12px hsl(0 0% 0% / 0.55);
+  --shadow: 0 2px 4px hsl(0 0% 0% / 0.35), 0 12px 32px -12px hsl(0 0% 0% / 0.55);
   --shadow-lg: 0 20px 52px -14px hsl(0 0% 0% / 0.62);
 }
 
@@ -92,7 +74,7 @@
  * KITCHEN. Warm, cozy, home-baked. (Also the safe default palette.)
  * ------------------------------------------------------------------------- */
 :root,
-[data-theme="kitchen"] {
+[data-theme='kitchen'] {
   --radius: 0.9rem;
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
@@ -127,7 +109,7 @@
   --ring: 18 60% 44%;
 }
 
-[data-theme="kitchen"].dark {
+[data-theme='kitchen'].dark {
   --background: 24 22% 9%;
   --foreground: 40 30% 92%;
   --surface: 24 18% 13%;
@@ -161,13 +143,12 @@
 /* ---------------------------------------------------------------------------
  * WHIMSY. Playful, colorful, bubbly.
  * ------------------------------------------------------------------------- */
-[data-theme="whimsy"] {
+[data-theme='whimsy'] {
   --radius: 1.4rem;
-  --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
+  --font-display: var(--font-baloo), ui-rounded, 'Segoe UI', sans-serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --shadow-sm: 0 1px 2px hsl(280 40% 40% / 0.08);
-  --shadow:
-    0 2px 4px hsl(280 40% 40% / 0.08), 0 12px 32px -12px hsl(280 60% 50% / 0.22);
+  --shadow: 0 2px 4px hsl(280 40% 40% / 0.08), 0 12px 32px -12px hsl(280 60% 50% / 0.22);
   --shadow-lg: 0 20px 48px -14px hsl(300 60% 50% / 0.3);
 
   --background: 300 60% 99%;
@@ -200,7 +181,7 @@
   --ring: 280 68% 55%;
 }
 
-[data-theme="whimsy"].dark {
+[data-theme='whimsy'].dark {
   --background: 275 30% 10%;
   --foreground: 300 40% 94%;
   --surface: 275 26% 14%;
@@ -234,13 +215,12 @@
 /* ---------------------------------------------------------------------------
  * PROFESSIONAL. Clean, editorial, magazine-grade.
  * ------------------------------------------------------------------------- */
-[data-theme="professional"] {
+[data-theme='professional'] {
   --radius: 0.4rem;
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --shadow-sm: 0 1px 2px hsl(220 20% 20% / 0.07);
-  --shadow:
-    0 1px 2px hsl(220 20% 20% / 0.08), 0 6px 20px -12px hsl(220 20% 20% / 0.18);
+  --shadow: 0 1px 2px hsl(220 20% 20% / 0.08), 0 6px 20px -12px hsl(220 20% 20% / 0.18);
   --shadow-lg: 0 16px 40px -16px hsl(220 20% 20% / 0.22);
 
   --background: 0 0% 100%;
@@ -273,7 +253,7 @@
   --ring: 210 30% 22%;
 }
 
-[data-theme="professional"].dark {
+[data-theme='professional'].dark {
   --background: 220 20% 9%;
   --foreground: 210 20% 92%;
   --surface: 220 18% 12%;
@@ -307,15 +287,13 @@
 /* ---------------------------------------------------------------------------
  * KIDS. Big, bright, friendly, safe. Larger targets + text.
  * ------------------------------------------------------------------------- */
-[data-theme="kids"] {
+[data-theme='kids'] {
   --radius: 1.5rem;
-  --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
+  --font-display: var(--font-baloo), ui-rounded, 'Segoe UI', sans-serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --shadow-sm: 0 2px 0 hsl(212 60% 40% / 0.12);
-  --shadow:
-    0 3px 0 hsl(212 60% 40% / 0.14), 0 12px 28px -12px hsl(212 80% 40% / 0.28);
-  --shadow-lg:
-    0 6px 0 hsl(212 60% 40% / 0.14), 0 22px 44px -14px hsl(212 80% 40% / 0.34);
+  --shadow: 0 3px 0 hsl(212 60% 40% / 0.14), 0 12px 28px -12px hsl(212 80% 40% / 0.28);
+  --shadow-lg: 0 6px 0 hsl(212 60% 40% / 0.14), 0 22px 44px -14px hsl(212 80% 40% / 0.34);
   --text-scale: 1.075;
   --tap-min: 3rem;
   --ring-width: 3px;
@@ -354,7 +332,7 @@
   --ring: 212 90% 46%;
 }
 
-[data-theme="kids"].dark {
+[data-theme='kids'].dark {
   --background: 224 40% 12%;
   --foreground: 48 90% 94%;
   --surface: 224 34% 16%;
@@ -388,10 +366,10 @@
 /* ---------------------------------------------------------------------------
  * BAREBONES (Simple). Ultra-simple, high-contrast, minimal chrome.
  * ------------------------------------------------------------------------- */
-[data-theme="barebones"] {
+[data-theme='barebones'] {
   --radius: 0.25rem;
-  --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
-  --font-body: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-body: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
   --shadow-sm: 0 1px 1px hsl(0 0% 0% / 0.08);
   --shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
   --shadow-lg: 0 2px 6px hsl(0 0% 0% / 0.14);
@@ -433,7 +411,7 @@
   --ring: 222 80% 44%;
 }
 
-[data-theme="barebones"].dark {
+[data-theme='barebones'].dark {
   --background: 0 0% 7%;
   --foreground: 0 0% 96%;
   --surface: 0 0% 11%;

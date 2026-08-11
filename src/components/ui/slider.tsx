@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as SliderPrimitive from "@radix-ui/react-slider";
+import * as React from 'react';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 /**
  * Range slider. The track thickness and thumb size scale with
@@ -20,7 +20,7 @@ const Slider = React.forwardRef<
   <SliderPrimitive.Root
     ref={ref}
     className={cn(
-      "relative flex min-h-[var(--control-min)] w-full touch-none select-none items-center [@media(pointer:coarse)]:min-h-11",
+      'relative flex min-h-[var(--control-min)] w-full touch-none select-none items-center [@media(pointer:coarse)]:min-h-11',
       className,
     )}
     {...props}

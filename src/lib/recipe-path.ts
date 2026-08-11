@@ -1,4 +1,4 @@
-import type { Route } from "next";
+import type { Route } from 'next';
 
 /**
  * Minimal shape needed to build a recipe's canonical detail path.

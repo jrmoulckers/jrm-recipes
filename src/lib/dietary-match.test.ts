@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   allergenConflicts,
@@ -11,109 +11,109 @@ import {
   safeSubstitutions,
   type MemberNeeds,
   type PlanMember,
-} from "./dietary-match";
-import { type Substitution } from "./substitutions";
+} from './dietary-match';
+import { type Substitution } from './substitutions';
 
-describe("memberPlanWarnings", () => {
+describe('memberPlanWarnings', () => {
   const mom: PlanMember = {
-    id: "m-mom",
-    name: "Mom",
-    allergens: ["dairy"],
+    id: 'm-mom',
+    name: 'Mom',
+    allergens: ['dairy'],
     diets: [],
   };
   const veganKid: PlanMember = {
-    id: "m-kid",
-    name: "Kid",
+    id: 'm-kid',
+    name: 'Kid',
     allergens: [],
-    diets: ["vegan"],
+    diets: ['vegan'],
   };
 
-  it("returns [] when the recipe has no allergens", () => {
+  it('returns [] when the recipe has no allergens', () => {
     expect(memberPlanWarnings([], [mom, veganKid])).toEqual([]);
   });
 
-  it("warns a member whose avoided allergen the recipe carries", () => {
-    const warnings = memberPlanWarnings(["dairy", "wheat"], [mom]);
+  it('warns a member whose avoided allergen the recipe carries', () => {
+    const warnings = memberPlanWarnings(['dairy', 'wheat'], [mom]);
     expect(warnings).toEqual([
-      { memberId: "m-mom", memberName: "Mom", allergens: ["dairy"], diets: [] },
+      { memberId: 'm-mom', memberName: 'Mom', allergens: ['dairy'], diets: [] },
     ]);
   });
 
   it("warns a member whose diet the recipe's allergens violate", () => {
     // vegan forbids dairy. A dairy recipe conflicts even with no allergen set.
-    const warnings = memberPlanWarnings(["dairy"], [veganKid]);
+    const warnings = memberPlanWarnings(['dairy'], [veganKid]);
     expect(warnings).toEqual([
       {
-        memberId: "m-kid",
-        memberName: "Kid",
+        memberId: 'm-kid',
+        memberName: 'Kid',
         allergens: [],
-        diets: ["vegan"],
+        diets: ['vegan'],
       },
     ]);
   });
 
-  it("omits members with no conflict and returns one entry per conflicting member", () => {
+  it('omits members with no conflict and returns one entry per conflicting member', () => {
     const safe: PlanMember = {
-      id: "m-safe",
-      name: "Safe",
-      allergens: ["shellfish"],
+      id: 'm-safe',
+      name: 'Safe',
+      allergens: ['shellfish'],
       diets: [],
     };
-    const warnings = memberPlanWarnings(["dairy"], [mom, veganKid, safe]);
-    expect(warnings.map((w) => w.memberId)).toEqual(["m-mom", "m-kid"]);
+    const warnings = memberPlanWarnings(['dairy'], [mom, veganKid, safe]);
+    expect(warnings.map((w) => w.memberId)).toEqual(['m-mom', 'm-kid']);
   });
 });
 
-describe("hasAllergenConflict", () => {
-  it("is false when the member avoids nothing", () => {
-    expect(hasAllergenConflict([], ["peanut", "dairy"])).toBe(false);
+describe('hasAllergenConflict', () => {
+  it('is false when the member avoids nothing', () => {
+    expect(hasAllergenConflict([], ['peanut', 'dairy'])).toBe(false);
   });
 
-  it("is true when the recipe carries an avoided allergen", () => {
-    expect(hasAllergenConflict(["peanut"], ["dairy", "peanut"])).toBe(true);
+  it('is true when the recipe carries an avoided allergen', () => {
+    expect(hasAllergenConflict(['peanut'], ['dairy', 'peanut'])).toBe(true);
   });
 
-  it("is false when none of the avoided allergens are present", () => {
-    expect(hasAllergenConflict(["shellfish"], ["dairy", "wheat"])).toBe(false);
+  it('is false when none of the avoided allergens are present', () => {
+    expect(hasAllergenConflict(['shellfish'], ['dairy', 'wheat'])).toBe(false);
   });
 });
 
-describe("meetsDiets", () => {
-  it("is satisfied when the member follows no diet", () => {
+describe('meetsDiets', () => {
+  it('is satisfied when the member follows no diet', () => {
     expect(meetsDiets([], [])).toBe(true);
-    expect(meetsDiets([], ["vegan"])).toBe(true);
+    expect(meetsDiets([], ['vegan'])).toBe(true);
   });
 
-  it("requires the recipe to declare every diet the member follows", () => {
-    expect(meetsDiets(["vegan"], ["vegan", "gluten-free"])).toBe(true);
-    expect(meetsDiets(["vegan", "gluten-free"], ["vegan"])).toBe(false);
+  it('requires the recipe to declare every diet the member follows', () => {
+    expect(meetsDiets(['vegan'], ['vegan', 'gluten-free'])).toBe(true);
+    expect(meetsDiets(['vegan', 'gluten-free'], ['vegan'])).toBe(false);
   });
 
-  it("fails closed when the recipe declares no flags", () => {
-    expect(meetsDiets(["vegetarian"], [])).toBe(false);
+  it('fails closed when the recipe declares no flags', () => {
+    expect(meetsDiets(['vegetarian'], [])).toBe(false);
   });
 });
 
-describe("isRecipeSafeFor", () => {
+describe('isRecipeSafeFor', () => {
   const nutAllergicVegan: MemberNeeds = {
-    allergens: ["peanut", "tree-nut"],
-    diets: ["vegan"],
+    allergens: ['peanut', 'tree-nut'],
+    diets: ['vegan'],
   };
 
-  it("is safe when no allergen conflicts and all diets are met", () => {
+  it('is safe when no allergen conflicts and all diets are met', () => {
     expect(
       isRecipeSafeFor(nutAllergicVegan, {
-        allergens: ["soy"],
-        dietaryFlags: ["vegan", "gluten-free"],
+        allergens: ['soy'],
+        dietaryFlags: ['vegan', 'gluten-free'],
       }),
     ).toBe(true);
   });
 
-  it("is unsafe when an avoided allergen is present, even if the diet matches", () => {
+  it('is unsafe when an avoided allergen is present, even if the diet matches', () => {
     expect(
       isRecipeSafeFor(nutAllergicVegan, {
-        allergens: ["peanut"],
-        dietaryFlags: ["vegan"],
+        allergens: ['peanut'],
+        dietaryFlags: ['vegan'],
       }),
     ).toBe(false);
   });
@@ -127,121 +127,122 @@ describe("isRecipeSafeFor", () => {
     ).toBe(false);
   });
 
-  it("treats a member with no restrictions as safe for anything", () => {
+  it('treats a member with no restrictions as safe for anything', () => {
     expect(
       isRecipeSafeFor(
         { allergens: [], diets: [] },
-        { allergens: ["peanut", "dairy"], dietaryFlags: [] },
+        { allergens: ['peanut', 'dairy'], dietaryFlags: [] },
       ),
     ).toBe(true);
   });
 });
 
-describe("allergenConflicts", () => {
-  it("returns nothing when the member avoids nothing", () => {
-    expect(allergenConflicts([], ["peanut", "dairy"])).toEqual([]);
+describe('allergenConflicts', () => {
+  it('returns nothing when the member avoids nothing', () => {
+    expect(allergenConflicts([], ['peanut', 'dairy'])).toEqual([]);
   });
 
-  it("returns the avoided allergens the recipe carries, in member order", () => {
-    expect(
-      allergenConflicts(["dairy", "peanut"], ["peanut", "soy", "dairy"]),
-    ).toEqual(["dairy", "peanut"]);
+  it('returns the avoided allergens the recipe carries, in member order', () => {
+    expect(allergenConflicts(['dairy', 'peanut'], ['peanut', 'soy', 'dairy'])).toEqual([
+      'dairy',
+      'peanut',
+    ]);
   });
 
-  it("returns nothing when there is no overlap", () => {
-    expect(allergenConflicts(["shellfish"], ["dairy", "wheat"])).toEqual([]);
+  it('returns nothing when there is no overlap', () => {
+    expect(allergenConflicts(['shellfish'], ['dairy', 'wheat'])).toEqual([]);
   });
 });
 
-describe("detectIngredientConflict", () => {
+describe('detectIngredientConflict', () => {
   const dairyFreeVegan: MemberNeeds = {
     allergens: [],
-    diets: ["dairy-free", "vegan"],
+    diets: ['dairy-free', 'vegan'],
   };
 
-  it("flags a diet violation and suggests the neutralizing tag", () => {
+  it('flags a diet violation and suggests the neutralizing tag', () => {
     // "butter" → dairy. Conflicts with both dairy-free and vegan.
-    const conflict = detectIngredientConflict(["dairy"], dairyFreeVegan);
+    const conflict = detectIngredientConflict(['dairy'], dairyFreeVegan);
     expect(conflict.allergens).toEqual([]);
-    expect(conflict.diets).toEqual(["dairy-free", "vegan"]);
-    expect(conflict.suggestedTags).toContain("dairy-free");
+    expect(conflict.diets).toEqual(['dairy-free', 'vegan']);
+    expect(conflict.suggestedTags).toContain('dairy-free');
     expect(isIngredientConflict(conflict)).toBe(true);
   });
 
-  it("flags a raw allergen and maps it to a -free swap tag", () => {
-    const conflict = detectIngredientConflict(["wheat"], {
-      allergens: ["wheat"],
+  it('flags a raw allergen and maps it to a -free swap tag', () => {
+    const conflict = detectIngredientConflict(['wheat'], {
+      allergens: ['wheat'],
       diets: [],
     });
-    expect(conflict.allergens).toEqual(["wheat"]);
+    expect(conflict.allergens).toEqual(['wheat']);
     expect(conflict.diets).toEqual([]);
-    expect(conflict.suggestedTags).toEqual(["gluten-free"]);
+    expect(conflict.suggestedTags).toEqual(['gluten-free']);
   });
 
   it("does not flag an allergen the member doesn't avoid", () => {
-    const conflict = detectIngredientConflict(["soy"], dairyFreeVegan);
+    const conflict = detectIngredientConflict(['soy'], dairyFreeVegan);
     expect(isIngredientConflict(conflict)).toBe(false);
     expect(conflict.suggestedTags).toEqual([]);
   });
 
-  it("suggests no tag for an allergen with no matching diet (e.g. peanut)", () => {
-    const conflict = detectIngredientConflict(["peanut"], {
-      allergens: ["peanut"],
+  it('suggests no tag for an allergen with no matching diet (e.g. peanut)', () => {
+    const conflict = detectIngredientConflict(['peanut'], {
+      allergens: ['peanut'],
       diets: [],
     });
-    expect(conflict.allergens).toEqual(["peanut"]);
+    expect(conflict.allergens).toEqual(['peanut']);
     expect(conflict.suggestedTags).toEqual([]);
     expect(isIngredientConflict(conflict)).toBe(true);
   });
 });
 
-describe("safeSubstitutions (#429 safe-swap safety)", () => {
+describe('safeSubstitutions (#429 safe-swap safety)', () => {
   // A dairy-free swap list that includes nut-based options. Realistic for
   // "butter" or "cream". A dairy-allergic member who is ALSO nut-allergic must
   // not be shown the cashew/almond swaps as "safe".
   const dairySwaps: Substitution[] = [
     {
-      substitute: "Olive oil",
-      ratioOrNotes: "Use ¾ cup oil per cup of butter.",
-      dietaryTags: ["dairy-free", "vegan"],
+      substitute: 'Olive oil',
+      ratioOrNotes: 'Use ¾ cup oil per cup of butter.',
+      dietaryTags: ['dairy-free', 'vegan'],
     },
     {
-      substitute: "Cashew cream",
-      ratioOrNotes: "Blend 1 cup soaked cashews with ½ cup water.",
-      dietaryTags: ["dairy-free", "vegan"],
+      substitute: 'Cashew cream',
+      ratioOrNotes: 'Blend 1 cup soaked cashews with ½ cup water.',
+      dietaryTags: ['dairy-free', 'vegan'],
     },
     {
-      substitute: "Almond milk + oil",
-      ratioOrNotes: "1 cup almond milk whisked with 2 tbsp oil.",
-      dietaryTags: ["dairy-free"],
+      substitute: 'Almond milk + oil',
+      ratioOrNotes: '1 cup almond milk whisked with 2 tbsp oil.',
+      dietaryTags: ['dairy-free'],
     },
     {
-      substitute: "Coconut oil",
-      ratioOrNotes: "Swap 1:1 with solid coconut oil.",
-      dietaryTags: ["dairy-free", "vegan"],
+      substitute: 'Coconut oil',
+      ratioOrNotes: 'Swap 1:1 with solid coconut oil.',
+      dietaryTags: ['dairy-free', 'vegan'],
     },
   ];
 
   it("drops swaps that carry one of the member's other allergens", () => {
-    const safe = safeSubstitutions(dairySwaps, ["tree-nut"]);
+    const safe = safeSubstitutions(dairySwaps, ['tree-nut']);
     const names = safe.map((s) => s.substitute);
-    expect(names).not.toContain("Cashew cream");
-    expect(names).not.toContain("Almond milk + oil");
+    expect(names).not.toContain('Cashew cream');
+    expect(names).not.toContain('Almond milk + oil');
     // Nut-free options survive (coconut is deliberately not treated as tree-nut).
-    expect(names).toEqual(expect.arrayContaining(["Olive oil", "Coconut oil"]));
+    expect(names).toEqual(expect.arrayContaining(['Olive oil', 'Coconut oil']));
   });
 
-  it("leaves the list untouched when the member avoids nothing", () => {
+  it('leaves the list untouched when the member avoids nothing', () => {
     expect(safeSubstitutions(dairySwaps, [])).toHaveLength(dairySwaps.length);
   });
 
-  it("detects an avoided allergen mentioned only in the notes", () => {
+  it('detects an avoided allergen mentioned only in the notes', () => {
     const swaps: Substitution[] = [
       {
-        substitute: "Nut-free spread",
-        ratioOrNotes: "A blend finished with a little peanut oil.",
+        substitute: 'Nut-free spread',
+        ratioOrNotes: 'A blend finished with a little peanut oil.',
       },
     ];
-    expect(safeSubstitutions(swaps, ["peanut"])).toHaveLength(0);
+    expect(safeSubstitutions(swaps, ['peanut'])).toHaveLength(0);
   });
 });

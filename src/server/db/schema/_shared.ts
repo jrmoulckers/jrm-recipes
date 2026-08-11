@@ -1,5 +1,5 @@
-import { createId } from "@paralleldrive/cuid2";
-import { timestamp, varchar, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { createId } from '@paralleldrive/cuid2';
+import { timestamp, varchar, type AnyPgColumn } from 'drizzle-orm/pg-core';
 
 /** Primary key: short, URL-safe, collision-resistant cuid2. */
 export const pk = () =>
@@ -28,5 +28,5 @@ export const timestamps = () => ({
  */
 export const softDelete = (userIdColumn: () => AnyPgColumn) => ({
   deletedAt: timestamp({ withTimezone: true }),
-  deletedBy: fk().references(userIdColumn, { onDelete: "set null" }),
+  deletedBy: fk().references(userIdColumn, { onDelete: 'set null' }),
 });

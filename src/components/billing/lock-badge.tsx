@@ -1,19 +1,13 @@
-import * as React from "react";
-import type { Route } from "next";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Lock } from "lucide-react";
+import * as React from 'react';
+import type { Route } from 'next';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Lock } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { Badge, type BadgeProps } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { cn } from '~/lib/utils';
+import { Badge, type BadgeProps } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 
 /**
  * Presentational paywall building blocks (issue #311).
@@ -32,14 +26,14 @@ import {
 export function LockBadge({
   label,
   className,
-  variant = "muted",
+  variant = 'muted',
   ...props
 }: BadgeProps & { label?: string }) {
-  const t = useTranslations("billing.locked");
+  const t = useTranslations('billing.locked');
   return (
-    <Badge variant={variant} className={cn("gap-1", className)} {...props}>
+    <Badge variant={variant} className={cn('gap-1', className)} {...props}>
       <Lock className="size-3" aria-hidden="true" />
-      {label ?? t("badge")}
+      {label ?? t('badge')}
     </Badge>
   );
 }
@@ -53,7 +47,7 @@ export function LockedFeatureCard({
   title,
   description,
   cta,
-  href = "/pricing",
+  href = '/pricing',
   className,
 }: {
   title?: string;
@@ -62,19 +56,19 @@ export function LockedFeatureCard({
   href?: Route;
   className?: string;
 }) {
-  const t = useTranslations("billing.locked");
+  const t = useTranslations('billing.locked');
   return (
     <Card className={className}>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>{title ?? t("title")}</CardTitle>
+          <CardTitle>{title ?? t('title')}</CardTitle>
           <LockBadge />
         </div>
-        <CardDescription>{description ?? t("description")}</CardDescription>
+        <CardDescription>{description ?? t('description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Button asChild variant="outline">
-          <Link href={href}>{cta ?? t("seePlans")}</Link>
+          <Link href={href}>{cta ?? t('seePlans')}</Link>
         </Button>
       </CardContent>
     </Card>

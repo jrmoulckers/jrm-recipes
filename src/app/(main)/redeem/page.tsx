@@ -1,24 +1,18 @@
-import { type Metadata } from "next";
-import { Gift } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import { Gift } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser, isAuthConfigured } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { RedeemForm } from "~/components/billing/redeem-form";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
+import { RedeemForm } from '~/components/billing/redeem-form';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
+  const t = await getTranslations('metadata');
   return {
-    title: t("redeem.title"),
-    description: t("redeem.description"),
+    title: t('redeem.title'),
+    description: t('redeem.description'),
   };
 }
 
@@ -43,7 +37,7 @@ async function RedeemPage({
   if (isAuthConfigured() && dbConfigured && !user) return <SignInNudge />;
 
   const { gift, code } = await searchParams;
-  const t = await getTranslations("billing.redeemPage");
+  const t = await getTranslations('billing.redeemPage');
 
   return (
     <div className="container flex max-w-lg flex-col gap-8 py-12">
@@ -51,35 +45,33 @@ async function RedeemPage({
         <span className="bg-primary/12 mx-auto inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <Gift className="size-7" aria-hidden="true" />
         </span>
-        <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">
-          {t("title")}
-        </h1>
-        <p className="mt-2 text-muted-foreground">{t("description")}</p>
+        <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="mt-2 text-muted-foreground">{t('description')}</p>
       </header>
 
-      {gift === "purchased" ? (
+      {gift === 'purchased' ? (
         <p
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-center text-sm text-success"
         >
-          {t("purchased")}
+          {t('purchased')}
         </p>
       ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("form.title")}</CardTitle>
+          <CardTitle>{t('form.title')}</CardTitle>
           <CardDescription>
-            {t.rich("form.description", {
+            {t.rich('form.description', {
               code: (chunks) => <span className="font-mono">{chunks}</span>,
             })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {dbConfigured ? (
-            <RedeemForm initialCode={code ?? ""} />
+            <RedeemForm initialCode={code ?? ''} />
           ) : (
-            <p className="text-sm text-muted-foreground">{t("unavailable")}</p>
+            <p className="text-sm text-muted-foreground">{t('unavailable')}</p>
           )}
         </CardContent>
       </Card>
@@ -88,7 +80,7 @@ async function RedeemPage({
 }
 
 async function SignInNudge() {
-  const t = await getTranslations("billing.redeemPage.signIn");
+  const t = await getTranslations('billing.redeemPage.signIn');
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -96,10 +88,8 @@ async function SignInNudge() {
           <Gift className="size-7" aria-hidden="true" />
         </span>
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="mt-2 text-muted-foreground">{t("body")}</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('body')}</p>
         </div>
       </div>
     </div>

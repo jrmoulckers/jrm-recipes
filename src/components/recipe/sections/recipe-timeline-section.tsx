@@ -1,11 +1,11 @@
-import { History } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { History } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getRecipeTimeline, getRecipeVersions } from "~/server/recipes/queries";
-import { type RecipeForViewer } from "~/server/recipes/loaders";
-import { RecipeStory } from "~/components/recipe/story";
-import { RecipeTimeline } from "~/components/recipe/timeline";
-import { VersionCompareLazy } from "~/components/recipe/version-compare-lazy";
+import { getRecipeTimeline, getRecipeVersions } from '~/server/recipes/queries';
+import { type RecipeForViewer } from '~/server/recipes/loaders';
+import { RecipeStory } from '~/components/recipe/story';
+import { RecipeTimeline } from '~/components/recipe/timeline';
+import { VersionCompareLazy } from '~/components/recipe/version-compare-lazy';
 
 /**
  * Timeline tab content (#176). Fetches the story timeline and saved versions in
@@ -23,9 +23,9 @@ export async function RecipeTimelineSection({
   recipeSlug: string;
   recipeTitle: string;
   canRevert: boolean;
-  user: RecipeForViewer["user"];
+  user: RecipeForViewer['user'];
 }) {
-  const t = await getTranslations("recipe.timeline");
+  const t = await getTranslations('recipe.timeline');
   const [timeline, versions] = await Promise.all([
     getRecipeTimeline(recipeId, user),
     getRecipeVersions(recipeId),
@@ -37,7 +37,7 @@ export async function RecipeTimelineSection({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <History className="size-4" aria-hidden="true" />
-          {t("savedVersions")}
+          {t('savedVersions')}
         </div>
         <RecipeTimeline
           versions={versions.items}
@@ -49,9 +49,7 @@ export async function RecipeTimelineSection({
           recipeId={recipeId}
           versions={versions.items.map((version) => ({
             versionNumber: version.versionNumber,
-            label:
-              version.label ??
-              (version.versionNumber === 1 ? t("created") : t("updated")),
+            label: version.label ?? (version.versionNumber === 1 ? t('created') : t('updated')),
           }))}
         />
       </div>

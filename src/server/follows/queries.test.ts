@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   followsFindManyMock,
@@ -16,7 +16,7 @@ const {
   getHiddenAuthorIdsMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: {
     query: {
       follows: { findMany: followsFindManyMock },
@@ -29,154 +29,154 @@ vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
 }));
 
-vi.mock("~/server/moderation/blocks", () => ({
+vi.mock('~/server/moderation/blocks', () => ({
   getHiddenAuthorIds: getHiddenAuthorIdsMock,
 }));
 
-import { getFollowingActivity } from "./queries";
+import { getFollowingActivity } from './queries';
 
 const author = {
-  id: "followee",
-  name: "Fran",
-  handle: "fran",
+  id: 'followee',
+  name: 'Fran',
+  handle: 'fran',
   avatarUrl: null,
 };
 const publicRecipe = {
-  id: "r_pub",
-  slug: "public-stew",
-  title: "Public Stew",
+  id: 'r_pub',
+  slug: 'public-stew',
+  title: 'Public Stew',
   coverImageUrl: null,
-  visibility: "public",
-  status: "published",
+  visibility: 'public',
+  status: 'published',
   deletedAt: null,
 };
 const groupRecipe = {
-  id: "r_grp",
-  slug: "family-secret",
-  title: "Family Secret Sauce",
+  id: 'r_grp',
+  slug: 'family-secret',
+  title: 'Family Secret Sauce',
   coverImageUrl: null,
-  visibility: "group",
-  status: "published",
+  visibility: 'group',
+  status: 'published',
   deletedAt: null,
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  followsFindManyMock.mockResolvedValue([{ followeeId: "followee" }]);
-  usersFindManyMock.mockResolvedValue([{ id: "followee" }]);
+  followsFindManyMock.mockResolvedValue([{ followeeId: 'followee' }]);
+  usersFindManyMock.mockResolvedValue([{ id: 'followee' }]);
   getHiddenAuthorIdsMock.mockResolvedValue(new Set());
   recipesFindManyMock.mockResolvedValue([]);
   reviewsFindManyMock.mockResolvedValue([]);
   cooksFindManyMock.mockResolvedValue([]);
 });
 
-describe("getFollowingActivity opt-in / block gating", () => {
-  it("returns empty (without reading activity) when the viewer follows no one", async () => {
+describe('getFollowingActivity opt-in / block gating', () => {
+  it('returns empty (without reading activity) when the viewer follows no one', async () => {
     followsFindManyMock.mockResolvedValue([]);
-    const page = await getFollowingActivity("me");
+    const page = await getFollowingActivity('me');
     expect(page.events).toEqual([]);
     expect(recipesFindManyMock).not.toHaveBeenCalled();
     expect(reviewsFindManyMock).not.toHaveBeenCalled();
     expect(cooksFindManyMock).not.toHaveBeenCalled();
   });
 
-  it("contributes nothing once a followee opts out (re-checked at read time)", async () => {
+  it('contributes nothing once a followee opts out (re-checked at read time)', async () => {
     usersFindManyMock.mockResolvedValue([]); // followee no longer opted in
-    const page = await getFollowingActivity("me");
+    const page = await getFollowingActivity('me');
     expect(page.events).toEqual([]);
     expect(recipesFindManyMock).not.toHaveBeenCalled();
   });
 
-  it("drops a followee involved in a block, in either direction", async () => {
-    getHiddenAuthorIdsMock.mockResolvedValue(new Set(["followee"]));
-    const page = await getFollowingActivity("me");
+  it('drops a followee involved in a block, in either direction', async () => {
+    getHiddenAuthorIdsMock.mockResolvedValue(new Set(['followee']));
+    const page = await getFollowingActivity('me');
     expect(page.events).toEqual([]);
     expect(recipesFindManyMock).not.toHaveBeenCalled();
   });
 });
 
-describe("getFollowingActivity public-only firewall", () => {
+describe('getFollowingActivity public-only firewall', () => {
   it("surfaces a followee's public published recipe", async () => {
     recipesFindManyMock.mockResolvedValue([
       {
-        id: "r_pub",
-        slug: "public-stew",
-        title: "Public Stew",
+        id: 'r_pub',
+        slug: 'public-stew',
+        title: 'Public Stew',
         coverImageUrl: null,
-        createdAt: new Date("2024-01-01"),
+        createdAt: new Date('2024-01-01'),
         author,
       },
     ]);
 
-    const page = await getFollowingActivity("me");
+    const page = await getFollowingActivity('me');
     expect(page.events).toHaveLength(1);
     expect(page.events[0]).toMatchObject({
-      kind: "recipe_added",
-      recipe: { title: "Public Stew" },
+      kind: 'recipe_added',
+      recipe: { title: 'Public Stew' },
     });
   });
 
-  it("NEVER leaks group-private activity via the follow path", async () => {
+  it('NEVER leaks group-private activity via the follow path', async () => {
     // A review AND a cook that reference a group-visibility recipe. Even though
     // the (mocked) DB handed them back, the JS visibility firewall must drop them.
     reviewsFindManyMock.mockResolvedValue([
       {
-        id: "rev_grp",
-        title: "Family only",
-        body: "secret",
+        id: 'rev_grp',
+        title: 'Family only',
+        body: 'secret',
         rating: 5,
-        createdAt: new Date("2024-01-02"),
+        createdAt: new Date('2024-01-02'),
         user: author,
         recipe: groupRecipe,
       },
       {
-        id: "rev_pub",
-        title: "Loved it",
-        body: "public review",
+        id: 'rev_pub',
+        title: 'Loved it',
+        body: 'public review',
         rating: 4,
-        createdAt: new Date("2024-01-03"),
+        createdAt: new Date('2024-01-03'),
         user: author,
         recipe: publicRecipe,
       },
     ]);
     cooksFindManyMock.mockResolvedValue([
       {
-        id: "cook_grp",
-        note: "made the family secret",
+        id: 'cook_grp',
+        note: 'made the family secret',
         photoUrl: null,
-        createdAt: new Date("2024-01-04"),
+        createdAt: new Date('2024-01-04'),
         user: author,
         recipe: groupRecipe,
       },
     ]);
 
-    const page = await getFollowingActivity("me");
+    const page = await getFollowingActivity('me');
 
     const titles = page.events.map((e) => e.recipe?.title);
-    expect(titles).toContain("Public Stew");
-    expect(titles).not.toContain("Family Secret Sauce");
+    expect(titles).toContain('Public Stew');
+    expect(titles).not.toContain('Family Secret Sauce');
     // Only the single public review survives.
     expect(page.events).toHaveLength(1);
-    expect(page.events[0]).toMatchObject({ kind: "review" });
+    expect(page.events[0]).toMatchObject({ kind: 'review' });
   });
 
-  it("keeps a non-group-shared cook on a public recipe", async () => {
+  it('keeps a non-group-shared cook on a public recipe', async () => {
     cooksFindManyMock.mockResolvedValue([
       {
-        id: "cook_pub",
-        note: "yum",
-        photoUrl: "https://img/x.jpg",
-        createdAt: new Date("2024-01-05"),
+        id: 'cook_pub',
+        note: 'yum',
+        photoUrl: 'https://img/x.jpg',
+        createdAt: new Date('2024-01-05'),
         user: author,
         recipe: publicRecipe,
       },
     ]);
 
-    const page = await getFollowingActivity("me");
+    const page = await getFollowingActivity('me');
     expect(page.events).toHaveLength(1);
     expect(page.events[0]).toMatchObject({
-      kind: "cook_shared",
-      recipe: { title: "Public Stew" },
+      kind: 'cook_shared',
+      recipe: { title: 'Public Stew' },
     });
   });
 });

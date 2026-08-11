@@ -1,82 +1,82 @@
-import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
-import { recipeFallbackImage } from "~/lib/recipe-image-fallback";
+import { recipeFallbackImage } from '~/lib/recipe-image-fallback';
 
-import { RecipeImage } from "./recipe-image";
+import { RecipeImage } from './recipe-image';
 
 function decodedSrc(image: HTMLImageElement): string {
-  return decodeURIComponent(image.getAttribute("src") ?? "");
+  return decodeURIComponent(image.getAttribute('src') ?? '');
 }
 
-describe("RecipeImage", () => {
-  it("renders a pre-blurred semantic fallback when no cover is provided", () => {
+describe('RecipeImage', () => {
+  it('renders a pre-blurred semantic fallback when no cover is provided', () => {
     const { container } = render(
       <RecipeImage
         src={null}
         fallbackKey="recipe-without-cover"
-        fallbackContext={{ title: "Blueberry Buttermilk Pancakes" }}
+        fallbackContext={{ title: 'Blueberry Buttermilk Pancakes' }}
         alt=""
         width={640}
         height={400}
         className="object-cover group-hover:scale-[1.03]"
       />,
     );
-    const image = container.querySelector("img")!;
+    const image = container.querySelector('img')!;
 
     expect(decodedSrc(image)).toContain(
-      recipeFallbackImage("recipe-without-cover", {
-        title: "Blueberry Buttermilk Pancakes",
+      recipeFallbackImage('recipe-without-cover', {
+        title: 'Blueberry Buttermilk Pancakes',
       }),
     );
-    expect(image).toHaveAttribute("data-fallback");
-    expect(image).toHaveClass("scale-[1.02]", "group-hover:scale-[1.03]");
+    expect(image).toHaveAttribute('data-fallback');
+    expect(image).toHaveClass('scale-[1.02]', 'group-hover:scale-[1.03]');
   });
 
-  it("replaces a failed remote cover with the local fallback", () => {
+  it('replaces a failed remote cover with the local fallback', () => {
     const { container } = render(
       <RecipeImage
         src="https://example.test/missing-cover.jpg"
         fallbackKey="recipe-with-broken-cover"
-        fallbackContext={{ cuisine: "Italian" }}
+        fallbackContext={{ cuisine: 'Italian' }}
         alt=""
         width={640}
         height={400}
       />,
     );
-    const image = container.querySelector("img")!;
+    const image = container.querySelector('img')!;
 
-    expect(decodedSrc(image)).toContain("missing-cover.jpg");
+    expect(decodedSrc(image)).toContain('missing-cover.jpg');
     fireEvent.error(image);
     expect(decodedSrc(image)).toContain(
-      recipeFallbackImage("recipe-with-broken-cover", {
-        cuisine: "Italian",
+      recipeFallbackImage('recipe-with-broken-cover', {
+        cuisine: 'Italian',
       }),
     );
-    expect(image).toHaveAttribute("data-fallback");
-    expect(image).toHaveClass("scale-[1.02]");
+    expect(image).toHaveAttribute('data-fallback');
+    expect(image).toHaveClass('scale-[1.02]');
   });
 
-  it("keeps a valid uploaded cover crisp", () => {
+  it('keeps a valid uploaded cover crisp', () => {
     const { container } = render(
       <RecipeImage
         src="https://example.test/uploaded-cover.jpg"
         fallbackKey="recipe-with-cover"
-        fallbackContext={{ tags: ["Breakfast"] }}
+        fallbackContext={{ tags: ['Breakfast'] }}
         alt=""
         width={640}
         height={400}
         className="object-cover"
       />,
     );
-    const image = container.querySelector("img")!;
+    const image = container.querySelector('img')!;
 
-    expect(image).not.toHaveAttribute("data-fallback");
-    expect(image).not.toHaveClass("scale-[1.02]");
-    expect(image).toHaveClass("object-cover");
+    expect(image).not.toHaveAttribute('data-fallback');
+    expect(image).not.toHaveClass('scale-[1.02]');
+    expect(image).toHaveClass('object-cover');
   });
 
-  it("uses the fallback before rendering a malformed draft URL", () => {
+  it('uses the fallback before rendering a malformed draft URL', () => {
     const { container } = render(
       <RecipeImage
         src="example.com/incomplete-draft.jpg"
@@ -86,15 +86,13 @@ describe("RecipeImage", () => {
         height={400}
       />,
     );
-    const image = container.querySelector("img")!;
+    const image = container.querySelector('img')!;
 
-    expect(image.getAttribute("src")).toContain(
-      recipeFallbackImage("draft-recipe"),
-    );
-    expect(image).toHaveAttribute("data-fallback");
+    expect(image.getAttribute('src')).toContain(recipeFallbackImage('draft-recipe'));
+    expect(image).toHaveAttribute('data-fallback');
   });
 
-  it("hides unavailable instructional imagery instead of mislabeling a fallback", () => {
+  it('hides unavailable instructional imagery instead of mislabeling a fallback', () => {
     const { container } = render(
       <RecipeImage
         src="https://example.test/missing-step.jpg"
@@ -105,9 +103,9 @@ describe("RecipeImage", () => {
         height={400}
       />,
     );
-    const image = container.querySelector("img")!;
+    const image = container.querySelector('img')!;
 
     fireEvent.error(image);
-    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
   });
 });

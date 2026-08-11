@@ -17,8 +17,8 @@
  * union a compile error. `assertFoodAllergensValid` (exercised by the unit test
  * and the seed) additionally guarantees every key is a real food slug.
  */
-import { ALLERGENS, isAllergen, type Allergen } from "./allergens";
-import { FOOD_ITEMS, foodSlug } from "./food-db";
+import { ALLERGENS, isAllergen, type Allergen } from './allergens';
+import { FOOD_ITEMS, foodSlug } from './food-db';
 
 /**
  * Curated map from a food's stable slug to the allergens it inherently carries.
@@ -27,41 +27,39 @@ import { FOOD_ITEMS, foodSlug } from "./food-db";
  */
 export const FOOD_ALLERGENS: Record<string, Allergen[]> = {
   // Dairy
-  milk: ["dairy"],
-  cream: ["dairy"],
-  yogurt: ["dairy"],
-  cheese: ["dairy"],
-  butter: ["dairy"],
+  milk: ['dairy'],
+  cream: ['dairy'],
+  yogurt: ['dairy'],
+  cheese: ['dairy'],
+  butter: ['dairy'],
   // Wheat / gluten
-  flour: ["wheat"],
-  "whole-wheat-flour": ["wheat"],
-  pasta: ["wheat"],
-  couscous: ["wheat"],
-  barley: ["wheat"],
-  bulgur: ["wheat"],
-  breadcrumbs: ["wheat"],
+  flour: ['wheat'],
+  'whole-wheat-flour': ['wheat'],
+  pasta: ['wheat'],
+  couscous: ['wheat'],
+  barley: ['wheat'],
+  bulgur: ['wheat'],
+  breadcrumbs: ['wheat'],
   // Tree nut
-  "almond-flour": ["tree-nut"],
+  'almond-flour': ['tree-nut'],
   // Egg
-  egg: ["egg"],
-  "egg-white": ["egg"],
-  "egg-yolk": ["egg"],
-  mayonnaise: ["egg"],
+  egg: ['egg'],
+  'egg-white': ['egg'],
+  'egg-yolk': ['egg'],
+  mayonnaise: ['egg'],
   // Fish
-  fish: ["fish"],
-  "worcestershire-sauce": ["fish"],
+  fish: ['fish'],
+  'worcestershire-sauce': ['fish'],
   // Shellfish
-  shrimp: ["shellfish"],
-  scallops: ["shellfish"],
-  crab: ["shellfish"],
-  mussels: ["shellfish"],
+  shrimp: ['shellfish'],
+  scallops: ['shellfish'],
+  crab: ['shellfish'],
+  mussels: ['shellfish'],
   // Soy (soy sauce is brewed with wheat)
-  "soy-sauce": ["soy", "wheat"],
+  'soy-sauce': ['soy', 'wheat'],
 };
 
-const ALLERGEN_ORDER = new Map<Allergen, number>(
-  ALLERGENS.map((a, i) => [a, i]),
-);
+const ALLERGEN_ORDER = new Map<Allergen, number>(ALLERGENS.map((a, i) => [a, i]));
 
 /** The curated allergens for a food slug in canonical order, or `null` when the
  *  slug isn't curated (caller should fall back to text detection). */
@@ -82,9 +80,7 @@ export function assertFoodAllergensValid(): void {
   const validSlugs = new Set(FOOD_ITEMS.map((food) => foodSlug(food.name)));
   for (const [slug, allergens] of Object.entries(FOOD_ALLERGENS)) {
     if (!validSlugs.has(slug)) {
-      throw new Error(
-        `FOOD_ALLERGENS key "${slug}" is not a known food slug (see FOOD_ITEMS).`,
-      );
+      throw new Error(`FOOD_ALLERGENS key "${slug}" is not a known food slug (see FOOD_ITEMS).`);
     }
     for (const allergen of allergens as readonly string[]) {
       if (!isAllergen(allergen)) {

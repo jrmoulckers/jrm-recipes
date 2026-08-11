@@ -18,17 +18,17 @@
  * scripts/bundle-budget.test.mjs. The CLI only runs when this file is executed
  * directly.
  */
-import { spawnSync } from "node:child_process";
-import { appendFileSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawnSync } from 'node:child_process';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Convert a size token from the build table to kB. */
 export function toKb(value, unit) {
-  if (unit === "B") return value / 1024;
-  if (unit === "MB") return value * 1024;
+  if (unit === 'B') return value / 1024;
+  if (unit === 'MB') return value * 1024;
   return value; // kB
 }
 
@@ -41,7 +41,11 @@ export function parseFirstLoadJs(output) {
   const routes = new Map();
   const sizeRe = /([\d.]+)\s*(B|kB|MB)\b/g;
   for (const raw of output.split(/\r?\n/)) {
-    const line = raw.replace(/\u001b\[[0-9;]*m/g, "");
+    // Strips ANSI colour codes from `next build` output. The escape character
+    // is the thing being matched, so `no-control-regex` has nothing to warn
+    // about here.
+    // eslint-disable-next-line no-control-regex
+    const line = raw.replace(/\u001b\[[0-9;]*m/g, '');
     if (!/^\s*[┌├└]/u.test(line)) continue; // route rows only
     const routeMatch = line.match(/\s(\/[^\s]*)\s/u); // path token
     if (!routeMatch) continue;
@@ -86,7 +90,7 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
         actual: undefined,
         budget,
         headroom: undefined,
-        status: "MISSING",
+        status: 'MISSING',
       });
       failed = true;
       continue;
@@ -94,7 +98,7 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
     const headroom = budget - actual;
     const ok = actual <= budget;
     if (!ok) failed = true;
-    const status = !ok ? "OVER" : headroom < nearKb ? "NEAR" : "ok";
+    const status = !ok ? 'OVER' : headroom < nearKb ? 'NEAR' : 'ok';
     rows.push({ route, actual, budget, headroom, status });
   }
   return { rows, failed };
@@ -202,26 +206,23 @@ export function evaluateBudgetChanges(
  *
  * `runGit` is injected so this is unit-testable without a repository.
  */
-export function readBaseBudgetRoutes({
-  runGit = defaultRunGit,
-  env = process.env,
-} = {}) {
+export function readBaseBudgetRoutes({ runGit = defaultRunGit, env = process.env } = {}) {
   const show = (ref) => {
-    const res = runGit(["show", `${ref}:bundle-budgets.json`]);
+    const res = runGit(['show', `${ref}:bundle-budgets.json`]);
     if (res.status !== 0 || !res.stdout) return null;
     try {
       const routes = JSON.parse(res.stdout).routes;
-      return routes && typeof routes === "object" ? routes : null;
+      return routes && typeof routes === 'object' ? routes : null;
     } catch {
       return null;
     }
   };
 
-  const branch = env.GITHUB_BASE_REF || "main";
+  const branch = env.GITHUB_BASE_REF || 'main';
   const candidates = [
     env.BUNDLE_BUDGET_BASE_REF,
     env.GITHUB_BASE_REF && `origin/${env.GITHUB_BASE_REF}`,
-    "origin/main",
+    'origin/main',
   ].filter(Boolean);
 
   for (const ref of candidates) {
@@ -233,15 +234,9 @@ export function readBaseBudgetRoutes({
   // One shallow fetch of the base branch is enough, and the repository is
   // public, so the credential-free CI checkout can still read it.
   if (env.CI) {
-    const fetched = runGit([
-      "fetch",
-      "--no-tags",
-      "--depth=1",
-      "origin",
-      branch,
-    ]);
+    const fetched = runGit(['fetch', '--no-tags', '--depth=1', 'origin', branch]);
     if (fetched.status === 0) {
-      const routes = show("FETCH_HEAD");
+      const routes = show('FETCH_HEAD');
       if (routes) return { routes, ref: `origin/${branch}` };
     }
   }
@@ -250,9 +245,9 @@ export function readBaseBudgetRoutes({
 }
 
 function defaultRunGit(args) {
-  return spawnSync("git", args, {
+  return spawnSync('git', args, {
     cwd: repoRoot,
-    encoding: "utf8",
+    encoding: 'utf8',
     maxBuffer: 10 * 1024 * 1024,
   });
 }
@@ -261,26 +256,24 @@ function getBuildOutput() {
   const logArg = process.argv[2];
   if (logArg) {
     console.log(`Reading build output from ${logArg}`);
-    return readFileSync(resolve(process.cwd(), logArg), "utf8");
+    return readFileSync(resolve(process.cwd(), logArg), 'utf8');
   }
-  console.log("Running `next build` to measure first-load JS...");
-  const res = spawnSync("next build", {
+  console.log('Running `next build` to measure first-load JS...');
+  const res = spawnSync('next build', {
     cwd: repoRoot,
-    encoding: "utf8",
+    encoding: 'utf8',
     shell: true,
     env: {
       ...process.env,
-      SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION ?? "1",
-      NEXT_PUBLIC_APP_URL:
-        process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-      NEXT_PUBLIC_DEV_AUTH_BYPASS:
-        process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS ?? "1",
+      SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION ?? '1',
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS ?? '1',
     },
   });
-  const output = `${res.stdout ?? ""}\n${res.stderr ?? ""}`;
+  const output = `${res.stdout ?? ''}\n${res.stderr ?? ''}`;
   console.log(output);
   if (res.status !== 0) {
-    console.error("`next build` failed. Cannot check bundle budget.");
+    console.error('`next build` failed. Cannot check bundle budget.');
     process.exit(res.status ?? 1);
   }
   return output;
@@ -296,75 +289,68 @@ function writeStepSummary(near) {
   if (!path) return;
   const lines = [
     `### ⚠ Bundle budget: ${near.length} route(s) within ${NEAR_KB} kB`,
-    "",
-    "| Route | First Load JS | Budget | Headroom |",
-    "| --- | ---: | ---: | ---: |",
+    '',
+    '| Route | First Load JS | Budget | Headroom |',
+    '| --- | ---: | ---: | ---: |',
     ...near.map(
       (r) =>
         `| \`${r.route}\` | ${r.actual.toFixed(1)} kB | ${r.budget} kB | ${r.headroom.toFixed(1)} kB |`,
     ),
-    "",
-    "Advisory, not a failure. A route this close can be turned red by an unrelated PR — see #778.",
-    "",
+    '',
+    'Advisory, not a failure. A route this close can be turned red by an unrelated PR — see #778.',
+    '',
   ];
   try {
-    appendFileSync(path, `${lines.join("\n")}\n`);
+    appendFileSync(path, `${lines.join('\n')}\n`);
   } catch (err) {
     console.warn(`Could not write job summary: ${err.message}`);
   }
 }
 
 function main() {
-  const budgets = JSON.parse(
-    readFileSync(resolve(repoRoot, "bundle-budgets.json"), "utf8"),
-  ).routes;
+  const budgets = JSON.parse(readFileSync(resolve(repoRoot, 'bundle-budgets.json'), 'utf8')).routes;
 
   const measured = parseFirstLoadJs(getBuildOutput());
   const { rows, failed } = evaluateBudgets(measured, budgets);
 
-  console.log("\nFirst-load JS budget check (#206)");
-  console.log("─".repeat(72));
+  console.log('\nFirst-load JS budget check (#206)');
+  console.log('─'.repeat(72));
   for (const r of rows) {
-    const flag = { ok: "✓", NEAR: "⚠", OVER: "✗", MISSING: "✗" }[r.status];
-    const actual = r.actual === undefined ? "n/a" : `${r.actual.toFixed(1)} kB`;
+    const flag = { ok: '✓', NEAR: '⚠', OVER: '✗', MISSING: '✗' }[r.status];
+    const actual = r.actual === undefined ? 'n/a' : `${r.actual.toFixed(1)} kB`;
     const budgetLabel = `${r.budget} kB`;
-    const headroom =
-      r.headroom === undefined ? "" : `${r.headroom.toFixed(1)} kB free`;
+    const headroom = r.headroom === undefined ? '' : `${r.headroom.toFixed(1)} kB free`;
     console.log(
       `${flag} ${r.route.padEnd(28)} ${actual.padStart(10)} / ${budgetLabel.padStart(
         7,
       )}  ${r.status.padEnd(7)} ${headroom}`,
     );
   }
-  console.log("─".repeat(72));
+  console.log('─'.repeat(72));
 
-  const near = rows.filter((r) => r.status === "NEAR");
+  const near = rows.filter((r) => r.status === 'NEAR');
   if (near.length > 0) {
     // Advisory only — deliberately printed before the failure branch so it is
     // visible on red runs too, and deliberately does not touch the exit code.
     console.warn(
       `\n⚠ ${near.length} route(s) within ${NEAR_KB} kB of budget: ` +
-        `${near.map((r) => r.route).join(", ")}.\n` +
-        "  This is a warning, not a failure. A route this close can be tipped " +
-        "red by an\n  unrelated PR, because `next build` reports whole kB and " +
-        "Linux CI reads ~1 kB\n  above a local Windows build. When that happens " +
-        "the red route is usually not\n  the cause — measure which modules " +
-        "entered the route before bumping (#778).",
+        `${near.map((r) => r.route).join(', ')}.\n` +
+        '  This is a warning, not a failure. A route this close can be tipped ' +
+        'red by an\n  unrelated PR, because `next build` reports whole kB and ' +
+        'Linux CI reads ~1 kB\n  above a local Windows build. When that happens ' +
+        'the red route is usually not\n  the cause — measure which modules ' +
+        'entered the route before bumping (#778).',
     );
     writeStepSummary(near);
   }
 
   const base = readBaseBudgetRoutes();
-  const { checked, subjects, violations } = evaluateBudgetChanges(
-    measured,
-    budgets,
-    base.routes,
-  );
+  const { checked, subjects, violations } = evaluateBudgetChanges(measured, budgets, base.routes);
   if (!checked) {
     console.log(
-      "\nℹ Skipping the raised-budget headroom check (#796): could not read " +
-        "bundle-budgets.json\n  from the base ref. This is a skip, not a " +
-        "failure.",
+      '\nℹ Skipping the raised-budget headroom check (#796): could not read ' +
+        'bundle-budgets.json\n  from the base ref. This is a skip, not a ' +
+        'failure.',
     );
   } else if (violations.length > 0) {
     console.error(
@@ -372,8 +358,7 @@ function main() {
         `${REQUIRED_MARGIN_KB} kB of headroom (#796), against ${base.ref}:`,
     );
     for (const v of violations) {
-      const from =
-        v.baseBudget === undefined ? "new" : `was ${v.baseBudget} kB`;
+      const from = v.baseBudget === undefined ? 'new' : `was ${v.baseBudget} kB`;
       console.error(
         `    ${v.route}: set to ${v.budget} kB (${from}) but measures ` +
           `${v.actual.toFixed(1)} kB — only ${v.headroom.toFixed(1)} kB free. ` +
@@ -381,11 +366,11 @@ function main() {
       );
     }
     console.error(
-      "  A budget set to exactly what it measures goes red on the next " +
-        "unrelated PR, which\n  is how every zero-headroom route here was " +
-        "created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB " +
-        "above a local Windows build, and `next build` prints\n  whole kB, so a " +
-        "sub-kB webpack redistribution can move a route a full kB.",
+      '  A budget set to exactly what it measures goes red on the next ' +
+        'unrelated PR, which\n  is how every zero-headroom route here was ' +
+        'created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB ' +
+        'above a local Windows build, and `next build` prints\n  whole kB, so a ' +
+        'sub-kB webpack redistribution can move a route a full kB.',
     );
   } else if (subjects.length > 0) {
     // Only on a budget-changing run: confirm the margin was actually checked,
@@ -398,13 +383,13 @@ function main() {
 
   if (failed) {
     console.error(
-      "\nBundle budget exceeded (or a tracked route was not found). Reduce " +
-        "first-load JS, or bump the budget in bundle-budgets.json with justification.",
+      '\nBundle budget exceeded (or a tracked route was not found). Reduce ' +
+        'first-load JS, or bump the budget in bundle-budgets.json with justification.',
     );
     process.exit(1);
   }
   if (violations.length > 0) process.exit(1);
-  console.log("\nAll tracked routes are within budget.");
+  console.log('\nAll tracked routes are within budget.');
 }
 
 if (pathToFileURL(process.argv[1]).href === import.meta.url) {

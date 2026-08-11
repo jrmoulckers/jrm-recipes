@@ -1,14 +1,14 @@
-import "server-only";
+import 'server-only';
 
-import { cache } from "react";
+import { cache } from 'react';
 
-import { getCurrentUser } from "~/server/auth";
-import { getRecipe } from "~/server/recipes/queries";
+import { getCurrentUser } from '~/server/auth';
+import { getRecipe } from '~/server/recipes/queries';
 import {
   resolveFlatRecipe,
   resolveNamespacedRecipe,
   type RecipeUrlDisposition,
-} from "~/server/recipes/resolve";
+} from '~/server/recipes/resolve';
 
 /**
  * Request-scoped recipe Data-Access Layer (#156).
@@ -23,13 +23,11 @@ import {
  * dedupes by argument within a render. New domains should follow the same thin
  * `loaders.ts` pattern.
  */
-export const getRecipeForViewer = cache(
-  async (idOrSlug: string, shareToken?: string | null) => {
-    const user = await getCurrentUser();
-    const recipe = await getRecipe(idOrSlug, user, shareToken ?? null);
-    return { user, recipe };
-  },
-);
+export const getRecipeForViewer = cache(async (idOrSlug: string, shareToken?: string | null) => {
+  const user = await getCurrentUser();
+  const recipe = await getRecipe(idOrSlug, user, shareToken ?? null);
+  return { user, recipe };
+});
 
 /** The `{ user, recipe }` shape resolved by {@link getRecipeForViewer}. */
 export type RecipeForViewer = Awaited<ReturnType<typeof getRecipeForViewer>>;
@@ -56,7 +54,7 @@ export type RecipeForViewer = Awaited<ReturnType<typeof getRecipeForViewer>>;
  * canonical URL instead of 404ing. This is only consulted *after* the namespaced
  * lookup fails, so a cook who genuinely has a recipe slugged `cook` still wins.
  */
-const LEGACY_RECIPE_SUB_ROUTES = new Set(["cook", "print", "keepsake", "edit"]);
+const LEGACY_RECIPE_SUB_ROUTES = new Set(['cook', 'print', 'keepsake', 'edit']);
 
 export const getNamespacedRecipeForViewer = cache(
   async (cook: string, recipe: string, shareToken?: string | null) => {
@@ -76,7 +74,7 @@ export const getNamespacedRecipeForViewer = cache(
         const loaded = await getRecipeForViewer(flat.recipeId, shareToken);
         return {
           ...loaded,
-          disposition: "alias" as RecipeUrlDisposition,
+          disposition: 'alias' as RecipeUrlDisposition,
           legacySubRoute: recipe,
         };
       }
@@ -85,7 +83,7 @@ export const getNamespacedRecipeForViewer = cache(
     return {
       user: await getCurrentUser(),
       recipe: null,
-      disposition: "canonical" as RecipeUrlDisposition,
+      disposition: 'canonical' as RecipeUrlDisposition,
       legacySubRoute: null as string | null,
     };
   },

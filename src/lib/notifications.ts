@@ -1,4 +1,4 @@
-import type { NotificationType } from "~/server/db/schema";
+import type { NotificationType } from '~/server/db/schema';
 
 /**
  * Warm, human copy for a notification row (issue #348). Pure and UI-agnostic so
@@ -11,54 +11,42 @@ export function notificationSentence(
   actor: string,
   context: string | null,
 ): string {
-  const who = actor.trim().length > 0 ? actor.trim() : "Someone";
+  const who = actor.trim().length > 0 ? actor.trim() : 'Someone';
   const on = context && context.trim().length > 0 ? context.trim() : null;
 
   switch (type) {
-    case "mention":
+    case 'mention':
       return on ? `${who} mentioned you on ${on}` : `${who} mentioned you`;
-    case "comment_reply":
-      return on
-        ? `${who} replied to your comment on ${on}`
-        : `${who} replied to your comment`;
-    case "suggestion":
-      return on
-        ? `${who} suggested an edit to ${on}`
-        : `${who} suggested an edit`;
-    case "review":
+    case 'comment_reply':
+      return on ? `${who} replied to your comment on ${on}` : `${who} replied to your comment`;
+    case 'suggestion':
+      return on ? `${who} suggested an edit to ${on}` : `${who} suggested an edit`;
+    case 'review':
       return on ? `${who} reviewed ${on}` : `${who} left a review`;
-    case "cook":
+    case 'cook':
       return on ? `${who} cooked ${on}` : `${who} cooked your recipe`;
-    case "reaction":
-      return on
-        ? `${who} reacted to your ${on}`
-        : `${who} reacted to your post`;
-    case "group_invite":
-      return on
-        ? `${who} invited you to ${on}`
-        : `${who} invited you to a group`;
-    case "group_join":
+    case 'reaction':
+      return on ? `${who} reacted to your ${on}` : `${who} reacted to your post`;
+    case 'group_invite':
+      return on ? `${who} invited you to ${on}` : `${who} invited you to a group`;
+    case 'group_join':
       return on ? `${who} joined ${on}` : `${who} joined your group`;
-    case "cook_along_invite":
+    case 'cook_along_invite':
       return on
         ? `${who} invited you to cook ${on} together`
         : `${who} invited you to a cook-along`;
-    case "cook_along_reminder":
-      return on ? `Cook-along soon: ${on}` : "You have a cook-along coming up";
-    case "report":
-      return on
-        ? `New report to review in ${on}`
-        : "New content report to review";
-    case "follow":
+    case 'cook_along_reminder':
+      return on ? `Cook-along soon: ${on}` : 'You have a cook-along coming up';
+    case 'report':
+      return on ? `New report to review in ${on}` : 'New content report to review';
+    case 'follow':
       return `${who} started following you`;
-    case "recipe_creator_invite":
+    case 'recipe_creator_invite':
       return on
         ? `${who} invited you to co-create ${on}`
         : `${who} invited you to co-create a recipe`;
-    case "recipe_creator_accepted":
-      return on
-        ? `${who} is now a co-creator of ${on}`
-        : `${who} accepted your co-creator invite`;
+    case 'recipe_creator_accepted':
+      return on ? `${who} is now a co-creator of ${on}` : `${who} accepted your co-creator invite`;
     default:
       return on ? `${who}: ${on}` : who;
   }

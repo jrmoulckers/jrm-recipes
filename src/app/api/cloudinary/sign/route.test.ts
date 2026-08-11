@@ -1,23 +1,21 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireUserMock, apiSignRequestMock, getLimitStatusMock } = vi.hoisted(
-  () => ({
-    requireUserMock: vi.fn(),
-    apiSignRequestMock: vi.fn(() => "test-signature"),
-    getLimitStatusMock: vi.fn(),
-  }),
-);
+const { requireUserMock, apiSignRequestMock, getLimitStatusMock } = vi.hoisted(() => ({
+  requireUserMock: vi.fn(),
+  apiSignRequestMock: vi.fn(() => 'test-signature'),
+  getLimitStatusMock: vi.fn(),
+}));
 
-vi.mock("~/server/auth", () => ({
+vi.mock('~/server/auth', () => ({
   requireUser: requireUserMock,
 }));
 
-vi.mock("~/server/billing/entitlements", () => ({
+vi.mock('~/server/billing/entitlements', () => ({
   getLimitStatus: getLimitStatusMock,
 }));
 
-vi.mock("cloudinary", () => ({
+vi.mock('cloudinary', () => ({
   v2: {
     utils: {
       api_sign_request: apiSignRequestMock,
@@ -25,37 +23,30 @@ vi.mock("cloudinary", () => ({
   },
 }));
 
-vi.mock("~/env", () => ({
+vi.mock('~/env', () => ({
   env: {
-    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "demo",
-    NEXT_PUBLIC_CLOUDINARY_API_KEY: "public-key",
-    CLOUDINARY_API_SECRET: "top-secret",
-    NEXT_PUBLIC_APP_URL: "https://recipes.example.com",
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: 'demo',
+    NEXT_PUBLIC_CLOUDINARY_API_KEY: 'public-key',
+    CLOUDINARY_API_SECRET: 'top-secret',
+    NEXT_PUBLIC_APP_URL: 'https://recipes.example.com',
   },
 }));
 
-import { POST } from "./route";
-import {
-  MemoryRateLimitStore,
-  RATE_LIMITS,
-  setRateLimitStore,
-} from "~/server/rate-limit";
+import { POST } from './route';
+import { MemoryRateLimitStore, RATE_LIMITS, setRateLimitStore } from '~/server/rate-limit';
 
-const APP_HOST = "recipes.example.com";
+const APP_HOST = 'recipes.example.com';
 const APP_ORIGIN = `https://${APP_HOST}`;
 
 function freshTimestamp(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-function makeRequest(
-  body: unknown,
-  headers: Record<string, string> = {},
-): Request {
+function makeRequest(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request(`${APP_ORIGIN}/api/cloudinary/sign`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "content-type": "application/json",
+      'content-type': 'application/json',
       origin: APP_ORIGIN,
       host: APP_HOST,
       ...headers,
@@ -67,9 +58,9 @@ function makeRequest(
 beforeEach(() => {
   requireUserMock.mockReset();
   apiSignRequestMock.mockReset();
-  apiSignRequestMock.mockReturnValue("test-signature");
+  apiSignRequestMock.mockReturnValue('test-signature');
   // Default to a signed-in user. Individual tests override as needed.
-  requireUserMock.mockResolvedValue({ id: "user_1" });
+  requireUserMock.mockResolvedValue({ id: 'user_1' });
   // Fresh rate-limit store per test so budgets don't bleed across cases (#199).
   setRateLimitStore(new MemoryRateLimitStore());
   // Default: under the storage cap, so signing proceeds. The cap test overrides.
@@ -79,17 +70,17 @@ beforeEach(() => {
     used: 10,
     remaining: 190,
     ratio: 0.05,
-    state: "ok",
+    state: 'ok',
   });
 });
 
-describe("POST /api/cloudinary/sign", () => {
-  it("rejects unauthenticated callers with 401 and signs nothing", async () => {
-    requireUserMock.mockRejectedValue(new Error("UNAUTHENTICATED"));
+describe('POST /api/cloudinary/sign', () => {
+  it('rejects unauthenticated callers with 401 and signs nothing', async () => {
+    requireUserMock.mockRejectedValue(new Error('UNAUTHENTICATED'));
 
     const res = await POST(
       makeRequest({
-        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+        paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' },
       }),
     );
 
@@ -99,11 +90,11 @@ describe("POST /api/cloudinary/sign", () => {
     expect(json.signature).toBeUndefined();
   });
 
-  it("rejects a foreign origin with 403", async () => {
+  it('rejects a foreign origin with 403', async () => {
     const res = await POST(
       makeRequest(
-        { paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" } },
-        { origin: "https://evil.example.com", host: APP_HOST },
+        { paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' } },
+        { origin: 'https://evil.example.com', host: APP_HOST },
       ),
     );
 
@@ -112,10 +103,10 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing origin with 403", async () => {
+  it('rejects a missing origin with 403', async () => {
     const req = new Request(`${APP_ORIGIN}/api/cloudinary/sign`, {
-      method: "POST",
-      headers: { "content-type": "application/json", host: APP_HOST },
+      method: 'POST',
+      headers: { 'content-type': 'application/json', host: APP_HOST },
       body: JSON.stringify({ paramsToSign: { timestamp: freshTimestamp() } }),
     });
 
@@ -125,13 +116,13 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a dangerous key (notification_url) with 400", async () => {
+  it('rejects a dangerous key (notification_url) with 400', async () => {
     const res = await POST(
       makeRequest({
         paramsToSign: {
           timestamp: freshTimestamp(),
-          folder: "heirloom",
-          notification_url: "https://evil.example.com/callback",
+          folder: 'heirloom',
+          notification_url: 'https://evil.example.com/callback',
         },
       }),
     );
@@ -140,12 +131,12 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects an arbitrary public_id with 400", async () => {
+  it('rejects an arbitrary public_id with 400', async () => {
     const res = await POST(
       makeRequest({
         paramsToSign: {
           timestamp: freshTimestamp(),
-          public_id: "../someone-elses-asset",
+          public_id: '../someone-elses-asset',
         },
       }),
     );
@@ -154,10 +145,10 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a folder outside the heirloom namespace with 400", async () => {
+  it('rejects a folder outside the heirloom namespace with 400', async () => {
     const res = await POST(
       makeRequest({
-        paramsToSign: { timestamp: freshTimestamp(), folder: "attacker" },
+        paramsToSign: { timestamp: freshTimestamp(), folder: 'attacker' },
       }),
     );
 
@@ -165,12 +156,12 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a folder attempting path traversal with 400", async () => {
+  it('rejects a folder attempting path traversal with 400', async () => {
     const res = await POST(
       makeRequest({
         paramsToSign: {
           timestamp: freshTimestamp(),
-          folder: "heirloom/../evil",
+          folder: 'heirloom/../evil',
         },
       }),
     );
@@ -179,21 +170,19 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing folder with 400 (never signs outside the namespace)", async () => {
-    const res = await POST(
-      makeRequest({ paramsToSign: { timestamp: freshTimestamp() } }),
-    );
+  it('rejects a missing folder with 400 (never signs outside the namespace)', async () => {
+    const res = await POST(makeRequest({ paramsToSign: { timestamp: freshTimestamp() } }));
 
     expect(res.status).toBe(400);
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a stale timestamp with 400", async () => {
+  it('rejects a stale timestamp with 400', async () => {
     const res = await POST(
       makeRequest({
         paramsToSign: {
           timestamp: freshTimestamp() - 60 * 60,
-          folder: "heirloom",
+          folder: 'heirloom',
         },
       }),
     );
@@ -202,27 +191,25 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing timestamp with 400", async () => {
-    const res = await POST(
-      makeRequest({ paramsToSign: { folder: "heirloom" } }),
-    );
+  it('rejects a missing timestamp with 400', async () => {
+    const res = await POST(makeRequest({ paramsToSign: { folder: 'heirloom' } }));
 
     expect(res.status).toBe(400);
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("refuses to sign a new upload once over the storage cap (402, #318)", async () => {
+  it('refuses to sign a new upload once over the storage cap (402, #318)', async () => {
     getLimitStatusMock.mockResolvedValue({
       limit: 200,
       used: 200,
       remaining: 0,
       ratio: 1,
-      state: "blocked",
+      state: 'blocked',
     });
 
     const res = await POST(
       makeRequest({
-        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+        paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' },
       }),
     );
 
@@ -232,30 +219,30 @@ describe("POST /api/cloudinary/sign", () => {
     expect(json.upgrade).toBe(true);
   });
 
-  it("signs only allowlisted params for a signed-in user (happy path)", async () => {
+  it('signs only allowlisted params for a signed-in user (happy path)', async () => {
     const timestamp = freshTimestamp();
 
     const res = await POST(
       makeRequest({
-        paramsToSign: { timestamp, folder: "heirloom/cooks", source: "uw" },
+        paramsToSign: { timestamp, folder: 'heirloom/cooks', source: 'uw' },
       }),
     );
 
     expect(res.status).toBe(200);
     const json = (await res.json()) as { signature?: string };
-    expect(json.signature).toBe("test-signature");
+    expect(json.signature).toBe('test-signature');
     expect(apiSignRequestMock).toHaveBeenCalledTimes(1);
     expect(apiSignRequestMock).toHaveBeenCalledWith(
-      { timestamp, folder: "heirloom/cooks", source: "uw" },
-      "top-secret",
+      { timestamp, folder: 'heirloom/cooks', source: 'uw' },
+      'top-secret',
     );
   });
 
-  it("rejects an oversized declared body with 413 and signs nothing (i222)", async () => {
+  it('rejects an oversized declared body with 413 and signs nothing (i222)', async () => {
     const res = await POST(
       makeRequest(
-        { paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" } },
-        { "content-length": String(1_000_000) },
+        { paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' } },
+        { 'content-length': String(1_000_000) },
       ),
     );
 
@@ -263,13 +250,13 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("rejects an oversized actual body with 413 (i222)", async () => {
+  it('rejects an oversized actual body with 413 (i222)', async () => {
     const res = await POST(
       makeRequest({
         paramsToSign: {
           timestamp: freshTimestamp(),
-          folder: "heirloom",
-          source: "x".repeat(8_000),
+          folder: 'heirloom',
+          source: 'x'.repeat(8_000),
         },
       }),
     );
@@ -278,13 +265,13 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
-  it("throttles excessive signing requests with 429 (i199)", async () => {
+  it('throttles excessive signing requests with 429 (i199)', async () => {
     const { limit } = RATE_LIMITS.sign;
     // Exhaust the per-user budget.
     for (let i = 0; i < limit; i++) {
       const res = await POST(
         makeRequest({
-          paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+          paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' },
         }),
       );
       expect(res.status).toBe(200);
@@ -292,10 +279,10 @@ describe("POST /api/cloudinary/sign", () => {
 
     const throttled = await POST(
       makeRequest({
-        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+        paramsToSign: { timestamp: freshTimestamp(), folder: 'heirloom' },
       }),
     );
     expect(throttled.status).toBe(429);
-    expect(throttled.headers.get("retry-after")).toBeTruthy();
+    expect(throttled.headers.get('retry-after')).toBeTruthy();
   });
 });

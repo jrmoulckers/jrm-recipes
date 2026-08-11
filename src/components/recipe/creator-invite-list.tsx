@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Check, X } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { friendlyError } from "~/lib/error-copy";
+import { friendlyError } from '~/lib/error-copy';
 import {
   acceptRecipeCreatorAction,
   declineRecipeCreatorAction,
-} from "~/server/recipes/creators-actions";
-import { Button } from "~/components/ui/button";
+} from '~/server/recipes/creators-actions';
+import { Button } from '~/components/ui/button';
 
 /** A pending invitation as shown to the invitee. */
 export type CreatorInviteEntry = {
@@ -29,12 +29,8 @@ export type CreatorInviteEntry = {
  * title and inviter shown here are exactly what the owner chose to disclose by
  * sending it.
  */
-export function CreatorInviteList({
-  invites,
-}: {
-  invites: CreatorInviteEntry[];
-}) {
-  const t = useTranslations("recipeCreators.invites");
+export function CreatorInviteList({ invites }: { invites: CreatorInviteEntry[] }) {
+  const t = useTranslations('recipeCreators.invites');
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
 
@@ -48,14 +44,14 @@ export function CreatorInviteList({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(accept ? t("toast.accepted") : t("toast.declined"));
+        toast.success(accept ? t('toast.accepted') : t('toast.declined'));
         router.refresh();
       });
     });
   }
 
   if (invites.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("empty")}</p>;
+    return <p className="text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (
@@ -66,11 +62,9 @@ export function CreatorInviteList({
           className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface/40 px-4 py-3"
         >
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {invite.title}
-            </p>
+            <p className="truncate text-sm font-medium text-foreground">{invite.title}</p>
             <p className="text-xs text-muted-foreground">
-              {t("from", { name: invite.ownerName ?? t("someone") })}
+              {t('from', { name: invite.ownerName ?? t('someone') })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -81,7 +75,7 @@ export function CreatorInviteList({
               onClick={() => respond(invite.recipeId, true)}
             >
               <Check aria-hidden />
-              {t("accept")}
+              {t('accept')}
             </Button>
             <Button
               type="button"
@@ -91,7 +85,7 @@ export function CreatorInviteList({
               onClick={() => respond(invite.recipeId, false)}
             >
               <X aria-hidden />
-              {t("decline")}
+              {t('decline')}
             </Button>
           </div>
         </li>

@@ -1,18 +1,14 @@
-"use server";
+'use server';
 
-import { revalidateTag } from "next/cache";
+import { revalidateTag } from 'next/cache';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { PUBLIC_RECIPES_TAG } from "~/server/recipes/cache";
-import { revalidateRecipeSlugPaths } from "~/server/recipes/revalidate";
-import {
-  type ActionResult as BaseActionResult,
-  fail,
-  fromZodError,
-} from "~/server/action-result";
-import { messageForError } from "~/server/errors";
-import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { PUBLIC_RECIPES_TAG } from '~/server/recipes/cache';
+import { revalidateRecipeSlugPaths } from '~/server/recipes/revalidate';
+import { type ActionResult as BaseActionResult, fail, fromZodError } from '~/server/action-result';
+import { messageForError } from '~/server/errors';
+import { checkRateLimit, RATE_LIMITED_MESSAGE } from '~/server/rate-limit';
 import {
   commentInput,
   deleteCommentInput,
@@ -32,7 +28,7 @@ import {
   type ReviewInput,
   type DeleteReviewInput,
   type ReactionInput,
-} from "./validation";
+} from './validation';
 import {
   createComment,
   deleteComment,
@@ -40,25 +36,22 @@ import {
   resolveComment,
   applySuggestion,
   setRating,
-} from "./mutations";
-import { deleteReview, upsertReview } from "./reviews";
-import { toggleReaction } from "./reactions";
-import { ok } from "~/server/action-result";
+} from './mutations';
+import { deleteReview, upsertReview } from './reviews';
+import { toggleReaction } from './reactions';
+import { ok } from '~/server/action-result';
 
 export type ActionResult = BaseActionResult;
 
-export async function addCommentAction(
-  input: CommentInput,
-): Promise<ActionResult> {
+export async function addCommentAction(input: CommentInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Comments need a database." };
+    return { ok: false, error: 'Comments need a database.' };
   }
   const parsed = commentInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
-  if (!checkRateLimit("engagementWrite", user.id).ok)
-    return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit('engagementWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
   try {
     await createComment(parsed.data, user);
     await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
@@ -77,11 +70,9 @@ export async function addCommentAction(
   }
 }
 
-export async function deleteCommentAction(
-  input: DeleteCommentInput,
-): Promise<ActionResult> {
+export async function deleteCommentAction(input: DeleteCommentInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Comments need a database." };
+    return { ok: false, error: 'Comments need a database.' };
   }
   const parsed = deleteCommentInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -96,8 +87,8 @@ export async function deleteCommentAction(
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the comment author or recipe owner can delete that.",
-          NOT_FOUND: "That comment is already gone.",
+          FORBIDDEN: 'Only the comment author or recipe owner can delete that.',
+          NOT_FOUND: 'That comment is already gone.',
         },
         "We couldn't delete that comment.",
       ),
@@ -105,11 +96,9 @@ export async function deleteCommentAction(
   }
 }
 
-export async function resolveCommentAction(
-  input: ResolveCommentInput,
-): Promise<ActionResult> {
+export async function resolveCommentAction(input: ResolveCommentInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Suggestions need a database." };
+    return { ok: false, error: 'Suggestions need a database.' };
   }
   const parsed = resolveCommentInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -124,9 +113,8 @@ export async function resolveCommentAction(
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the recipe owner can resolve suggestions.",
-          ALREADY_APPLIED:
-            "That suggestion was already applied and can't be reopened.",
+          FORBIDDEN: 'Only the recipe owner can resolve suggestions.',
+          ALREADY_APPLIED: "That suggestion was already applied and can't be reopened.",
           NOT_FOUND: "We couldn't find that suggestion.",
         },
         "We couldn't update that suggestion.",
@@ -135,11 +123,9 @@ export async function resolveCommentAction(
   }
 }
 
-export async function applySuggestionAction(
-  input: ApplySuggestionInput,
-): Promise<ActionResult> {
+export async function applySuggestionAction(input: ApplySuggestionInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Suggestions need a database." };
+    return { ok: false, error: 'Suggestions need a database.' };
   }
   const parsed = applySuggestionInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -160,8 +146,8 @@ export async function applySuggestionAction(
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the recipe owner can apply suggestions.",
-          ALREADY_APPLIED: "That suggestion was already applied.",
+          FORBIDDEN: 'Only the recipe owner can apply suggestions.',
+          ALREADY_APPLIED: 'That suggestion was already applied.',
           NOT_FOUND: "We couldn't find that suggestion.",
         },
         "We couldn't apply that suggestion.",
@@ -170,18 +156,15 @@ export async function applySuggestionAction(
   }
 }
 
-export async function setRatingAction(
-  input: RatingInput,
-): Promise<ActionResult> {
+export async function setRatingAction(input: RatingInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Ratings need a database." };
+    return { ok: false, error: 'Ratings need a database.' };
   }
   const parsed = ratingInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
-  if (!checkRateLimit("engagementWrite", user.id).ok)
-    return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit('engagementWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
   try {
     await setRating(parsed.data, user);
     await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
@@ -204,11 +187,9 @@ export async function setRatingAction(
   }
 }
 
-export async function removeRatingAction(
-  input: RemoveRatingInput,
-): Promise<ActionResult> {
+export async function removeRatingAction(input: RemoveRatingInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Ratings need a database." };
+    return { ok: false, error: 'Ratings need a database.' };
   }
   const parsed = removeRatingInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -231,11 +212,9 @@ export async function removeRatingAction(
   }
 }
 
-export async function upsertReviewAction(
-  input: ReviewInput,
-): Promise<ActionResult> {
+export async function upsertReviewAction(input: ReviewInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Reviews need a database." };
+    return { ok: false, error: 'Reviews need a database.' };
   }
   const parsed = reviewInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -259,11 +238,9 @@ export async function upsertReviewAction(
   }
 }
 
-export async function deleteReviewAction(
-  input: DeleteReviewInput,
-): Promise<ActionResult> {
+export async function deleteReviewAction(input: DeleteReviewInput): Promise<ActionResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Reviews need a database." };
+    return { ok: false, error: 'Reviews need a database.' };
   }
   const parsed = deleteReviewInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -278,8 +255,8 @@ export async function deleteReviewAction(
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the review author or recipe owner can delete that.",
-          NOT_FOUND: "That review is already gone.",
+          FORBIDDEN: 'Only the review author or recipe owner can delete that.',
+          NOT_FOUND: 'That review is already gone.',
         },
         "We couldn't delete that review.",
       ),
@@ -291,7 +268,7 @@ export async function toggleReactionAction(
   input: ReactionInput,
 ): Promise<BaseActionResult<{ reacted: boolean }>> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Reactions need a database." };
+    return { ok: false, error: 'Reactions need a database.' };
   }
   const parsed = reactionInput.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);

@@ -11,7 +11,7 @@
  * ingestion job feeds `recipe_ingredients` rows in and upserts the result.
  */
 
-import { canonicalFood, normalizeFoodText, type FoodCategory } from "./food-db";
+import { canonicalFood, normalizeFoodText, type FoodCategory } from './food-db';
 
 /** One recipe-ingredient line, shaped like the `recipe_ingredients` columns. */
 export type MinedIngredient = {
@@ -105,21 +105,21 @@ const DEFAULT_MIN_ALIAS_USE_COUNT = 1;
  * relies on (`units.ts` has no count registry), so mined count usage surfaces
  * as `each`.
  */
-const COUNT_UNIT_TOKEN = "each";
+const COUNT_UNIT_TOKEN = 'each';
 
 /** Field separator for composite map keys (a byte that can't occur in text). */
-const SEP = "\u0000";
+const SEP = '\u0000';
 
 /** Normalize a unit token: trim + lowercase, empty → the count token `each`. */
 function normalizeUnit(unit: string | null | undefined): string {
-  const u = (unit ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-  return (u === "" ? COUNT_UNIT_TOKEN : u).slice(0, 40);
+  const u = (unit ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return (u === '' ? COUNT_UNIT_TOKEN : u).slice(0, 40);
 }
 
 /** Normalize a prep token: trim + lowercase. Empty → null (no prep recorded). */
 function normalizePrep(prep: string | null | undefined): string | null {
-  const p = (prep ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-  return p === "" ? null : p.slice(0, 200);
+  const p = (prep ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return p === '' ? null : p.slice(0, 200);
 }
 
 /** Linear-interpolation percentile of an ascending-sorted numeric array. */
@@ -145,10 +145,7 @@ function topToken(counts: Map<string, number>): string | null {
   let best: string | null = null;
   let bestCount = -1;
   for (const [token, count] of counts) {
-    if (
-      count > bestCount ||
-      (count === bestCount && (best === null || token < best))
-    ) {
+    if (count > bestCount || (count === bestCount && (best === null || token < best))) {
       best = token;
       bestCount = count;
     }
@@ -167,8 +164,7 @@ export function mineFoodGraph(
   options: MiningOptions = {},
 ): FoodGraphMining {
   const minPairCoCount = options.minPairCoCount ?? DEFAULT_MIN_PAIR_CO_COUNT;
-  const minAliasUseCount =
-    options.minAliasUseCount ?? DEFAULT_MIN_ALIAS_USE_COUNT;
+  const minAliasUseCount = options.minAliasUseCount ?? DEFAULT_MIN_ALIAS_USE_COUNT;
 
   const nodeMeta = new Map<string, MinedNode>();
   const nodeRecipes = new Map<string, Set<string>>();
@@ -186,13 +182,8 @@ export function mineFoodGraph(
   const userFoodKeys = new Map<string, { userId: string; foodId: string }>();
   const recipeLinkCounts = new Map<string, number>();
 
-  const bump = (map: Map<string, number>, key: string) =>
-    map.set(key, (map.get(key) ?? 0) + 1);
-  const bumpNested = (
-    map: Map<string, Map<string, number>>,
-    outer: string,
-    inner: string,
-  ) => {
+  const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
+  const bumpNested = (map: Map<string, Map<string, number>>, outer: string, inner: string) => {
     const sub = map.get(outer) ?? map.set(outer, new Map()).get(outer)!;
     sub.set(inner, (sub.get(inner) ?? 0) + 1);
   };
@@ -212,12 +203,9 @@ export function mineFoodGraph(
         recipeCount: 0,
       });
     }
-    (nodeRecipes.get(id) ?? nodeRecipes.set(id, new Set()).get(id)!).add(
-      row.recipeId,
-    );
+    (nodeRecipes.get(id) ?? nodeRecipes.set(id, new Set()).get(id)!).add(row.recipeId);
     (
-      recipeNodes.get(row.recipeId) ??
-      recipeNodes.set(row.recipeId, new Set()).get(row.recipeId)!
+      recipeNodes.get(row.recipeId) ?? recipeNodes.set(row.recipeId, new Set()).get(row.recipeId)!
     ).add(id);
 
     bump(recipeLinkCounts, `${id}${SEP}${row.recipeId}`);
@@ -229,7 +217,7 @@ export function mineFoodGraph(
     const unitKey = `${id}${SEP}${unit}`;
     const bucket = unitBuckets.get(unitKey) ?? { useCount: 0, samples: [] };
     bucket.useCount += 1;
-    if (typeof row.quantity === "number" && Number.isFinite(row.quantity)) {
+    if (typeof row.quantity === 'number' && Number.isFinite(row.quantity)) {
       bucket.samples.push(row.quantity);
     }
     unitBuckets.set(unitKey, bucket);
@@ -240,8 +228,7 @@ export function mineFoodGraph(
     const authorId = row.authorId;
     if (authorId) {
       const ufKey = `${authorId}${SEP}${id}`;
-      if (!userFoodKeys.has(ufKey))
-        userFoodKeys.set(ufKey, { userId: authorId, foodId: id });
+      if (!userFoodKeys.has(ufKey)) userFoodKeys.set(ufKey, { userId: authorId, foodId: id });
       userFoodUse.set(ufKey, (userFoodUse.get(ufKey) ?? 0) + 1);
       bumpNested(userFoodUnits, ufKey, unit);
       if (prep) bumpNested(userFoodPreps, ufKey, prep);
@@ -283,25 +270,16 @@ export function mineFoodGraph(
     prepStats.push({ foodId: foodId!, prep: prep!, useCount });
   }
 
-  const pairs = buildPairs(
-    recipeNodes,
-    nodeRecipes,
-    allRecipes.size,
-    minPairCoCount,
-  );
+  const pairs = buildPairs(recipeNodes, nodeRecipes, allRecipes.size, minPairCoCount);
 
   const userPrefs: MinedUserPref[] = [];
   for (const [ufKey, { userId, foodId }] of userFoodKeys) {
     userPrefs.push({
       userId,
       foodId,
-      preferredUnit: topToken(
-        userFoodUnits.get(ufKey) ?? new Map<string, number>(),
-      ),
+      preferredUnit: topToken(userFoodUnits.get(ufKey) ?? new Map<string, number>()),
       preferredVariantId: null,
-      preferredPrep: topToken(
-        userFoodPreps.get(ufKey) ?? new Map<string, number>(),
-      ),
+      preferredPrep: topToken(userFoodPreps.get(ufKey) ?? new Map<string, number>()),
       useCount: userFoodUse.get(ufKey) ?? 0,
     });
   }
@@ -415,10 +393,7 @@ export function rankNeighbours(
   }
 
   const ranked = [...scored.values()].sort(
-    (a, b) =>
-      b.lift - a.lift ||
-      b.coCount - a.coCount ||
-      a.foodId.localeCompare(b.foodId),
+    (a, b) => b.lift - a.lift || b.coCount - a.coCount || a.foodId.localeCompare(b.foodId),
   );
   return options.limit != null ? ranked.slice(0, options.limit) : ranked;
 }

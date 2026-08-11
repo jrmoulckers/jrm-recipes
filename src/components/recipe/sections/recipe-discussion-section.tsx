@@ -3,20 +3,17 @@ import {
   getRatingBreakdown,
   getRecipeComments,
   getViewerRating,
-} from "~/server/engagement/queries";
-import { getReactionsForTargets } from "~/server/engagement/reactions";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import type { ThreadedComment } from "~/server/engagement/queries";
-import type { User } from "~/server/db/schema";
-import { RatingControl } from "~/components/engagement/rating-control";
-import { RatingSummary } from "~/components/engagement/rating-summary";
-import { CommentsSection } from "~/components/engagement/comments-section-lazy";
+} from '~/server/engagement/queries';
+import { getReactionsForTargets } from '~/server/engagement/reactions';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
+import type { ThreadedComment } from '~/server/engagement/queries';
+import type { User } from '~/server/db/schema';
+import { RatingControl } from '~/components/engagement/rating-control';
+import { RatingSummary } from '~/components/engagement/rating-summary';
+import { CommentsSection } from '~/components/engagement/comments-section-lazy';
 
 /** Flatten a threaded comment tree into a flat list of ids (all depths). */
-function collectCommentIds(
-  nodes: ThreadedComment[],
-  into: string[] = [],
-): string[] {
+function collectCommentIds(nodes: ThreadedComment[], into: string[] = []): string[] {
   for (const node of nodes) {
     into.push(node.id);
     if (node.replies.length > 0) collectCommentIds(node.replies, into);
@@ -48,17 +45,16 @@ export async function RecipeDiscussionSection({
   canInteract: boolean;
 }) {
   const hiddenAuthorIds = await getHiddenAuthorIds(currentUserId);
-  const [viewerRating, breakdown, comments, mentionCandidates] =
-    await Promise.all([
-      getViewerRating(recipeId, currentUserId),
-      getRatingBreakdown(recipeId, viewer),
-      getRecipeComments(recipeId, { hiddenAuthorIds }),
-      getMentionCandidates(recipeId, currentUserId),
-    ]);
+  const [viewerRating, breakdown, comments, mentionCandidates] = await Promise.all([
+    getViewerRating(recipeId, currentUserId),
+    getRatingBreakdown(recipeId, viewer),
+    getRecipeComments(recipeId, { hiddenAuthorIds }),
+    getMentionCandidates(recipeId, currentUserId),
+  ]);
 
   // Reaction tallies for every comment (all thread depths) in one query (#342).
   const reactionMap = await getReactionsForTargets(
-    "comment",
+    'comment',
     collectCommentIds(comments),
     currentUserId,
     hiddenAuthorIds,

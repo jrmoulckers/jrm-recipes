@@ -13,9 +13,9 @@
  * Connection: prefers a direct (non-pooled) URL for the DML, mirroring
  * `scripts/migrate.mjs` and `scripts/backfill-dietary-tags.ts`.
  */
-import postgres from "postgres";
+import postgres from 'postgres';
 
-import { buildAliasIndex, pickFoodId } from "../src/lib/food-resolve";
+import { buildAliasIndex, pickFoodId } from '../src/lib/food-resolve';
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -23,7 +23,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[backfill-food-links] No database URL set, nothing to do.");
+  console.log('[backfill-food-links] No database URL set, nothing to do.');
   process.exit(0);
 }
 
@@ -76,7 +76,7 @@ main()
   .then(() => sql.end())
   .then(() => process.exit(0))
   .catch(async (error) => {
-    console.error("[backfill-food-links] Failed:", error);
+    console.error('[backfill-food-links] Failed:', error);
     await sql.end({ timeout: 5 }).catch(() => {});
     process.exit(1);
   });

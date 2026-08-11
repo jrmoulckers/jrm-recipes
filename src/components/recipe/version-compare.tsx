@@ -1,32 +1,22 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import {
-  ArrowRight,
-  GitCompare,
-  Loader2,
-  Minus,
-  Plus,
-  Pencil,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { ArrowRight, GitCompare, Loader2, Minus, Plus, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { cn } from "~/lib/utils";
-import { friendlyError } from "~/lib/error-copy";
-import {
-  compareRecipeVersionsAction,
-  type CompareSelection,
-} from "~/server/recipes/actions";
-import type { LineDiff, RecipeDiff, SectionDiff } from "~/lib/recipe-diff";
-import { Button } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { friendlyError } from '~/lib/error-copy';
+import { compareRecipeVersionsAction, type CompareSelection } from '~/server/recipes/actions';
+import type { LineDiff, RecipeDiff, SectionDiff } from '~/lib/recipe-diff';
+import { Button } from '~/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from '~/components/ui/select';
 
 type VersionOption = { versionNumber: number; label: string };
 
@@ -36,7 +26,7 @@ export type VersionCompareProps = {
   versions: VersionOption[];
 };
 
-const CURRENT = "current" as const;
+const CURRENT = 'current' as const;
 
 function toSelection(value: string): CompareSelection {
   return value === CURRENT ? CURRENT : Number(value);
@@ -48,12 +38,12 @@ function toSelection(value: string): CompareSelection {
  * ingredient lines, and steps. Read-only. Restore lives in the version list.
  */
 export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
-  const t = useTranslations("versionCompare");
-  const td = useTranslations("recipeDetail");
+  const t = useTranslations('versionCompare');
+  const td = useTranslations('recipeDetail');
   // Need at least one saved version to have anything to compare against.
   const options = React.useMemo(
     () => [
-      { value: CURRENT, label: t("currentRecipe") },
+      { value: CURRENT, label: t('currentRecipe') },
       ...versions.map((v) => ({
         value: String(v.versionNumber),
         label: `v${v.versionNumber} · ${v.label}`,
@@ -89,23 +79,23 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
   return (
     <section
       className="rounded-xl border border-border bg-card p-5 shadow-token"
-      aria-label={t("aria")}
+      aria-label={t('aria')}
     >
       <div className="mb-4 flex items-center gap-2">
         <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
           <GitCompare className="size-4" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-semibold">{t("heading")}</h3>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
+          <h3 className="font-display text-lg font-semibold">{t('heading')}</h3>
+          <p className="text-sm text-muted-foreground">{t('description')}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-muted-foreground">{t("from")}</span>
+          <span className="font-medium text-muted-foreground">{t('from')}</span>
           <Select value={from} onValueChange={setFrom}>
-            <SelectTrigger className="w-52" aria-label={t("fromAria")}>
+            <SelectTrigger className="w-52" aria-label={t('fromAria')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -118,15 +108,12 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
           </Select>
         </label>
 
-        <ArrowRight
-          className="mb-2.5 size-4 shrink-0 text-muted-foreground"
-          aria-hidden="true"
-        />
+        <ArrowRight className="mb-2.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-muted-foreground">{t("to")}</span>
+          <span className="font-medium text-muted-foreground">{t('to')}</span>
           <Select value={to} onValueChange={setTo}>
-            <SelectTrigger className="w-52" aria-label={t("toAria")}>
+            <SelectTrigger className="w-52" aria-label={t('toAria')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -145,15 +132,15 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
           ) : (
             <GitCompare aria-hidden="true" />
           )}
-          {t("compare")}
+          {t('compare')}
         </Button>
       </div>
 
       {diff && (
         <DiffResult
           diff={diff}
-          ingredientsTitle={td("ingredients.heading")}
-          stepsTitle={td("method.heading")}
+          ingredientsTitle={td('ingredients.heading')}
+          stepsTitle={td('method.heading')}
         />
       )}
     </section>
@@ -169,13 +156,13 @@ function DiffResult({
   ingredientsTitle: string;
   stepsTitle: string;
 }) {
-  const t = useTranslations("versionCompare");
+  const t = useTranslations('versionCompare');
   const { changed, added, removed } = diff.summary;
   const parts: string[] = [];
-  if (changed > 0) parts.push(t("summaryChanged", { count: changed }));
-  if (added > 0) parts.push(t("summaryAdded", { count: added }));
-  if (removed > 0) parts.push(t("summaryRemoved", { count: removed }));
-  const summary = parts.length > 0 ? parts.join(" · ") : t("noDifferences");
+  if (changed > 0) parts.push(t('summaryChanged', { count: changed }));
+  if (added > 0) parts.push(t('summaryAdded', { count: added }));
+  if (removed > 0) parts.push(t('summaryRemoved', { count: removed }));
+  const summary = parts.length > 0 ? parts.join(' · ') : t('noDifferences');
 
   return (
     <div className="mt-5 flex flex-col gap-5" aria-live="polite">
@@ -183,13 +170,13 @@ function DiffResult({
 
       {diff.identical ? (
         <p className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
-          {t("identical")}
+          {t('identical')}
         </p>
       ) : (
         <>
           {diff.fields.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h4 className="text-sm font-semibold">{t("details")}</h4>
+              <h4 className="text-sm font-semibold">{t('details')}</h4>
               <ul className="flex flex-col gap-2">
                 {diff.fields.map((field) => (
                   <li
@@ -199,12 +186,10 @@ function DiffResult({
                     <span className="font-medium">{field.label}</span>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
                       <span className="line-through decoration-destructive/60">
-                        {field.before ?? "—"}
+                        {field.before ?? '—'}
                       </span>
                       <ArrowRight className="size-3.5" aria-hidden="true" />
-                      <span className="text-foreground">
-                        {field.after ?? "—"}
-                      </span>
+                      <span className="text-foreground">{field.after ?? '—'}</span>
                     </div>
                   </li>
                 ))}
@@ -220,16 +205,10 @@ function DiffResult({
   );
 }
 
-function DiffSection({
-  title,
-  section,
-}: {
-  title: string;
-  section: SectionDiff;
-}) {
-  const t = useTranslations("versionCompare");
+function DiffSection({ title, section }: { title: string; section: SectionDiff }) {
+  const t = useTranslations('versionCompare');
   const [showUnchanged, setShowUnchanged] = React.useState(false);
-  const changedLines = section.lines.filter((l) => l.kind !== "unchanged");
+  const changedLines = section.lines.filter((l) => l.kind !== 'unchanged');
   const unchangedCount = section.lines.length - changedLines.length;
 
   if (section.lines.length === 0) return null;
@@ -248,14 +227,12 @@ function DiffSection({
             onClick={() => setShowUnchanged((v) => !v)}
             aria-expanded={showUnchanged}
           >
-            {showUnchanged
-              ? t("hideUnchanged")
-              : t("showUnchanged", { count: unchangedCount })}
+            {showUnchanged ? t('hideUnchanged') : t('showUnchanged', { count: unchangedCount })}
           </Button>
         )}
       </div>
       {changedLines.length === 0 && !showUnchanged ? (
-        <p className="text-sm text-muted-foreground">{t("noChanges")}</p>
+        <p className="text-sm text-muted-foreground">{t('noChanges')}</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {visible.map((line, i) => (
@@ -267,47 +244,37 @@ function DiffSection({
   );
 }
 
-const KIND_META: Record<
-  LineDiff["kind"],
-  { icon: typeof Plus; className: string }
-> = {
+const KIND_META: Record<LineDiff['kind'], { icon: typeof Plus; className: string }> = {
   added: {
     icon: Plus,
-    className: "border-primary/40 bg-primary/5 text-foreground",
+    className: 'border-primary/40 bg-primary/5 text-foreground',
   },
   removed: {
     icon: Minus,
-    className: "border-destructive/40 bg-destructive/5 text-muted-foreground",
+    className: 'border-destructive/40 bg-destructive/5 text-muted-foreground',
   },
   changed: {
     icon: Pencil,
-    className: "border-secondary/40 bg-secondary/10 text-foreground",
+    className: 'border-secondary/40 bg-secondary/10 text-foreground',
   },
   unchanged: {
     icon: Minus,
-    className: "border-border/70 bg-background text-muted-foreground",
+    className: 'border-border/70 bg-background text-muted-foreground',
   },
 };
 
 function DiffLineRow({ line }: { line: LineDiff }) {
-  const t = useTranslations("versionCompare");
+  const t = useTranslations('versionCompare');
   const meta = KIND_META[line.kind];
   const Icon = meta.icon;
   return (
-    <li
-      className={cn(
-        "flex items-start gap-2 rounded-lg border p-2.5 text-sm",
-        meta.className,
-      )}
-    >
+    <li className={cn('flex items-start gap-2 rounded-lg border p-2.5 text-sm', meta.className)}>
       <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
       <span className="sr-only">{t(`kind.${line.kind}`)}:</span>
       <span className="min-w-0">
-        {line.kind === "changed" ? (
+        {line.kind === 'changed' ? (
           <span className="flex flex-wrap items-center gap-1.5">
-            <span className="line-through decoration-destructive/60">
-              {line.before}
-            </span>
+            <span className="line-through decoration-destructive/60">{line.before}</span>
             <ArrowRight className="size-3" aria-hidden="true" />
             <span className="text-foreground">{line.after}</span>
           </span>

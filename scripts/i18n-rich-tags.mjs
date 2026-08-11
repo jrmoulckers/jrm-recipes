@@ -16,12 +16,12 @@
  *   node scripts/i18n-rich-tags.mjs             # exits 1 when a handler is missing
  *   node scripts/i18n-rich-tags.mjs --verbose   # also list the passing call sites
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { flatten, readLocaleConfig } from "./i18n-validate.mjs";
-import { repoRoot, walkSource } from "./lib/walk-source.mjs";
+import { flatten, readLocaleConfig } from './i18n-validate.mjs';
+import { repoRoot, walkSource } from './lib/walk-source.mjs';
 
 /**
  * Collect every rich-text tag used for each key, across all locales.
@@ -31,7 +31,7 @@ export function collectTagsByKey(flatCatalogs) {
   const tagsByKey = new Map();
   for (const flat of flatCatalogs) {
     for (const [key, value] of Object.entries(flat)) {
-      if (typeof value !== "string") continue;
+      if (typeof value !== 'string') continue;
       for (const match of value.matchAll(/<([a-zA-Z][\w-]*)>/g)) {
         if (!tagsByKey.has(key)) tagsByKey.set(key, new Set());
         tagsByKey.get(key).add(match[1]);
@@ -50,8 +50,8 @@ export function parseHandlers(source, openBraceIndex) {
   let depth = 0;
   let end = openBraceIndex;
   for (let i = openBraceIndex; i < source.length; i += 1) {
-    if (source[i] === "{") depth += 1;
-    else if (source[i] === "}") {
+    if (source[i] === '{') depth += 1;
+    else if (source[i] === '}') {
       depth -= 1;
       if (depth === 0) {
         end = i;
@@ -60,11 +60,7 @@ export function parseHandlers(source, openBraceIndex) {
     }
   }
   const body = source.slice(openBraceIndex, end + 1);
-  return new Set(
-    [...body.matchAll(/(?:^|[{,\s])([a-zA-Z][\w-]*)\s*:\s*\(/g)].map(
-      (m) => m[1],
-    ),
-  );
+  return new Set([...body.matchAll(/(?:^|[{,\s])([a-zA-Z][\w-]*)\s*:\s*\(/g)].map((m) => m[1]));
 }
 
 /**
@@ -75,13 +71,13 @@ export function parseHandlers(source, openBraceIndex) {
 export function checkFile(relPath, source, tagsByKey) {
   const problems = [];
   const checked = [];
-  if (!source.includes(".rich(")) return { problems, checked };
+  if (!source.includes('.rich(')) return { problems, checked };
 
   const namespaces = [
-    ...source.matchAll(/(?:useTranslations|getTranslations)\(\s*"([^"]+)"/g),
+    ...source.matchAll(/(?:useTranslations|getTranslations)\(\s*['"]([^'"]+)['"]/g),
   ].map((m) => m[1]);
 
-  for (const call of source.matchAll(/\.rich\(\s*"([^"]+)"\s*,\s*\{/g)) {
+  for (const call of source.matchAll(/\.rich\(\s*['"]([^'"]+)['"]\s*,\s*\{/g)) {
     const key = call[1];
     const handlers = parseHandlers(source, call.index + call[0].length - 1);
 
@@ -109,7 +105,7 @@ export function checkFile(relPath, source, tagsByKey) {
         missing,
       });
     } else {
-      checked.push(`  ok       ${relPath}  ${fullKey}  [${tags.join(",")}]`);
+      checked.push(`  ok       ${relPath}  ${fullKey}  [${tags.join(',')}]`);
     }
   }
 
@@ -117,19 +113,14 @@ export function checkFile(relPath, source, tagsByKey) {
 }
 
 function main() {
-  const verbose = process.argv.includes("--verbose");
+  const verbose = process.argv.includes('--verbose');
   const { locales } = readLocaleConfig(
-    readFileSync(resolve(repoRoot, "src", "config", "i18n.ts"), "utf8"),
+    readFileSync(resolve(repoRoot, 'src', 'config', 'i18n.ts'), 'utf8'),
   );
 
   const flatCatalogs = locales.map((locale) =>
     flatten(
-      JSON.parse(
-        readFileSync(
-          resolve(repoRoot, "src", "messages", `${locale}.json`),
-          "utf8",
-        ),
-      ),
+      JSON.parse(readFileSync(resolve(repoRoot, 'src', 'messages', `${locale}.json`), 'utf8')),
     ),
   );
 
@@ -140,7 +131,7 @@ function main() {
   for (const rel of walkSource()) {
     const { problems, checked } = checkFile(
       rel,
-      readFileSync(resolve(repoRoot, rel), "utf8"),
+      readFileSync(resolve(repoRoot, rel), 'utf8'),
       tagsByKey,
     );
     allProblems.push(...problems);
@@ -151,16 +142,14 @@ function main() {
     console.error(
       `MISSING HANDLER  ${problem.file}\n` +
         `    key:      ${problem.key}\n` +
-        `    tags:     ${problem.tags.join(", ")}\n` +
-        `    handlers: ${problem.handlers.join(", ") || "(none)"}\n` +
-        `    missing:  ${problem.missing.join(", ")}\n`,
+        `    tags:     ${problem.tags.join(', ')}\n` +
+        `    handlers: ${problem.handlers.join(', ') || '(none)'}\n` +
+        `    missing:  ${problem.missing.join(', ')}\n`,
     );
   }
 
   const total = allChecked.length + allProblems.length;
-  console.log(
-    `i18n: checked ${total} t.rich call site(s) against ${locales.length} locale(s).`,
-  );
+  console.log(`i18n: checked ${total} t.rich call site(s) against ${locales.length} locale(s).`);
   if (verbose) allChecked.forEach((line) => console.log(line));
 
   if (allProblems.length) {
@@ -169,12 +158,9 @@ function main() {
     );
     process.exit(1);
   }
-  console.log("i18n: every rich-text tag has a handler.");
+  console.log('i18n: every rich-text tag has a handler.');
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

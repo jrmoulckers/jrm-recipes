@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
@@ -16,25 +16,25 @@ const { dbMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
 }));
 
-import { reviews, type User } from "~/server/db/schema";
-import { listRecipeReviews, upsertMyReview } from "./reviews";
+import { reviews, type User } from '~/server/db/schema';
+import { listRecipeReviews, upsertMyReview } from './reviews';
 
-const author = { id: "user_1" } as User;
+const author = { id: 'user_1' } as User;
 const publicRecipe = {
-  id: "r1",
-  authorId: "user_1",
-  visibility: "public",
+  id: 'r1',
+  authorId: 'user_1',
+  visibility: 'public',
   groupId: null,
 };
 const privateRecipe = {
-  id: "r2",
-  authorId: "someone_else",
-  visibility: "private",
+  id: 'r2',
+  authorId: 'someone_else',
+  visibility: 'private',
   groupId: null,
 };
 
@@ -54,25 +54,25 @@ beforeEach(() => {
   dbMock.query.groupMembers.findMany.mockResolvedValue([]);
 });
 
-describe("upsertMyReview (issue #174)", () => {
-  it("upserts on the one-per-user constraint and stamps editedAt", async () => {
+describe('upsertMyReview (issue #174)', () => {
+  it('upserts on the one-per-user constraint and stamps editedAt', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    const chain = stubInsert([{ id: "rev1" }]);
+    const chain = stubInsert([{ id: 'rev1' }]);
 
-    const result = await upsertMyReview("r1", author, {
+    const result = await upsertMyReview('r1', author, {
       rating: 4,
-      title: "Great",
-      body: "Loved it",
+      title: 'Great',
+      body: 'Loved it',
     });
 
-    expect(result).toEqual({ id: "rev1" });
+    expect(result).toEqual({ id: 'rev1' });
     // Inserts the new review...
     expect(chain.values).toHaveBeenCalledWith({
-      recipeId: "r1",
-      userId: "user_1",
+      recipeId: 'r1',
+      userId: 'user_1',
       rating: 4,
-      title: "Great",
-      body: "Loved it",
+      title: 'Great',
+      body: 'Loved it',
     });
     // ...but on a duplicate (recipe, user) edits the existing row in place.
     const conflict = chain.onConflictDoUpdate.mock.calls[0]![0] as {
@@ -84,60 +84,54 @@ describe("upsertMyReview (issue #174)", () => {
     expect(conflict.set.editedAt).toBeInstanceOf(Date);
   });
 
-  it("normalises blank title/body to null", async () => {
+  it('normalises blank title/body to null', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    const chain = stubInsert([{ id: "rev1" }]);
+    const chain = stubInsert([{ id: 'rev1' }]);
 
-    await upsertMyReview("r1", author, { rating: 5, title: "  ", body: "" });
+    await upsertMyReview('r1', author, { rating: 5, title: '  ', body: '' });
 
-    expect(chain.values).toHaveBeenCalledWith(
-      expect.objectContaining({ title: null, body: null }),
-    );
+    expect(chain.values).toHaveBeenCalledWith(expect.objectContaining({ title: null, body: null }));
   });
 
-  it("rejects an out-of-range rating before touching the DB", async () => {
+  it('rejects an out-of-range rating before touching the DB', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    await expect(upsertMyReview("r1", author, { rating: 6 })).rejects.toThrow();
+    await expect(upsertMyReview('r1', author, { rating: 6 })).rejects.toThrow();
     expect(dbMock.insert).not.toHaveBeenCalled();
   });
 
-  it("throws NOT_FOUND for a missing/soft-deleted recipe", async () => {
+  it('throws NOT_FOUND for a missing/soft-deleted recipe', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(undefined);
-    await expect(
-      upsertMyReview("missing", author, { rating: 5 }),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(upsertMyReview('missing', author, { rating: 5 })).rejects.toThrow('NOT_FOUND');
     expect(dbMock.insert).not.toHaveBeenCalled();
   });
 
   it("throws FORBIDDEN when the reviewer can't view the recipe", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(privateRecipe);
-    await expect(upsertMyReview("r2", author, { rating: 5 })).rejects.toThrow(
-      "FORBIDDEN",
-    );
+    await expect(upsertMyReview('r2', author, { rating: 5 })).rejects.toThrow('FORBIDDEN');
     expect(dbMock.insert).not.toHaveBeenCalled();
   });
 });
 
-describe("listRecipeReviews (issue #174)", () => {
-  it("returns an empty page for a missing recipe without querying reviews", async () => {
+describe('listRecipeReviews (issue #174)', () => {
+  it('returns an empty page for a missing recipe without querying reviews', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(undefined);
-    const page = await listRecipeReviews("missing", author);
+    const page = await listRecipeReviews('missing', author);
     expect(page).toEqual({ items: [], nextOffset: null });
     expect(dbMock.query.reviews.findMany).not.toHaveBeenCalled();
   });
 
   it("hides reviews on a recipe the viewer can't see", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(privateRecipe);
-    const page = await listRecipeReviews("r2", author);
+    const page = await listRecipeReviews('r2', author);
     expect(page).toEqual({ items: [], nextOffset: null });
     expect(dbMock.query.reviews.findMany).not.toHaveBeenCalled();
   });
 
   it("paginates a viewable recipe's reviews and reports the next offset", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    dbMock.query.reviews.findMany.mockResolvedValue([{ id: "a" }, { id: "b" }]);
+    dbMock.query.reviews.findMany.mockResolvedValue([{ id: 'a' }, { id: 'b' }]);
 
-    const page = await listRecipeReviews("r1", author, { limit: 2, offset: 0 });
+    const page = await listRecipeReviews('r1', author, { limit: 2, offset: 0 });
 
     expect(page.items).toHaveLength(2);
     expect(page.nextOffset).toBe(2);
@@ -149,11 +143,11 @@ describe("listRecipeReviews (issue #174)", () => {
     expect(args.offset).toBe(0);
   });
 
-  it("stops paginating on a short (final) page", async () => {
+  it('stops paginating on a short (final) page', async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    dbMock.query.reviews.findMany.mockResolvedValue([{ id: "a" }]);
+    dbMock.query.reviews.findMany.mockResolvedValue([{ id: 'a' }]);
 
-    const page = await listRecipeReviews("r1", author, { limit: 2, offset: 4 });
+    const page = await listRecipeReviews('r1', author, { limit: 2, offset: 4 });
 
     expect(page.nextOffset).toBeNull();
   });

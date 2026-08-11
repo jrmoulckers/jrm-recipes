@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { identify, reset } from "~/lib/analytics";
-import { isAnalyticsConfigured } from "~/lib/analytics/config";
-import { isCaptureAllowed } from "~/lib/analytics/consent";
-import { clearClientBackend, setClientBackend } from "~/lib/analytics/backend";
-import { createPostHogBackend } from "~/lib/analytics/posthog-client";
+import { identify, reset } from '~/lib/analytics';
+import { isAnalyticsConfigured } from '~/lib/analytics/config';
+import { isCaptureAllowed } from '~/lib/analytics/consent';
+import { clearClientBackend, setClientBackend } from '~/lib/analytics/backend';
+import { createPostHogBackend } from '~/lib/analytics/posthog-client';
 
 /**
  * Mounts the analytics backend once for the whole app (issue #306) and keeps the

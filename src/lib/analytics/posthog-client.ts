@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * The concrete PostHog client adapter. The *only* module that imports the
@@ -10,8 +10,8 @@
  * Capture is **cookieless** (`persistence: "memory"`) and routed through the
  * first-party `/ingest` proxy, honoring Heirloom's private-family-data stance.
  */
-import { type AnalyticsBackend } from "./backend";
-import { INGEST_PATH, analyticsHost, analyticsKey } from "./config";
+import { type AnalyticsBackend } from './backend';
+import { INGEST_PATH, analyticsHost, analyticsKey } from './config';
 
 let initialized = false;
 
@@ -22,16 +22,16 @@ let initialized = false;
  */
 export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
   const key = analyticsKey();
-  if (!key || typeof window === "undefined") return null;
+  if (!key || typeof window === 'undefined') return null;
 
-  const { default: posthog } = await import("posthog-js");
+  const { default: posthog } = await import('posthog-js');
 
   if (!initialized) {
     posthog.init(key, {
       api_host: INGEST_PATH,
       ui_host: analyticsHost(),
       // Cookieless: keep persistence in memory so no analytics cookies are set.
-      persistence: "memory",
+      persistence: 'memory',
       // Pageviews are emitted manually by <PageviewTracker> (#322) to catch
       // App Router client navigations, so the SDK's own pageview would double-count.
       capture_pageview: false,
@@ -45,7 +45,7 @@ export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
       autocapture: false,
       capture_pageleave: true,
       // Only create person profiles once a user is identified (#321).
-      person_profiles: "identified_only",
+      person_profiles: 'identified_only',
       // Honor Do Not Track at the SDK level too (belt-and-braces with #324).
       respect_dnt: true,
       disable_session_recording: true,

@@ -28,12 +28,12 @@
  * (DATABASE_URL_UNPOOLED ?? POSTGRES_URL_NON_POOLING ?? DATABASE_URL) since a
  * seed does a burst of writes and a direct connection sidesteps pooler quirks.
  */
-import { createId } from "@paralleldrive/cuid2";
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { createId } from '@paralleldrive/cuid2';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import * as schema from "~/server/db/schema";
+import * as schema from '~/server/db/schema';
 import {
   collectionRecipes,
   collections,
@@ -58,9 +58,9 @@ import {
   tags,
   users,
   type User,
-} from "~/server/db/schema";
-import { DEV_USER, isE2eIdentity } from "~/server/auth/dev-user";
-import type { RecipeInput } from "~/server/recipes/validation";
+} from '~/server/db/schema';
+import { DEV_USER, isE2eIdentity } from '~/server/auth/dev-user';
+import type { RecipeInput } from '~/server/recipes/validation';
 import {
   buildCollectionRecipeRows,
   buildCollectionRows,
@@ -72,12 +72,12 @@ import {
   SEED_COLLECTION_IDS,
   SEED_SHOPPING_LIST_ID,
   type LibraryIds,
-} from "~/server/db/seed-library";
+} from '~/server/db/seed-library';
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
   buildFoodNutritionRows,
-} from "~/server/db/seed-ingredients";
+} from '~/server/db/seed-ingredients';
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -90,8 +90,8 @@ const url =
 
 if (!url) {
   console.error(
-    "No database URL set. Provide DATABASE_URL (or DATABASE_URL_UNPOOLED / " +
-      "POSTGRES_URL_NON_POOLING). See .env.example.",
+    'No database URL set. Provide DATABASE_URL (or DATABASE_URL_UNPOOLED / ' +
+      'POSTGRES_URL_NON_POOLING). See .env.example.',
   );
   process.exit(1);
 }
@@ -103,7 +103,7 @@ const client = postgres(url, {
 });
 // `casing: "snake_case"` mirrors src/server/db/index.ts so the schema's camelCase
 // keys map to the same snake_case columns the migrations created.
-const db = drizzle(client, { schema, casing: "snake_case" });
+const db = drizzle(client, { schema, casing: 'snake_case' });
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // ---------------------------------------------------------------------------
@@ -115,9 +115,9 @@ function slugify(input: string): string {
   return input
     .toLowerCase()
     .trim()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, 80);
 }
 
@@ -126,9 +126,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function daysAgo(days: number, extraMinutes = 0): Date {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
-  return new Date(
-    midnight.getTime() - days * DAY_MS + extraMinutes * 60 * 1000,
-  );
+  return new Date(midnight.getTime() - days * DAY_MS + extraMinutes * 60 * 1000);
 }
 
 // ---------------------------------------------------------------------------
@@ -136,34 +134,34 @@ function daysAgo(days: number, extraMinutes = 0): Date {
 // ---------------------------------------------------------------------------
 
 const GROUP = {
-  id: "seed_grp_family",
-  slug: "heirloom-family",
-  name: "The Heirloom Family",
-  description: "Our family cookbook. The recipes worth passing down.",
+  id: 'seed_grp_family',
+  slug: 'heirloom-family',
+  name: 'The Heirloom Family',
+  description: 'Our family cookbook. The recipes worth passing down.',
 };
 
 /** Extra family voices for ratings, comments, and suggestions. clerkId stays null. */
 const DEMO_USERS = [
   {
-    id: "seed_usr_gran",
-    name: "Gran (Lucia)",
-    handle: "gran-lucia",
-    slug: "gran-lucia",
-    email: "lucia@heirloom.local",
+    id: 'seed_usr_gran',
+    name: 'Gran (Lucia)',
+    handle: 'gran-lucia',
+    slug: 'gran-lucia',
+    email: 'lucia@heirloom.local',
   },
   {
-    id: "seed_usr_rosa",
-    name: "Aunt Rosa",
-    handle: "aunt-rosa",
-    slug: "aunt-rosa",
-    email: "rosa@heirloom.local",
+    id: 'seed_usr_rosa',
+    name: 'Aunt Rosa',
+    handle: 'aunt-rosa',
+    slug: 'aunt-rosa',
+    email: 'rosa@heirloom.local',
   },
   {
-    id: "seed_usr_mateo",
-    name: "Cousin Mateo",
-    handle: "cousin-mateo",
-    slug: "cousin-mateo",
-    email: "mateo@heirloom.local",
+    id: 'seed_usr_mateo',
+    name: 'Cousin Mateo',
+    handle: 'cousin-mateo',
+    slug: 'cousin-mateo',
+    email: 'mateo@heirloom.local',
   },
 ] as const;
 
@@ -179,8 +177,8 @@ const DEMO_USERS = [
   const leaked = DEMO_USERS.filter(isE2eIdentity).map((u) => u.id);
   if (leaked.length > 0) {
     throw new Error(
-      `Refusing to seed E2E-only identities from the shared seed: ${leaked.join(", ")}. ` +
-        "Fixtures belong in src/server/db/seed-e2e.ts (issue #783).",
+      `Refusing to seed E2E-only identities from the shared seed: ${leaked.join(', ')}. ` +
+        'Fixtures belong in src/server/db/seed-e2e.ts (issue #783).',
     );
   }
 }
@@ -209,7 +207,7 @@ type SeedRecipe = {
   servingsNoun?: string;
   prepMinutes: number;
   cookMinutes: number;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: 'easy' | 'medium' | 'hard';
   cuisine: string;
   notes?: string;
   sourceName?: string;
@@ -223,186 +221,184 @@ type SeedRecipe = {
 };
 
 const GRAVY: SeedRecipe = {
-  id: "seed_rcp_gravy",
-  slug: "nonnas-sunday-gravy",
+  id: 'seed_rcp_gravy',
+  slug: 'nonnas-sunday-gravy',
   title: "Nonna's Sunday Gravy",
   description:
     "The slow-simmered meat sauce that anchored every Sunday at Nonna's table. Make a big pot. It only gets better, and it freezes beautifully.",
   servings: 8,
   prepMinutes: 20,
   cookMinutes: 210,
-  difficulty: "medium",
-  cuisine: "Italian",
+  difficulty: 'medium',
+  cuisine: 'Italian',
   notes:
     "Nonna never measured the basil. 'A big handful, then one more.' The gravy is done when a wooden spoon leaves a clean trail across the pot.",
   sourceName: "Nonna Lucia's handwritten card",
   createdDaysAgo: 90,
-  tags: ["dinner", "sauce", "heirloom", "sunday"],
+  tags: ['dinner', 'sauce', 'heirloom', 'sunday'],
   ingredients: [
-    { quantity: 3, unit: "tbsp", item: "olive oil" },
-    { quantity: 1, item: "yellow onion", note: "finely diced" },
-    { quantity: 6, item: "garlic cloves", note: "sliced" },
-    { quantity: 3, unit: "tbsp", item: "tomato paste" },
+    { quantity: 3, unit: 'tbsp', item: 'olive oil' },
+    { quantity: 1, item: 'yellow onion', note: 'finely diced' },
+    { quantity: 6, item: 'garlic cloves', note: 'sliced' },
+    { quantity: 3, unit: 'tbsp', item: 'tomato paste' },
     {
       quantity: 56,
-      unit: "oz",
-      item: "canned San Marzano tomatoes",
-      note: "crushed by hand",
+      unit: 'oz',
+      item: 'canned San Marzano tomatoes',
+      note: 'crushed by hand',
     },
-    { quantity: 1, unit: "tsp", item: "sugar" },
-    { item: "basil", note: "a big handful", optional: true },
-    { quantity: 1, unit: "lb", item: "pork spare ribs", section: "The meat" },
+    { quantity: 1, unit: 'tsp', item: 'sugar' },
+    { item: 'basil', note: 'a big handful', optional: true },
+    { quantity: 1, unit: 'lb', item: 'pork spare ribs', section: 'The meat' },
     {
       quantity: 0.5,
-      unit: "lb",
-      item: "Italian sausage",
-      section: "The meat",
+      unit: 'lb',
+      item: 'Italian sausage',
+      section: 'The meat',
     },
   ],
   steps: [
     {
       instruction:
-        "Brown the pork ribs and sausage in the oil in batches, turning until deeply colored on all sides. Set the meat aside.",
+        'Brown the pork ribs and sausage in the oil in batches, turning until deeply colored on all sides. Set the meat aside.',
       timerSeconds: 600,
-      techniques: ["searing"],
+      techniques: ['searing'],
     },
     {
       instruction:
-        "Lower the heat and sweat the onion in the rendered fat with a pinch of salt until soft and sweet.",
+        'Lower the heat and sweat the onion in the rendered fat with a pinch of salt until soft and sweet.',
       timerSeconds: 480,
-      techniques: ["sweating"],
+      techniques: ['sweating'],
     },
     {
-      instruction:
-        "Stir in the garlic and tomato paste and cook until brick-red and fragrant.",
+      instruction: 'Stir in the garlic and tomato paste and cook until brick-red and fragrant.',
       timerSeconds: 180,
     },
     {
       instruction:
-        "Crush in the tomatoes, add the sugar, and nestle the meat back in. Bring to a bare simmer.",
+        'Crush in the tomatoes, add the sugar, and nestle the meat back in. Bring to a bare simmer.',
     },
     {
       instruction:
-        "Simmer low and partially covered, stirring now and then, until the gravy is deep, glossy, and thick.",
+        'Simmer low and partially covered, stirring now and then, until the gravy is deep, glossy, and thick.',
       timerSeconds: 10800,
-      techniques: ["simmering"],
+      techniques: ['simmering'],
     },
     {
       instruction:
-        "Fish out the meat, tear in the basil, taste for salt, and serve over rigatoni with plenty of grated pecorino.",
+        'Fish out the meat, tear in the basil, taste for salt, and serve over rigatoni with plenty of grated pecorino.',
     },
   ],
 };
 
 const MARINARA: SeedRecipe = {
-  id: "seed_rcp_marinara",
-  slug: "weeknight-garden-marinara",
-  title: "Weeknight Garden Marinara",
+  id: 'seed_rcp_marinara',
+  slug: 'weeknight-garden-marinara',
+  title: 'Weeknight Garden Marinara',
   description:
     "A lighter, meatless take on Nonna's gravy for busy nights. Same soul, ready in well under an hour.",
   servings: 4,
   prepMinutes: 10,
   cookMinutes: 25,
-  difficulty: "easy",
-  cuisine: "Italian",
+  difficulty: 'easy',
+  cuisine: 'Italian',
   notes:
-    "Keeps the bright tomato-and-basil heart of the Sunday gravy but drops the meat and the long simmer.",
+    'Keeps the bright tomato-and-basil heart of the Sunday gravy but drops the meat and the long simmer.',
   createdDaysAgo: 30,
-  tags: ["dinner", "sauce", "weeknight", "vegetarian"],
+  tags: ['dinner', 'sauce', 'weeknight', 'vegetarian'],
   forkedFromId: GRAVY.id,
   forkNote:
     "Adapted from Nonna's Sunday Gravy. Meatless and quick for a Tuesday, but still simmered with basil and good tomatoes.",
   ingredients: [
-    { quantity: 2, unit: "tbsp", item: "olive oil" },
-    { quantity: 4, item: "garlic cloves", note: "thinly sliced" },
-    { item: "red pepper flakes", note: "a pinch", optional: true },
+    { quantity: 2, unit: 'tbsp', item: 'olive oil' },
+    { quantity: 4, item: 'garlic cloves', note: 'thinly sliced' },
+    { item: 'red pepper flakes', note: 'a pinch', optional: true },
     {
       quantity: 28,
-      unit: "oz",
-      item: "canned San Marzano tomatoes",
-      note: "crushed by hand",
+      unit: 'oz',
+      item: 'canned San Marzano tomatoes',
+      note: 'crushed by hand',
     },
-    { quantity: 1, unit: "tsp", item: "sugar" },
-    { item: "basil", note: "a big handful" },
-    { item: "flaky salt", note: "to taste" },
+    { quantity: 1, unit: 'tsp', item: 'sugar' },
+    { item: 'basil', note: 'a big handful' },
+    { item: 'flaky salt', note: 'to taste' },
   ],
   steps: [
     {
       instruction:
-        "Warm the oil and gently sizzle the garlic (and pepper flakes, if using) until just golden and perfumed.",
+        'Warm the oil and gently sizzle the garlic (and pepper flakes, if using) until just golden and perfumed.',
       timerSeconds: 120,
-      techniques: ["infusing"],
+      techniques: ['infusing'],
     },
     {
       instruction:
-        "Add the crushed tomatoes and sugar and simmer briskly, stirring, until thickened and jammy.",
+        'Add the crushed tomatoes and sugar and simmer briskly, stirring, until thickened and jammy.',
       timerSeconds: 1200,
-      techniques: ["simmering"],
+      techniques: ['simmering'],
     },
     {
       instruction:
-        "Tear in the basil, season with flaky salt, and toss with spaghetti cooked just shy of al dente.",
+        'Tear in the basil, season with flaky salt, and toss with spaghetti cooked just shy of al dente.',
     },
   ],
 };
 
 const FOCACCIA: SeedRecipe = {
-  id: "seed_rcp_focaccia",
-  slug: "rosemary-focaccia",
-  title: "Rosemary Focaccia",
+  id: 'seed_rcp_focaccia',
+  slug: 'rosemary-focaccia',
+  title: 'Rosemary Focaccia',
   description:
-    "Pillowy, golden, dimpled focaccia with a crackly olive-oil crust and a shower of rosemary and flaky salt.",
+    'Pillowy, golden, dimpled focaccia with a crackly olive-oil crust and a shower of rosemary and flaky salt.',
   servings: 12,
-  servingsNoun: "pieces",
+  servingsNoun: 'pieces',
   prepMinutes: 20,
   cookMinutes: 25,
-  difficulty: "medium",
-  cuisine: "Italian",
-  notes:
-    "The overnight cold ferment is what gives it that open, bubbly crumb. Don't skip it.",
+  difficulty: 'medium',
+  cuisine: 'Italian',
+  notes: "The overnight cold ferment is what gives it that open, bubbly crumb. Don't skip it.",
   createdDaysAgo: 60,
-  tags: ["bread", "baking", "vegetarian", "weekend"],
+  tags: ['bread', 'baking', 'vegetarian', 'weekend'],
   ingredients: [
-    { quantity: 4, unit: "cup", item: "bread flour" },
-    { quantity: 2, unit: "tsp", item: "instant yeast" },
-    { quantity: 2, unit: "tsp", item: "fine salt" },
-    { quantity: 2, unit: "cup", item: "warm water" },
+    { quantity: 4, unit: 'cup', item: 'bread flour' },
+    { quantity: 2, unit: 'tsp', item: 'instant yeast' },
+    { quantity: 2, unit: 'tsp', item: 'fine salt' },
+    { quantity: 2, unit: 'cup', item: 'warm water' },
     {
       quantity: 5,
-      unit: "tbsp",
-      item: "extra-virgin olive oil",
-      note: "divided",
+      unit: 'tbsp',
+      item: 'extra-virgin olive oil',
+      note: 'divided',
     },
-    { item: "fresh rosemary", section: "To finish" },
-    { item: "flaky sea salt", section: "To finish" },
+    { item: 'fresh rosemary', section: 'To finish' },
+    { item: 'flaky sea salt', section: 'To finish' },
   ],
   steps: [
     {
       instruction:
-        "Whisk the flour, yeast, and fine salt. Stir in the water and 2 tbsp of the oil to a shaggy, sticky dough.",
+        'Whisk the flour, yeast, and fine salt. Stir in the water and 2 tbsp of the oil to a shaggy, sticky dough.',
     },
     {
       instruction:
-        "Cover and cold-ferment in the fridge overnight so the flavor deepens and the crumb opens up.",
+        'Cover and cold-ferment in the fridge overnight so the flavor deepens and the crumb opens up.',
       timerSeconds: 43200,
-      techniques: ["fermenting"],
+      techniques: ['fermenting'],
     },
     {
       instruction:
-        "Pour 2 tbsp oil into a sheet pan, stretch the dough to the edges, and dimple all over with oiled fingertips.",
-      techniques: ["dimpling"],
+        'Pour 2 tbsp oil into a sheet pan, stretch the dough to the edges, and dimple all over with oiled fingertips.',
+      techniques: ['dimpling'],
     },
     {
       instruction:
-        "Proof until pillowy, then scatter with rosemary and flaky salt and drizzle with the last of the oil.",
+        'Proof until pillowy, then scatter with rosemary and flaky salt and drizzle with the last of the oil.',
       timerSeconds: 5400,
-      techniques: ["proofing"],
+      techniques: ['proofing'],
     },
     {
       instruction:
-        "Bake at 220°C (430°F) until deep golden and crisp at the edges. Cool briefly, then cut into squares.",
+        'Bake at 220°C (430°F) until deep golden and crisp at the edges. Cool briefly, then cut into squares.',
       timerSeconds: 1500,
-      techniques: ["baking"],
+      techniques: ['baking'],
     },
   ],
 };
@@ -448,9 +444,7 @@ async function resolveOwner(tx: Tx): Promise<User> {
     where: eq(users.clerkId, ownerEnv),
   });
   if (byClerk) {
-    console.log(
-      `Owner: existing user for clerkId ${ownerEnv} (${byClerk.id}).`,
-    );
+    console.log(`Owner: existing user for clerkId ${ownerEnv} (${byClerk.id}).`);
     return byClerk;
   }
 
@@ -468,13 +462,13 @@ async function resolveOwner(tx: Tx): Promise<User> {
     .values({
       id: ownerId,
       clerkId: ownerEnv,
-      name: "Heirloom Cook",
+      name: 'Heirloom Cook',
       slug: `cook-${ownerId.slice(0, 8)}`,
     })
     .returning();
   console.log(
     `Owner: created placeholder user for clerkId ${ownerEnv} (${created!.id}). ` +
-      "Signing in with that Clerk account will adopt it.",
+      'Signing in with that Clerk account will adopt it.',
   );
   return created!;
 }
@@ -523,9 +517,9 @@ async function ensureDemoUsers(tx: Tx): Promise<void> {
 
 /** Owner + family in the group so it reads like a real shared cookbook. */
 async function ensureMemberships(tx: Tx, ownerId: string): Promise<void> {
-  const members: { userId: string; role: "owner" | "member" }[] = [
-    { userId: ownerId, role: "owner" },
-    ...DEMO_USERS.map((u) => ({ userId: u.id, role: "member" as const })),
+  const members: { userId: string; role: 'owner' | 'member' }[] = [
+    { userId: ownerId, role: 'owner' },
+    ...DEMO_USERS.map((u) => ({ userId: u.id, role: 'member' as const })),
   ];
   for (const m of members) {
     await tx
@@ -547,7 +541,7 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
     title: r.title,
     description: r.description,
     servings: r.servings,
-    servingsNoun: r.servingsNoun ?? "servings",
+    servingsNoun: r.servingsNoun ?? 'servings',
     prepMinutes: r.prepMinutes,
     cookMinutes: r.cookMinutes,
     totalMinutes: r.prepMinutes + r.cookMinutes,
@@ -556,8 +550,8 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
     cuisines: [r.cuisine],
     mealTypes: [],
     notes: r.notes,
-    visibility: "public",
-    status: "published",
+    visibility: 'public',
+    status: 'published',
     ingredients: r.ingredients.map((ing) => ({
       section: ing.section,
       quantity: ing.quantity,
@@ -594,10 +588,10 @@ async function upsertRecipe(
     description: r.description,
     authorId: ownerId,
     groupId,
-    visibility: "public" as const,
-    status: "published" as const,
+    visibility: 'public' as const,
+    status: 'published' as const,
     servings: r.servings,
-    servingsNoun: r.servingsNoun ?? "servings",
+    servingsNoun: r.servingsNoun ?? 'servings',
     prepMinutes: r.prepMinutes,
     cookMinutes: r.cookMinutes,
     totalMinutes: r.prepMinutes + r.cookMinutes,
@@ -623,9 +617,7 @@ async function upsertRecipe(
 
 /** Rebuild a recipe's ingredients + steps from scratch (stable row counts). */
 async function rebuildRecipeContent(tx: Tx, r: SeedRecipe): Promise<void> {
-  await tx
-    .delete(recipeIngredients)
-    .where(eq(recipeIngredients.recipeId, r.id));
+  await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, r.id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, r.id));
 
   if (r.ingredients.length > 0) {
@@ -651,10 +643,7 @@ async function rebuildRecipeContent(tx: Tx, r: SeedRecipe): Promise<void> {
         section: step.section ?? null,
         instruction: step.instruction,
         timerSeconds: step.timerSeconds ?? null,
-        techniques:
-          step.techniques && step.techniques.length > 0
-            ? step.techniques
-            : null,
+        techniques: step.techniques && step.techniques.length > 0 ? step.techniques : null,
       })),
     );
   }
@@ -691,20 +680,16 @@ async function rebuildRecipeTags(tx: Tx, r: SeedRecipe): Promise<void> {
 }
 
 /** One saved version per recipe (feeds the "Saved versions" list + revert). */
-async function rebuildRecipeVersion(
-  tx: Tx,
-  r: SeedRecipe,
-  ownerId: string,
-): Promise<void> {
+async function rebuildRecipeVersion(tx: Tx, r: SeedRecipe, ownerId: string): Promise<void> {
   await tx.delete(recipeVersions).where(eq(recipeVersions.recipeId, r.id));
   await tx.insert(recipeVersions).values({
     recipeId: r.id,
     authorId: ownerId,
     versionNumber: 1,
-    label: r.forkedFromId ? "Adapted" : "Created",
+    label: r.forkedFromId ? 'Adapted' : 'Created',
     summary: r.forkedFromId
-      ? "Forked from the original and tuned for weeknights."
-      : "First saved version.",
+      ? 'Forked from the original and tuned for weeknights.'
+      : 'First saved version.',
     snapshot: versionSnapshot(r),
     createdAt: daysAgo(r.createdDaysAgo),
   });
@@ -717,14 +702,12 @@ async function rebuildRecipeVersion(
  * so the lineage shows on both sides.
  */
 async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
-  await tx
-    .delete(recipeEvents)
-    .where(inArray(recipeEvents.recipeId, RECIPE_IDS));
+  await tx.delete(recipeEvents).where(inArray(recipeEvents.recipeId, RECIPE_IDS));
 
   type EventRow = {
     recipeId: string;
     actorId: string;
-    type: "created" | "adapted" | "published" | "updated";
+    type: 'created' | 'adapted' | 'published' | 'updated';
     note: string | null;
     relatedRecipeId: string | null;
     createdAt: Date;
@@ -737,7 +720,7 @@ async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
       rows.push({
         recipeId: r.id,
         actorId: ownerId,
-        type: "adapted",
+        type: 'adapted',
         note: r.forkNote ?? null,
         relatedRecipeId: r.forkedFromId,
         createdAt: created,
@@ -746,7 +729,7 @@ async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
       rows.push({
         recipeId: r.id,
         actorId: ownerId,
-        type: "created",
+        type: 'created',
         note: null,
         relatedRecipeId: null,
         createdAt: created,
@@ -755,7 +738,7 @@ async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
     rows.push({
       recipeId: r.id,
       actorId: ownerId,
-      type: "published",
+      type: 'published',
       note: null,
       relatedRecipeId: null,
       createdAt: daysAgo(r.createdDaysAgo, 1),
@@ -769,7 +752,7 @@ async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
     rows.push({
       recipeId: child.forkedFromId,
       actorId: ownerId,
-      type: "adapted",
+      type: 'adapted',
       note: child.forkNote ?? null,
       relatedRecipeId: child.id,
       createdAt: daysAgo(child.createdDaysAgo, 2),
@@ -779,11 +762,7 @@ async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
   await tx.insert(recipeEvents).values(rows);
 }
 
-async function seedRecipes(
-  tx: Tx,
-  ownerId: string,
-  groupId: string,
-): Promise<void> {
+async function seedRecipes(tx: Tx, ownerId: string, groupId: string): Promise<void> {
   // Insert sources before forks so self-referential FKs resolve.
   const ordered = [...SEED_RECIPES].sort(
     (a, b) => (a.forkedFromId ? 1 : 0) - (b.forkedFromId ? 1 : 0),
@@ -805,13 +784,13 @@ async function seedRecipes(
 
 async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
   const ratingRows: { recipeId: string; userId: string; value: number }[] = [
-    { recipeId: GRAVY.id, userId: "seed_usr_rosa", value: 5 },
-    { recipeId: GRAVY.id, userId: "seed_usr_mateo", value: 4 },
-    { recipeId: GRAVY.id, userId: "seed_usr_gran", value: 5 },
-    { recipeId: MARINARA.id, userId: "seed_usr_mateo", value: 5 },
-    { recipeId: MARINARA.id, userId: "seed_usr_rosa", value: 4 },
-    { recipeId: FOCACCIA.id, userId: "seed_usr_gran", value: 5 },
-    { recipeId: FOCACCIA.id, userId: "seed_usr_mateo", value: 5 },
+    { recipeId: GRAVY.id, userId: 'seed_usr_rosa', value: 5 },
+    { recipeId: GRAVY.id, userId: 'seed_usr_mateo', value: 4 },
+    { recipeId: GRAVY.id, userId: 'seed_usr_gran', value: 5 },
+    { recipeId: MARINARA.id, userId: 'seed_usr_mateo', value: 5 },
+    { recipeId: MARINARA.id, userId: 'seed_usr_rosa', value: 4 },
+    { recipeId: FOCACCIA.id, userId: 'seed_usr_gran', value: 5 },
+    { recipeId: FOCACCIA.id, userId: 'seed_usr_mateo', value: 5 },
   ];
   for (const rt of ratingRows) {
     await tx
@@ -846,7 +825,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
     id: string;
     recipeId: string;
     userId: string;
-    kind: "comment" | "suggestion";
+    kind: 'comment' | 'suggestion';
     body: string;
     parentId?: string;
     daysAgo: number;
@@ -855,52 +834,52 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
   // Parents before replies so threads assemble correctly.
   const commentRows: CommentRow[] = [
     {
-      id: "seed_cmt_gravy_praise",
+      id: 'seed_cmt_gravy_praise',
       recipeId: GRAVY.id,
-      userId: "seed_usr_rosa",
-      kind: "comment",
+      userId: 'seed_usr_rosa',
+      kind: 'comment',
       daysAgo: 80,
-      body: "This is exactly how Nonna made it. The smell took me straight back to her kitchen. The ribs are non-negotiable!",
+      body: 'This is exactly how Nonna made it. The smell took me straight back to her kitchen. The ribs are non-negotiable!',
     },
     {
-      id: "seed_cmt_gravy_reply",
+      id: 'seed_cmt_gravy_reply',
       recipeId: GRAVY.id,
       userId: ownerId,
-      parentId: "seed_cmt_gravy_praise",
-      kind: "comment",
+      parentId: 'seed_cmt_gravy_praise',
+      kind: 'comment',
       daysAgo: 79,
       body: "So glad it landed, Rosa. I finally wrote down the timing on her card so we don't lose it.",
     },
     {
-      id: "seed_cmt_gravy_sugg",
+      id: 'seed_cmt_gravy_sugg',
       recipeId: GRAVY.id,
-      userId: "seed_usr_mateo",
-      kind: "suggestion",
+      userId: 'seed_usr_mateo',
+      kind: 'suggestion',
       daysAgo: 70,
-      body: "Suggestion: drop a parmesan rind in while it simmers and pull it before serving. Adds a lovely savory depth.",
+      body: 'Suggestion: drop a parmesan rind in while it simmers and pull it before serving. Adds a lovely savory depth.',
     },
     {
-      id: "seed_cmt_mar_praise",
+      id: 'seed_cmt_mar_praise',
       recipeId: MARINARA.id,
-      userId: "seed_usr_gran",
-      kind: "comment",
+      userId: 'seed_usr_gran',
+      kind: 'comment',
       daysAgo: 20,
-      body: "Clever little weeknight version, and a nice way to keep the Sunday flavor going midweek.",
+      body: 'Clever little weeknight version, and a nice way to keep the Sunday flavor going midweek.',
     },
     {
-      id: "seed_cmt_mar_sugg",
+      id: 'seed_cmt_mar_sugg',
       recipeId: MARINARA.id,
-      userId: "seed_usr_rosa",
-      kind: "suggestion",
+      userId: 'seed_usr_rosa',
+      kind: 'suggestion',
       daysAgo: 18,
       resolvedDaysAgo: 12,
-      body: "Suggestion: a splash of pasta water when you toss it helps the sauce cling. Worth adding to the last step.",
+      body: 'Suggestion: a splash of pasta water when you toss it helps the sauce cling. Worth adding to the last step.',
     },
     {
-      id: "seed_cmt_foc_tip",
+      id: 'seed_cmt_foc_tip',
       recipeId: FOCACCIA.id,
-      userId: "seed_usr_mateo",
-      kind: "comment",
+      userId: 'seed_usr_mateo',
+      kind: 'comment',
       daysAgo: 50,
       body: "The overnight cold ferment is absolutely worth it. Biggest, bubbliest crumb I've gotten at home.",
     },
@@ -916,8 +895,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
         parentId: c.parentId ?? null,
         kind: c.kind,
         body: c.body,
-        resolvedAt:
-          c.resolvedDaysAgo != null ? daysAgo(c.resolvedDaysAgo) : null,
+        resolvedAt: c.resolvedDaysAgo != null ? daysAgo(c.resolvedDaysAgo) : null,
         createdAt,
         updatedAt: createdAt,
       })
@@ -927,8 +905,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
           body: c.body,
           kind: c.kind,
           parentId: c.parentId ?? null,
-          resolvedAt:
-            c.resolvedDaysAgo != null ? daysAgo(c.resolvedDaysAgo) : null,
+          resolvedAt: c.resolvedDaysAgo != null ? daysAgo(c.resolvedDaysAgo) : null,
           updatedAt: new Date(),
         },
       });
@@ -951,9 +928,9 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
     ownerId,
     groupId,
     users: {
-      gran: "seed_usr_gran",
-      rosa: "seed_usr_rosa",
-      mateo: "seed_usr_mateo",
+      gran: 'seed_usr_gran',
+      rosa: 'seed_usr_rosa',
+      mateo: 'seed_usr_mateo',
     },
     recipes: {
       gravy: GRAVY.id,
@@ -1020,11 +997,9 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
     .values(listRow)
     .onConflictDoUpdate({
       target: shoppingLists.id,
-      set: { name: listRow.name ?? "Shopping list", updatedAt: new Date() },
+      set: { name: listRow.name ?? 'Shopping list', updatedAt: new Date() },
     });
-  await tx
-    .delete(shoppingListItems)
-    .where(eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID));
+  await tx.delete(shoppingListItems).where(eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID));
   const itemRows = buildShoppingListItemRows(ids);
   if (itemRows.length > 0) {
     await tx.insert(shoppingListItems).values(itemRows);
@@ -1127,25 +1102,16 @@ async function countAll() {
     db.$count(ratings, inArray(ratings.recipeId, RECIPE_IDS)),
     db.$count(comments, inArray(comments.recipeId, RECIPE_IDS)),
     db.$count(recipeVersions, inArray(recipeVersions.recipeId, RECIPE_IDS)),
-    db.$count(comments, eq(comments.kind, "suggestion")),
+    db.$count(comments, eq(comments.kind, 'suggestion')),
     db.$count(
       recipes,
-      and(
-        inArray(recipes.id, RECIPE_IDS),
-        sql`${recipes.forkedFromId} is not null`,
-      ),
+      and(inArray(recipes.id, RECIPE_IDS), sql`${recipes.forkedFromId} is not null`),
     ),
     db.$count(cookLogEntries, inArray(cookLogEntries.recipeId, RECIPE_IDS)),
     db.$count(collections, inArray(collections.id, [...SEED_COLLECTION_IDS])),
-    db.$count(
-      collectionRecipes,
-      inArray(collectionRecipes.collectionId, [...SEED_COLLECTION_IDS]),
-    ),
+    db.$count(collectionRecipes, inArray(collectionRecipes.collectionId, [...SEED_COLLECTION_IDS])),
     db.$count(favorites, inArray(favorites.recipeId, RECIPE_IDS)),
-    db.$count(
-      shoppingListItems,
-      eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID),
-    ),
+    db.$count(shoppingListItems, eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID)),
     db.$count(mealPlanEntries, inArray(mealPlanEntries.recipeId, RECIPE_IDS)),
     db.$count(foodItems),
   ]);
@@ -1168,7 +1134,7 @@ async function countAll() {
 }
 
 async function main() {
-  console.log("Seeding Heirloom demo data…");
+  console.log('Seeding Heirloom demo data…');
   await db.transaction(async (tx) => {
     const owner = await resolveOwner(tx);
     const groupId = await ensureGroup(tx, owner.id);
@@ -1181,7 +1147,7 @@ async function main() {
   });
 
   const c = await countAll();
-  console.log("Seed complete:");
+  console.log('Seed complete:');
   console.log(
     `  ${c.recipeCount} recipes (${c.forkCount} adaptation), ` +
       `${c.versionCount} versions, ${c.eventCount} timeline events`,
@@ -1205,7 +1171,7 @@ async function main() {
 }
 
 main().catch(async (error) => {
-  console.error("Seed failed:", error);
+  console.error('Seed failed:', error);
   await client.end({ timeout: 5 }).catch(() => undefined);
   process.exit(1);
 });

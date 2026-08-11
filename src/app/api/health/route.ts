@@ -1,21 +1,20 @@
-import { sql } from "drizzle-orm";
+import { sql } from 'drizzle-orm';
 
-import packageJson from "../../../../package.json";
-import { db, isDbConfigured } from "~/server/db";
+import packageJson from '../../../../package.json';
+import { db, isDbConfigured } from '~/server/db';
 
 // The DB probe needs Node's `postgres` driver, so keep this off the edge
 // runtime. `force-dynamic` + `revalidate: 0` guarantee a live check every hit
 // (never a cached 200) so an uptime monitor sees the real current state.
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
  * Commit the running build was produced from. Vercel and GitHub Actions expose
  * it under different names. Falls back to `dev` for a local `next start`.
  */
-const BUILD_SHA =
-  process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? "dev";
+const BUILD_SHA = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? 'dev';
 
 /** Human-readable release version, kept in lockstep by release-please (#265). */
 const VERSION = packageJson.version;
@@ -23,21 +22,18 @@ const VERSION = packageJson.version;
 /** Give up on the connectivity probe quickly. Health must stay cheap. */
 const DB_PROBE_TIMEOUT_MS = 2_000;
 
-async function probeDatabase(): Promise<"ok" | "degraded" | "not_configured"> {
-  if (!isDbConfigured()) return "not_configured";
+async function probeDatabase(): Promise<'ok' | 'degraded' | 'not_configured'> {
+  if (!isDbConfigured()) return 'not_configured';
   try {
     await Promise.race([
       db.execute(sql`select 1`),
       new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("db probe timeout")),
-          DB_PROBE_TIMEOUT_MS,
-        ),
+        setTimeout(() => reject(new Error('db probe timeout')), DB_PROBE_TIMEOUT_MS),
       ),
     ]);
-    return "ok";
+    return 'ok';
   } catch {
-    return "degraded";
+    return 'degraded';
   }
 }
 
@@ -59,11 +55,11 @@ async function probeDatabase(): Promise<"ok" | "degraded" | "not_configured"> {
  */
 export async function GET() {
   const database = await probeDatabase();
-  const healthy = database !== "degraded";
+  const healthy = database !== 'degraded';
 
   return Response.json(
     {
-      status: healthy ? "ok" : "degraded",
+      status: healthy ? 'ok' : 'degraded',
       version: VERSION,
       sha: BUILD_SHA,
       db: database,
@@ -71,7 +67,7 @@ export async function GET() {
     },
     {
       status: healthy ? 200 : 503,
-      headers: { "cache-control": "no-store" },
+      headers: { 'cache-control': 'no-store' },
     },
   );
 }

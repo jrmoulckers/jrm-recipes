@@ -11,7 +11,7 @@
  * `<ConsentProvider>` from the SSR-resolved cookie plus the browser's privacy
  * signals. All helpers are pure and synchronous so instrumentation stays cheap.
  */
-import { type ConsentStatus } from "~/config/consent";
+import { type ConsentStatus } from '~/config/consent';
 
 export type ConsentState = {
   /** When true, capture is opt-in: nothing is sent until status === "granted". */
@@ -24,7 +24,7 @@ export type ConsentState = {
 
 const DEFAULT_STATE: ConsentState = {
   requireConsent: false,
-  status: "unset",
+  status: 'unset',
   privacySignal: false,
 };
 
@@ -53,8 +53,8 @@ export function getConsentState(): ConsentState {
  */
 export function isCaptureAllowed(): boolean {
   if (state.privacySignal) return false;
-  if (state.status === "denied") return false;
-  if (state.requireConsent) return state.status === "granted";
+  if (state.status === 'denied') return false;
+  if (state.requireConsent) return state.status === 'granted';
   return true;
 }
 
@@ -80,5 +80,5 @@ export function detectPrivacySignal(
   if (!nav) return false;
   if (nav.globalPrivacyControl === true) return true;
   const dnt = nav.doNotTrack ?? win?.doNotTrack ?? nav.msDoNotTrack;
-  return dnt === "1" || dnt === "yes";
+  return dnt === '1' || dnt === 'yes';
 }

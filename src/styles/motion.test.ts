@@ -1,7 +1,7 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 /**
  * Motion-token guard (issue #95).
@@ -13,10 +13,14 @@ import { describe, expect, it } from "vitest";
  */
 
 const ROOT = process.cwd();
-const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
+const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), 'utf8');
 
-const THEMES_CSS = read("src", "styles", "themes.css");
-const TAILWIND = read("tailwind.config.ts");
+const THEMES_CSS = read('src', 'styles', 'themes.css');
+// Read as *source text*, so the assertions below would otherwise be pinned to
+// whichever quote style the formatter happens to be configured for. Normalize
+// at the read boundary: what these guards care about is the token values, not
+// how the file quotes them.
+const TAILWIND = read('tailwind.config.ts').replace(/'/g, '"');
 
 /**
  * Bans on untokenized motion (#750, #756, #758, #759).
@@ -46,7 +50,7 @@ const TAILWIND = read("tailwind.config.ts");
  * `transform:` keeps a hand-written probe. It names a CSS property rather than a
  * value that can be extracted and compared, and it has no referent to anchor to.
  */
-const RAW_TRANSFORM = "transform:";
+const RAW_TRANSFORM = 'transform:';
 
 /** Every `duration-x` utility in a source file, in order. */
 const durationTokensIn = (source: string) =>
@@ -57,20 +61,18 @@ const blockOf = (config: string, header: string) => {
   const start = config.indexOf(header);
   expect(start, `tailwind.config.ts declares ${header}`).toBeGreaterThan(-1);
   let depth = 0;
-  let i = config.indexOf("{", start);
+  let i = config.indexOf('{', start);
   const from = i;
   for (; i < config.length; i++) {
-    if (config[i] === "{") depth++;
-    else if (config[i] === "}" && --depth === 0) break;
+    if (config[i] === '{') depth++;
+    else if (config[i] === '}' && --depth === 0) break;
   }
   return config.slice(from, i);
 };
 
 /** Every animation shorthand declared in the Tailwind `animation` block. */
 const animationValues = (config: string) =>
-  [...blockOf(config, "animation: {").matchAll(/:\s*"([^"]+)"/g)].map(
-    (m) => m[1]!,
-  );
+  [...blockOf(config, 'animation: {').matchAll(/:\s*"([^"]+)"/g)].map((m) => m[1]!);
 
 /**
  * The duration token names Tailwind exposes, e.g. fast / base / slow.
@@ -81,35 +83,25 @@ const animationValues = (config: string) =>
  */
 const tokenizedDurations = (config: string) =>
   [
-    ...blockOf(config, "transitionDuration: {").matchAll(
-      /(\w+):\s*"var\(--duration-[\w-]+\)"/g,
-    ),
+    ...blockOf(config, 'transitionDuration: {').matchAll(/(\w+):\s*"var\(--duration-[\w-]+\)"/g),
   ].map((m) => m[1]!);
 
 /** Every UI primitive, enumerated rather than listed (#759). */
-const PRIMITIVES = readdirSync(join(ROOT, "src", "components", "ui")).filter(
-  (file) => file.endsWith(".tsx") && !file.includes(".test."),
+const PRIMITIVES = readdirSync(join(ROOT, 'src', 'components', 'ui')).filter(
+  (file) => file.endsWith('.tsx') && !file.includes('.test.'),
 );
 
-describe("motion bans (issue #758)", () => {
-  it("every UI primitive uses only tokenized durations", () => {
+describe('motion bans (issue #758)', () => {
+  it('every UI primitive uses only tokenized durations', () => {
     const tokenized = tokenizedDurations(TAILWIND);
-    expect(
-      tokenized.length,
-      "Tailwind exposes duration tokens",
-    ).toBeGreaterThan(0);
-    expect(PRIMITIVES.length, "UI primitives were found").toBeGreaterThan(0);
+    expect(tokenized.length, 'Tailwind exposes duration tokens').toBeGreaterThan(0);
+    expect(PRIMITIVES.length, 'UI primitives were found').toBeGreaterThan(0);
 
     let checked = 0;
     for (const file of PRIMITIVES) {
-      for (const used of durationTokensIn(
-        read("src", "components", "ui", file),
-      )) {
+      for (const used of durationTokensIn(read('src', 'components', 'ui', file))) {
         checked++;
-        expect(
-          tokenized,
-          `${file} uses an untokenized duration-${used}`,
-        ).toContain(used);
+        expect(tokenized, `${file} uses an untokenized duration-${used}`).toContain(used);
       }
     }
     // A per-file `toEqual([...])` is non-vacuous by construction, because a
@@ -117,10 +109,10 @@ describe("motion bans (issue #758)", () => {
     // "Every extracted token is tokenized" is vacuously true over zero tokens,
     // so restating it as a sweep reintroduces the vacuity of #751/#754. Count
     // the assertions actually made.
-    expect(checked, "durations were actually extracted").toBeGreaterThan(0);
+    expect(checked, 'durations were actually extracted').toBeGreaterThan(0);
   });
 
-  it("every animation is tokenized, including ones added later", () => {
+  it('every animation is tokenized, including ones added later', () => {
     const values = animationValues(TAILWIND);
     // Fails closed: a rotted extractor yields [], which has no length.
     expect(values.length).toBeGreaterThan(0);
@@ -131,43 +123,39 @@ describe("motion bans (issue #758)", () => {
     }
   });
 
-  it("still matches a raw transform, so that ban can fire", () => {
+  it('still matches a raw transform, so that ban can fire', () => {
     expect('"pop-in": { transform: "scale(0.96)" }').toContain(RAW_TRANSFORM);
   });
 });
 
-describe("motion tokens (issue #95)", () => {
-  it("defines duration tokens scaled by --motion-scale", () => {
+describe('motion tokens (issue #95)', () => {
+  it('defines duration tokens scaled by --motion-scale', () => {
     // Derived from the referent rather than listed, so a token added later is
     // covered too (#757, #780). A hardcoded list silently stops checking when
     // emptied: unlike `it.each([])`, a plain `for` loop keeps the registered
     // test count identical, so there is no signal at all.
-    const declared = [
-      ...THEMES_CSS.matchAll(/(--duration-[\w-]+):\s*([^;]+);/g),
-    ];
+    const declared = [...THEMES_CSS.matchAll(/(--duration-[\w-]+):\s*([^;]+);/g)];
     // Fails closed: a rotted extractor yields [], which has no length.
-    expect(declared.length, "duration tokens were found").toBeGreaterThan(0);
+    expect(declared.length, 'duration tokens were found').toBeGreaterThan(0);
     for (const [, name, value] of declared) {
-      expect(value, `${name} scaled by --motion-scale`).toMatch(
-        /calc\([^;]*var\(--motion-scale\)/,
-      );
+      expect(value, `${name} scaled by --motion-scale`).toMatch(/calc\([^;]*var\(--motion-scale\)/);
     }
   });
 
-  it("defines named easing tokens", () => {
+  it('defines named easing tokens', () => {
     expect(THEMES_CSS).toMatch(/--ease-standard:\s*cubic-bezier/);
     expect(THEMES_CSS).toMatch(/--ease-emphasized:\s*cubic-bezier/);
   });
 
-  it("exposes the tokens through Tailwind and tokenizes keyframe easing", () => {
+  it('exposes the tokens through Tailwind and tokenizes keyframe easing', () => {
     expect(TAILWIND).toContain('fast: "var(--duration-fast)"');
     expect(TAILWIND).toContain('standard: "var(--ease-standard)"');
     // Untokenized easings are caught by the extract-and-compare check above,
     // which covers animations added later too (#758).
-    expect(TAILWIND).toContain("fade-in 0.2s var(--ease-standard)");
+    expect(TAILWIND).toContain('fade-in 0.2s var(--ease-standard)');
   });
 
-  it("provides direction-aware sheet slide keyframes for RTL (issue #93)", () => {
+  it('provides direction-aware sheet slide keyframes for RTL (issue #93)', () => {
     // The sheet docks on the logical inline-end edge, so RTL must slide from the
     // opposite physical side. Both directions stay tokenized (no ease-out).
     expect(TAILWIND).toContain(
@@ -176,29 +164,30 @@ describe("motion tokens (issue #95)", () => {
     expect(TAILWIND).toContain(
       '"slide-out-to-left": "slide-out-to-left 0.2s var(--ease-standard)"',
     );
-    expect(TAILWIND).toContain("translateX(-100%)");
+    expect(TAILWIND).toContain('translateX(-100%)');
   });
 
-  it("keeps translated overlays positioned while they pop (issue #620)", () => {
-    const popKeyframes = TAILWIND.slice(
-      TAILWIND.indexOf('"pop-in": {'),
-      TAILWIND.indexOf('"slide-in-from-right": {'),
-    );
+  it('keeps translated overlays positioned while they pop (issue #620)', () => {
+    // Via `blockOf` rather than a bare slice between two markers: a raw slice
+    // whose markers stop matching yields "", and `expect("").toContain(...)`
+    // reports a mismatch that reads like the config changed. `blockOf` asserts
+    // the header is present first, so a rotted marker fails as a rotted marker.
+    const popKeyframes = blockOf(TAILWIND, '"pop-in": {');
 
     expect(popKeyframes).toContain('scale: "0.96"');
     expect(popKeyframes).toContain('scale: "1"');
     expect(popKeyframes).not.toContain(RAW_TRANSFORM);
   });
 
-  it("adopts the tokens in the primitives instead of literal durations", () => {
-    const button = read("src", "components", "ui", "button.tsx");
-    const card = read("src", "components", "ui", "card.tsx");
-    const tabs = read("src", "components", "ui", "tabs.tsx");
+  it('adopts the tokens in the primitives instead of literal durations', () => {
+    const button = read('src', 'components', 'ui', 'button.tsx');
+    const card = read('src', 'components', 'ui', 'card.tsx');
+    const tabs = read('src', 'components', 'ui', 'tabs.tsx');
 
     // Which token each primitive uses. That no *untokenized* duration appears
     // is asserted by extract-and-compare above, for all three files (#758).
-    expect(button).toContain("duration-fast");
-    expect(card).toContain("duration-base");
-    expect(tabs).toContain("duration-fast");
+    expect(button).toContain('duration-fast');
+    expect(card).toContain('duration-base');
+    expect(tabs).toContain('duration-fast');
   });
 });

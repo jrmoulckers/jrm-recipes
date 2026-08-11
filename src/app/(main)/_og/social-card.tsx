@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import * as React from "react";
+import * as React from 'react';
 
 import {
   BrandCard,
@@ -10,7 +10,7 @@ import {
   TERRACOTTA_DEEP,
   Wordmark,
   clampText,
-} from "../recipes/_assets/card";
+} from '../recipes/_assets/card';
 
 /**
  * Shared, satori-safe Open Graph cards for public *social* surfaces. Creator
@@ -40,12 +40,10 @@ export type GroupCardData = {
 export function ogInitials(source: string): string {
   const words = source.split(/\s+/).filter(Boolean);
   const first = words[0];
-  if (!first) return "?";
+  if (!first) return '?';
   const letters =
-    words.length === 1
-      ? first.slice(0, 2)
-      : `${first[0] ?? ""}${words[1]?.[0] ?? ""}`;
-  return (letters || "?").toUpperCase();
+    words.length === 1 ? first.slice(0, 2) : `${first[0] ?? ''}${words[1]?.[0] ?? ''}`;
+  return (letters || '?').toUpperCase();
 }
 
 function AvatarCircle({
@@ -60,16 +58,16 @@ function AvatarCircle({
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: size,
         height: size,
         borderRadius: 999,
         background: `linear-gradient(145deg, ${TERRACOTTA} 0%, ${TERRACOTTA_DEEP} 100%)`,
         border: `6px solid ${CREAM}`,
-        boxShadow: "0 8px 24px rgba(124,61,6,0.28)",
-        overflow: "hidden",
+        boxShadow: '0 8px 24px rgba(124,61,6,0.28)',
+        overflow: 'hidden',
         flexShrink: 0,
       }}
     >
@@ -82,13 +80,13 @@ function AvatarCircle({
           alt=""
           width={size}
           height={size}
-          style={{ width: size, height: size, objectFit: "cover" }}
+          style={{ width: size, height: size, objectFit: 'cover' }}
         />
       ) : (
         <div
           style={{
-            display: "flex",
-            fontFamily: "Nunito",
+            display: 'flex',
+            fontFamily: 'Nunito',
             fontSize: size * 0.4,
             fontWeight: 800,
             color: CREAM,
@@ -101,52 +99,46 @@ function AvatarCircle({
   );
 }
 
-function Frame({
-  kicker,
-  children,
-}: {
-  kicker: string;
-  children: React.ReactNode;
-}) {
+function Frame({ kicker, children }: { kicker: string; children: React.ReactNode }) {
   return (
     <div
       style={{
-        display: "flex",
-        position: "relative",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        width: "100%",
-        height: "100%",
+        display: 'flex',
+        position: 'relative',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        width: '100%',
+        height: '100%',
         padding: 64,
         background: CREAM,
-        fontFamily: "Nunito",
+        fontFamily: 'Nunito',
       }}
     >
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: 0,
           left: 0,
           width: 1200,
           height: 630,
-          display: "flex",
+          display: 'flex',
           background:
-            "radial-gradient(circle at 88% 6%, rgba(180,83,9,0.16) 0%, rgba(180,83,9,0) 42%), radial-gradient(circle at 108% 96%, rgba(180,83,9,0.12) 0%, rgba(180,83,9,0) 40%)",
+            'radial-gradient(circle at 88% 6%, rgba(180,83,9,0.16) 0%, rgba(180,83,9,0) 42%), radial-gradient(circle at 108% 96%, rgba(180,83,9,0.12) 0%, rgba(180,83,9,0) 40%)',
         }}
       />
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <Wordmark onDark={false} />
         <div
           style={{
-            display: "flex",
-            fontFamily: "Nunito",
+            display: 'flex',
+            fontFamily: 'Nunito',
             fontSize: 24,
             fontWeight: 700,
             color: TERRACOTTA_DEEP,
@@ -159,10 +151,10 @@ function Frame({
       {children}
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          justifyContent: "flex-end",
-          fontFamily: "Nunito",
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          fontFamily: 'Nunito',
           fontSize: 24,
           fontWeight: 600,
           color: MUTED,
@@ -186,28 +178,24 @@ function titleSize(name: string): number {
 export function ProfileCard({ data }: { data: ProfileCardData | null }) {
   if (!data) return <BrandCard />;
   const { name, handle, avatar, recipeCount } = data;
-  const recipeLabel = `${recipeCount} public recipe${recipeCount === 1 ? "" : "s"}`;
+  const recipeLabel = `${recipeCount} public recipe${recipeCount === 1 ? '' : 's'}`;
   return (
     <Frame kicker="COOK">
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
           gap: 40,
         }}
       >
-        <AvatarCircle
-          src={avatar}
-          initials={ogInitials(name || handle)}
-          size={200}
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <AvatarCircle src={avatar} initials={ogInitials(name || handle)} size={200} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div
             style={{
-              display: "flex",
+              display: 'flex',
               ...clampText(2),
-              fontFamily: "Fraunces",
+              fontFamily: 'Fraunces',
               fontSize: titleSize(name),
               fontWeight: 600,
               lineHeight: 1.05,
@@ -220,8 +208,8 @@ export function ProfileCard({ data }: { data: ProfileCardData | null }) {
           </div>
           <div
             style={{
-              display: "flex",
-              fontFamily: "Nunito",
+              display: 'flex',
+              fontFamily: 'Nunito',
               fontSize: 30,
               fontWeight: 700,
               color: MUTED,
@@ -231,8 +219,8 @@ export function ProfileCard({ data }: { data: ProfileCardData | null }) {
           </div>
           <div
             style={{
-              display: "flex",
-              fontFamily: "Nunito",
+              display: 'flex',
+              fontFamily: 'Nunito',
               fontSize: 28,
               fontWeight: 600,
               color: TERRACOTTA,
@@ -250,24 +238,24 @@ export function ProfileCard({ data }: { data: ProfileCardData | null }) {
 export function GroupCard({ data }: { data: GroupCardData | null }) {
   if (!data) return <BrandCard />;
   const { name, avatar, memberCount, recipeCount } = data;
-  const metaLabel = `${memberCount} member${memberCount === 1 ? "" : "s"}  ·  ${recipeCount} recipe${recipeCount === 1 ? "" : "s"}`;
+  const metaLabel = `${memberCount} member${memberCount === 1 ? '' : 's'}  ·  ${recipeCount} recipe${recipeCount === 1 ? '' : 's'}`;
   return (
     <Frame kicker="FAMILY COOKBOOK">
       <div
         style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
           gap: 40,
         }}
       >
         <AvatarCircle src={avatar} initials={ogInitials(name)} size={200} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div
             style={{
-              display: "flex",
+              display: 'flex',
               ...clampText(2),
-              fontFamily: "Fraunces",
+              fontFamily: 'Fraunces',
               fontSize: titleSize(name),
               fontWeight: 600,
               lineHeight: 1.05,
@@ -280,8 +268,8 @@ export function GroupCard({ data }: { data: GroupCardData | null }) {
           </div>
           <div
             style={{
-              display: "flex",
-              fontFamily: "Nunito",
+              display: 'flex',
+              fontFamily: 'Nunito',
               fontSize: 28,
               fontWeight: 600,
               color: MUTED,

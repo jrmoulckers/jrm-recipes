@@ -1,4 +1,4 @@
-import { type User } from "~/server/db/schema";
+import { type User } from '~/server/db/schema';
 
 /**
  * The stable local user used when auth isn't configured (dev-bypass) and by the
@@ -6,12 +6,12 @@ import { type User } from "~/server/db/schema";
  * import it without pulling in the Clerk-aware auth module.
  */
 export const DEV_USER: User = {
-  id: "dev_local_user_00000000",
+  id: 'dev_local_user_00000000',
   clerkId: null,
-  email: "cook@heirloom.local",
-  name: "Home Cook",
-  handle: "home-cook",
-  slug: "home-cook",
+  email: 'cook@heirloom.local',
+  name: 'Home Cook',
+  handle: 'home-cook',
+  slug: 'home-cook',
   avatarUrl: null,
   avatarUserManaged: false,
   weeklyDigestOptIn: false,
@@ -41,11 +41,11 @@ export const DEV_USER: User = {
  */
 export const DEV_CO_COOK: User = {
   ...DEV_USER,
-  id: "e2e_usr_cocook_000000",
-  email: "co-cook@heirloom.e2e",
-  name: "E2E Co-Cook",
-  handle: "e2e-co-cook",
-  slug: "e2e-co-cook",
+  id: 'e2e_usr_cocook_000000',
+  email: 'co-cook@heirloom.e2e',
+  name: 'E2E Co-Cook',
+  handle: 'e2e-co-cook',
+  slug: 'e2e-co-cook',
 };
 
 /**
@@ -55,8 +55,8 @@ export const DEV_CO_COOK: User = {
  * rule is stated once rather than as a list of ids that has to be maintained
  * alongside the identities themselves.
  */
-export function isE2eIdentity(user: Pick<User, "id">): boolean {
-  return user.id.startsWith("e2e_");
+export function isE2eIdentity(user: Pick<User, 'id'>): boolean {
+  return user.id.startsWith('e2e_');
 }
 
 /**
@@ -72,7 +72,7 @@ export function isE2eIdentity(user: Pick<User, "id">): boolean {
 export const DEV_IDENTITIES: readonly User[] = [DEV_USER, DEV_CO_COOK];
 
 /** Cookie a test sets to choose which dev identity a browser context is. */
-export const DEV_IDENTITY_COOKIE = "heirloom_dev_identity";
+export const DEV_IDENTITY_COOKIE = 'heirloom_dev_identity';
 
 /**
  * Whether the dev identity selector is switched on at all (issue #783).
@@ -91,7 +91,7 @@ export const DEV_IDENTITY_COOKIE = "heirloom_dev_identity";
 export function isIdentitySelectorEnabled(
   flag: string | undefined = process.env.E2E_IDENTITY_SELECTOR,
 ): boolean {
-  return flag === "1";
+  return flag === '1';
 }
 
 /**
@@ -104,7 +104,5 @@ export function isIdentitySelectorEnabled(
  */
 export function resolveDevIdentity(requested: string | undefined | null): User {
   if (!requested) return DEV_USER;
-  return (
-    DEV_IDENTITIES.find((identity) => identity.id === requested) ?? DEV_USER
-  );
+  return DEV_IDENTITIES.find((identity) => identity.id === requested) ?? DEV_USER;
 }

@@ -14,9 +14,9 @@
  */
 export interface OfflineFallbackRequest {
   /** `RequestDestination`. `"document"` for hard navigations and reloads. */
-  destination: Request["destination"];
+  destination: Request['destination'];
   /** Request headers. App Router RSC navigations carry `RSC: 1`. */
-  headers: Pick<Headers, "get">;
+  headers: Pick<Headers, 'get'>;
 }
 
 /**
@@ -34,11 +34,9 @@ export interface OfflineFallbackRequest {
  *   Next.js router fall back to a hard navigation that lands on `/~offline`,
  *   instead of the click silently dying.
  */
-export function isOfflineFallbackRequest(
-  request: OfflineFallbackRequest,
-): boolean {
-  if (request.destination === "document") {
+export function isOfflineFallbackRequest(request: OfflineFallbackRequest): boolean {
+  if (request.destination === 'document') {
     return true;
   }
-  return request.headers.get("RSC") === "1";
+  return request.headers.get('RSC') === '1';
 }

@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /** The three Svix headers that carry a webhook's id, timestamp, and signature. */
 export type SvixHeaders = {
@@ -36,15 +36,13 @@ export function verifySvixSignature(
   if (!Number.isFinite(ts)) return false;
   if (Math.abs(now / 1000 - ts) > TOLERANCE_SECONDS) return false;
 
-  const key = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+  const key = Buffer.from(secret.replace(/^whsec_/, ''), 'base64');
   const signedContent = `${id}.${timestamp}.${payload}`;
-  const expected = createHmac("sha256", key)
-    .update(signedContent)
-    .digest("base64");
+  const expected = createHmac('sha256', key).update(signedContent).digest('base64');
 
-  for (const part of signature.split(" ")) {
-    const [version, value] = part.split(",");
-    if (version !== "v1" || !value) continue;
+  for (const part of signature.split(' ')) {
+    const [version, value] = part.split(',');
+    if (version !== 'v1' || !value) continue;
     if (timingSafeEqualString(value, expected)) return true;
   }
   return false;

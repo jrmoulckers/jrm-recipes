@@ -1,8 +1,8 @@
-"use server";
+'use server';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { incrementUsage } from "./usage";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { incrementUsage } from './usage';
 
 /** One mebibyte, so byte counts convert to the `storage_mb` metric's unit. */
 const BYTES_PER_MB = 1024 * 1024;
@@ -25,7 +25,7 @@ export async function recordStorageUsageAction(bytes: number): Promise<void> {
   try {
     const user = await requireUser();
     const megabytes = Math.ceil(bytes / BYTES_PER_MB);
-    await incrementUsage(user, "storage_mb", megabytes);
+    await incrementUsage(user, 'storage_mb', megabytes);
   } catch {
     // Metering is non-critical. Swallow (e.g. unauthenticated) rather than
     // surfacing an error over a successful upload.

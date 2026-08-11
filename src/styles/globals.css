@@ -1,5 +1,5 @@
-@import "./themes.css";
-@import "./a11y.css";
+@import './themes.css';
+@import './a11y.css';
 
 @tailwind base;
 @tailwind components;
@@ -64,7 +64,7 @@
    * links (`a` without `.btn`) are intentionally excluded so prose isn't
    * stretched. only link-styled buttons (`a.btn`, `label.btn`) opt in. */
   button,
-  [role="button"],
+  [role='button'],
   a.btn,
   label.btn {
     min-height: var(--tap-min, 2.75rem);
@@ -79,9 +79,9 @@
    * (render at their designed size, a normal-looking toggle) and `--tap-min` in
    * the large-target Kids/Simple modes, where `--control-scale` grows the pill to
    * match. Role selectors (0,1,0) outrank the bare `button` rule (0,0,1). */
-  [role="switch"],
-  [role="checkbox"],
-  [role="radio"] {
+  [role='switch'],
+  [role='checkbox'],
+  [role='radio'] {
     min-height: var(--control-min, 0px);
     min-width: var(--control-min, 0px);
   }
@@ -93,8 +93,8 @@
    * preserving accessibility (issue #288). */
   button,
   a,
-  [role="button"],
-  [role="tab"],
+  [role='button'],
+  [role='tab'],
   summary {
     touch-action: manipulation;
   }
@@ -121,9 +121,9 @@
  * Scoped to :not([data-motion="off"]) so an explicit in-app "off" (issue #130)
  * overrides the OS preference. unset/"reduced" still reduce. */
 @media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion="off"]) *,
-  :root:not([data-motion="off"]) *::before,
-  :root:not([data-motion="off"]) *::after {
+  :root:not([data-motion='off']) *,
+  :root:not([data-motion='off']) *::before,
+  :root:not([data-motion='off']) *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -131,9 +131,9 @@
   }
 }
 
-[data-theme="barebones"] *,
-[data-theme="barebones"] *::before,
-[data-theme="barebones"] *::after {
+[data-theme='barebones'] *,
+[data-theme='barebones'] *::before,
+[data-theme='barebones'] *::after {
   animation-duration: 0.001ms !important;
   transition-duration: 0.001ms !important;
 }
@@ -144,13 +144,13 @@
  * only the calm `bg-muted` base remains (see components/ui/skeleton.tsx).
  */
 @media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion="off"]) [data-skeleton-shimmer] {
+  :root:not([data-motion='off']) [data-skeleton-shimmer] {
     display: none;
   }
 }
 
-[data-theme="barebones"] [data-skeleton-shimmer],
-[data-motion="reduced"] [data-skeleton-shimmer] {
+[data-theme='barebones'] [data-skeleton-shimmer],
+[data-motion='reduced'] [data-skeleton-shimmer] {
   display: none;
 }
 
@@ -185,9 +185,7 @@
   --toast-close-button-transform: none;
 }
 
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled] {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] {
   gap: 0.75rem;
   padding: 0.75rem;
   /* Room for the dismiss button parked on the trailing edge. */
@@ -200,19 +198,13 @@
   backdrop-filter: blur(8px);
 }
 
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled]
-  [data-title] {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] [data-title] {
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25;
 }
 
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled]
-  [data-description] {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] [data-description] {
   font-size: 0.75rem;
   line-height: 1.4;
   color: hsl(var(--muted-foreground));
@@ -224,10 +216,7 @@
  * so glyph contrast is guaranteed by the theme's own token pairing in every
  * mode and scheme (WCAG 1.4.11) instead of depending on how a tint happens to
  * land on the card. */
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled]
-  [data-icon] {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] [data-icon] {
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -240,18 +229,14 @@
   color: hsl(var(--muted-foreground));
 }
 
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled]
-  [data-icon]
-  > * {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] [data-icon] > * {
   width: 1.25rem;
   height: 1.25rem;
 }
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled][data-type="success"]
+  [data-sonner-toast][data-styled][data-type='success']
   [data-icon] {
   background: hsl(var(--success));
   color: hsl(var(--success-foreground));
@@ -259,7 +244,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled][data-type="error"]
+  [data-sonner-toast][data-styled][data-type='error']
   [data-icon] {
   background: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
@@ -267,7 +252,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled][data-type="warning"]
+  [data-sonner-toast][data-styled][data-type='warning']
   [data-icon] {
   background: hsl(var(--warning));
   color: hsl(var(--warning-foreground));
@@ -275,7 +260,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled][data-type="info"]
+  [data-sonner-toast][data-styled][data-type='info']
   [data-icon] {
   background: hsl(var(--info));
   color: hsl(var(--info-foreground));
@@ -338,10 +323,7 @@
 /* Toast actions borrow the primary/secondary button tokens so a toast never
  * introduces a third button language. Height is left to the global tap-target
  * floor. */
-:root
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled]
-  [data-button] {
+:root [data-sonner-toaster][data-sonner-theme] [data-sonner-toast][data-styled] [data-button] {
   border-radius: calc(var(--radius) - 2px);
   padding-inline: 0.75rem;
   font-size: 0.75rem;

@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Heart } from "lucide-react";
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Heart } from 'lucide-react';
 
 import {
   formatIngredientLine,
@@ -9,10 +9,10 @@ import {
   groupIngredients,
   groupSteps,
   provenanceLines,
-} from "~/components/print/export";
-import type { PrintRecipe } from "~/components/print/types";
-import { buttonVariants } from "~/components/ui/button";
-import { KeepsakePrintButton } from "~/components/recipe/keepsake-print-button";
+} from '~/components/print/export';
+import type { PrintRecipe } from '~/components/print/types';
+import { buttonVariants } from '~/components/ui/button';
+import { KeepsakePrintButton } from '~/components/recipe/keepsake-print-button';
 
 /**
  * A recipe presented as a warm keepsake (issue #407): a personal note "from"
@@ -30,8 +30,8 @@ export function KeepsakeView({
   from: string | null;
   note: string | null;
 }) {
-  const t = useTranslations("keepsake");
-  const td = useTranslations("recipeDetail");
+  const t = useTranslations('keepsake');
+  const td = useTranslations('recipeDetail');
   const meta = formatRecipeMeta(recipe);
   const provenance = provenanceLines(recipe);
   let stepNumber = 0;
@@ -39,11 +39,8 @@ export function KeepsakeView({
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 print:py-0">
       <div className="mb-8 flex items-center justify-between gap-4 print:hidden">
-        <Link
-          href={`/recipes/${recipe.slug}`}
-          className={buttonVariants({ variant: "ghost" })}
-        >
-          {t("viewRecipe")}
+        <Link href={`/recipes/${recipe.slug}`} className={buttonVariants({ variant: 'ghost' })}>
+          {t('viewRecipe')}
         </Link>
         <KeepsakePrintButton />
       </div>
@@ -55,7 +52,7 @@ export function KeepsakeView({
             <Heart className="size-6" aria-hidden="true" />
           </span>
           <p className="mt-4 font-display text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            {t("handedDown")}
+            {t('handedDown')}
           </p>
           {note ? (
             <p className="mx-auto mt-4 max-w-lg whitespace-pre-line font-display text-xl leading-relaxed text-foreground">
@@ -64,31 +61,23 @@ export function KeepsakeView({
           ) : null}
           {from ? (
             <p className="mt-4 font-display text-lg italic text-muted-foreground">
-              {t("withLove", { from })}
+              {t('withLove', { from })}
             </p>
           ) : null}
         </header>
 
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          {recipe.title}
-        </h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{recipe.title}</h1>
         {recipe.description ? (
           <p className="mt-2 text-muted-foreground">{recipe.description}</p>
         ) : null}
         {meta.length > 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            {meta.join(" · ")}
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{meta.join(' · ')}</p>
         ) : null}
 
         <section className="mt-8">
-          <h2 className="font-display text-xl font-semibold">
-            {td("ingredients.heading")}
-          </h2>
+          <h2 className="font-display text-xl font-semibold">{td('ingredients.heading')}</h2>
           {recipe.ingredients.length === 0 ? (
-            <p className="mt-2 text-muted-foreground">
-              {td("ingredients.empty")}
-            </p>
+            <p className="mt-2 text-muted-foreground">{td('ingredients.empty')}</p>
           ) : (
             groupIngredients(recipe.ingredients).map((group, groupIndex) => (
               <div key={group.section ?? `ing-${groupIndex}`} className="mt-3">
@@ -99,9 +88,7 @@ export function KeepsakeView({
                 ) : null}
                 <ul className="mt-1 list-disc space-y-1 pl-5">
                   {group.items.map((ingredient) => (
-                    <li key={ingredient.id}>
-                      {formatIngredientLine(ingredient)}
-                    </li>
+                    <li key={ingredient.id}>{formatIngredientLine(ingredient)}</li>
                   ))}
                 </ul>
               </div>
@@ -110,11 +97,9 @@ export function KeepsakeView({
         </section>
 
         <section className="mt-8">
-          <h2 className="font-display text-xl font-semibold">
-            {td("method.heading")}
-          </h2>
+          <h2 className="font-display text-xl font-semibold">{td('method.heading')}</h2>
           {recipe.steps.length === 0 ? (
-            <p className="mt-2 text-muted-foreground">{t("noSteps")}</p>
+            <p className="mt-2 text-muted-foreground">{t('noSteps')}</p>
           ) : (
             groupSteps(recipe.steps).map((group, groupIndex) => (
               <div key={group.section ?? `step-${groupIndex}`} className="mt-3">
@@ -143,23 +128,16 @@ export function KeepsakeView({
 
         {recipe.notes ? (
           <section className="mt-8">
-            <h2 className="font-display text-xl font-semibold">
-              {td("notes")}
-            </h2>
-            <p className="mt-2 whitespace-pre-line text-muted-foreground">
-              {recipe.notes.trim()}
-            </p>
+            <h2 className="font-display text-xl font-semibold">{td('notes')}</h2>
+            <p className="mt-2 whitespace-pre-line text-muted-foreground">{recipe.notes.trim()}</p>
           </section>
         ) : null}
 
         {recipe.story || provenance.length > 0 ? (
           <section className="mt-8">
-            <h2 className="font-display text-xl font-semibold">{t("story")}</h2>
+            <h2 className="font-display text-xl font-semibold">{t('story')}</h2>
             {provenance.map((line) => (
-              <p
-                key={line}
-                className="mt-1 text-sm italic text-muted-foreground"
-              >
+              <p key={line} className="mt-1 text-sm italic text-muted-foreground">
                 {line}
               </p>
             ))}

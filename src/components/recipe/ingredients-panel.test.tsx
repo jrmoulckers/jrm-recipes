@@ -1,20 +1,20 @@
-import { cleanup, render as rtlRender } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ReactElement } from "react";
+import { cleanup, render as rtlRender } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ReactElement } from 'react';
 
-import { IntlWrapper } from "~/test/intl";
+import { IntlWrapper } from '~/test/intl';
 import {
   IngredientsPanel,
   type IngredientsPanelControls,
   type IngredientSuggestions,
-} from "./ingredients-panel";
+} from './ingredients-panel';
 
 // Stub the lazy anchored-suggestions client bundle so we can assert the panel
 // renders it itself from serializable data. The fix for the production RSC
 // crash where a `renderSuggestions` function prop was passed across the
 // Server -> Client boundary ("Functions cannot be passed directly to Client
 // Components", digest 2500096145).
-vi.mock("~/components/engagement/anchored-suggestions-lazy", () => ({
+vi.mock('~/components/engagement/anchored-suggestions-lazy', () => ({
   AnchoredSuggestions: (props: {
     anchorId: string;
     anchorLabel: string;
@@ -39,22 +39,22 @@ afterEach(cleanup);
 
 const ingredients = [
   {
-    id: "flour",
+    id: 'flour',
     section: null,
     quantity: 200,
     quantityMax: null,
-    unit: "g",
-    item: "flour",
+    unit: 'g',
+    item: 'flour',
     note: null,
     optional: false,
   },
   {
-    id: "sugar",
+    id: 'sugar',
     section: null,
     quantity: 100,
     quantityMax: null,
-    unit: "g",
-    item: "sugar",
+    unit: 'g',
+    item: 'sugar',
     note: null,
     optional: false,
   },
@@ -64,27 +64,21 @@ function makeControls(checked: string[]): IngredientsPanelControls {
   return {
     servings: 4,
     onServingsChange: vi.fn(),
-    system: "original",
+    system: 'original',
     onSystemChange: vi.fn(),
     checked: new Set(checked),
     onToggleChecked: vi.fn(),
   };
 }
 
-const CHECK_ANIM = [
-  "animate-check-box-pop",
-  "animate-check-pop",
-  "animate-strike-in",
-] as const;
+const CHECK_ANIM = ['animate-check-box-pop', 'animate-check-pop', 'animate-strike-in'] as const;
 
 function hasCheckAnim(container: HTMLElement) {
-  return CHECK_ANIM.some(
-    (name) => container.querySelector(`[class*="${name}"]`) !== null,
-  );
+  return CHECK_ANIM.some((name) => container.querySelector(`[class*="${name}"]`) !== null);
 }
 
-describe("IngredientsPanel check-off animation gating", () => {
-  it("does not replay check-off motion for rows already checked on first paint", () => {
+describe('IngredientsPanel check-off animation gating', () => {
+  it('does not replay check-off motion for rows already checked on first paint', () => {
     // A resumed cook session hands the panel a pre-checked set on its very first
     // render (issue #88 regression).
     const { container } = render(
@@ -92,21 +86,21 @@ describe("IngredientsPanel check-off animation gating", () => {
         ingredients={ingredients}
         baseServings={4}
         servingsNoun={null}
-        controls={makeControls(["flour"])}
+        controls={makeControls(['flour'])}
       />,
     );
 
     // The flour row renders in its checked state...
-    const pressed = Array.from(
-      container.querySelectorAll('button[aria-pressed="true"]'),
-    ).find((button) => button.textContent?.includes("flour"));
+    const pressed = Array.from(container.querySelectorAll('button[aria-pressed="true"]')).find(
+      (button) => button.textContent?.includes('flour'),
+    );
     expect(pressed).toBeDefined();
 
     // ...but none of the one-shot pop/strike animations fire on load.
     expect(hasCheckAnim(container)).toBe(false);
   });
 
-  it("animates a row that actually flips checked after mount", () => {
+  it('animates a row that actually flips checked after mount', () => {
     const { container, rerender } = rtlRender(
       <IntlWrapper>
         <IngredientsPanel
@@ -128,7 +122,7 @@ describe("IngredientsPanel check-off animation gating", () => {
           ingredients={ingredients}
           baseServings={4}
           servingsNoun={null}
-          controls={makeControls(["flour"])}
+          controls={makeControls(['flour'])}
         />
       </IntlWrapper>,
     );
@@ -137,20 +131,20 @@ describe("IngredientsPanel check-off animation gating", () => {
   });
 });
 
-describe("IngredientsPanel anchored suggestions (RSC boundary regression)", () => {
-  it("renders AnchoredSuggestions per ingredient from serializable data", () => {
+describe('IngredientsPanel anchored suggestions (RSC boundary regression)', () => {
+  it('renders AnchoredSuggestions per ingredient from serializable data', () => {
     const ingredientSuggestions: IngredientSuggestions = {
-      recipeId: "rcp_1",
-      recipeSlug: "test-recipe",
+      recipeId: 'rcp_1',
+      recipeSlug: 'test-recipe',
       canInteract: true,
       byIngredientId: {
         flour: [
           {
-            id: "sug_1",
-            anchorType: "ingredient",
-            anchorId: "flour",
-            anchorLabel: "flour",
-            body: "Try bread flour",
+            id: 'sug_1',
+            anchorType: 'ingredient',
+            anchorId: 'flour',
+            anchorLabel: 'flour',
+            body: 'Try bread flour',
             resolvedAt: null,
             appliedAt: null,
             createdAt: new Date(0),
@@ -173,42 +167,38 @@ describe("IngredientsPanel anchored suggestions (RSC boundary regression)", () =
       />,
     );
 
-    const slots = getAllByTestId("anchored-suggestions");
+    const slots = getAllByTestId('anchored-suggestions');
     expect(slots).toHaveLength(ingredients.length);
 
-    const flour = slots.find((el) => el.dataset.anchorId === "flour");
-    expect(flour?.dataset.anchorLabel).toBe("flour");
-    expect(flour?.dataset.canInteract).toBe("true");
-    expect(flour?.dataset.suggestionCount).toBe("1");
+    const flour = slots.find((el) => el.dataset.anchorId === 'flour');
+    expect(flour?.dataset.anchorLabel).toBe('flour');
+    expect(flour?.dataset.canInteract).toBe('true');
+    expect(flour?.dataset.suggestionCount).toBe('1');
 
     // Ingredients with no anchored suggestions still render the slot with an
     // empty list (preserves the "suggest an edit" affordance).
-    const sugar = slots.find((el) => el.dataset.anchorId === "sugar");
-    expect(sugar?.dataset.suggestionCount).toBe("0");
+    const sugar = slots.find((el) => el.dataset.anchorId === 'sugar');
+    expect(sugar?.dataset.suggestionCount).toBe('0');
   });
 
-  it("omits the suggestion slot entirely when no data is provided", () => {
+  it('omits the suggestion slot entirely when no data is provided', () => {
     const { queryAllByTestId } = render(
-      <IngredientsPanel
-        ingredients={ingredients}
-        baseServings={4}
-        servingsNoun={null}
-      />,
+      <IngredientsPanel ingredients={ingredients} baseServings={4} servingsNoun={null} />,
     );
 
-    expect(queryAllByTestId("anchored-suggestions")).toHaveLength(0);
+    expect(queryAllByTestId('anchored-suggestions')).toHaveLength(0);
   });
 });
 
-describe("IngredientsPanel display-time unit conversion", () => {
+describe('IngredientsPanel display-time unit conversion', () => {
   const water = [
     {
-      id: "water",
+      id: 'water',
       section: null,
       quantity: 240,
       quantityMax: null,
-      unit: "ml",
-      item: "water",
+      unit: 'ml',
+      item: 'water',
       note: null,
       optional: false,
     },
@@ -221,7 +211,7 @@ describe("IngredientsPanel display-time unit conversion", () => {
         baseServings={1}
         servingsNoun={null}
         unitPrefs={{
-          defaultSystem: "us",
+          defaultSystem: 'us',
           volumeUnit: null,
           massUnit: null,
           temperatureUnit: null,
@@ -241,7 +231,7 @@ describe("IngredientsPanel display-time unit conversion", () => {
         baseServings={1}
         servingsNoun={null}
         unitPrefs={{
-          defaultSystem: "us",
+          defaultSystem: 'us',
           volumeUnit: null,
           massUnit: null,
           temperatureUnit: null,
@@ -253,15 +243,15 @@ describe("IngredientsPanel display-time unit conversion", () => {
     expect(container.textContent).not.toMatch(/cup/i);
   });
 
-  it("honors a per-dimension unit override", () => {
+  it('honors a per-dimension unit override', () => {
     const { container } = render(
       <IngredientsPanel
         ingredients={water}
         baseServings={1}
         servingsNoun={null}
         unitPrefs={{
-          defaultSystem: "metric",
-          volumeUnit: "cup",
+          defaultSystem: 'metric',
+          volumeUnit: 'cup',
           massUnit: null,
           temperatureUnit: null,
           autoConvert: true,

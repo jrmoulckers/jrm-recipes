@@ -1,10 +1,10 @@
-import { renderHook } from "@testing-library/react";
-import { act } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderHook } from '@testing-library/react';
+import { act } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { useReducedMotion } from "./use-reduced-motion";
+import { useReducedMotion } from './use-reduced-motion';
 
-const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 type Listener = () => void;
 
@@ -31,59 +31,59 @@ function mockMatchMedia(reduced: boolean) {
 }
 
 afterEach(() => {
-  document.documentElement.removeAttribute("data-motion");
-  document.documentElement.removeAttribute("data-theme");
+  document.documentElement.removeAttribute('data-motion');
+  document.documentElement.removeAttribute('data-theme');
   vi.restoreAllMocks();
 });
 
-describe("useReducedMotion (issue #110)", () => {
-  it("is false when nothing opts out of motion", () => {
+describe('useReducedMotion (issue #110)', () => {
+  it('is false when nothing opts out of motion', () => {
     mockMatchMedia(false);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);
   });
 
-  it("is true when the OS prefers reduced motion", () => {
+  it('is true when the OS prefers reduced motion', () => {
     mockMatchMedia(true);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(true);
   });
 
-  it("is true when the in-app data-motion=reduced toggle is on", () => {
+  it('is true when the in-app data-motion=reduced toggle is on', () => {
     mockMatchMedia(false);
-    document.documentElement.setAttribute("data-motion", "reduced");
+    document.documentElement.setAttribute('data-motion', 'reduced');
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(true);
   });
 
-  it("is true in Simple/barebones mode even when the OS is neutral", () => {
+  it('is true in Simple/barebones mode even when the OS is neutral', () => {
     mockMatchMedia(false);
-    document.documentElement.setAttribute("data-theme", "barebones");
+    document.documentElement.setAttribute('data-theme', 'barebones');
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(true);
   });
 
-  it("lets an explicit in-app opt-out (data-motion=off) beat the OS", () => {
+  it('lets an explicit in-app opt-out (data-motion=off) beat the OS', () => {
     mockMatchMedia(true);
-    document.documentElement.setAttribute("data-motion", "off");
+    document.documentElement.setAttribute('data-motion', 'off');
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);
   });
 
-  it("reacts live to a data-motion attribute change", async () => {
+  it('reacts live to a data-motion attribute change', async () => {
     mockMatchMedia(false);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);
 
     await act(async () => {
-      document.documentElement.setAttribute("data-motion", "reduced");
+      document.documentElement.setAttribute('data-motion', 'reduced');
       // Let the MutationObserver microtask deliver before asserting.
       await Promise.resolve();
     });
     expect(result.current).toBe(true);
   });
 
-  it("reacts live to an OS media-query change", () => {
+  it('reacts live to an OS media-query change', () => {
     const mq = mockMatchMedia(false);
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);

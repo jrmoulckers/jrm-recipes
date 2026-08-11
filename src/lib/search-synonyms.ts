@@ -19,52 +19,40 @@
  */
 const SYNONYM_GROUPS: readonly (readonly string[])[] = [
   // Herbs & produce (US / UK / regional names)
-  ["cilantro", "coriander", "fresh coriander"],
-  ["eggplant", "aubergine"],
-  ["zucchini", "courgette"],
-  ["arugula", "rocket"],
-  [
-    "scallion",
-    "scallions",
-    "green onion",
-    "green onions",
-    "spring onion",
-    "spring onions",
-  ],
-  ["snow pea", "snow peas", "mangetout"],
-  ["beet", "beets", "beetroot"],
-  ["bell pepper", "bell peppers", "capsicum", "sweet pepper"],
-  ["chickpea", "chickpeas", "garbanzo", "garbanzo beans"],
-  ["fava bean", "fava beans", "broad bean", "broad beans"],
-  ["romaine", "cos lettuce", "cos"],
-  ["golden raisin", "golden raisins", "sultana", "sultanas"],
-  ["raisin", "raisins", "currant", "currants"],
+  ['cilantro', 'coriander', 'fresh coriander'],
+  ['eggplant', 'aubergine'],
+  ['zucchini', 'courgette'],
+  ['arugula', 'rocket'],
+  ['scallion', 'scallions', 'green onion', 'green onions', 'spring onion', 'spring onions'],
+  ['snow pea', 'snow peas', 'mangetout'],
+  ['beet', 'beets', 'beetroot'],
+  ['bell pepper', 'bell peppers', 'capsicum', 'sweet pepper'],
+  ['chickpea', 'chickpeas', 'garbanzo', 'garbanzo beans'],
+  ['fava bean', 'fava beans', 'broad bean', 'broad beans'],
+  ['romaine', 'cos lettuce', 'cos'],
+  ['golden raisin', 'golden raisins', 'sultana', 'sultanas'],
+  ['raisin', 'raisins', 'currant', 'currants'],
   // Proteins
-  ["shrimp", "prawn", "prawns"],
-  ["ground beef", "minced beef", "beef mince", "hamburger meat"],
-  ["ground pork", "minced pork", "pork mince"],
+  ['shrimp', 'prawn', 'prawns'],
+  ['ground beef', 'minced beef', 'beef mince', 'hamburger meat'],
+  ['ground pork', 'minced pork', 'pork mince'],
   // Pantry / baking
-  ["all purpose flour", "plain flour", "all-purpose flour"],
-  ["cornstarch", "cornflour", "corn starch"],
-  [
-    "powdered sugar",
-    "confectioners sugar",
-    "icing sugar",
-    "confectioner's sugar",
-  ],
-  ["superfine sugar", "caster sugar", "castor sugar"],
-  ["baking soda", "bicarbonate of soda", "bicarb"],
-  ["heavy cream", "double cream", "whipping cream"],
-  ["molasses", "treacle", "black treacle"],
-  ["golden syrup", "light treacle"],
+  ['all purpose flour', 'plain flour', 'all-purpose flour'],
+  ['cornstarch', 'cornflour', 'corn starch'],
+  ['powdered sugar', 'confectioners sugar', 'icing sugar', "confectioner's sugar"],
+  ['superfine sugar', 'caster sugar', 'castor sugar'],
+  ['baking soda', 'bicarbonate of soda', 'bicarb'],
+  ['heavy cream', 'double cream', 'whipping cream'],
+  ['molasses', 'treacle', 'black treacle'],
+  ['golden syrup', 'light treacle'],
   // Techniques a searcher might phrase either way
-  ["barbecue", "bbq", "barbeque"],
-  ["broil", "grill"],
+  ['barbecue', 'bbq', 'barbeque'],
+  ['broil', 'grill'],
 ];
 
 /** Lowercase + collapse internal whitespace so lookups are forgiving. */
 export function normalizeTerm(term: string): string {
-  return term.trim().toLowerCase().replace(/\s+/g, " ");
+  return term.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 /** Precomputed map from a normalized term to its distinct synonyms. */
@@ -102,10 +90,7 @@ export const MAX_SYNONYM_EXPANSION = 6;
  * even when it has no synonyms. Results are de-duplicated and capped at
  * `1 + MAX_SYNONYM_EXPANSION` entries. An empty/whitespace query yields `[]`.
  */
-export function expandQueryTerms(
-  q: string,
-  max: number = MAX_SYNONYM_EXPANSION,
-): string[] {
+export function expandQueryTerms(q: string, max: number = MAX_SYNONYM_EXPANSION): string[] {
   const original = normalizeTerm(q);
   if (original.length === 0) return [];
 

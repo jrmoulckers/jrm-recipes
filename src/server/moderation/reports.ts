@@ -1,15 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { canViewRecipe } from "~/server/recipes/queries";
-import { assertKidAllowed } from "~/server/groups/kid-safe";
-import { notifyMany } from "~/server/notifications/notify";
-import { contentReports, groupMembers, type User } from "~/server/db/schema";
-import type { ReportContentInput } from "./validation";
-import { resolveTarget } from "./targets";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { canViewRecipe } from '~/server/recipes/queries';
+import { assertKidAllowed } from '~/server/groups/kid-safe';
+import { notifyMany } from '~/server/notifications/notify';
+import { contentReports, groupMembers, type User } from '~/server/db/schema';
+import type { ReportContentInput } from './validation';
+import { resolveTarget } from './targets';
 
 /**
  * File a report against a comment / review / cook-log post (issue #356).
@@ -31,12 +31,12 @@ export async function reportContent(
 ): Promise<{ created: boolean }> {
   return db.transaction(async (tx) => {
     const target = await resolveTarget(tx, input.targetType, input.targetId);
-    if (!target) throw new DomainError("NOT_FOUND");
+    if (!target) throw new DomainError('NOT_FOUND');
     if (!(await canViewRecipe(target.recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
     // You can't report your own content. That's a delete, not a report.
-    if (target.authorId === user.id) throw new DomainError("FORBIDDEN");
+    if (target.authorId === user.id) throw new DomainError('FORBIDDEN');
 
     const groupId = target.recipe.groupId;
     let ownerAdminIds: string[] = [];
@@ -46,9 +46,9 @@ export async function reportContent(
         columns: { userId: true, role: true },
       });
       const reporterRole = members.find((m) => m.userId === user.id)?.role;
-      assertKidAllowed(reporterRole, "moderate_content");
+      assertKidAllowed(reporterRole, 'moderate_content');
       ownerAdminIds = members
-        .filter((m) => m.role === "owner" || m.role === "admin")
+        .filter((m) => m.role === 'owner' || m.role === 'admin')
         .map((m) => m.userId);
     }
 
@@ -63,11 +63,7 @@ export async function reportContent(
         detail: input.detail ?? null,
       })
       .onConflictDoNothing({
-        target: [
-          contentReports.targetType,
-          contentReports.targetId,
-          contentReports.reporterId,
-        ],
+        target: [contentReports.targetType, contentReports.targetId, contentReports.reporterId],
       })
       .returning({ id: contentReports.id });
 
@@ -77,7 +73,7 @@ export async function reportContent(
     if (created && ownerAdminIds.length > 0) {
       await notifyMany(tx, ownerAdminIds, {
         actorId: user.id,
-        type: "report",
+        type: 'report',
         recipeId: target.recipeId,
         groupId,
         entityId: input.targetId,
@@ -91,7 +87,7 @@ export async function reportContent(
 
 /** Count of standing (open) reports per target for a set of targets (#357). */
 export async function countOpenReports(
-  targetType: ReportContentInput["targetType"],
+  targetType: ReportContentInput['targetType'],
   targetIds: string[],
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
@@ -100,7 +96,7 @@ export async function countOpenReports(
     where: and(
       eq(contentReports.targetType, targetType),
       inArray(contentReports.targetId, targetIds),
-      eq(contentReports.status, "open"),
+      eq(contentReports.status, 'open'),
     ),
     columns: { targetId: true },
   });

@@ -18,16 +18,16 @@ export type MentionCandidate = {
 };
 
 export type MentionSegment =
-  | { type: "text"; text: string }
-  | { type: "mention"; raw: string; handle: string; user: MentionCandidate };
+  | { type: 'text'; text: string }
+  | { type: 'mention'; raw: string; handle: string; user: MentionCandidate };
 
 /** Handle charset, shared by extraction and the composer's active-token probe. */
-const HANDLE_CHARS = "a-zA-Z0-9_.-";
-const MENTION_RE = new RegExp(`@([${HANDLE_CHARS}]{1,40})`, "g");
+const HANDLE_CHARS = 'a-zA-Z0-9_.-';
+const MENTION_RE = new RegExp(`@([${HANDLE_CHARS}]{1,40})`, 'g');
 
 /** Normalize a handle for comparison (case-insensitive, no leading @). */
 export function normalizeHandle(handle: string): string {
-  return handle.replace(/^@/, "").toLowerCase();
+  return handle.replace(/^@/, '').toLowerCase();
 }
 
 /**
@@ -48,9 +48,7 @@ export function extractMentionHandles(body: string): string[] {
 }
 
 /** Index candidates by normalized handle, ignoring any without a handle. */
-export function candidatesByHandle(
-  candidates: MentionCandidate[],
-): Map<string, MentionCandidate> {
+export function candidatesByHandle(candidates: MentionCandidate[]): Map<string, MentionCandidate> {
   const map = new Map<string, MentionCandidate>();
   for (const c of candidates) {
     if (c.handle) map.set(normalizeHandle(c.handle), c);
@@ -63,10 +61,7 @@ export function candidatesByHandle(
  * candidate once, in first-mention order. Unknown handles are dropped (they are
  * not "mentions" for notification purposes).
  */
-export function resolveMentions(
-  body: string,
-  candidates: MentionCandidate[],
-): MentionCandidate[] {
+export function resolveMentions(body: string, candidates: MentionCandidate[]): MentionCandidate[] {
   const byHandle = candidatesByHandle(candidates);
   const out: MentionCandidate[] = [];
   const seen = new Set<string>();
@@ -85,10 +80,7 @@ export function resolveMentions(
  * resolve to a known candidate become `mention` segments. Everything else
  * (including unknown `@handles`) stays as `text` so it renders verbatim.
  */
-export function splitMentions(
-  body: string,
-  candidates: MentionCandidate[],
-): MentionSegment[] {
+export function splitMentions(body: string, candidates: MentionCandidate[]): MentionSegment[] {
   const byHandle = candidatesByHandle(candidates);
   const segments: MentionSegment[] = [];
   let lastIndex = 0;
@@ -101,14 +93,14 @@ export function splitMentions(
 
     const start = match.index ?? 0;
     if (start > lastIndex) {
-      segments.push({ type: "text", text: body.slice(lastIndex, start) });
+      segments.push({ type: 'text', text: body.slice(lastIndex, start) });
     }
-    segments.push({ type: "mention", raw, handle, user });
+    segments.push({ type: 'mention', raw, handle, user });
     lastIndex = start + raw.length;
   }
 
   if (lastIndex < body.length) {
-    segments.push({ type: "text", text: body.slice(lastIndex) });
+    segments.push({ type: 'text', text: body.slice(lastIndex) });
   }
   return segments;
 }

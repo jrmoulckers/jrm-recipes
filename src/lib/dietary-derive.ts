@@ -11,9 +11,9 @@
  * map), so it runs on the write path, in a backfill script, and in unit tests.
  */
 
-import { summarizeAllergensForSafety } from "./allergens";
-import { DIET_FORBIDDEN_ALLERGENS } from "./dietary-match";
-import { type DietaryTag } from "./substitutions";
+import { summarizeAllergensForSafety } from './allergens';
+import { DIET_FORBIDDEN_ALLERGENS } from './dietary-match';
+import { type DietaryTag } from './substitutions';
 
 /**
  * The dietary tags we auto-derive from ingredients, in canonical display order.
@@ -21,9 +21,9 @@ import { type DietaryTag } from "./substitutions";
  * `vegan`/`vegetarian`, which require author declaration.
  */
 export const DERIVED_DIETARY_TAGS = [
-  "dairy-free",
-  "gluten-free",
-  "egg-free",
+  'dairy-free',
+  'gluten-free',
+  'egg-free',
 ] as const satisfies readonly DietaryTag[];
 
 /**

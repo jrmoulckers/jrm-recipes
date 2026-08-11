@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { ErrorState } from "~/components/layout/error-state";
+import { ErrorState } from '~/components/layout/error-state';
 
 /**
  * Segment-level error boundary for the `(immersive)` route group (cook/print

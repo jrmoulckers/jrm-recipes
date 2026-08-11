@@ -1,4 +1,4 @@
-import { env } from "~/env";
+import { env } from '~/env';
 
 /**
  * Analytics configuration. The single place that reads the (optional) product
@@ -11,17 +11,17 @@ import { env } from "~/env";
  */
 
 /** Default ingestion host when a deploy doesn't override it. */
-export const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+export const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
 
 /** Default static-asset host paired with {@link DEFAULT_POSTHOG_HOST}. */
-export const DEFAULT_POSTHOG_ASSET_HOST = "https://us-assets.i.posthog.com";
+export const DEFAULT_POSTHOG_ASSET_HOST = 'https://us-assets.i.posthog.com';
 
 /**
  * First-party path all browser capture is routed through (a Next rewrite in
  * `next.config.js` proxies it to the real host). Keeps ingestion first-party and
  * adblock-resilient, and means no third-party origin appears in the network tab.
  */
-export const INGEST_PATH = "/ingest";
+export const INGEST_PATH = '/ingest';
 
 /** The public project key, or undefined when analytics is unconfigured. */
 export function analyticsKey(): string | undefined {
@@ -45,5 +45,5 @@ export function isAnalyticsConfigured(): boolean {
  * honors DNT/GPC and an explicit opt-out. See `~/lib/analytics/consent`.
  */
 export function analyticsRequiresConsent(): boolean {
-  return env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT === "1";
+  return env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT === '1';
 }

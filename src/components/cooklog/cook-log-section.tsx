@@ -1,23 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  CookingPot,
-  Loader2,
-  Plus,
-  Trash2,
-  UtensilsCrossed,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { CookingPot, Loader2, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import { deleteCookLogAction, logCookAction } from "~/server/cooklog/actions";
-import type { CookLogItem } from "~/server/cooklog/queries";
-import { formatDate, formatRelativeTime } from "~/lib/dates";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { deleteCookLogAction, logCookAction } from '~/server/cooklog/actions';
+import type { CookLogItem } from '~/server/cooklog/queries';
+import { formatDate, formatRelativeTime } from '~/lib/dates';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -27,20 +21,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { ImageUploadField } from "~/components/ui/image-upload";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
-import { Textarea } from "~/components/ui/textarea";
-import { CharacterCounter } from "~/components/ui/character-counter";
-import { useConfirm } from "~/components/ui/confirm-dialog";
-import {
-  COOK_NOTE_MAX_LENGTH,
-  COOK_NOTE_TOO_LONG_MESSAGE,
-} from "~/server/cooklog/validation";
-import { ReactionBar } from "~/components/engagement/reaction-bar";
-import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
+} from '~/components/ui/dialog';
+import { ImageUploadField } from '~/components/ui/image-upload';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Switch } from '~/components/ui/switch';
+import { Textarea } from '~/components/ui/textarea';
+import { CharacterCounter } from '~/components/ui/character-counter';
+import { useConfirm } from '~/components/ui/confirm-dialog';
+import { COOK_NOTE_MAX_LENGTH, COOK_NOTE_TOO_LONG_MESSAGE } from '~/server/cooklog/validation';
+import { ReactionBar } from '~/components/engagement/reaction-bar';
+import type { ReactionCount, ReactionEmojiKey } from '~/lib/reactions';
 
 /** Per-entry reaction tally passed from the server (#342). */
 export type EntryReactions = {
@@ -71,22 +62,19 @@ export function CookLogSection({
   shareGroup?: { id: string; name: string } | null;
   dbConfigured: boolean;
 }) {
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
   if (!dbConfigured) {
     return (
       <section
         className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground"
-        aria-label={t("a11y.journal")}
+        aria-label={t('a11y.journal')}
       >
         <div className="flex items-center gap-2">
           <CookingPot className="size-4" aria-hidden="true" />
-          {t("databaseConnect.before")}{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-            DATABASE_URL
-          </code>{" "}
-          {t("databaseConnect.after")}{" "}
-          <code className="font-mono text-xs">.env.example</code>
-          {t("databaseConnect.end")}
+          {t('databaseConnect.before')}{' '}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">DATABASE_URL</code>{' '}
+          {t('databaseConnect.after')} <code className="font-mono text-xs">.env.example</code>
+          {t('databaseConnect.end')}
         </div>
       </section>
     );
@@ -101,7 +89,7 @@ export function CookLogSection({
   return (
     <section
       className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 shadow-token sm:p-6"
-      aria-label={t("a11y.journalForRecipe", { title: recipeTitle })}
+      aria-label={t('a11y.journalForRecipe', { title: recipeTitle })}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -109,13 +97,9 @@ export function CookLogSection({
             <CookingPot className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-display text-xl font-semibold">
-              {t("heading")}
-            </h2>
+            <h2 className="font-display text-xl font-semibold">{t('heading')}</h2>
             <p className="text-sm text-muted-foreground">
-              {cookCount > 0
-                ? t("summary.withCooks", { count: cookCount })
-                : t("summary.empty")}
+              {cookCount > 0 ? t('summary.withCooks', { count: cookCount }) : t('summary.empty')}
             </p>
           </div>
         </div>
@@ -124,7 +108,7 @@ export function CookLogSection({
           {cookCount > 0 && (
             <Badge variant="secondary" className="gap-1.5">
               <CookingPot className="size-3.5" aria-hidden="true" />
-              {t("cookedTimes", { count: cookCount })}
+              {t('cookedTimes', { count: cookCount })}
             </Badge>
           )}
           <LogCookButton
@@ -162,16 +146,14 @@ export function CookLogSection({
 }
 
 function EmptyCookLog() {
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
   return (
     <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-background/60 py-10 text-center">
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <UtensilsCrossed className="size-6" aria-hidden="true" />
       </span>
-      <p className="font-medium">{t("empty.heading")}</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
-        {t("empty.body")}
-      </p>
+      <p className="font-medium">{t('empty.heading')}</p>
+      <p className="max-w-xs text-sm text-muted-foreground">{t('empty.body')}</p>
     </div>
   );
 }
@@ -199,7 +181,7 @@ function LogAgainNudge({
 }) {
   const locale = useLocale();
   const router = useRouter();
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
   const [pending, startTransition] = React.useTransition();
   const valid = !Number.isNaN(lastCookedAt.getTime());
 
@@ -212,7 +194,7 @@ function LogAgainNudge({
         servingsMade: lastServings ?? undefined,
       });
       if (result.ok) {
-        toast.success(t("toast.loggedAgain", { count: cookCount + 1 }));
+        toast.success(t('toast.loggedAgain', { count: cookCount + 1 }));
         router.refresh();
         return;
       }
@@ -223,30 +205,18 @@ function LogAgainNudge({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background/60 p-3">
       <p className="text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">
-          {t("logAgain.question")}
-        </span>{" "}
+        <span className="font-medium text-foreground">{t('logAgain.question')}</span>{' '}
         {valid
-          ? t("logAgain.lastMade", {
+          ? t('logAgain.lastMade', {
               time: formatRelativeTime(lastCookedAt, locale),
             })
-          : t("logAgain.madeBefore")}
-        {" · "}
-        {t("cookedTimesLower", { count: cookCount })}
+          : t('logAgain.madeBefore')}
+        {' · '}
+        {t('cookedTimesLower', { count: cookCount })}
       </p>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onLogAgain}
-        disabled={pending}
-      >
-        {pending ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <CookingPot className="size-4" />
-        )}
-        {pending ? t("logging") : t("logAgain.button")}
+      <Button type="button" variant="outline" size="sm" onClick={onLogAgain} disabled={pending}>
+        {pending ? <Loader2 className="size-4 animate-spin" /> : <CookingPot className="size-4" />}
+        {pending ? t('logging') : t('logAgain.button')}
       </Button>
     </div>
   );
@@ -264,7 +234,7 @@ function CookLogTimeline({
   reactionsByEntry: Record<string, EntryReactions>;
 }) {
   const locale = useLocale();
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
   return (
     <ol className="relative space-y-4 before:absolute before:bottom-3 before:start-[1.15rem] before:top-3 before:w-px before:bg-border">
       {entries.map((entry) => {
@@ -274,8 +244,7 @@ function CookLogTimeline({
           entry.servingsMade == null || !Number.isFinite(entry.servingsMade)
             ? 0
             : Math.max(0, Math.floor(entry.servingsMade));
-        const servings =
-          servingsCount > 0 ? t("servings", { count: servingsCount }) : null;
+        const servings = servingsCount > 0 ? t('servings', { count: servingsCount }) : null;
 
         return (
           <li key={entry.id} className="relative flex gap-4">
@@ -290,9 +259,7 @@ function CookLogTimeline({
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                 <div className="min-w-0">
                   <p className="font-medium leading-tight">
-                    {valid
-                      ? formatDate(cookedAt, "PPP", locale)
-                      : t("loggedEarlier")}
+                    {valid ? formatDate(cookedAt, 'PPP', locale) : t('loggedEarlier')}
                   </p>
                   {valid && (
                     <p className="text-xs text-muted-foreground">
@@ -307,10 +274,7 @@ function CookLogTimeline({
                       {servings}
                     </Badge>
                   )}
-                  <DeleteCookButton
-                    entryId={entry.id}
-                    recipeSlug={recipeSlug}
-                  />
+                  <DeleteCookButton entryId={entry.id} recipeSlug={recipeSlug} />
                 </div>
               </div>
 
@@ -325,10 +289,8 @@ function CookLogTimeline({
                   {/* eslint-disable-next-line @next/next/no-img-element -- cook photos may be arbitrary user-pasted URLs (Cloudinary optional) that can't be pre-allowlisted for next/image */}
                   <img
                     src={entry.photoUrl}
-                    alt={t("photoAlt", {
-                      date: valid
-                        ? formatDate(cookedAt, "PPP", locale)
-                        : t("earlierDate"),
+                    alt={t('photoAlt', {
+                      date: valid ? formatDate(cookedAt, 'PPP', locale) : t('earlierDate'),
                     })}
                     className="max-h-72 w-full object-cover"
                   />
@@ -367,18 +329,18 @@ function LogCookButton({
   shareGroup?: { id: string; name: string } | null;
 }) {
   const router = useRouter();
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
   const [open, setOpen] = React.useState(false);
-  const [note, setNote] = React.useState("");
-  const [photoUrl, setPhotoUrl] = React.useState("");
-  const [servingsMade, setServingsMade] = React.useState("");
+  const [note, setNote] = React.useState('');
+  const [photoUrl, setPhotoUrl] = React.useState('');
+  const [servingsMade, setServingsMade] = React.useState('');
   const [shareWithFamily, setShareWithFamily] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   function reset() {
-    setNote("");
-    setPhotoUrl("");
-    setServingsMade("");
+    setNote('');
+    setPhotoUrl('');
+    setServingsMade('');
     setShareWithFamily(false);
   }
 
@@ -396,8 +358,8 @@ function LogCookButton({
       if (result.ok) {
         toast.success(
           shareGroup && shareWithFamily
-            ? t("toast.loggedAndShared", { group: shareGroup.name })
-            : t("toast.loggedToJournal"),
+            ? t('toast.loggedAndShared', { group: shareGroup.name })
+            : t('toast.loggedToJournal'),
         );
         reset();
         setOpen(false);
@@ -410,8 +372,8 @@ function LogCookButton({
 
   if (!canLog) {
     return (
-      <Button type="button" onClick={() => toast(t("toast.signInToLog"))}>
-        <CookingPot /> {t("button.iCookedThis")}
+      <Button type="button" onClick={() => toast(t('toast.signInToLog'))}>
+        <CookingPot /> {t('button.iCookedThis')}
       </Button>
     );
   }
@@ -420,7 +382,7 @@ function LogCookButton({
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
         <Button type="button">
-          <CookingPot /> {t("button.iCookedThis")}
+          <CookingPot /> {t('button.iCookedThis')}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -429,25 +391,21 @@ function LogCookButton({
             <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
               <CookingPot className="size-5" aria-hidden="true" />
             </div>
-            <DialogTitle>{t("dialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("dialog.description", { title: recipeTitle })}
-            </DialogDescription>
+            <DialogTitle>{t('dialog.title')}</DialogTitle>
+            <DialogDescription>{t('dialog.description', { title: recipeTitle })}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
-            <Label htmlFor="cook-note">{t("dialog.noteLabel")}</Label>
+            <Label htmlFor="cook-note">{t('dialog.noteLabel')}</Label>
             <Textarea
               id="cook-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder={t("dialog.notePlaceholder")}
+              placeholder={t('dialog.notePlaceholder')}
               disabled={pending}
             />
             <div className="flex items-start justify-between gap-3">
-              <p className="text-xs text-muted-foreground">
-                {t("dialog.noteHelper")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('dialog.noteHelper')}</p>
               <CharacterCounter
                 value={note.length}
                 max={COOK_NOTE_MAX_LENGTH}
@@ -459,14 +417,14 @@ function LogCookButton({
           <ImageUploadField
             value={photoUrl}
             onChange={setPhotoUrl}
-            label={t("dialog.photoLabel")}
+            label={t('dialog.photoLabel')}
             folder="heirloom/cooks"
             size="compact"
-            hint={t("dialog.photoHint")}
+            hint={t('dialog.photoHint')}
           />
 
           <div className="grid gap-2">
-            <Label htmlFor="cook-servings">{t("dialog.servingsLabel")}</Label>
+            <Label htmlFor="cook-servings">{t('dialog.servingsLabel')}</Label>
             <Input
               id="cook-servings"
               type="number"
@@ -475,7 +433,7 @@ function LogCookButton({
               max={100000}
               value={servingsMade}
               onChange={(event) => setServingsMade(event.target.value)}
-              placeholder={t("dialog.servingsPlaceholder")}
+              placeholder={t('dialog.servingsPlaceholder')}
               disabled={pending}
               className="max-w-32"
             />
@@ -485,10 +443,10 @@ function LogCookButton({
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/40 p-3">
               <div className="grid gap-0.5">
                 <Label htmlFor="cook-share" className="cursor-pointer">
-                  {t("dialog.shareLabel")}
+                  {t('dialog.shareLabel')}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  {t("dialog.shareDescription", { group: shareGroup.name })}
+                  {t('dialog.shareDescription', { group: shareGroup.name })}
                 </p>
               </div>
               <Switch
@@ -496,7 +454,7 @@ function LogCookButton({
                 checked={shareWithFamily}
                 onCheckedChange={setShareWithFamily}
                 disabled={pending}
-                aria-label={t("a11y.shareWithGroup", {
+                aria-label={t('a11y.shareWithGroup', {
                   group: shareGroup.name,
                 })}
               />
@@ -506,12 +464,12 @@ function LogCookButton({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost" disabled={pending}>
-                {t("cancel")}
+                {t('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : <Plus />}
-              {pending ? t("saving") : t("dialog.addToJournal")}
+              {pending ? t('saving') : t('dialog.addToJournal')}
             </Button>
           </DialogFooter>
         </form>
@@ -520,29 +478,23 @@ function LogCookButton({
   );
 }
 
-function DeleteCookButton({
-  entryId,
-  recipeSlug,
-}: {
-  entryId: string;
-  recipeSlug: string;
-}) {
+function DeleteCookButton({ entryId, recipeSlug }: { entryId: string; recipeSlug: string }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const confirm = useConfirm();
-  const t = useTranslations("cookLog.section");
+  const t = useTranslations('cookLog.section');
 
   async function onDelete() {
     const ok = await confirm({
-      title: t("confirmDelete.title"),
-      description: t("confirmDelete.description"),
-      confirmLabel: t("confirmDelete.confirmLabel"),
+      title: t('confirmDelete.title'),
+      description: t('confirmDelete.description'),
+      confirmLabel: t('confirmDelete.confirmLabel'),
     });
     if (!ok) return;
     startTransition(async () => {
       const result = await deleteCookLogAction({ entryId, recipeSlug });
       if (result.ok) {
-        toast.success(t("toast.removedFromJournal"));
+        toast.success(t('toast.removedFromJournal'));
         router.refresh();
         return;
       }
@@ -558,13 +510,9 @@ function DeleteCookButton({
       className="size-8 text-muted-foreground hover:text-destructive"
       onClick={onDelete}
       disabled={pending}
-      aria-label={t("a11y.deleteEntry")}
+      aria-label={t('a11y.deleteEntry')}
     >
-      {pending ? (
-        <Loader2 className="size-4 animate-spin" />
-      ) : (
-        <Trash2 className="size-4" />
-      )}
+      {pending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </Button>
   );
 }

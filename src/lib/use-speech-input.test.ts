@@ -1,12 +1,12 @@
-import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { appendDictation, useSpeechInput } from "./use-speech-input";
+import { appendDictation, useSpeechInput } from './use-speech-input';
 
 type ResultRow = { isFinal: boolean; 0: { transcript: string } };
 
 class FakeRecognition {
-  lang = "";
+  lang = '';
   continuous = false;
   interimResults = false;
   onresult:
@@ -30,33 +30,31 @@ class FakeRecognition {
 }
 
 afterEach(() => {
-  delete (window as unknown as { SpeechRecognition?: unknown })
-    .SpeechRecognition;
+  delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
   vi.restoreAllMocks();
 });
 
-describe("appendDictation", () => {
-  it("appends with a separating space and never wipes existing text", () => {
-    expect(appendDictation("", "hello")).toBe("hello");
-    expect(appendDictation("Chop the", "onions")).toBe("Chop the onions");
-    expect(appendDictation("Chop the ", "onions")).toBe("Chop the onions");
-    expect(appendDictation("keep", "   ")).toBe("keep");
+describe('appendDictation', () => {
+  it('appends with a separating space and never wipes existing text', () => {
+    expect(appendDictation('', 'hello')).toBe('hello');
+    expect(appendDictation('Chop the', 'onions')).toBe('Chop the onions');
+    expect(appendDictation('Chop the ', 'onions')).toBe('Chop the onions');
+    expect(appendDictation('keep', '   ')).toBe('keep');
   });
 });
 
-describe("useSpeechInput (#373)", () => {
-  it("reports unsupported when the API is absent", () => {
+describe('useSpeechInput (#373)', () => {
+  it('reports unsupported when the API is absent', () => {
     const { result } = renderHook(() => useSpeechInput({ onResult: vi.fn() }));
     expect(result.current.supported).toBe(false);
   });
 
-  it("starts, transcribes final results, and stops", () => {
+  it('starts, transcribes final results, and stops', () => {
     let instance: FakeRecognition | null = null;
-    (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition =
-      function () {
-        instance = new FakeRecognition();
-        return instance;
-      };
+    (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition = function () {
+      instance = new FakeRecognition();
+      return instance;
+    };
 
     const onResult = vi.fn();
     const { result } = renderHook(() => useSpeechInput({ onResult }));
@@ -67,8 +65,8 @@ describe("useSpeechInput (#373)", () => {
     expect(result.current.listening).toBe(true);
     expect(instance!.start).toHaveBeenCalled();
 
-    act(() => instance!.emit("chicken and dumplings"));
-    expect(onResult).toHaveBeenCalledWith("chicken and dumplings");
+    act(() => instance!.emit('chicken and dumplings'));
+    expect(onResult).toHaveBeenCalledWith('chicken and dumplings');
 
     act(() => result.current.toggle());
     expect(instance!.stop).toHaveBeenCalled();

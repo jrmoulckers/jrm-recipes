@@ -11,13 +11,12 @@
  * unit tests can share exactly one definition of "active".
  */
 
-import { type CanonicalTag, type TagCategory } from "./tag-taxonomy";
+import { type CanonicalTag, type TagCategory } from './tag-taxonomy';
 
 /** A classification chip: a canonical tag plus how many recipes carry it. */
-export type ClassificationOption = Pick<
-  CanonicalTag,
-  "slug" | "name" | "category"
-> & { count: number };
+export type ClassificationOption = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
+  count: number;
+};
 
 /**
  * The querystring param each category filters on. Mirrors
@@ -26,35 +25,33 @@ export type ClassificationOption = Pick<
  * `tag` rather than `diet` because a tag on a recipe is author-declared, not a
  * verified dietary claim.
  */
-const PARAM_BY_CATEGORY: Record<TagCategory, "meal" | "cuisine" | "tag"> = {
-  meal: "meal",
-  cuisine: "cuisine",
-  dietary: "tag",
-  general: "tag",
+const PARAM_BY_CATEGORY: Record<TagCategory, 'meal' | 'cuisine' | 'tag'> = {
+  meal: 'meal',
+  cuisine: 'cuisine',
+  dietary: 'tag',
+  general: 'tag',
 };
 
 export function classificationParam(
-  item: Pick<ClassificationOption, "category">,
-): "meal" | "cuisine" | "tag" {
+  item: Pick<ClassificationOption, 'category'>,
+): 'meal' | 'cuisine' | 'tag' {
   return PARAM_BY_CATEGORY[item.category];
 }
 
 /** Cuisines filter by display name; every other category filters by slug. */
 export function classificationValue(
-  item: Pick<ClassificationOption, "slug" | "name" | "category">,
+  item: Pick<ClassificationOption, 'slug' | 'name' | 'category'>,
 ): string {
-  return item.category === "cuisine" ? item.name : item.slug;
+  return item.category === 'cuisine' ? item.name : item.slug;
 }
 
 /** True when the classification's value is already present in its own param. */
 export function isClassificationActive(
   params: URLSearchParams,
-  item: Pick<ClassificationOption, "slug" | "name" | "category">,
+  item: Pick<ClassificationOption, 'slug' | 'name' | 'category'>,
 ): boolean {
   const value = classificationValue(item).toLowerCase();
-  return params
-    .getAll(classificationParam(item))
-    .some((entry) => entry.toLowerCase() === value);
+  return params.getAll(classificationParam(item)).some((entry) => entry.toLowerCase() === value);
 }
 
 /**
@@ -64,15 +61,13 @@ export function isClassificationActive(
  */
 export function toggleClassification(
   params: URLSearchParams,
-  item: Pick<ClassificationOption, "slug" | "name" | "category">,
+  item: Pick<ClassificationOption, 'slug' | 'name' | 'category'>,
 ): URLSearchParams {
   const next = new URLSearchParams(params.toString());
   const key = classificationParam(item);
   const value = classificationValue(item);
   const lower = value.toLowerCase();
-  const kept = next
-    .getAll(key)
-    .filter((entry) => entry.toLowerCase() !== lower);
+  const kept = next.getAll(key).filter((entry) => entry.toLowerCase() !== lower);
   if (kept.length === next.getAll(key).length) kept.push(value);
   next.delete(key);
   for (const entry of kept) next.append(key, entry);

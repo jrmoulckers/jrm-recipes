@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   customUnits,
   shoppingIngredientRouteAlternatives,
@@ -16,35 +16,32 @@ import {
   type ShoppingListRestorePoint,
   userUnitPreferences,
   type User,
-} from "~/server/db/schema";
-import type { ShoppingIngredientRoute } from "~/lib/shopping-routing";
-import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
+} from '~/server/db/schema';
+import type { ShoppingIngredientRoute } from '~/lib/shopping-routing';
+import { toCustomUnitDefs, toUnitPrefs } from '~/lib/unit-prefs';
 
-export type ShoppingWorkspace = NonNullable<
-  Awaited<ReturnType<typeof getShoppingWorkspace>>
->;
-export type ShoppingListWithItems = ShoppingWorkspace["selectedList"];
-export type ShoppingItemRow =
-  NonNullable<ShoppingListWithItems>["items"][number];
+export type ShoppingWorkspace = NonNullable<Awaited<ReturnType<typeof getShoppingWorkspace>>>;
+export type ShoppingListWithItems = ShoppingWorkspace['selectedList'];
+export type ShoppingItemRow = NonNullable<ShoppingListWithItems>['items'][number];
 export const SHOPPING_HISTORY_LIMIT = 20;
 export type ShoppingListHistoryOperation =
-  "remove-completed" | "clear-all" | "bulk-move" | "list-rebuild" | "restore";
+  'remove-completed' | 'clear-all' | 'bulk-move' | 'list-rebuild' | 'restore';
 
 function historyOperation(
-  operation: ShoppingListRestorePoint["operation"],
+  operation: ShoppingListRestorePoint['operation'],
 ): ShoppingListHistoryOperation {
   switch (operation) {
-    case "remove_completed":
-      return "remove-completed";
-    case "clear_all":
-      return "clear-all";
-    case "bulk_move_source":
-    case "bulk_move_destination":
-      return "bulk-move";
-    case "rebuild":
-      return "list-rebuild";
-    case "restore":
-      return "restore";
+    case 'remove_completed':
+      return 'remove-completed';
+    case 'clear_all':
+      return 'clear-all';
+    case 'bulk_move_source':
+    case 'bulk_move_destination':
+      return 'bulk-move';
+    case 'rebuild':
+      return 'list-rebuild';
+    case 'restore':
+      return 'restore';
   }
 }
 
@@ -52,10 +49,7 @@ function historyOperation(
  * All user-owned lists plus one explicitly selected active list. Selection is
  * URL state and never mutates the independently persisted default.
  */
-export async function getShoppingWorkspace(
-  user: User | null,
-  selectedListId?: string | null,
-) {
+export async function getShoppingWorkspace(user: User | null, selectedListId?: string | null) {
   if (!isDbConfigured() || !user) return null;
   const lists = await db.query.shoppingLists.findMany({
     where: eq(shoppingLists.userId, user.id),
@@ -65,10 +59,7 @@ export async function getShoppingWorkspace(
         orderBy: [asc(shoppingListItems.position), asc(shoppingListItems.item)],
       },
       stores: {
-        orderBy: [
-          asc(shoppingListStores.position),
-          asc(shoppingListStores.storeId),
-        ],
+        orderBy: [asc(shoppingListStores.position), asc(shoppingListStores.storeId)],
       },
     },
   });
@@ -86,12 +77,9 @@ export async function getShoppingWorkspace(
   }));
 
   const activeLists = listsWithStores.filter((list) => list.archivedAt == null);
-  const defaultList =
-    activeLists.find((list) => list.isDefault) ?? activeLists[0] ?? null;
+  const defaultList = activeLists.find((list) => list.isDefault) ?? activeLists[0] ?? null;
   const selectedList =
-    activeLists.find((list) => list.id === selectedListId) ??
-    defaultList ??
-    null;
+    activeLists.find((list) => list.id === selectedListId) ?? defaultList ?? null;
 
   const [routeRows, preferenceRow, customUnitRows] = await Promise.all([
     db.query.shoppingIngredientRoutes.findMany({
@@ -122,13 +110,13 @@ export async function getShoppingWorkspace(
   const alternativesByRoute = new Map<string, string[]>();
   const ownedListIds = new Set(lists.map((list) => list.id));
   for (const alternative of alternativeRows) {
-    if (!ownedListIds.has(alternative.listId)) throw new Error("NOT_FOUND");
+    if (!ownedListIds.has(alternative.listId)) throw new Error('NOT_FOUND');
     const ids = alternativesByRoute.get(alternative.routeId) ?? [];
     ids.push(alternative.listId);
     alternativesByRoute.set(alternative.routeId, ids);
   }
   const routes: ShoppingIngredientRoute[] = routeRows.map((route) => {
-    if (!ownedListIds.has(route.preferredListId)) throw new Error("NOT_FOUND");
+    if (!ownedListIds.has(route.preferredListId)) throw new Error('NOT_FOUND');
     return {
       id: route.id,
       foodId: route.foodId,
@@ -139,11 +127,7 @@ export async function getShoppingWorkspace(
       packageUnit: route.packageUnit,
       packageLabel: route.packageLabel,
       packageRoundBehavior:
-        route.packageRounding == null
-          ? "inherit"
-          : route.packageRounding
-            ? "enable"
-            : "disable",
+        route.packageRounding == null ? 'inherit' : route.packageRounding ? 'enable' : 'disable',
     };
   });
   const unitPreferences = toUnitPrefs(preferenceRow);
@@ -166,27 +150,21 @@ export async function getShoppingWorkspace(
  * Return the newest retained snapshots for one owned list. Item ordering is
  * stable for previews and for a later deterministic restore.
  */
-export async function getShoppingListHistory(
-  user: User | null,
-  listId: string,
-) {
+export async function getShoppingListHistory(user: User | null, listId: string) {
   if (!isDbConfigured() || !user) return null;
 
   const list = await db.query.shoppingLists.findFirst({
     where: and(eq(shoppingLists.id, listId), eq(shoppingLists.userId, user.id)),
     columns: { id: true },
   });
-  if (!list) throw new Error("NOT_FOUND");
+  if (!list) throw new Error('NOT_FOUND');
 
   const points = await db.query.shoppingListRestorePoints.findMany({
     where: and(
       eq(shoppingListRestorePoints.listId, list.id),
       eq(shoppingListRestorePoints.userId, user.id),
     ),
-    orderBy: [
-      desc(shoppingListRestorePoints.createdAt),
-      desc(shoppingListRestorePoints.id),
-    ],
+    orderBy: [desc(shoppingListRestorePoints.createdAt), desc(shoppingListRestorePoints.id)],
     limit: SHOPPING_HISTORY_LIMIT,
     with: {
       items: {
@@ -213,15 +191,9 @@ export async function getShoppingListHistory(
             listId: true,
             operationGroupId: true,
           },
-          orderBy: [
-            asc(shoppingListRestorePoints.listId),
-            asc(shoppingListRestorePoints.id),
-          ],
+          orderBy: [asc(shoppingListRestorePoints.listId), asc(shoppingListRestorePoints.id)],
         });
-  const referencesByGroup = new Map<
-    string,
-    { listId: string; restorePointId: string }[]
-  >();
+  const referencesByGroup = new Map<string, { listId: string; restorePointId: string }[]>();
   for (const point of groupedPoints) {
     if (!point.operationGroupId) continue;
     const references = referencesByGroup.get(point.operationGroupId) ?? [];

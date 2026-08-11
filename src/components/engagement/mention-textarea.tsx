@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
-import {
-  activeMentionQuery,
-  normalizeHandle,
-  type MentionCandidate,
-} from "~/lib/mentions";
-import { Textarea } from "~/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { cn } from '~/lib/utils';
+import { activeMentionQuery, normalizeHandle, type MentionCandidate } from '~/lib/mentions';
+import { Textarea } from '~/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 
-type Props = Omit<
-  React.ComponentPropsWithoutRef<typeof Textarea>,
-  "value" | "onChange"
-> & {
+type Props = Omit<React.ComponentPropsWithoutRef<typeof Textarea>, 'value' | 'onChange'> & {
   value: string;
   onChange: (value: string) => void;
   candidates: MentionCandidate[];
@@ -23,8 +16,8 @@ type Props = Omit<
 function matches(candidate: MentionCandidate, query: string): boolean {
   const q = query.toLowerCase();
   if (q.length === 0) return true;
-  const handle = candidate.handle ? normalizeHandle(candidate.handle) : "";
-  const name = (candidate.name ?? "").toLowerCase();
+  const handle = candidate.handle ? normalizeHandle(candidate.handle) : '';
+  const name = (candidate.name ?? '').toLowerCase();
   return handle.startsWith(q) || name.includes(q);
 }
 
@@ -44,7 +37,7 @@ export function MentionTextarea({
 }: Props) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
 
   const suggestions = React.useMemo(() => {
@@ -70,10 +63,7 @@ export function MentionTextarea({
     const caret = el.selectionStart ?? value.length;
     const before = value.slice(0, caret);
     const after = value.slice(caret);
-    const replaced = before.replace(
-      /(^|\s)@[a-zA-Z0-9_.-]*$/,
-      `$1@${candidate.handle} `,
-    );
+    const replaced = before.replace(/(^|\s)@[a-zA-Z0-9_.-]*$/, `$1@${candidate.handle} `);
     const next = replaced + after;
     onChange(next);
     setOpen(false);
@@ -87,22 +77,22 @@ export function MentionTextarea({
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (open && suggestions.length > 0) {
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
         setActive((i) => (i + 1) % suggestions.length);
         return;
       }
-      if (event.key === "ArrowUp") {
+      if (event.key === 'ArrowUp') {
         event.preventDefault();
         setActive((i) => (i - 1 + suggestions.length) % suggestions.length);
         return;
       }
-      if (event.key === "Enter" || event.key === "Tab") {
+      if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();
         insertMention(suggestions[active]!);
         return;
       }
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setOpen(false);
         return;
       }
@@ -140,8 +130,8 @@ export function MentionTextarea({
                 role="option"
                 aria-selected={i === active}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm",
-                  i === active ? "bg-muted" : "hover:bg-muted/60",
+                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm',
+                  i === active ? 'bg-muted' : 'hover:bg-muted/60',
                 )}
                 onMouseDown={(event) => {
                   event.preventDefault();
@@ -152,22 +142,16 @@ export function MentionTextarea({
                   {candidate.avatarUrl ? (
                     <AvatarImage
                       src={candidate.avatarUrl}
-                      alt={candidate.name ?? candidate.handle ?? ""}
+                      alt={candidate.name ?? candidate.handle ?? ''}
                     />
                   ) : null}
                   <AvatarFallback>
-                    {(candidate.name ?? candidate.handle ?? "?")
-                      .slice(0, 1)
-                      .toUpperCase()}
+                    {(candidate.name ?? candidate.handle ?? '?').slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="min-w-0 flex-1 truncate">
-                  <span className="font-medium">
-                    {candidate.name ?? candidate.handle}
-                  </span>{" "}
-                  <span className="text-muted-foreground">
-                    @{candidate.handle}
-                  </span>
+                  <span className="font-medium">{candidate.name ?? candidate.handle}</span>{' '}
+                  <span className="text-muted-foreground">@{candidate.handle}</span>
                 </span>
               </button>
             </li>

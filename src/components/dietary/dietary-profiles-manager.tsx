@@ -1,39 +1,35 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
-import { toast } from "sonner";
-import { useFriendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Pencil, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
+import { toast } from 'sonner';
+import { useFriendlyError } from '~/lib/error-copy';
 
 import {
   createMemberProfileAction,
   deleteMemberProfileAction,
   updateMemberProfileAction,
-} from "~/server/dietary/actions";
-import { type MemberProfileInputRaw } from "~/server/dietary/validation";
-import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
-import {
-  DIETARY_TAGS,
-  DIETARY_TAG_LABELS,
-  type DietaryTag,
-} from "~/lib/substitutions";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+} from '~/server/dietary/actions';
+import { type MemberProfileInputRaw } from '~/server/dietary/validation';
+import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Label } from "~/components/ui/label";
-import { NativeSelect } from "~/components/ui/native-select";
-import { useConfirm } from "~/components/ui/confirm-dialog";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { Checkbox } from '~/components/ui/checkbox';
+import { Label } from '~/components/ui/label';
+import { NativeSelect } from '~/components/ui/native-select';
+import { useConfirm } from '~/components/ui/confirm-dialog';
 
 export type MemberProfileView = {
   id: string;
@@ -47,7 +43,7 @@ export type MemberProfileView = {
 type GroupOption = { id: string; name: string };
 
 /** Which form the dialog is showing: adding a new member or editing one. */
-type EditingState = { kind: "add" } | { kind: "edit"; id: string };
+type EditingState = { kind: 'add' } | { kind: 'edit'; id: string };
 
 type Draft = {
   name: string;
@@ -58,11 +54,11 @@ type Draft = {
 };
 
 const EMPTY_DRAFT: Draft = {
-  name: "",
+  name: '',
   allergens: [],
   diets: [],
-  calorieGoal: "",
-  groupId: "",
+  calorieGoal: '',
+  groupId: '',
 };
 
 function toDraft(profile: MemberProfileView): Draft {
@@ -70,15 +66,13 @@ function toDraft(profile: MemberProfileView): Draft {
     name: profile.name,
     allergens: profile.allergens,
     diets: profile.diets,
-    calorieGoal: profile.calorieGoal != null ? String(profile.calorieGoal) : "",
-    groupId: profile.groupId ?? "",
+    calorieGoal: profile.calorieGoal != null ? String(profile.calorieGoal) : '',
+    groupId: profile.groupId ?? '',
   };
 }
 
 function toggle<T>(list: T[], value: T): T[] {
-  return list.includes(value)
-    ? list.filter((v) => v !== value)
-    : [...list, value];
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
 export function DietaryProfilesManager({
@@ -96,29 +90,24 @@ export function DietaryProfilesManager({
   // `null` = dialog closed.
   const [editing, setEditing] = React.useState<EditingState | null>(null);
   const [draft, setDraft] = React.useState<Draft>(EMPTY_DRAFT);
-  const [fieldErrors, setFieldErrors] = React.useState<
-    Record<string, string[]>
-  >({});
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
-  const t = useTranslations("dietary");
+  const t = useTranslations('dietary');
   const friendlyError = useFriendlyError();
 
-  const groupName = React.useMemo(
-    () => new Map(groups.map((g) => [g.id, g.name])),
-    [groups],
-  );
+  const groupName = React.useMemo(() => new Map(groups.map((g) => [g.id, g.name])), [groups]);
 
   function openAdd() {
     setDraft(EMPTY_DRAFT);
     setFieldErrors({});
-    setEditing({ kind: "add" });
+    setEditing({ kind: 'add' });
   }
 
   function openEdit(profile: MemberProfileView) {
     setDraft(toDraft(profile));
     setFieldErrors({});
-    setEditing({ kind: "edit", id: profile.id });
+    setEditing({ kind: 'edit', id: profile.id });
   }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -133,7 +122,7 @@ export function DietaryProfilesManager({
     };
     setFieldErrors({});
 
-    const isAdd = editing.kind === "add";
+    const isAdd = editing.kind === 'add';
     startTransition(() => {
       const run = isAdd
         ? createMemberProfileAction(input)
@@ -144,7 +133,7 @@ export function DietaryProfilesManager({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(isAdd ? t("toasts.added") : t("toasts.updated"));
+        toast.success(isAdd ? t('toasts.added') : t('toasts.updated'));
         setEditing(null);
         router.refresh();
       });
@@ -153,9 +142,9 @@ export function DietaryProfilesManager({
 
   async function onDelete(profile: MemberProfileView) {
     const ok = await confirm({
-      title: t("confirm.remove.title", { name: profile.name }),
-      description: t("confirm.remove.description"),
-      confirmLabel: t("confirm.remove.confirmLabel"),
+      title: t('confirm.remove.title', { name: profile.name }),
+      description: t('confirm.remove.description'),
+      confirmLabel: t('confirm.remove.confirmLabel'),
     });
     if (!ok) return;
     startTransition(() => {
@@ -164,7 +153,7 @@ export function DietaryProfilesManager({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(t("toasts.removed"));
+        toast.success(t('toasts.removed'));
         router.refresh();
       });
     });
@@ -174,7 +163,7 @@ export function DietaryProfilesManager({
     <div className="flex flex-col gap-6">
       <div className="flex justify-end">
         <Button onClick={openAdd}>
-          <Plus /> {t("actions.addFamilyMember")}
+          <Plus /> {t('actions.addFamilyMember')}
         </Button>
       </div>
 
@@ -184,15 +173,11 @@ export function DietaryProfilesManager({
             <UtensilsCrossed className="size-7" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="font-display text-xl font-semibold">
-              {t("empty.title")}
-            </h2>
-            <p className="mt-1 max-w-md text-muted-foreground">
-              {t("empty.description")}
-            </p>
+            <h2 className="font-display text-xl font-semibold">{t('empty.title')}</h2>
+            <p className="mt-1 max-w-md text-muted-foreground">{t('empty.description')}</p>
           </div>
           <Button onClick={openAdd}>
-            <Plus /> {t("actions.addFamilyMember")}
+            <Plus /> {t('actions.addFamilyMember')}
           </Button>
         </div>
       ) : (
@@ -204,9 +189,7 @@ export function DietaryProfilesManager({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-display text-lg font-semibold">
-                    {profile.name}
-                  </h3>
+                  <h3 className="font-display text-lg font-semibold">{profile.name}</h3>
                   {profile.groupId && groupName.has(profile.groupId) ? (
                     <p className="text-xs text-muted-foreground">
                       {groupName.get(profile.groupId)}
@@ -218,7 +201,7 @@ export function DietaryProfilesManager({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t("profile.edit", { name: profile.name })}
+                    aria-label={t('profile.edit', { name: profile.name })}
                     onClick={() => openEdit(profile)}
                   >
                     <Pencil className="size-4" />
@@ -227,7 +210,7 @@ export function DietaryProfilesManager({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t("profile.remove", { name: profile.name })}
+                    aria-label={t('profile.remove', { name: profile.name })}
                     onClick={() => onDelete(profile)}
                   >
                     <Trash2 className="size-4" />
@@ -257,7 +240,7 @@ export function DietaryProfilesManager({
 
               {profile.calorieGoal != null ? (
                 <p className="text-sm text-muted-foreground">
-                  {t("profile.calorieGoal", {
+                  {t('profile.calorieGoal', {
                     calories: profile.calorieGoal.toLocaleString(),
                   })}
                 </p>
@@ -266,51 +249,40 @@ export function DietaryProfilesManager({
               {profile.allergens.length === 0 &&
               profile.diets.length === 0 &&
               profile.calorieGoal == null ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("profile.noRestrictions")}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('profile.noRestrictions')}</p>
               ) : null}
             </li>
           ))}
         </ul>
       )}
 
-      <Dialog
-        open={editing !== null}
-        onOpenChange={(open) => !open && setEditing(null)}
-      >
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
-                {editing?.kind === "add"
-                  ? t("dialog.addTitle")
-                  : t("dialog.editTitle")}
+                {editing?.kind === 'add' ? t('dialog.addTitle') : t('dialog.editTitle')}
               </DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={nameId}>{t("fields.name")}</Label>
+              <Label htmlFor={nameId}>{t('fields.name')}</Label>
               <Input
                 id={nameId}
                 value={draft.name}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, name: e.target.value }))
-                }
-                placeholder={t("fields.namePlaceholder")}
+                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                placeholder={t('fields.namePlaceholder')}
                 aria-invalid={Boolean(fieldErrors.name)}
                 autoFocus
               />
               {fieldErrors.name?.[0] ? (
-                <p className="text-sm text-destructive">
-                  {fieldErrors.name[0]}
-                </p>
+                <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
               ) : null}
             </div>
 
             <fieldset className="grid gap-2">
               <legend className="text-sm font-medium text-foreground">
-                {t("fields.allergies")}
+                {t('fields.allergies')}
               </legend>
               <div className="flex flex-wrap gap-2">
                 {ALLERGENS.map((a) => {
@@ -319,10 +291,10 @@ export function DietaryProfilesManager({
                     <label
                       key={a}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                        'flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors',
                         checked
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted",
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:bg-muted',
                       )}
                     >
                       <Checkbox
@@ -342,9 +314,7 @@ export function DietaryProfilesManager({
             </fieldset>
 
             <fieldset className="grid gap-2">
-              <legend className="text-sm font-medium text-foreground">
-                {t("fields.diets")}
-              </legend>
+              <legend className="text-sm font-medium text-foreground">{t('fields.diets')}</legend>
               <div className="flex flex-wrap gap-2">
                 {DIETARY_TAGS.map((tag) => {
                   const checked = draft.diets.includes(tag);
@@ -352,10 +322,10 @@ export function DietaryProfilesManager({
                     <label
                       key={tag}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                        'flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors',
                         checked
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted",
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:bg-muted',
                       )}
                     >
                       <Checkbox
@@ -375,35 +345,29 @@ export function DietaryProfilesManager({
             </fieldset>
 
             <div className="grid gap-2">
-              <Label htmlFor={calorieId}>{t("fields.calorieGoal")}</Label>
+              <Label htmlFor={calorieId}>{t('fields.calorieGoal')}</Label>
               <Input
                 id={calorieId}
                 value={draft.calorieGoal}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, calorieGoal: e.target.value }))
-                }
+                onChange={(e) => setDraft((d) => ({ ...d, calorieGoal: e.target.value }))}
                 inputMode="numeric"
-                placeholder={t("fields.caloriePlaceholder")}
+                placeholder={t('fields.caloriePlaceholder')}
                 aria-invalid={Boolean(fieldErrors.calorieGoal)}
               />
               {fieldErrors.calorieGoal?.[0] ? (
-                <p className="text-sm text-destructive">
-                  {fieldErrors.calorieGoal[0]}
-                </p>
+                <p className="text-sm text-destructive">{fieldErrors.calorieGoal[0]}</p>
               ) : null}
             </div>
 
             {groups.length > 0 ? (
               <div className="grid gap-2">
-                <Label htmlFor={groupSelectId}>{t("fields.familyGroup")}</Label>
+                <Label htmlFor={groupSelectId}>{t('fields.familyGroup')}</Label>
                 <NativeSelect
                   id={groupSelectId}
                   value={draft.groupId}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, groupId: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, groupId: e.target.value }))}
                 >
-                  <option value="">{t("fields.justMe")}</option>
+                  <option value="">{t('fields.justMe')}</option>
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -411,9 +375,7 @@ export function DietaryProfilesManager({
                   ))}
                 </NativeSelect>
                 {fieldErrors.groupId?.[0] ? (
-                  <p className="text-sm text-destructive">
-                    {fieldErrors.groupId[0]}
-                  </p>
+                  <p className="text-sm text-destructive">{fieldErrors.groupId[0]}</p>
                 ) : null}
               </div>
             ) : null}
@@ -425,14 +387,14 @@ export function DietaryProfilesManager({
                 onClick={() => setEditing(null)}
                 disabled={isPending}
               >
-                {t("actions.cancel")}
+                {t('actions.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
-                  ? t("actions.saving")
-                  : editing?.kind === "add"
-                    ? t("actions.addMember")
-                    : t("actions.saveChanges")}
+                  ? t('actions.saving')
+                  : editing?.kind === 'add'
+                    ? t('actions.addMember')
+                    : t('actions.saveChanges')}
               </Button>
             </DialogFooter>
           </form>

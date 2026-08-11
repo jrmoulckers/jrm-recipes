@@ -22,7 +22,7 @@ import {
   type ReelExportCapabilities,
   type ReelExportMode,
   type ReelScene,
-} from "~/lib/reel/scenes";
+} from '~/lib/reel/scenes';
 
 const { width: W, height: H } = REEL_SIZE;
 const MARGIN = 96;
@@ -32,27 +32,25 @@ export type LoadedImages = Map<string, HTMLImageElement>;
 
 /** Resolve the runtime font-family for a next/font CSS variable (canvas-safe). */
 function fontFamily(varName: string, fallback: string): string {
-  if (typeof document === "undefined") return fallback;
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(varName)
-    .trim();
+  if (typeof document === 'undefined') return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   return value ? `${value}, ${fallback}` : fallback;
 }
 
 function displayFont(): string {
-  return fontFamily("--font-fraunces", "Georgia, 'Times New Roman', serif");
+  return fontFamily('--font-fraunces', "Georgia, 'Times New Roman', serif");
 }
 
 function bodyFont(): string {
-  return fontFamily("--font-nunito", "system-ui, -apple-system, sans-serif");
+  return fontFamily('--font-nunito', 'system-ui, -apple-system, sans-serif');
 }
 
 /** Load one image with CORS enabled so the canvas is never tainted. */
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.decoding = "async";
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
@@ -64,12 +62,10 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
  * their original url. Failed loads are simply omitted so scenes fall back to a
  * branded no-photo layout.
  */
-export async function preloadReelImages(
-  scenes: ReelScene[],
-): Promise<LoadedImages> {
+export async function preloadReelImages(scenes: ReelScene[]): Promise<LoadedImages> {
   const urls = new Set<string>();
   for (const scene of scenes) {
-    if ("imageUrl" in scene && scene.imageUrl) urls.add(scene.imageUrl);
+    if ('imageUrl' in scene && scene.imageUrl) urls.add(scene.imageUrl);
   }
   const map: LoadedImages = new Map();
   await Promise.all(
@@ -127,14 +123,10 @@ function drawCover(
 }
 
 /** Break text into lines that fit `maxWidth` for the current ctx font. */
-function wrapText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-): string[] {
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
-  let current = "";
+  let current = '';
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
     if (ctx.measureText(candidate).width > maxWidth && current) {
@@ -163,10 +155,7 @@ function drawParagraph(
     lines = lines.slice(0, maxLines);
     const last = lines.length - 1;
     let clipped = lines[last]!;
-    while (
-      clipped.length > 1 &&
-      ctx.measureText(`${clipped}\u2026`).width > maxWidth
-    ) {
+    while (clipped.length > 1 && ctx.measureText(`${clipped}\u2026`).width > maxWidth) {
       clipped = clipped.slice(0, -1).trimEnd();
     }
     lines[last] = `${clipped}\u2026`;
@@ -220,12 +209,7 @@ function linearGradient(
 // Shared brand marks
 // ---------------------------------------------------------------------------
 
-function drawWordmark(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  onDark: boolean,
-): void {
+function drawWordmark(ctx: CanvasRenderingContext2D, x: number, y: number, onDark: boolean): void {
   const size = 72;
   // Rounded terracotta tile with an "H".
   const g = linearGradient(ctx, x, y, x + size, y + size, [
@@ -237,15 +221,15 @@ function drawWordmark(
   ctx.fill();
   ctx.fillStyle = REEL_COLORS.cream;
   ctx.font = `600 46px ${displayFont()}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("H", x + size / 2, y + size / 2 + 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('H', x + size / 2, y + size / 2 + 2);
 
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = onDark ? REEL_COLORS.cream : REEL_COLORS.terracottaDeep;
   ctx.font = `800 44px ${bodyFont()}`;
-  ctx.fillText("Heirloom", x + size + 22, y + size / 2 + 16);
+  ctx.fillText('Heirloom', x + size + 22, y + size / 2 + 16);
 }
 
 function drawChips(
@@ -261,7 +245,7 @@ function drawChips(
   const chipH = 68;
   const dotR = 9;
   ctx.font = `600 34px ${bodyFont()}`;
-  ctx.textBaseline = "middle";
+  ctx.textBaseline = 'middle';
   let cx = x;
   let cy = y;
   for (const chip of chips) {
@@ -272,8 +256,8 @@ function drawChips(
       cx = x;
       cy += chipH + gap;
     }
-    ctx.fillStyle = onDark ? "rgba(255,250,243,0.18)" : "rgba(180,83,9,0.10)";
-    ctx.strokeStyle = onDark ? "rgba(255,255,255,0.45)" : "rgba(180,83,9,0.32)";
+    ctx.fillStyle = onDark ? 'rgba(255,250,243,0.18)' : 'rgba(180,83,9,0.10)';
+    ctx.strokeStyle = onDark ? 'rgba(255,255,255,0.45)' : 'rgba(180,83,9,0.32)';
     ctx.lineWidth = 2;
     roundRect(ctx, cx, cy, chipW, chipH, chipH / 2);
     ctx.fill();
@@ -287,36 +271,25 @@ function drawChips(
       tx += dotR * 2 + 14;
     }
     ctx.fillStyle = onDark ? REEL_COLORS.cream : REEL_COLORS.ink;
-    ctx.textAlign = "left";
+    ctx.textAlign = 'left';
     ctx.fillText(chip.label, tx, cy + chipH / 2 + 2);
     cx += chipW + gap;
   }
-  ctx.textBaseline = "alphabetic";
+  ctx.textBaseline = 'alphabetic';
   return cy + chipH;
 }
 
 /** A slim reel-progress bar across the top (skipped when motion is reduced). */
-function drawProgressBar(
-  ctx: CanvasRenderingContext2D,
-  fraction: number,
-  onDark: boolean,
-): void {
+function drawProgressBar(ctx: CanvasRenderingContext2D, fraction: number, onDark: boolean): void {
   const y = 24;
   const h = 8;
   const x = MARGIN;
   const w = CONTENT_W;
-  ctx.fillStyle = onDark ? "rgba(255,250,243,0.28)" : "rgba(124,61,6,0.18)";
+  ctx.fillStyle = onDark ? 'rgba(255,250,243,0.28)' : 'rgba(124,61,6,0.18)';
   roundRect(ctx, x, y, w, h, h / 2);
   ctx.fill();
   ctx.fillStyle = onDark ? REEL_COLORS.cream : REEL_COLORS.terracotta;
-  roundRect(
-    ctx,
-    x,
-    y,
-    Math.max(h, w * Math.min(1, Math.max(0, fraction))),
-    h,
-    h / 2,
-  );
+  roundRect(ctx, x, y, Math.max(h, w * Math.min(1, Math.max(0, fraction))), h, h / 2);
   ctx.fill();
 }
 
@@ -335,7 +308,7 @@ function titleFontSize(title: string): number {
 
 function drawCoverScene(
   ctx: CanvasRenderingContext2D,
-  scene: Extract<ReelScene, { kind: "cover" }>,
+  scene: Extract<ReelScene, { kind: 'cover' }>,
   images: LoadedImages,
   progress: number,
   reducedMotion: boolean,
@@ -346,16 +319,16 @@ function drawCoverScene(
     const zoom = reducedMotion ? 1.02 : 1 + 0.08 * progress;
     drawCover(ctx, img, 0, 0, W, H, zoom);
     ctx.fillStyle = linearGradient(ctx, 0, 0, 0, H, [
-      [0, "rgba(36,19,9,0.62)"],
-      [0.45, "rgba(36,19,9,0.28)"],
-      [1, "rgba(36,19,9,0.92)"],
+      [0, 'rgba(36,19,9,0.62)'],
+      [0.45, 'rgba(36,19,9,0.28)'],
+      [1, 'rgba(36,19,9,0.92)'],
     ]);
     ctx.fillRect(0, 0, W, H);
   } else {
     fillBackground(ctx);
     ctx.fillStyle = linearGradient(ctx, 0, 0, W, H, [
-      [0, "rgba(180,83,9,0.14)"],
-      [1, "rgba(180,83,9,0.04)"],
+      [0, 'rgba(180,83,9,0.14)'],
+      [1, 'rgba(180,83,9,0.04)'],
     ]);
     ctx.fillRect(0, 0, W, H);
   }
@@ -383,7 +356,7 @@ function drawCoverScene(
 
   if (scene.byline) {
     ctx.font = `600 34px ${bodyFont()}`;
-    ctx.fillStyle = onDark ? "rgba(255,250,243,0.92)" : REEL_COLORS.muted;
+    ctx.fillStyle = onDark ? 'rgba(255,250,243,0.92)' : REEL_COLORS.muted;
     ctx.fillText(scene.byline, MARGIN, cursor + 60);
   }
   ctx.restore();
@@ -391,7 +364,7 @@ function drawCoverScene(
 
 function drawIngredientsScene(
   ctx: CanvasRenderingContext2D,
-  scene: Extract<ReelScene, { kind: "ingredients" }>,
+  scene: Extract<ReelScene, { kind: 'ingredients' }>,
   images: LoadedImages,
   progress: number,
   reducedMotion: boolean,
@@ -404,7 +377,7 @@ function drawIngredientsScene(
     const zoom = reducedMotion ? 1.02 : 1 + 0.05 * progress;
     drawCover(ctx, img, 0, 0, W, bandH, zoom);
     ctx.fillStyle = linearGradient(ctx, 0, 0, 0, bandH, [
-      [0, "rgba(36,19,9,0.28)"],
+      [0, 'rgba(36,19,9,0.28)'],
       [1, REEL_COLORS.cream],
     ]);
     ctx.fillRect(0, 0, W, bandH);
@@ -437,7 +410,7 @@ function drawIngredientsScene(
     ctx.fillStyle = REEL_COLORS.ink;
     const endY = drawParagraph(
       ctx,
-      item.text + (item.optional ? "  (optional)" : ""),
+      item.text + (item.optional ? '  (optional)' : ''),
       MARGIN + 52,
       y,
       CONTENT_W - 52,
@@ -451,7 +424,7 @@ function drawIngredientsScene(
 
 function drawStepScene(
   ctx: CanvasRenderingContext2D,
-  scene: Extract<ReelScene, { kind: "step" }>,
+  scene: Extract<ReelScene, { kind: 'step' }>,
   images: LoadedImages,
   progress: number,
   reducedMotion: boolean,
@@ -464,7 +437,7 @@ function drawStepScene(
     const zoom = reducedMotion ? 1.02 : 1 + 0.06 * progress;
     drawCover(ctx, img, 0, 0, W, bandH, zoom);
     ctx.fillStyle = linearGradient(ctx, 0, bandH - 400, 0, bandH, [
-      [0, "rgba(255,250,243,0)"],
+      [0, 'rgba(255,250,243,0)'],
       [1, REEL_COLORS.cream],
     ]);
     ctx.fillRect(0, bandH - 400, W, 400);
@@ -485,21 +458,13 @@ function drawStepScene(
   roundRect(ctx, MARGIN, top, badgeW, 74, 37);
   ctx.fill();
   ctx.fillStyle = REEL_COLORS.cream;
-  ctx.textBaseline = "middle";
+  ctx.textBaseline = 'middle';
   ctx.fillText(badge, MARGIN + 30, top + 39);
-  ctx.textBaseline = "alphabetic";
+  ctx.textBaseline = 'alphabetic';
 
   ctx.fillStyle = REEL_COLORS.ink;
   ctx.font = `600 60px ${displayFont()}`;
-  drawParagraph(
-    ctx,
-    scene.step.instruction,
-    MARGIN,
-    top + 190,
-    CONTENT_W,
-    76,
-    8,
-  );
+  drawParagraph(ctx, scene.step.instruction, MARGIN, top + 190, CONTENT_W, 76, 8);
 
   ctx.restore();
 
@@ -510,7 +475,7 @@ function drawStepScene(
 
 function drawOutroScene(
   ctx: CanvasRenderingContext2D,
-  scene: Extract<ReelScene, { kind: "outro" }>,
+  scene: Extract<ReelScene, { kind: 'outro' }>,
   progress: number,
   reducedMotion: boolean,
 ): void {
@@ -534,14 +499,14 @@ function drawOutroScene(
   ctx.fill();
   ctx.fillStyle = REEL_COLORS.terracottaDeep;
   ctx.font = `600 96px ${displayFont()}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("H", W / 2, ty + tile / 2 + 4);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('H', W / 2, ty + tile / 2 + 4);
 
-  ctx.textBaseline = "alphabetic";
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = REEL_COLORS.cream;
   ctx.font = `800 60px ${bodyFont()}`;
-  ctx.fillText("Heirloom", W / 2, ty + tile + 110);
+  ctx.fillText('Heirloom', W / 2, ty + tile + 110);
 
   ctx.font = `600 78px ${displayFont()}`;
   const lines = wrapText(ctx, scene.headline, CONTENT_W).slice(0, 3);
@@ -552,10 +517,10 @@ function drawOutroScene(
   }
 
   ctx.font = `600 40px ${bodyFont()}`;
-  ctx.fillStyle = "rgba(255,250,243,0.9)";
+  ctx.fillStyle = 'rgba(255,250,243,0.9)';
   ctx.fillText(scene.siteUrl, W / 2, H - 200);
 
-  ctx.textAlign = "left";
+  ctx.textAlign = 'left';
   ctx.restore();
 }
 
@@ -578,23 +543,22 @@ export function drawFrame(
 
   ctx.clearRect(0, 0, W, H);
   switch (scene.kind) {
-    case "cover":
+    case 'cover':
       drawCoverScene(ctx, scene, images, progress, reducedMotion);
       break;
-    case "ingredients":
+    case 'ingredients':
       drawIngredientsScene(ctx, scene, images, progress, reducedMotion);
       break;
-    case "step":
+    case 'step':
       drawStepScene(ctx, scene, images, progress, reducedMotion);
       break;
-    case "outro":
+    case 'outro':
       drawOutroScene(ctx, scene, progress, reducedMotion);
       break;
   }
 
-  if (!reducedMotion && scene.kind !== "outro") {
-    const onDark =
-      scene.kind === "cover" && "imageUrl" in scene && Boolean(scene.imageUrl);
+  if (!reducedMotion && scene.kind !== 'outro') {
+    const onDark = scene.kind === 'cover' && 'imageUrl' in scene && Boolean(scene.imageUrl);
     drawProgressBar(ctx, clamped / Math.max(1, total), onDark);
   }
 }
@@ -620,7 +584,7 @@ export function playPreview(
   scenes: ReelScene[],
   images: LoadedImages,
 ): PreviewHandle {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   if (!ctx) return { stop: () => undefined };
   const total = totalDurationMs(scenes);
   let raf = 0;
@@ -653,12 +617,8 @@ export function playPreview(
 
 /** Detect the webm mime type this browser can actually encode (null if none). */
 function pickMimeType(): string | null {
-  const candidates = [
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm",
-  ];
-  if (typeof MediaRecorder === "undefined") return null;
+  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  if (typeof MediaRecorder === 'undefined') return null;
   for (const type of candidates) {
     if (MediaRecorder.isTypeSupported(type)) return type;
   }
@@ -667,17 +627,14 @@ function pickMimeType(): string | null {
 
 /** Probe the current browser for the capabilities the export decision needs. */
 export function detectExportCapabilities(): ReelExportCapabilities {
-  const hasWindow = typeof window !== "undefined";
-  const hasCanvas = hasWindow && typeof HTMLCanvasElement !== "undefined";
+  const hasWindow = typeof window !== 'undefined';
+  const hasCanvas = hasWindow && typeof HTMLCanvasElement !== 'undefined';
   return {
-    canvasCapture:
-      hasCanvas &&
-      typeof HTMLCanvasElement.prototype.captureStream === "function",
-    mediaRecorder: hasWindow && typeof MediaRecorder !== "undefined",
+    canvasCapture: hasCanvas && typeof HTMLCanvasElement.prototype.captureStream === 'function',
+    mediaRecorder: hasWindow && typeof MediaRecorder !== 'undefined',
     // The decisive check for Safari/iOS: MediaRecorder exists but can't encode webm.
     webmMimeType: pickMimeType() !== null,
-    canvasToBlob:
-      hasCanvas && typeof HTMLCanvasElement.prototype.toBlob === "function",
+    canvasToBlob: hasCanvas && typeof HTMLCanvasElement.prototype.toBlob === 'function',
   };
 }
 
@@ -688,7 +645,7 @@ export function detectReelExportMode(): ReelExportMode {
 
 /** True when this browser can capture a canvas to an animated webm video. */
 export function canRecordReel(): boolean {
-  return detectReelExportMode() === "video";
+  return detectReelExportMode() === 'video';
 }
 
 /**
@@ -698,7 +655,7 @@ export function canRecordReel(): boolean {
  * poster image instead of dead-ending on an error.
  */
 export function canEncodeReelVideo(): boolean {
-  return detectReelExportMode() === "video";
+  return detectReelExportMode() === 'video';
 }
 
 /**
@@ -706,23 +663,20 @@ export function canEncodeReelVideo(): boolean {
  * return it as a PNG blob. This is the graceful fallback for browsers that can't
  * encode webm (Safari/iOS) so the user still gets something shareable.
  */
-export function renderPoster(
-  scenes: ReelScene[],
-  images: LoadedImages,
-): Promise<Blob> {
+export function renderPoster(scenes: ReelScene[], images: LoadedImages): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (
-      typeof document === "undefined" ||
-      typeof HTMLCanvasElement === "undefined" ||
-      typeof HTMLCanvasElement.prototype.toBlob !== "function"
+      typeof document === 'undefined' ||
+      typeof HTMLCanvasElement === 'undefined' ||
+      typeof HTMLCanvasElement.prototype.toBlob !== 'function'
     ) {
       reject(new Error("Image export isn't supported in this browser."));
       return;
     }
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       reject(new Error("Couldn't get a drawing context."));
       return;
@@ -731,7 +685,7 @@ export function renderPoster(
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
       else reject(new Error("Couldn't encode the image."));
-    }, "image/png");
+    }, 'image/png');
   });
 }
 
@@ -763,10 +717,10 @@ export function recordReel(
       return;
     }
 
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       reject(new Error("Couldn't get a drawing context."));
       return;
@@ -791,8 +745,8 @@ export function recordReel(
       if (finished) return;
       finished = true;
       cleanup();
-      if (recorder.state !== "inactive") recorder.stop();
-      reject(new DOMException("Recording cancelled", "AbortError"));
+      if (recorder.state !== 'inactive') recorder.stop();
+      reject(new DOMException('Recording cancelled', 'AbortError'));
     };
 
     if (options.signal) {
@@ -800,7 +754,7 @@ export function recordReel(
         abort();
         return;
       }
-      options.signal.addEventListener("abort", abort, { once: true });
+      options.signal.addEventListener('abort', abort, { once: true });
     }
 
     recorder.ondataavailable = (event: BlobEvent) => {
@@ -816,7 +770,7 @@ export function recordReel(
       if (finished) return;
       finished = true;
       cleanup();
-      reject(new Error("Recording failed."));
+      reject(new Error('Recording failed.'));
     };
 
     const start = performance.now();
@@ -827,7 +781,7 @@ export function recordReel(
       drawFrame(ctx, scenes, images, Math.min(elapsed, total - 1), false);
       options.onProgress?.(fraction);
       if (elapsed >= total) {
-        if (recorder.state !== "inactive") recorder.stop();
+        if (recorder.state !== 'inactive') recorder.stop();
         return;
       }
       raf = requestAnimationFrame(tick);

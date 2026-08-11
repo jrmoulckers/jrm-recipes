@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, or } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { userBlocks, type User } from "~/server/db/schema";
+import { db, isDbConfigured } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { userBlocks, type User } from '~/server/db/schema';
 
 /**
  * Personal blocks (issue #355). A block is a private, reversible record: the
@@ -16,7 +16,7 @@ import { userBlocks, type User } from "~/server/db/schema";
 
 /** Block another member. No-ops if already blocked. You can't block yourself. */
 export async function blockUser(blockerId: string, blockedId: string) {
-  if (blockerId === blockedId) throw new DomainError("FORBIDDEN");
+  if (blockerId === blockedId) throw new DomainError('FORBIDDEN');
   await db
     .insert(userBlocks)
     .values({ blockerId, blockedId })
@@ -29,12 +29,7 @@ export async function blockUser(blockerId: string, blockedId: string) {
 export async function unblockUser(blockerId: string, blockedId: string) {
   await db
     .delete(userBlocks)
-    .where(
-      and(
-        eq(userBlocks.blockerId, blockerId),
-        eq(userBlocks.blockedId, blockedId),
-      ),
-    );
+    .where(and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, blockedId)));
 }
 
 /**
@@ -42,15 +37,10 @@ export async function unblockUser(blockerId: string, blockedId: string) {
  * blocked, plus everyone who's blocked them (symmetric). Returned as a Set for
  * O(1) membership tests in list-filtering. Empty for signed-out viewers.
  */
-export async function getHiddenAuthorIds(
-  userId: string | null | undefined,
-): Promise<Set<string>> {
+export async function getHiddenAuthorIds(userId: string | null | undefined): Promise<Set<string>> {
   if (!isDbConfigured() || !userId) return new Set();
   const rows = await db.query.userBlocks.findMany({
-    where: or(
-      eq(userBlocks.blockerId, userId),
-      eq(userBlocks.blockedId, userId),
-    ),
+    where: or(eq(userBlocks.blockerId, userId), eq(userBlocks.blockedId, userId)),
     columns: { blockerId: true, blockedId: true },
   });
   const hidden = new Set<string>();
@@ -61,9 +51,7 @@ export async function getHiddenAuthorIds(
 }
 
 /** Just the ids `userId` has actively blocked (for the settings list order). */
-export async function getBlockedIds(
-  userId: string | null | undefined,
-): Promise<Set<string>> {
+export async function getBlockedIds(userId: string | null | undefined): Promise<Set<string>> {
   if (!isDbConfigured() || !userId) return new Set();
   const rows = await db.query.userBlocks.findMany({
     where: eq(userBlocks.blockerId, userId),
@@ -82,9 +70,7 @@ export type BlockedPerson = {
 };
 
 /** The people `viewer` has blocked, most recent first, for the settings page. */
-export async function listBlockedPeople(
-  viewer: User,
-): Promise<BlockedPerson[]> {
+export async function listBlockedPeople(viewer: User): Promise<BlockedPerson[]> {
   if (!isDbConfigured()) return [];
   const rows = await db.query.userBlocks.findMany({
     where: eq(userBlocks.blockerId, viewer.id),

@@ -1,45 +1,36 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  Check,
-  CornerDownRight,
-  Lightbulb,
-  MessageCircle,
-  Sparkles,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { Check, CornerDownRight, Lightbulb, MessageCircle, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
 import {
   addCommentAction,
   applySuggestionAction,
   deleteCommentAction,
   resolveCommentAction,
-} from "~/server/engagement/actions";
-import type { ThreadedComment } from "~/server/engagement/queries";
-import type { MentionCandidate } from "~/lib/mentions";
-import { MentionTextarea } from "~/components/engagement/mention-textarea";
-import { MentionText } from "~/components/engagement/mention-text";
-import { ReactionBar } from "~/components/engagement/reaction-bar";
-import { ContentActionsMenu } from "~/components/moderation/content-actions-menu";
-import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
-import { Separator } from "~/components/ui/separator";
-import { CharacterCounter } from "~/components/ui/character-counter";
-import {
-  COMMENT_MAX_LENGTH,
-  COMMENT_TOO_LONG_MESSAGE,
-} from "~/server/engagement/validation";
-import { cn } from "~/lib/utils";
-import { formatRelativeTime } from "~/lib/dates";
+} from '~/server/engagement/actions';
+import type { ThreadedComment } from '~/server/engagement/queries';
+import type { MentionCandidate } from '~/lib/mentions';
+import { MentionTextarea } from '~/components/engagement/mention-textarea';
+import { MentionText } from '~/components/engagement/mention-text';
+import { ReactionBar } from '~/components/engagement/reaction-bar';
+import { ContentActionsMenu } from '~/components/moderation/content-actions-menu';
+import type { ReactionCount, ReactionEmojiKey } from '~/lib/reactions';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Label } from '~/components/ui/label';
+import { Separator } from '~/components/ui/separator';
+import { CharacterCounter } from '~/components/ui/character-counter';
+import { COMMENT_MAX_LENGTH, COMMENT_TOO_LONG_MESSAGE } from '~/server/engagement/validation';
+import { cn } from '~/lib/utils';
+import { formatRelativeTime } from '~/lib/dates';
 
-type CommentKind = "comment" | "suggestion";
+type CommentKind = 'comment' | 'suggestion';
 
 type PostComment = (
   body: string,
@@ -48,15 +39,15 @@ type PostComment = (
   onSuccess?: () => void,
 ) => void;
 
-function displayName(author: ThreadedComment["author"]) {
-  return author?.name ?? author?.handle ?? "Family cook";
+function displayName(author: ThreadedComment['author']) {
+  return author?.name ?? author?.handle ?? 'Family cook';
 }
 
-function initials(author: ThreadedComment["author"]) {
+function initials(author: ThreadedComment['author']) {
   return displayName(author)
-    .split(" ")
+    .split(' ')
     .map((part) => part[0])
-    .join("")
+    .join('')
     .slice(0, 2)
     .toUpperCase();
 }
@@ -93,25 +84,20 @@ export function CommentsSection(props: CommentsSectionProps) {
     reactionsByComment = {},
   } = props;
   const router = useRouter();
-  const t = useTranslations("engagement.comments");
+  const t = useTranslations('engagement.comments');
   const [pending, startTransition] = React.useTransition();
   const [comments, setComments] = React.useState(initialComments);
-  const [kind, setKind] = React.useState<CommentKind>("comment");
-  const [body, setBody] = React.useState("");
+  const [kind, setKind] = React.useState<CommentKind>('comment');
+  const [body, setBody] = React.useState('');
 
   React.useEffect(() => {
     setComments(initialComments);
   }, [initialComments]);
 
-  const postComment: PostComment = (
-    nextBody,
-    nextKind,
-    parentId,
-    onSuccess,
-  ) => {
+  const postComment: PostComment = (nextBody, nextKind, parentId, onSuccess) => {
     const trimmed = nextBody.trim();
     if (!trimmed) {
-      toast.error(t("toast.writeBeforePosting"));
+      toast.error(t('toast.writeBeforePosting'));
       return;
     }
 
@@ -127,10 +113,10 @@ export function CommentsSection(props: CommentsSectionProps) {
       if (result.ok) {
         toast.success(
           parentId
-            ? t("toast.replyPosted")
-            : nextKind === "suggestion"
-              ? t("toast.suggestionShared")
-              : t("toast.commentPosted"),
+            ? t('toast.replyPosted')
+            : nextKind === 'suggestion'
+              ? t('toast.suggestionShared')
+              : t('toast.commentPosted'),
         );
         onSuccess?.();
         router.refresh();
@@ -144,7 +130,7 @@ export function CommentsSection(props: CommentsSectionProps) {
     startTransition(async () => {
       const result = await deleteCommentAction({ commentId, recipeSlug });
       if (result.ok) {
-        toast.success(t("toast.commentDeleted"));
+        toast.success(t('toast.commentDeleted'));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -160,11 +146,7 @@ export function CommentsSection(props: CommentsSectionProps) {
         resolved,
       });
       if (result.ok) {
-        toast.success(
-          resolved
-            ? t("toast.suggestionResolved")
-            : t("toast.suggestionReopened"),
-        );
+        toast.success(resolved ? t('toast.suggestionResolved') : t('toast.suggestionReopened'));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -180,7 +162,7 @@ export function CommentsSection(props: CommentsSectionProps) {
         suggestionId,
       });
       if (result.ok) {
-        toast.success(t("toast.suggestionApplied"));
+        toast.success(t('toast.suggestionApplied'));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -190,7 +172,7 @@ export function CommentsSection(props: CommentsSectionProps) {
 
   function submitTopLevel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    postComment(body, kind, null, () => setBody(""));
+    postComment(body, kind, null, () => setBody(''));
   }
 
   return (
@@ -200,46 +182,40 @@ export function CommentsSection(props: CommentsSectionProps) {
           <MessageCircle className="size-5" />
         </span>
         <div>
-          <h2 className="font-display text-xl font-semibold text-foreground">
-            {t("heading")}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
+          <h2 className="font-display text-xl font-semibold text-foreground">{t('heading')}</h2>
+          <p className="text-sm text-muted-foreground">{t('description')}</p>
         </div>
       </div>
 
       <div className="mt-5">
         {canPost ? (
-          <form
-            onSubmit={submitTopLevel}
-            className="rounded-xl bg-muted/45 p-3"
-          >
+          <form onSubmit={submitTopLevel} className="rounded-xl bg-muted/45 p-3">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 size="sm"
-                variant={kind === "comment" ? "secondary" : "ghost"}
-                aria-pressed={kind === "comment"}
-                onClick={() => setKind("comment")}
+                variant={kind === 'comment' ? 'secondary' : 'ghost'}
+                aria-pressed={kind === 'comment'}
+                onClick={() => setKind('comment')}
               >
-                <MessageCircle /> {t("comment")}
+                <MessageCircle /> {t('comment')}
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
-                aria-pressed={kind === "suggestion"}
-                onClick={() => setKind("suggestion")}
+                aria-pressed={kind === 'suggestion'}
+                onClick={() => setKind('suggestion')}
                 className={cn(
-                  kind === "suggestion" &&
-                    "bg-warning/20 text-foreground hover:bg-warning/25",
+                  kind === 'suggestion' && 'bg-warning/20 text-foreground hover:bg-warning/25',
                 )}
               >
-                <Lightbulb /> {t("suggestion")}
+                <Lightbulb /> {t('suggestion')}
               </Button>
             </div>
 
             <Label htmlFor="comment-body" className="sr-only">
-              {t("commentBodyLabel")}
+              {t('commentBodyLabel')}
             </Label>
             <MentionTextarea
               id="comment-body"
@@ -247,18 +223,14 @@ export function CommentsSection(props: CommentsSectionProps) {
               onChange={setBody}
               candidates={mentionCandidates}
               placeholder={
-                kind === "suggestion"
-                  ? t("suggestionPlaceholder")
-                  : t("commentPlaceholder")
+                kind === 'suggestion' ? t('suggestionPlaceholder') : t('commentPlaceholder')
               }
               className="min-h-28 resize-y bg-background"
               disabled={pending}
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                {kind === "suggestion"
-                  ? t("suggestionHelper")
-                  : t("commentHelper")}
+                {kind === 'suggestion' ? t('suggestionHelper') : t('commentHelper')}
               </p>
               <div className="flex items-center gap-3">
                 <CharacterCounter
@@ -266,19 +238,15 @@ export function CommentsSection(props: CommentsSectionProps) {
                   max={COMMENT_MAX_LENGTH}
                   overMessage={COMMENT_TOO_LONG_MESSAGE}
                 />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={pending || !body.trim()}
-                >
-                  {pending ? t("posting") : t("post")}
+                <Button type="submit" size="sm" disabled={pending || !body.trim()}>
+                  {pending ? t('posting') : t('post')}
                 </Button>
               </div>
             </div>
           </form>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-            {t("signIn")}
+            {t('signIn')}
           </div>
         )}
       </div>
@@ -289,11 +257,9 @@ export function CommentsSection(props: CommentsSectionProps) {
         <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
           <MessageCircle className="mx-auto mb-3 size-8 text-muted-foreground" />
           <h3 className="font-display text-lg font-semibold text-foreground">
-            {t("empty.heading")}
+            {t('empty.heading')}
           </h3>
-          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            {t("empty.body")}
-          </p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{t('empty.body')}</p>
         </div>
       ) : (
         <ul className="space-y-4">
@@ -351,22 +317,21 @@ function CommentItem({
   depth?: number;
 }) {
   const [replyOpen, setReplyOpen] = React.useState(false);
-  const [replyBody, setReplyBody] = React.useState("");
+  const [replyBody, setReplyBody] = React.useState('');
   const locale = useLocale();
-  const t = useTranslations("engagement.comments");
+  const t = useTranslations('engagement.comments');
   const authorName = displayName(comment.author);
-  const isSuggestion = comment.kind === "suggestion";
+  const isSuggestion = comment.kind === 'suggestion';
   const isApplied = Boolean(comment.appliedAt);
   const isResolved = Boolean(comment.resolvedAt);
   const canManageSuggestion = isSuggestion && isRecipeOwner && !isApplied;
   const canDelete =
-    (currentUserId != null && currentUserId === comment.author?.id) ||
-    isRecipeOwner;
+    (currentUserId != null && currentUserId === comment.author?.id) || isRecipeOwner;
 
   function submitReply(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onPostReply(replyBody, "comment", comment.id, () => {
-      setReplyBody("");
+    onPostReply(replyBody, 'comment', comment.id, () => {
+      setReplyBody('');
       setReplyOpen(false);
     });
   }
@@ -374,9 +339,9 @@ function CommentItem({
   return (
     <article
       className={cn(
-        "rounded-xl border border-border bg-background p-4 transition-colors duration-150",
-        isSuggestion && "border-warning/40 bg-warning/10",
-        isResolved && "border-border bg-muted/45",
+        'rounded-xl border border-border bg-background p-4 transition-colors duration-150',
+        isSuggestion && 'border-warning/40 bg-warning/10',
+        isResolved && 'border-border bg-muted/45',
       )}
     >
       <div className="flex gap-3">
@@ -391,9 +356,7 @@ function CommentItem({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium text-foreground">{authorName}</span>
             {comment.author?.handle ? (
-              <span className="text-xs text-muted-foreground">
-                @{comment.author.handle}
-              </span>
+              <span className="text-xs text-muted-foreground">@{comment.author.handle}</span>
             ) : null}
             <time
               dateTime={new Date(comment.createdAt).toISOString()}
@@ -405,42 +368,34 @@ function CommentItem({
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {isSuggestion ? (
-              <Badge
-                variant="warning"
-                className="bg-warning/25 text-foreground"
-              >
+              <Badge variant="warning" className="bg-warning/25 text-foreground">
                 <Lightbulb className="size-3" />
-                {t("suggestion")}
+                {t('suggestion')}
               </Badge>
             ) : null}
             {isSuggestion && comment.anchorLabel ? (
-              <Badge
-                variant="muted"
-                title={t("anchor.title", { label: comment.anchorLabel })}
-              >
-                {comment.anchorType === "ingredient"
-                  ? t("anchor.ingredient")
-                  : t("anchor.step")}
-                : {comment.anchorLabel}
+              <Badge variant="muted" title={t('anchor.title', { label: comment.anchorLabel })}>
+                {comment.anchorType === 'ingredient' ? t('anchor.ingredient') : t('anchor.step')}:{' '}
+                {comment.anchorLabel}
               </Badge>
             ) : null}
             {isApplied ? (
               <Badge variant="default">
                 <Sparkles className="size-3" />
-                {t("applied")}
+                {t('applied')}
               </Badge>
             ) : isResolved ? (
               <Badge variant="success">
                 <Check className="size-3" />
-                {t("resolved")}
+                {t('resolved')}
               </Badge>
             ) : null}
           </div>
 
           <p
             className={cn(
-              "mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-foreground",
-              isResolved && "text-muted-foreground",
+              'mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-foreground',
+              isResolved && 'text-muted-foreground',
             )}
           >
             <MentionText body={comment.body} candidates={mentionCandidates} />
@@ -467,7 +422,7 @@ function CommentItem({
                 onClick={() => setReplyOpen((open) => !open)}
                 className="h-8 px-2 text-muted-foreground"
               >
-                <CornerDownRight /> {t("reply")}
+                <CornerDownRight /> {t('reply')}
               </Button>
             ) : null}
 
@@ -480,7 +435,7 @@ function CommentItem({
                 onClick={() => onApply(comment.id)}
                 className="h-8 px-2 text-primary hover:bg-primary/10 hover:text-primary"
               >
-                <Sparkles /> {t("acceptAndApply")}
+                <Sparkles /> {t('acceptAndApply')}
               </Button>
             ) : null}
 
@@ -493,7 +448,7 @@ function CommentItem({
                 onClick={() => onResolve(comment.id, !isResolved)}
                 className="h-8 px-2 text-muted-foreground"
               >
-                <Check /> {isResolved ? t("reopen") : t("resolve")}
+                <Check /> {isResolved ? t('reopen') : t('resolve')}
               </Button>
             ) : null}
 
@@ -510,19 +465,16 @@ function CommentItem({
           </div>
 
           {replyOpen ? (
-            <form
-              onSubmit={submitReply}
-              className="mt-3 rounded-lg bg-muted/45 p-3"
-            >
+            <form onSubmit={submitReply} className="mt-3 rounded-lg bg-muted/45 p-3">
               <Label htmlFor={`reply-${comment.id}`} className="sr-only">
-                {t("replyLabel")}
+                {t('replyLabel')}
               </Label>
               <MentionTextarea
                 id={`reply-${comment.id}`}
                 value={replyBody}
                 onChange={setReplyBody}
                 candidates={mentionCandidates}
-                placeholder={t("replyPlaceholder")}
+                placeholder={t('replyPlaceholder')}
                 className="min-h-20 bg-background"
                 maxLength={4000}
                 disabled={pending}
@@ -533,18 +485,14 @@ function CommentItem({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setReplyBody("");
+                    setReplyBody('');
                     setReplyOpen(false);
                   }}
                 >
-                  {t("cancel")}
+                  {t('cancel')}
                 </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={pending || !replyBody.trim()}
-                >
-                  {pending ? t("replying") : t("reply")}
+                <Button type="submit" size="sm" disabled={pending || !replyBody.trim()}>
+                  {pending ? t('replying') : t('reply')}
                 </Button>
               </div>
             </form>
@@ -553,12 +501,7 @@ function CommentItem({
       </div>
 
       {comment.replies.length > 0 ? (
-        <div
-          className={cn(
-            "mt-4 space-y-3 border-s border-border ps-4",
-            depth > 1 && "ps-3",
-          )}
-        >
+        <div className={cn('mt-4 space-y-3 border-s border-border ps-4', depth > 1 && 'ps-3')}>
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}

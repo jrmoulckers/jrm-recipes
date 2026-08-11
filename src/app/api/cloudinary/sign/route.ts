@@ -1,22 +1,22 @@
-import { v2 as cloudinary } from "cloudinary";
-import { z } from "zod";
+import { v2 as cloudinary } from 'cloudinary';
+import { z } from 'zod';
 
-import { env } from "~/env";
-import { requireUser } from "~/server/auth";
-import { getLimitStatus } from "~/server/billing/entitlements";
-import { checkRateLimit } from "~/server/rate-limit";
-import { type User } from "~/server/db/schema";
+import { env } from '~/env';
+import { requireUser } from '~/server/auth';
+import { getLimitStatus } from '~/server/billing/entitlements';
+import { checkRateLimit } from '~/server/rate-limit';
+import { type User } from '~/server/db/schema';
 
 // The Cloudinary SDK relies on Node crypto for signing, so keep this off the
 // edge runtime.
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
 /**
  * Root Cloudinary folder every Heirloom upload must live under. The route
  * refuses to sign uploads targeting anything outside this namespace so a caller
  * can't drop assets into (or overwrite assets in) arbitrary folders.
  */
-const ROOT_FOLDER = "heirloom";
+const ROOT_FOLDER = 'heirloom';
 
 /**
  * Upper bound on the signing request body (issue #222). The allowlisted params
@@ -34,7 +34,7 @@ const folderSchema = z
   .string()
   .regex(
     new RegExp(`^${ROOT_FOLDER}(?:/[a-zA-Z0-9_-]+)*$`),
-    "folder must live under the heirloom namespace",
+    'folder must live under the heirloom namespace',
   );
 
 /**
@@ -60,11 +60,8 @@ const paramsToSignSchema = z
       .positive()
       .refine((ts) => {
         const now = Math.floor(Date.now() / 1000);
-        return (
-          ts <= now + MAX_TIMESTAMP_SKEW_SECONDS &&
-          ts >= now - MAX_TIMESTAMP_AGE_SECONDS
-        );
-      }, "timestamp is missing or stale"),
+        return ts <= now + MAX_TIMESTAMP_SKEW_SECONDS && ts >= now - MAX_TIMESTAMP_AGE_SECONDS;
+      }, 'timestamp is missing or stale'),
     // Required: a signature must never be issued without a heirloom-namespaced
     // folder, so every signed upload stays inside our account's namespace.
     folder: folderSchema,
@@ -86,7 +83,7 @@ const requestSchema = z.object({
  * cross-site-capable `POST` the upload widget makes.
  */
 function hasTrustedOrigin(request: Request): boolean {
-  const originHeader = request.headers.get("origin");
+  const originHeader = request.headers.get('origin');
   if (!originHeader) return false;
 
   let origin: URL;
@@ -96,7 +93,7 @@ function hasTrustedOrigin(request: Request): boolean {
     return false;
   }
 
-  const host = request.headers.get("host");
+  const host = request.headers.get('host');
   if (host && origin.host === host) return true;
 
   if (env.NEXT_PUBLIC_APP_URL) {
@@ -126,7 +123,7 @@ function hasTrustedOrigin(request: Request): boolean {
 export async function POST(request: Request) {
   // 1. CSRF defense-in-depth: reject foreign/missing origins before anything else.
   if (!hasTrustedOrigin(request)) {
-    return Response.json({ error: "Untrusted origin." }, { status: 403 });
+    return Response.json({ error: 'Untrusted origin.' }, { status: 403 });
   }
 
   // 2. Never act as a signing oracle for anonymous callers.
@@ -134,18 +131,18 @@ export async function POST(request: Request) {
   try {
     user = await requireUser();
   } catch {
-    return Response.json({ error: "Sign in to upload." }, { status: 401 });
+    return Response.json({ error: 'Sign in to upload.' }, { status: 401 });
   }
 
   // 2a. Throttle signature issuance per user to blunt Cloudinary quota/cost
   //     abuse (issue #199). Friendly 429 with Retry-After, no internals leaked.
-  const limit = checkRateLimit("sign", user.id);
+  const limit = checkRateLimit('sign', user.id);
   if (!limit.ok) {
     return Response.json(
-      { error: "Too many upload requests. Please slow down." },
+      { error: 'Too many upload requests. Please slow down.' },
       {
         status: 429,
-        headers: { "retry-after": String(limit.retryAfterSeconds) },
+        headers: { 'retry-after': String(limit.retryAfterSeconds) },
       },
     );
   }
@@ -155,17 +152,14 @@ export async function POST(request: Request) {
   const apiSecret = env.CLOUDINARY_API_SECRET;
 
   if (!cloudName || !apiKey || !apiSecret) {
-    return Response.json(
-      { error: "Cloudinary is not configured." },
-      { status: 501 },
-    );
+    return Response.json({ error: 'Cloudinary is not configured.' }, { status: 501 });
   }
 
   // 2b. Soft storage cap (issue #318): refuse to sign *new* uploads once the
   //     account is at/over its plan's storage allowance. Existing assets are
   //     never touched. An unconfigured DB or unlimited plan resolves to `ok`.
-  const storage = await getLimitStatus(user, "maxStorageMb", "storage_mb");
-  if (storage.state === "blocked") {
+  const storage = await getLimitStatus(user, 'maxStorageMb', 'storage_mb');
+  if (storage.state === 'blocked') {
     return Response.json(
       {
         error:
@@ -179,26 +173,26 @@ export async function POST(request: Request) {
   // 2c. Bound the request body (issue #222). The signed payload is a handful of
   //     short fields. Anything large is abuse, so refuse to buffer it. Guard on
   //     the declared length up front and hard-cap the bytes we actually read.
-  const declaredLength = Number(request.headers.get("content-length"));
+  const declaredLength = Number(request.headers.get('content-length'));
   if (Number.isFinite(declaredLength) && declaredLength > MAX_SIGN_BODY_BYTES) {
-    return Response.json({ error: "Request body too large." }, { status: 413 });
+    return Response.json({ error: 'Request body too large.' }, { status: 413 });
   }
 
   let raw: string;
   try {
     raw = await request.text();
   } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
+    return Response.json({ error: 'Invalid request body.' }, { status: 400 });
   }
   if (raw.length > MAX_SIGN_BODY_BYTES) {
-    return Response.json({ error: "Request body too large." }, { status: 413 });
+    return Response.json({ error: 'Request body too large.' }, { status: 413 });
   }
 
   let json: unknown;
   try {
     json = JSON.parse(raw);
   } catch {
-    return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+    return Response.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
   // 3. Strictly validate + allowlist the params. Anything unexpected or
@@ -206,16 +200,10 @@ export async function POST(request: Request) {
   //    here, so only a vetted set is ever handed to the signer.
   const parsed = requestSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json(
-      { error: "Unsupported signing parameters." },
-      { status: 400 },
-    );
+    return Response.json({ error: 'Unsupported signing parameters.' }, { status: 400 });
   }
 
-  const signature = cloudinary.utils.api_sign_request(
-    parsed.data.paramsToSign,
-    apiSecret,
-  );
+  const signature = cloudinary.utils.api_sign_request(parsed.data.paramsToSign, apiSecret);
 
   return Response.json({ signature });
 }

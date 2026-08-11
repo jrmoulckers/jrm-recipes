@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Verifies the write-time food-graph link (foodId) is populated on every
@@ -9,19 +9,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * asserts only the wiring in `insertChildren`.
  */
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { dbMock, resolveMock } = vi.hoisted(() => ({
   dbMock: { transaction: vi.fn() },
   resolveMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
 }));
 
-vi.mock("~/server/db/resolve-food", () => ({
+vi.mock('~/server/db/resolve-food', () => ({
   resolveFoodIds: resolveMock,
 }));
 
@@ -34,20 +34,18 @@ import {
   recipeVersions,
   tags,
   type User,
-} from "~/server/db/schema";
-import { recipeInput } from "./validation";
-import { createRecipe, updateRecipe } from "./mutations";
+} from '~/server/db/schema';
+import { recipeInput } from './validation';
+import { createRecipe, updateRecipe } from './mutations';
 
-const author = { id: "user_1" } as User;
+const author = { id: 'user_1' } as User;
 
 function chainable(result: unknown) {
   return {
     returning: vi.fn(() => Promise.resolve(result)),
     onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
-    then: (
-      onFulfilled: (value: unknown) => unknown,
-      onRejected?: (reason: unknown) => unknown,
-    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+    then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
+      Promise.resolve(result).then(onFulfilled, onRejected),
   };
 }
 
@@ -62,21 +60,21 @@ function recordingTx(existing?: Record<string, unknown>) {
   const keyOf = (table: unknown): string => {
     switch (table) {
       case recipes:
-        return "recipes";
+        return 'recipes';
       case recipeIngredients:
-        return "recipeIngredients";
+        return 'recipeIngredients';
       case recipeSteps:
-        return "recipeSteps";
+        return 'recipeSteps';
       case tags:
-        return "tags";
+        return 'tags';
       case recipeTags:
-        return "recipeTags";
+        return 'recipeTags';
       case recipeEvents:
-        return "recipeEvents";
+        return 'recipeEvents';
       case recipeVersions:
-        return "recipeVersions";
+        return 'recipeVersions';
       default:
-        return "unknown";
+        return 'unknown';
     }
   };
 
@@ -84,9 +82,7 @@ function recordingTx(existing?: Record<string, unknown>) {
     values: (vals: unknown) => {
       const key = keyOf(table);
       push(key, vals);
-      return chainable(
-        key === "recipes" ? [{ id: "r1", slug: "apple-pie" }] : undefined,
-      );
+      return chainable(key === 'recipes' ? [{ id: 'r1', slug: 'apple-pie' }] : undefined);
     },
   }));
 
@@ -115,64 +111,52 @@ function recordingTx(existing?: Record<string, unknown>) {
   return { tx, inserts };
 }
 
-const twoIngredients = [
-  { item: "2 cloves garlic, minced" },
-  { item: "mystery space dust" },
-];
+const twoIngredients = [{ item: '2 cloves garlic, minced' }, { item: 'mystery space dust' }];
 
 beforeEach(() => {
   dbMock.transaction.mockReset();
   resolveMock.mockReset();
   // Resolve garlic to a node, leave the nonsense line unresolved (null).
   resolveMock.mockImplementation((items: string[]) =>
-    Promise.resolve(
-      items.map((it) => (it.includes("garlic") ? "food_garlic" : null)),
-    ),
+    Promise.resolve(items.map((it) => (it.includes('garlic') ? 'food_garlic' : null))),
   );
 });
 
-describe("insertChildren wires foodId onto ingredient rows", () => {
-  it("populates foodId on create (best-effort, null when unresolved)", async () => {
+describe('insertChildren wires foodId onto ingredient rows', () => {
+  it('populates foodId on create (best-effort, null when unresolved)', async () => {
     const { tx, inserts } = recordingTx();
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
-      cb(tx),
-    );
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
 
     await createRecipe(
-      recipeInput.parse({ title: "Apple Pie", ingredients: twoIngredients }),
+      recipeInput.parse({ title: 'Apple Pie', ingredients: twoIngredients }),
       author,
     );
 
-    expect(resolveMock).toHaveBeenCalledWith(
-      ["2 cloves garlic, minced", "mystery space dust"],
-      tx,
-    );
+    expect(resolveMock).toHaveBeenCalledWith(['2 cloves garlic, minced', 'mystery space dust'], tx);
     const rows = inserts.recipeIngredients?.[0] as Array<{
       item: string;
       foodId: string | null;
     }>;
     expect(rows.map((r) => ({ item: r.item, foodId: r.foodId }))).toEqual([
-      { item: "2 cloves garlic, minced", foodId: "food_garlic" },
-      { item: "mystery space dust", foodId: null },
+      { item: '2 cloves garlic, minced', foodId: 'food_garlic' },
+      { item: 'mystery space dust', foodId: null },
     ]);
   });
 
-  it("populates foodId on update", async () => {
+  it('populates foodId on update', async () => {
     const { tx, inserts } = recordingTx({
-      id: "r1",
-      slug: "apple-pie",
+      id: 'r1',
+      slug: 'apple-pie',
       publishedAt: null,
-      status: "draft",
-      visibility: "private",
+      status: 'draft',
+      visibility: 'private',
       authorId: author.id,
     });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
-      cb(tx),
-    );
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
 
     await updateRecipe(
-      "r1",
-      recipeInput.parse({ title: "Apple Pie", ingredients: twoIngredients }),
+      'r1',
+      recipeInput.parse({ title: 'Apple Pie', ingredients: twoIngredients }),
       author,
     );
 
@@ -180,6 +164,6 @@ describe("insertChildren wires foodId onto ingredient rows", () => {
       item: string;
       foodId: string | null;
     }>;
-    expect(rows.map((r) => r.foodId)).toEqual(["food_garlic", null]);
+    expect(rows.map((r) => r.foodId)).toEqual(['food_garlic', null]);
   });
 });

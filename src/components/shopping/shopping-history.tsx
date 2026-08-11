@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { ChevronDown, History, RotateCcw } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { ChevronDown, History, RotateCcw } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
-import { describeQuantity } from "~/lib/shopping-list";
-import { Button } from "~/components/ui/button";
-import type { ShoppingViewItem } from "./shopping-list-view";
+import { describeQuantity } from '~/lib/shopping-list';
+import { Button } from '~/components/ui/button';
+import type { ShoppingViewItem } from './shopping-list-view';
 
 export type ShoppingHistoryOperation =
-  "remove-completed" | "clear-all" | "bulk-move" | "list-rebuild" | "restore";
+  'remove-completed' | 'clear-all' | 'bulk-move' | 'list-rebuild' | 'restore';
 
 export type ShoppingHistoryEntry = {
   id: string;
@@ -28,15 +28,15 @@ export function ShoppingHistory({
   onRestore: (entry: ShoppingHistoryEntry) => void;
 }) {
   const locale = useLocale();
-  const t = useTranslations("shopping.history");
+  const t = useTranslations('shopping.history');
   const dateTime = new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "UTC",
-    timeZoneName: "short",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
   });
 
   return (
@@ -48,10 +48,10 @@ export function ShoppingHistory({
         >
           <span className="flex items-center gap-2">
             <History className="size-4 text-primary" aria-hidden="true" />
-            <span id="shopping-history-heading">{t("title")}</span>
+            <span id="shopping-history-heading">{t('title')}</span>
           </span>
           <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-            <span>{t("count", { count: entries.length })}</span>
+            <span>{t('count', { count: entries.length })}</span>
             <ChevronDown
               className="size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
               aria-hidden="true"
@@ -59,9 +59,9 @@ export function ShoppingHistory({
           </span>
         </summary>
         <div className="border-t border-border px-4 py-4">
-          <p className="mb-4 text-sm text-muted-foreground">{t("retention")}</p>
+          <p className="mb-4 text-sm text-muted-foreground">{t('retention')}</p>
           {entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("empty")}</p>
+            <p className="text-sm text-muted-foreground">{t('empty')}</p>
           ) : (
             <ol className="grid gap-3">
               {entries.map((entry) => {
@@ -69,10 +69,7 @@ export function ShoppingHistory({
                 const dateLabel = dateTime.format(createdAt);
                 const operationLabel = t(`operations.${entry.operation}`);
                 return (
-                  <li
-                    key={entry.id}
-                    className="rounded-lg border border-border bg-background"
-                  >
+                  <li key={entry.id} className="rounded-lg border border-border bg-background">
                     <details className="group/entry">
                       <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-2 font-medium">
@@ -83,21 +80,17 @@ export function ShoppingHistory({
                           {operationLabel}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          <time dateTime={createdAt.toISOString()}>
-                            {dateLabel}
-                          </time>
-                          {" · "}
-                          {t("items", { count: entry.items.length })}
+                          <time dateTime={createdAt.toISOString()}>{dateLabel}</time>
+                          {' · '}
+                          {t('items', { count: entry.items.length })}
                         </span>
                       </summary>
                       <div className="border-t border-border px-3 py-3">
                         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          {t("preview")}
+                          {t('preview')}
                         </p>
                         {entry.items.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            {t("emptySnapshot")}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{t('emptySnapshot')}</p>
                         ) : (
                           <ul className="max-h-48 overflow-y-auto pe-2 text-sm">
                             {entry.items.map((item) => {
@@ -107,15 +100,11 @@ export function ShoppingHistory({
                                   key={item.id}
                                   className="border-b border-border/60 py-1.5 last:border-0"
                                 >
-                                  {amount ? (
-                                    <span className="font-semibold">
-                                      {amount}{" "}
-                                    </span>
-                                  ) : null}
+                                  {amount ? <span className="font-semibold">{amount} </span> : null}
                                   {item.item}
                                   {item.checked ? (
                                     <span className="ms-2 text-xs text-muted-foreground">
-                                      {t("completed")}
+                                      {t('completed')}
                                     </span>
                                   ) : null}
                                 </li>
@@ -129,14 +118,14 @@ export function ShoppingHistory({
                             size="sm"
                             variant="outline"
                             disabled={disabled}
-                            aria-label={t("restoreNamed", {
+                            aria-label={t('restoreNamed', {
                               operation: operationLabel,
                               date: dateLabel,
                             })}
                             onClick={() => onRestore(entry)}
                           >
                             <RotateCcw aria-hidden="true" />
-                            {t("restore")}
+                            {t('restore')}
                           </Button>
                         </div>
                       </div>

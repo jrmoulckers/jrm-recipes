@@ -1,4 +1,4 @@
-import "server-only";
+import 'server-only';
 
 /**
  * Server-side analytics entry (issue #305) for server actions and RSC.
@@ -9,10 +9,10 @@ import "server-only";
  * errors, so instrumentation never blocks or breaks a server action. Callers
  * pass an explicit, non-PII distinct id (the internal user id. See #321).
  */
-import { analyticsHost, analyticsKey, isAnalyticsConfigured } from "./config";
-import { type AnalyticsEventName, type EventProperties } from "./events";
-import { scrubProperties } from "./scrub";
-import { serverCaptureAllowed } from "./server-consent";
+import { analyticsHost, analyticsKey, isAnalyticsConfigured } from './config';
+import { type AnalyticsEventName, type EventProperties } from './events';
+import { scrubProperties } from './scrub';
+import { serverCaptureAllowed } from './server-consent';
 
 /**
  * Hard ceiling on how long a call may wait on the analytics provider. Every
@@ -22,18 +22,15 @@ import { serverCaptureAllowed } from "./server-consent";
  */
 const REQUEST_TIMEOUT_MS = 1500;
 
-async function post(
-  path: string,
-  body: Record<string, unknown>,
-): Promise<Response | null> {
+async function post(path: string, body: Record<string, unknown>): Promise<Response | null> {
   const key = analyticsKey();
   if (!key) return null;
   try {
     return await fetch(`${analyticsHost()}${path}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ api_key: key, ...body }),
-      cache: "no-store",
+      cache: 'no-store',
       keepalive: true,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -54,7 +51,7 @@ export async function captureServer<K extends AnalyticsEventName>(
 ): Promise<void> {
   if (!isAnalyticsConfigured()) return;
   if (!(await serverCaptureAllowed())) return;
-  await post("/capture/", {
+  await post('/capture/', {
     event: name,
     distinct_id: distinctId,
     properties: scrubProperties(properties) ?? {},
@@ -69,8 +66,8 @@ export async function identifyServer(
 ): Promise<void> {
   if (!isAnalyticsConfigured()) return;
   if (!(await serverCaptureAllowed())) return;
-  await post("/capture/", {
-    event: "$identify",
+  await post('/capture/', {
+    event: '$identify',
     distinct_id: distinctId,
     properties: { $set: scrubProperties(setProperties) ?? {} },
     timestamp: new Date().toISOString(),
@@ -78,14 +75,11 @@ export async function identifyServer(
 }
 
 /** Stitch an anonymous device id to the identified user id (funnel stitching). */
-export async function aliasServer(
-  distinctId: string,
-  aliasId: string,
-): Promise<void> {
+export async function aliasServer(distinctId: string, aliasId: string): Promise<void> {
   if (!isAnalyticsConfigured()) return;
   if (!(await serverCaptureAllowed())) return;
-  await post("/capture/", {
-    event: "$create_alias",
+  await post('/capture/', {
+    event: '$create_alias',
     distinct_id: distinctId,
     properties: { distinct_id: distinctId, alias: aliasId },
     timestamp: new Date().toISOString(),
@@ -101,11 +95,9 @@ export async function aliasServer(
  * Note: flag evaluation is *read-only* (no event, no PII leaves the app), so it
  * is intentionally not consent-gated. Only capture/identify/alias are.
  */
-export async function getAllFlags(
-  distinctId: string,
-): Promise<Record<string, string | boolean>> {
+export async function getAllFlags(distinctId: string): Promise<Record<string, string | boolean>> {
   if (!isAnalyticsConfigured()) return {};
-  const res = await post("/decide/?v=3", { distinct_id: distinctId });
+  const res = await post('/decide/?v=3', { distinct_id: distinctId });
   if (!res?.ok) return {};
   try {
     const data = (await res.json()) as {

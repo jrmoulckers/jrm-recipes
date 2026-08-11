@@ -1,7 +1,7 @@
-import * as React from "react";
-import { ChevronDown } from "lucide-react";
+import * as React from 'react';
+import { ChevronDown } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   /**
@@ -32,14 +32,14 @@ export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelect
 const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
   ({ className, wrapperClassName, children, ...props }, ref) => {
     return (
-      <div className={cn("relative w-full", wrapperClassName)}>
+      <div className={cn('relative w-full', wrapperClassName)}>
         <select
           ref={ref}
           className={cn(
-            "flex h-11 w-full appearance-none rounded-lg border border-input bg-background py-2 pe-10 ps-3.5 text-base shadow-token-sm transition-colors focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            'flex h-11 w-full appearance-none rounded-lg border border-input bg-background py-2 pe-10 ps-3.5 text-base shadow-token-sm transition-colors focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
             // Invalid state (aria-invalid="true") paints a destructive border and
             // focus ring so the error is visible, not just announced.
-            "aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:border-destructive aria-[invalid=true]:focus-visible:ring-destructive",
+            'aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:border-destructive aria-[invalid=true]:focus-visible:ring-destructive',
             className,
           )}
           {...props}
@@ -54,6 +54,6 @@ const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
     );
   },
 );
-NativeSelect.displayName = "NativeSelect";
+NativeSelect.displayName = 'NativeSelect';
 
 export { NativeSelect };

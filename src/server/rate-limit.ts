@@ -1,4 +1,4 @@
-import "server-only";
+import 'server-only';
 
 /**
  * Shared rate-limiting utility (issue #199).
@@ -80,10 +80,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
         limit: rule.limit,
         remaining: 0,
         resetAt: existing.resetAt,
-        retryAfterSeconds: Math.max(
-          1,
-          Math.ceil((existing.resetAt - now) / 1000),
-        ),
+        retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
       };
     }
 
@@ -139,7 +136,7 @@ export type RateLimitName = keyof typeof RATE_LIMITS;
 
 function isDisabled(): boolean {
   const flag = process.env.RATE_LIMIT_DISABLED;
-  return flag === "1" || flag === "true";
+  return flag === '1' || flag === 'true';
 }
 
 /**

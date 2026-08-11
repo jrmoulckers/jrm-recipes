@@ -18,12 +18,10 @@
  * dev-bypass in production, this checks config *completeness*.
  */
 
-const isProduction = process.env.VERCEL_ENV === "production";
+const isProduction = process.env.VERCEL_ENV === 'production';
 
 if (!isProduction) {
-  console.log(
-    "[preflight] Non-production environment, skipping production env checks.",
-  );
+  console.log('[preflight] Non-production environment, skipping production env checks.');
   process.exit(0);
 }
 
@@ -50,9 +48,7 @@ function requireUrl(name, protocols) {
     return;
   }
   if (protocols && !protocols.includes(url.protocol)) {
-    problems.push(
-      `${name} must use one of ${protocols.join(", ")} (got "${url.protocol}").`,
-    );
+    problems.push(`${name} must use one of ${protocols.join(', ')} (got "${url.protocol}").`);
   }
 }
 
@@ -70,38 +66,35 @@ function requirePresent(name, reason) {
 
 // Database: the app is useless in production without it, and migrations below
 // would silently skip. Accept the common Postgres URL schemes.
-requireUrl("DATABASE_URL", ["postgres:", "postgresql:"]);
+requireUrl('DATABASE_URL', ['postgres:', 'postgresql:']);
 
 // Public base URL: share links, Open Graph, and PWA metadata are wrong without
 // a real absolute URL.
-requireUrl("NEXT_PUBLIC_APP_URL", ["http:", "https:"]);
+requireUrl('NEXT_PUBLIC_APP_URL', ['http:', 'https:']);
 
 // Auth: production fail-closes without real Clerk keys (see src/env.js). Assert
 // them here too so the failure is a clear preflight message, not a late throw.
+requirePresent('CLERK_SECRET_KEY', 'auth must not fall back to dev-bypass in production');
 requirePresent(
-  "CLERK_SECRET_KEY",
-  "auth must not fall back to dev-bypass in production",
-);
-requirePresent(
-  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-  "auth must not fall back to dev-bypass in production",
+  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+  'auth must not fall back to dev-bypass in production',
 );
 
-if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === "1") {
+if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === '1') {
   problems.push(
     'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production: dev-bypass ' +
-      "auth is a local/test-only affordance.",
+      'auth is a local/test-only affordance.',
   );
 }
 
 if (problems.length > 0) {
   console.error(
-    "\n❌ Production deploy preflight failed: fix the following before deploying:\n" +
-      problems.map((p) => `   • ${p}`).join("\n") +
-      "\n\nSee DEPLOY.md → “Environment variables” for the required-for-production list.\n",
+    '\n❌ Production deploy preflight failed: fix the following before deploying:\n' +
+      problems.map((p) => `   • ${p}`).join('\n') +
+      '\n\nSee DEPLOY.md → “Environment variables” for the required-for-production list.\n',
   );
   process.exit(1);
 }
 
-console.log("[preflight] Production environment configuration looks good.");
+console.log('[preflight] Production environment configuration looks good.');
 process.exit(0);

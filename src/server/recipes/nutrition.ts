@@ -1,17 +1,17 @@
-import "server-only";
+import 'server-only';
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { recipes, recipeIngredients } from "~/server/db/schema/recipes";
-import { foodItems, foodNutrition } from "~/server/db/schema/ingredients";
-import type { NutritionFacts } from "~/lib/food-nutrition";
+import { db, isDbConfigured } from '~/server/db';
+import { recipes, recipeIngredients } from '~/server/db/schema/recipes';
+import { foodItems, foodNutrition } from '~/server/db/schema/ingredients';
+import type { NutritionFacts } from '~/lib/food-nutrition';
 import {
   emptyRecipeNutrition,
   rollUpNutrition,
   type RecipeNutritionEstimate,
   type ResolvedNutritionLine,
-} from "~/lib/recipe-nutrition";
+} from '~/lib/recipe-nutrition';
 
 /**
  * Auto-estimate a recipe's **per-serving** nutrition from its ingredient list,
@@ -30,9 +30,7 @@ import {
  * no resolvable ingredients all yield an empty estimate the UI renders as
  * nothing.
  */
-export async function computeRecipeNutrition(
-  recipeId: string,
-): Promise<RecipeNutritionEstimate> {
+export async function computeRecipeNutrition(recipeId: string): Promise<RecipeNutritionEstimate> {
   if (!isDbConfigured()) return emptyRecipeNutrition();
 
   try {
@@ -55,9 +53,7 @@ export async function computeRecipeNutrition(
     // Batch-load the graph facts for every linked food in one round-trip each,
     // keyed by foodId, so the roll-up itself stays a pure in-memory pass.
     const foodIds = [
-      ...new Set(
-        lines.map((l) => l.foodId).filter((id): id is string => id != null),
-      ),
+      ...new Set(lines.map((l) => l.foodId).filter((id): id is string => id != null)),
     ];
 
     const [densityRows, nutritionRows] =

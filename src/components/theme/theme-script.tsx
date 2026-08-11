@@ -3,7 +3,7 @@ import {
   DEFAULT_UI_THEME,
   SCHEME_COOKIE,
   THEME_COOKIE,
-} from "~/config/themes";
+} from '~/config/themes';
 
 /**
  * Blocking inline script that applies the saved (or system) theme to <html>
@@ -32,10 +32,6 @@ export function ThemeScript({ nonce }: { nonce?: string }) {
 })();
 `;
   return (
-    <script
-      nonce={nonce}
-      dangerouslySetInnerHTML={{ __html: script }}
-      suppressHydrationWarning
-    />
+    <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} suppressHydrationWarning />
   );
 }

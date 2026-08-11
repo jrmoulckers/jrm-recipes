@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Check, Database, HardDrive, Trash2 } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Check, Database, HardDrive, Trash2 } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { brand } from "~/config/brand";
+import { cn } from '~/lib/utils';
+import { brand } from '~/config/brand';
 import {
   APP_RUNTIME_CACHE_NAMES,
   clearAppCaches,
@@ -13,8 +13,8 @@ import {
   formatBytes,
   requestPersistentStorage,
   type StorageEstimateResult,
-} from "~/lib/offline-storage";
-import { Button } from "~/components/ui/button";
+} from '~/lib/offline-storage';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,15 +22,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 
 function storageManager(): StorageManager | undefined {
-  if (typeof navigator === "undefined") return undefined;
+  if (typeof navigator === 'undefined') return undefined;
   return navigator.storage;
 }
 
 function cacheStorage(): CacheStorage | undefined {
-  if (typeof window === "undefined") return undefined;
+  if (typeof window === 'undefined') return undefined;
   return window.caches;
 }
 
@@ -46,11 +46,9 @@ function cacheStorage(): CacheStorage | undefined {
  * browses again.
  */
 export function OfflineStorageMenu({ label }: { label?: string } = {}) {
-  const t = useTranslations("pwa.storage");
+  const t = useTranslations('pwa.storage');
   const [open, setOpen] = React.useState(false);
-  const [estimate, setEstimate] = React.useState<StorageEstimateResult | null>(
-    null,
-  );
+  const [estimate, setEstimate] = React.useState<StorageEstimateResult | null>(null);
   const [clearing, setClearing] = React.useState(false);
   const [cleared, setCleared] = React.useState(false);
 
@@ -84,15 +82,12 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {label ? (
-          <Button
-            variant="ghost"
-            className="h-11 w-full justify-start gap-3 px-2 font-medium"
-          >
+          <Button variant="ghost" className="h-11 w-full justify-start gap-3 px-2 font-medium">
             <HardDrive className="size-5" />
             {label}
           </Button>
         ) : (
-          <Button variant="outline" size="icon" aria-label={t("trigger")}>
+          <Button variant="outline" size="icon" aria-label={t('trigger')}>
             <HardDrive className="size-5" />
           </Button>
         )}
@@ -102,11 +97,9 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="size-5 text-primary" />
-            {t("title")}
+            {t('title')}
           </DialogTitle>
-          <DialogDescription>
-            {t("description", { brand: brand.name })}
-          </DialogDescription>
+          <DialogDescription>{t('description', { brand: brand.name })}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -114,12 +107,12 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
             {supported && estimate ? (
               <>
                 <div className="flex items-baseline justify-between text-sm">
-                  <span className="font-medium">{t("used")}</span>
+                  <span className="font-medium">{t('used')}</span>
                   <span className="tabular-nums text-muted-foreground">
                     {formatBytes(estimate.usage)}
                     {estimate.quota > 0 && (
                       <>
-                        {" / "}
+                        {' / '}
                         {formatBytes(estimate.quota)}
                       </>
                     )}
@@ -130,7 +123,7 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={percent}
-                  aria-label={t("usedLabel")}
+                  aria-label={t('usedLabel')}
                   className="h-2 overflow-hidden rounded-full bg-muted"
                 >
                   <div
@@ -140,9 +133,7 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("unavailable")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('unavailable')}</p>
             )}
           </section>
 
@@ -153,8 +144,8 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
               disabled={clearing}
               className="justify-center"
             >
-              <Trash2 className={cn("size-4", clearing && "animate-pulse")} />
-              {clearing ? t("clearing") : t("clear")}
+              <Trash2 className={cn('size-4', clearing && 'animate-pulse')} />
+              {clearing ? t('clearing') : t('clear')}
             </Button>
             {cleared && (
               <p
@@ -163,7 +154,7 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
                 className="inline-flex items-center gap-1.5 text-sm text-success"
               >
                 <Check className="size-4" />
-                {t("cleared")}
+                {t('cleared')}
               </p>
             )}
           </div>

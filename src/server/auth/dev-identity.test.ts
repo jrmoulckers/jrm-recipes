@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   DEV_CO_COOK,
@@ -9,7 +9,7 @@ import {
   DEV_IDENTITY_COOKIE,
   DEV_USER,
   resolveDevIdentity,
-} from "~/server/auth/dev-user";
+} from '~/server/auth/dev-user';
 
 /**
  * The dev-bypass identity selector (issue #698).
@@ -30,19 +30,16 @@ import {
  */
 
 const ROOT = process.cwd();
-const AUTH_SOURCE = readFileSync(
-  join(ROOT, "src", "server", "auth", "index.ts"),
-  "utf8",
-);
+const AUTH_SOURCE = readFileSync(join(ROOT, 'src', 'server', 'auth', 'index.ts'), 'utf8');
 
-describe("resolveDevIdentity", () => {
-  it("defaults to the shared dev user when nothing is requested", () => {
-    for (const nothing of [undefined, null, ""]) {
+describe('resolveDevIdentity', () => {
+  it('defaults to the shared dev user when nothing is requested', () => {
+    for (const nothing of [undefined, null, '']) {
       expect(resolveDevIdentity(nothing)).toBe(DEV_USER);
     }
   });
 
-  it("resolves each allowlisted identity by id", () => {
+  it('resolves each allowlisted identity by id', () => {
     // Non-vacuous by construction: an empty allowlist would make the loop
     // assert nothing, so the count is pinned first.
     expect(DEV_IDENTITIES.length).toBeGreaterThan(1);
@@ -51,28 +48,28 @@ describe("resolveDevIdentity", () => {
     }
   });
 
-  it("refuses anything not on the allowlist, without erroring", () => {
+  it('refuses anything not on the allowlist, without erroring', () => {
     const attacks = [
-      "dev_local_user_00000001",
-      "seed_usr_gran",
+      'dev_local_user_00000001',
+      'seed_usr_gran',
       "' OR 1=1 --",
-      "../dev_local_user_00000000",
-      "DEV_LOCAL_USER_00000000",
-      " dev_local_user_00000000 ",
+      '../dev_local_user_00000000',
+      'DEV_LOCAL_USER_00000000',
+      ' dev_local_user_00000000 ',
     ];
     for (const attack of attacks) {
       expect(resolveDevIdentity(attack), attack).toBe(DEV_USER);
     }
   });
 
-  it("never widens access: every resolution is an allowlisted identity", () => {
-    const probes = ["", "seed_usr_rosa", "nope", DEV_USER.id, DEV_CO_COOK.id];
+  it('never widens access: every resolution is an allowlisted identity', () => {
+    const probes = ['', 'seed_usr_rosa', 'nope', DEV_USER.id, DEV_CO_COOK.id];
     for (const probe of probes) {
       expect(DEV_IDENTITIES).toContain(resolveDevIdentity(probe));
     }
   });
 
-  it("gives the two identities distinct URL namespaces", () => {
+  it('gives the two identities distinct URL namespaces', () => {
     // The whole point of a second identity is a second `users.slug`. Equal
     // slugs would make every dual-namespace assertion in the e2e journey
     // trivially true.
@@ -83,8 +80,8 @@ describe("resolveDevIdentity", () => {
   });
 });
 
-describe("selector placement", () => {
-  it("is reached only from the guarded dev-bypass branch", () => {
+describe('selector placement', () => {
+  it('is reached only from the guarded dev-bypass branch', () => {
     // The bypass branch calls the guard and then the dev-user resolver. If the
     // selector were ever hoisted above `assertDevBypassAllowed`, or called from
     // the Clerk branch, it would become a second way in.
@@ -94,9 +91,7 @@ describe("selector placement", () => {
     const callers = [...AUTH_SOURCE.matchAll(/selectDevIdentity\(/g)];
     // One definition, one call site, and nothing else.
     expect(callers.length).toBe(2);
-    expect(AUTH_SOURCE).toContain(
-      "const identity = await selectDevIdentity();",
-    );
+    expect(AUTH_SOURCE).toContain('const identity = await selectDevIdentity();');
   });
 
   // Production fail-closed is *not* re-asserted here: `dev-bypass-guard.test.ts`
@@ -106,8 +101,8 @@ describe("selector placement", () => {
   // this file uniquely owns is the *placement* assertion above — that the
   // selector sits strictly inside the branch that guard already protects.
 
-  it("names the cookie it reads, so the harness and the server agree", () => {
-    expect(DEV_IDENTITY_COOKIE).toBe("heirloom_dev_identity");
-    expect(AUTH_SOURCE).toContain("DEV_IDENTITY_COOKIE");
+  it('names the cookie it reads, so the harness and the server agree', () => {
+    expect(DEV_IDENTITY_COOKIE).toBe('heirloom_dev_identity');
+    expect(AUTH_SOURCE).toContain('DEV_IDENTITY_COOKIE');
   });
 });

@@ -3,8 +3,8 @@ import {
   recipeCategoriesInText,
   recipeCategoryForTag,
   type RecipeCategory,
-} from "./tag-taxonomy";
-import { slugify } from "./utils";
+} from './tag-taxonomy';
+import { slugify } from './utils';
 
 /**
  * Locally bundled Unsplash photos used under the Unsplash License. Keeping the
@@ -27,27 +27,27 @@ import { slugify } from "./utils";
  * (roughly 60% visual blur), keeping the scene atmospheric but recognizable.
  */
 export const RECIPE_FALLBACK_IMAGES = [
-  "/img/recipe-fallbacks/shared-table.webp",
-  "/img/recipe-fallbacks/kitchen-prep.webp",
-  "/img/recipe-fallbacks/plated-supper.webp",
-  "/img/recipe-fallbacks/pasta-table.webp",
-  "/img/recipe-fallbacks/breakfast-griddle.webp",
-  "/img/recipe-fallbacks/breakfast-toast.webp",
-  "/img/recipe-fallbacks/baked-cake.webp",
-  "/img/recipe-fallbacks/baked-pastries.webp",
-  "/img/recipe-fallbacks/soup-bowl.webp",
-  "/img/recipe-fallbacks/soup-pot.webp",
-  "/img/recipe-fallbacks/fresh-salad.webp",
-  "/img/recipe-fallbacks/fresh-greens.webp",
-  "/img/recipe-fallbacks/grill-feast.webp",
-  "/img/recipe-fallbacks/grill-skewers.webp",
-  "/img/recipe-fallbacks/appetizer-board.webp",
-  "/img/recipe-fallbacks/appetizer-bites.webp",
-  "/img/recipe-fallbacks/drinks-cocktail.webp",
-  "/img/recipe-fallbacks/drinks-table.webp",
-  "/img/recipe-fallbacks/bread-loaves.webp",
-  "/img/recipe-fallbacks/bread-basket.webp",
-  "/img/recipe-fallbacks/pasta-bowl.webp",
+  '/img/recipe-fallbacks/shared-table.webp',
+  '/img/recipe-fallbacks/kitchen-prep.webp',
+  '/img/recipe-fallbacks/plated-supper.webp',
+  '/img/recipe-fallbacks/pasta-table.webp',
+  '/img/recipe-fallbacks/breakfast-griddle.webp',
+  '/img/recipe-fallbacks/breakfast-toast.webp',
+  '/img/recipe-fallbacks/baked-cake.webp',
+  '/img/recipe-fallbacks/baked-pastries.webp',
+  '/img/recipe-fallbacks/soup-bowl.webp',
+  '/img/recipe-fallbacks/soup-pot.webp',
+  '/img/recipe-fallbacks/fresh-salad.webp',
+  '/img/recipe-fallbacks/fresh-greens.webp',
+  '/img/recipe-fallbacks/grill-feast.webp',
+  '/img/recipe-fallbacks/grill-skewers.webp',
+  '/img/recipe-fallbacks/appetizer-board.webp',
+  '/img/recipe-fallbacks/appetizer-bites.webp',
+  '/img/recipe-fallbacks/drinks-cocktail.webp',
+  '/img/recipe-fallbacks/drinks-table.webp',
+  '/img/recipe-fallbacks/bread-loaves.webp',
+  '/img/recipe-fallbacks/bread-basket.webp',
+  '/img/recipe-fallbacks/pasta-bowl.webp',
 ] as const;
 
 export type RecipeFallbackContext = {
@@ -58,27 +58,24 @@ export type RecipeFallbackContext = {
 
 type RecipeFallbackImage = (typeof RECIPE_FALLBACK_IMAGES)[number];
 type RecipeFallbackFamily =
-  | "generic"
-  | "breakfast"
-  | "baked"
-  | "soup"
-  | "fresh"
-  | "grill"
-  | "comfort"
-  | "appetizer"
-  | "drinks"
-  | "bread"
-  | "pasta";
+  | 'generic'
+  | 'breakfast'
+  | 'baked'
+  | 'soup'
+  | 'fresh'
+  | 'grill'
+  | 'comfort'
+  | 'appetizer'
+  | 'drinks'
+  | 'bread'
+  | 'pasta';
 
 type FamilyRule = {
   family: RecipeFallbackFamily;
   terms: readonly string[];
 };
 
-const FAMILY_IMAGES: Record<
-  RecipeFallbackFamily,
-  readonly RecipeFallbackImage[]
-> = {
+const FAMILY_IMAGES: Record<RecipeFallbackFamily, readonly RecipeFallbackImage[]> = {
   generic: RECIPE_FALLBACK_IMAGES.slice(0, 4),
   breakfast: RECIPE_FALLBACK_IMAGES.slice(4, 6),
   baked: RECIPE_FALLBACK_IMAGES.slice(6, 8),
@@ -89,196 +86,184 @@ const FAMILY_IMAGES: Record<
   drinks: RECIPE_FALLBACK_IMAGES.slice(16, 18),
   bread: RECIPE_FALLBACK_IMAGES.slice(18, 20),
   pasta: [RECIPE_FALLBACK_IMAGES[3], RECIPE_FALLBACK_IMAGES[20]],
-  comfort: [
-    RECIPE_FALLBACK_IMAGES[0],
-    RECIPE_FALLBACK_IMAGES[2],
-    RECIPE_FALLBACK_IMAGES[12],
-  ],
+  comfort: [RECIPE_FALLBACK_IMAGES[0], RECIPE_FALLBACK_IMAGES[2], RECIPE_FALLBACK_IMAGES[12]],
 };
 
 const CATEGORY_FAMILY: Record<RecipeCategory, RecipeFallbackFamily> = {
-  Appetizer: "appetizer",
-  Breakfast: "breakfast",
-  Lunch: "fresh",
-  Main: "comfort",
-  Side: "fresh",
-  Salad: "fresh",
-  Soup: "soup",
-  Dessert: "baked",
-  Snack: "appetizer",
-  Drink: "drinks",
-  Bread: "bread",
-  Sauce: "fresh",
+  Appetizer: 'appetizer',
+  Breakfast: 'breakfast',
+  Lunch: 'fresh',
+  Main: 'comfort',
+  Side: 'fresh',
+  Salad: 'fresh',
+  Soup: 'soup',
+  Dessert: 'baked',
+  Snack: 'appetizer',
+  Drink: 'drinks',
+  Bread: 'bread',
+  Sauce: 'fresh',
 };
 
 const TAG_FAMILY_RULES: readonly FamilyRule[] = [
   {
-    family: "bread",
-    terms: ["bread", "breads", "loaf", "loaves", "roll", "rolls"],
+    family: 'bread',
+    terms: ['bread', 'breads', 'loaf', 'loaves', 'roll', 'rolls'],
   },
   {
-    family: "breakfast",
-    terms: ["breakfast", "brunch"],
+    family: 'breakfast',
+    terms: ['breakfast', 'brunch'],
   },
   {
-    family: "baked",
+    family: 'baked',
     terms: [
-      "dessert",
-      "baking",
-      "sweet",
-      "sweets",
-      "cake",
-      "cakes",
-      "cookie",
-      "cookies",
-      "pastry",
-      "pastries",
+      'dessert',
+      'baking',
+      'sweet',
+      'sweets',
+      'cake',
+      'cakes',
+      'cookie',
+      'cookies',
+      'pastry',
+      'pastries',
     ],
   },
   {
-    family: "soup",
-    terms: ["soup", "soups", "stew", "stews", "slow cooker", "one pot"],
+    family: 'soup',
+    terms: ['soup', 'soups', 'stew', 'stews', 'slow cooker', 'one pot'],
   },
   {
-    family: "grill",
-    terms: ["barbecue", "bbq", "grill", "grilled"],
+    family: 'grill',
+    terms: ['barbecue', 'bbq', 'grill', 'grilled'],
   },
   {
-    family: "appetizer",
+    family: 'appetizer',
     terms: [
-      "appetizer",
-      "appetizers",
-      "starter",
-      "starters",
-      "snack",
-      "snacks",
-      "party",
-      "parties",
-      "dip",
-      "dips",
+      'appetizer',
+      'appetizers',
+      'starter',
+      'starters',
+      'snack',
+      'snacks',
+      'party',
+      'parties',
+      'dip',
+      'dips',
     ],
   },
   {
-    family: "drinks",
-    terms: ["drink", "beverage", "cocktail"],
+    family: 'drinks',
+    terms: ['drink', 'beverage', 'cocktail'],
   },
   {
-    family: "pasta",
-    terms: ["pasta", "noodle", "noodles"],
+    family: 'pasta',
+    terms: ['pasta', 'noodle', 'noodles'],
   },
   {
-    family: "comfort",
-    terms: ["comfort food", "dinner", "main course", "kid friendly"],
+    family: 'comfort',
+    terms: ['comfort food', 'dinner', 'main course', 'kid friendly'],
   },
   {
-    family: "fresh",
-    terms: [
-      "salad",
-      "healthy",
-      "vegetarian",
-      "vegan",
-      "plant based",
-      "low carb",
-      "side dish",
-    ],
+    family: 'fresh',
+    terms: ['salad', 'healthy', 'vegetarian', 'vegan', 'plant based', 'low carb', 'side dish'],
   },
 ];
 
 const TITLE_FAMILY_RULES: readonly FamilyRule[] = [
   {
-    family: "pasta",
+    family: 'pasta',
     terms: [
-      "pasta",
-      "spaghetti",
-      "lasagna",
-      "ravioli",
-      "tortellini",
-      "linguine",
-      "fettuccine",
-      "macaroni",
-      "gnocchi",
-      "noodle",
-      "noodles",
+      'pasta',
+      'spaghetti',
+      'lasagna',
+      'ravioli',
+      'tortellini',
+      'linguine',
+      'fettuccine',
+      'macaroni',
+      'gnocchi',
+      'noodle',
+      'noodles',
     ],
   },
   {
-    family: "breakfast",
+    family: 'breakfast',
     terms: [
-      "pancake",
-      "pancakes",
-      "waffle",
-      "waffles",
-      "omelet",
-      "omelette",
-      "frittata",
-      "oatmeal",
-      "porridge",
-      "granola",
-      "cereal",
-      "muffin",
-      "muffins",
-      "scone",
-      "scones",
+      'pancake',
+      'pancakes',
+      'waffle',
+      'waffles',
+      'omelet',
+      'omelette',
+      'frittata',
+      'oatmeal',
+      'porridge',
+      'granola',
+      'cereal',
+      'muffin',
+      'muffins',
+      'scone',
+      'scones',
     ],
   },
   {
-    family: "baked",
+    family: 'baked',
     terms: [
-      "cake",
-      "cakes",
-      "cookie",
-      "cookies",
-      "brownie",
-      "brownies",
-      "pie",
-      "pies",
-      "tart",
-      "tarts",
-      "cobbler",
-      "pastry",
-      "pastries",
-      "donut",
-      "donuts",
-      "doughnut",
-      "doughnuts",
+      'cake',
+      'cakes',
+      'cookie',
+      'cookies',
+      'brownie',
+      'brownies',
+      'pie',
+      'pies',
+      'tart',
+      'tarts',
+      'cobbler',
+      'pastry',
+      'pastries',
+      'donut',
+      'donuts',
+      'doughnut',
+      'doughnuts',
     ],
   },
   {
-    family: "grill",
-    terms: ["steak", "roast", "burger", "burgers", "chop", "chops"],
+    family: 'grill',
+    terms: ['steak', 'roast', 'burger', 'burgers', 'chop', 'chops'],
   },
   {
-    family: "generic",
-    terms: ["taco", "tacos", "curry", "sushi", "dumpling", "dumplings"],
+    family: 'generic',
+    terms: ['taco', 'tacos', 'curry', 'sushi', 'dumpling', 'dumplings'],
   },
 ];
 
 const CUISINE_FAMILY_RULES: readonly FamilyRule[] = [
   {
-    family: "pasta",
-    terms: ["italian", "sicilian", "tuscan", "mediterranean"],
+    family: 'pasta',
+    terms: ['italian', 'sicilian', 'tuscan', 'mediterranean'],
   },
   {
-    family: "comfort",
-    terms: ["american", "british", "french", "german", "austrian"],
+    family: 'comfort',
+    terms: ['american', 'british', 'french', 'german', 'austrian'],
   },
   {
-    family: "generic",
+    family: 'generic',
     terms: [
-      "chinese",
-      "japanese",
-      "korean",
-      "thai",
-      "vietnamese",
-      "indian",
-      "mexican",
-      "spanish",
-      "greek",
-      "middle eastern",
-      "lebanese",
-      "turkish",
-      "caribbean",
-      "african",
+      'chinese',
+      'japanese',
+      'korean',
+      'thai',
+      'vietnamese',
+      'indian',
+      'mexican',
+      'spanish',
+      'greek',
+      'middle eastern',
+      'lebanese',
+      'turkish',
+      'caribbean',
+      'african',
     ],
   },
 ];
@@ -287,18 +272,14 @@ function familyForTerms(
   value: string | null | undefined,
   rules: readonly FamilyRule[],
 ): RecipeFallbackFamily | undefined {
-  const key = slugify(value ?? "");
+  const key = slugify(value ?? '');
   if (!key) return undefined;
   const searchable = `-${key}-`;
-  return rules.find(({ terms }) =>
-    terms.some((term) => searchable.includes(`-${slugify(term)}-`)),
-  )?.family;
+  return rules.find(({ terms }) => terms.some((term) => searchable.includes(`-${slugify(term)}-`)))
+    ?.family;
 }
 
-function hashedImage(
-  key: string,
-  images: readonly RecipeFallbackImage[],
-): RecipeFallbackImage {
+function hashedImage(key: string, images: readonly RecipeFallbackImage[]): RecipeFallbackImage {
   let hash = 0;
   for (let i = 0; i < key.length; i += 1) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
@@ -319,12 +300,10 @@ function familyForTags(
       },
     ];
   });
-  const categories = normalizedTags.flatMap(({ category }) =>
-    category ? [category] : [],
-  );
+  const categories = normalizedTags.flatMap(({ category }) => (category ? [category] : []));
 
   const specificCategory = categories.find(
-    (category) => category !== "Lunch" && category !== "Main",
+    (category) => category !== 'Lunch' && category !== 'Main',
   );
   if (specificCategory) return CATEGORY_FAMILY[specificCategory];
 
@@ -353,13 +332,10 @@ export function recipeFallbackImage(
 
   const titleCategories = recipeCategoriesInText(context.title);
   const specificTitleCategory = titleCategories.find(
-    (category) => category !== "Lunch" && category !== "Main",
+    (category) => category !== 'Lunch' && category !== 'Main',
   );
   if (specificTitleCategory) {
-    return hashedImage(
-      key,
-      FAMILY_IMAGES[CATEGORY_FAMILY[specificTitleCategory]],
-    );
+    return hashedImage(key, FAMILY_IMAGES[CATEGORY_FAMILY[specificTitleCategory]]);
   }
 
   const titleFamily = familyForTerms(context.title, TITLE_FAMILY_RULES);
@@ -371,5 +347,5 @@ export function recipeFallbackImage(
   }
 
   const cuisineFamily = familyForTerms(context.cuisine, CUISINE_FAMILY_RULES);
-  return hashedImage(key, FAMILY_IMAGES[cuisineFamily ?? "generic"]);
+  return hashedImage(key, FAMILY_IMAGES[cuisineFamily ?? 'generic']);
 }

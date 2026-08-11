@@ -1,20 +1,20 @@
-import * as React from "react";
-import type { Metadata } from "next";
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { BookHeart, ChefHat, CloudOff, Timer } from "lucide-react";
+import * as React from 'react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { BookHeart, ChefHat, CloudOff, Timer } from 'lucide-react';
 
-import { brand } from "~/config/brand";
-import { Button } from "~/components/ui/button";
-import { LogoMark } from "~/components/layout/logo";
-import { OfflineReconnect } from "~/components/pwa/offline-reconnect";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { brand } from '~/config/brand';
+import { Button } from '~/components/ui/button';
+import { LogoMark } from '~/components/layout/logo';
+import { OfflineReconnect } from '~/components/pwa/offline-reconnect';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("pwa.offline");
+  const t = await getTranslations('pwa.offline');
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription", { brand: brand.name }),
+    title: t('metaTitle'),
+    description: t('metaDescription', { brand: brand.name }),
     // The offline fallback is a utility shell with no standalone search value.
     // keep crawlers from indexing it (it's precached and served only offline).
     robots: { index: false, follow: false },
@@ -22,18 +22,18 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function OfflinePage() {
-  const t = await getTranslations("pwa.offline");
+  const t = await getTranslations('pwa.offline');
 
   const stillWorks = [
     {
       icon: Timer,
-      title: t("cookModeTitle"),
-      body: t("cookModeBody"),
+      title: t('cookModeTitle'),
+      body: t('cookModeBody'),
     },
     {
       icon: BookHeart,
-      title: t("viewedTitle"),
-      body: t("viewedBody"),
+      title: t('viewedTitle'),
+      body: t('viewedBody'),
     },
   ];
 
@@ -54,16 +54,16 @@ async function OfflinePage() {
 
         <div className="flex flex-col gap-2">
           <h1 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            {t("heading")}
+            {t('heading')}
           </h1>
-          <p className="text-pretty text-muted-foreground">{t("body")}</p>
+          <p className="text-pretty text-muted-foreground">{t('body')}</p>
         </div>
 
         <OfflineReconnect />
 
         <div className="mt-4 w-full rounded-2xl border border-border bg-surface/60 p-4 text-start">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("stillWorksTitle")}
+            {t('stillWorksTitle')}
           </p>
           <ul className="flex flex-col gap-3">
             {stillWorks.map((item) => (
@@ -73,9 +73,7 @@ async function OfflinePage() {
                 </span>
                 <span className="flex flex-col">
                   <span className="text-sm font-medium">{item.title}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {item.body}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{item.body}</span>
                 </span>
               </li>
             ))}
@@ -85,7 +83,7 @@ async function OfflinePage() {
         <Button asChild variant="ghost" size="sm">
           <Link href="/">
             <ChefHat className="size-4" />
-            {t("home", { brand: brand.name })}
+            {t('home', { brand: brand.name })}
           </Link>
         </Button>
       </div>

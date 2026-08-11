@@ -1,18 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { BookOpen, HelpCircle } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { BookOpen, HelpCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { Badge, badgeVariants } from "~/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
-import { getTechnique, lookupTechnique } from "~/lib/techniques";
-import { cn } from "~/lib/utils";
+import { Badge, badgeVariants } from '~/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
+import { getTechnique, lookupTechnique } from '~/lib/techniques';
+import { cn } from '~/lib/utils';
 
 type TechniqueChipsProps = {
   techniques?: string[] | null;
@@ -36,24 +32,14 @@ export function TechniqueChips({ techniques, className }: TechniqueChipsProps) {
   return (
     <>
       {labels.map((label, index) => (
-        <TechniqueChip
-          key={`${label}-${index}`}
-          rawLabel={label}
-          className={className}
-        />
+        <TechniqueChip key={`${label}-${index}`} rawLabel={label} className={className} />
       ))}
     </>
   );
 }
 
-function TechniqueChip({
-  rawLabel,
-  className,
-}: {
-  rawLabel: string;
-  className?: string;
-}) {
-  const t = useTranslations("cook.techniques");
+function TechniqueChip({ rawLabel, className }: { rawLabel: string; className?: string }) {
+  const t = useTranslations('cook.techniques');
   const match = lookupTechnique(rawLabel);
   // In Kids mode, prefer the playful kid-friendly tip and skip the adult
   // description (full of grown-up words a pre-reader can't decode yet) (#446).
@@ -62,20 +48,19 @@ function TechniqueChip({
   if (!match.known) {
     if (match.suggestion) {
       const suggested = getTechnique(match.suggestion.slug);
-      const suggestedTip =
-        kidSafe && suggested?.kidTip ? suggested.kidTip : suggested?.shortTip;
+      const suggestedTip = kidSafe && suggested?.kidTip ? suggested.kidTip : suggested?.shortTip;
       return (
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={t("unrecognizedAria", {
+              aria-label={t('unrecognizedAria', {
                 label: match.label,
                 suggestion: match.suggestion.label,
               })}
               className={cn(
-                badgeVariants({ variant: "outline" }),
-                "cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                badgeVariants({ variant: 'outline' }),
+                'cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 className,
               )}
             >
@@ -85,12 +70,10 @@ function TechniqueChip({
           </PopoverTrigger>
           <PopoverContent align="start" className="flex flex-col gap-2">
             <p className="text-sm text-foreground">
-              {t("didYouMean", { suggestion: match.suggestion.label })}
+              {t('didYouMean', { suggestion: match.suggestion.label })}
             </p>
             {suggestedTip && (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {suggestedTip}
-              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{suggestedTip}</p>
             )}
           </PopoverContent>
         </Popover>
@@ -111,10 +94,10 @@ function TechniqueChip({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={t("learnAria", { label: match.label })}
+          aria-label={t('learnAria', { label: match.label })}
           className={cn(
-            badgeVariants({ variant: "outline" }),
-            "cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            badgeVariants({ variant: 'outline' }),
+            'cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             className,
           )}
         >
@@ -124,23 +107,14 @@ function TechniqueChip({
       </PopoverTrigger>
       <PopoverContent align="start" className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">
-            {match.label}
-          </span>
-          <Badge
-            variant="muted"
-            className="text-[10px] uppercase tracking-wide"
-          >
-            {t("badge")}
+          <span className="text-sm font-semibold text-foreground">{match.label}</span>
+          <Badge variant="muted" className="text-[10px] uppercase tracking-wide">
+            {t('badge')}
           </Badge>
         </div>
-        {primaryTip && (
-          <p className="text-sm font-medium text-foreground">{primaryTip}</p>
-        )}
+        {primaryTip && <p className="text-sm font-medium text-foreground">{primaryTip}</p>}
         {!kidMode && match.description && (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {match.description}
-          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{match.description}</p>
         )}
       </PopoverContent>
     </Popover>

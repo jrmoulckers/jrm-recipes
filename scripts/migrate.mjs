@@ -15,13 +15,13 @@
  * (non-pooled) connection when one is available, falling back to DATABASE_URL.
  * The app runtime still uses the pooled DATABASE_URL for serverless scale.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
 
-import { createLogger } from "../src/lib/log.js";
+import { createLogger } from '../src/lib/log.js';
 
-const log = createLogger({ scope: "migrate" });
+const log = createLogger({ scope: 'migrate' });
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -29,7 +29,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  log.info("No database URL set, skipping migrations.");
+  log.info('No database URL set, skipping migrations.');
   process.exit(0);
 }
 
@@ -39,14 +39,11 @@ if (!url) {
 // preview deploy unless an isolated per-branch database (e.g. a Neon branch) is
 // explicitly wired in and opted into via ALLOW_PREVIEW_MIGRATIONS=1. Production
 // (`VERCEL_ENV=production`) and local/CI (no `VERCEL_ENV`) are unaffected.
-if (
-  process.env.VERCEL_ENV === "preview" &&
-  process.env.ALLOW_PREVIEW_MIGRATIONS !== "1"
-) {
+if (process.env.VERCEL_ENV === 'preview' && process.env.ALLOW_PREVIEW_MIGRATIONS !== '1') {
   log.warn(
-    "Preview deploy detected, skipping migrations to protect the " +
-      "production database. Provision a per-branch database and set " +
-      "ALLOW_PREVIEW_MIGRATIONS=1 to run them against the isolated branch.",
+    'Preview deploy detected, skipping migrations to protect the ' +
+      'production database. Provision a per-branch database and set ' +
+      'ALLOW_PREVIEW_MIGRATIONS=1 to run them against the isolated branch.',
   );
   process.exit(0);
 }
@@ -54,13 +51,13 @@ if (
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 try {
-  log.info("Applying migrations from ./drizzle …");
-  await migrate(drizzle(sql), { migrationsFolder: "./drizzle" });
-  log.info("Database is up to date.");
+  log.info('Applying migrations from ./drizzle …');
+  await migrate(drizzle(sql), { migrationsFolder: './drizzle' });
+  log.info('Database is up to date.');
   await sql.end();
   process.exit(0);
 } catch (error) {
-  log.error("Migration failed.", { error });
+  log.error('Migration failed.', { error });
   await sql.end({ timeout: 5 }).catch(() => {});
   process.exit(1);
 }

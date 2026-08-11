@@ -22,18 +22,18 @@
  * Connection: prefers a direct (non-pooled) URL for the DML, mirroring
  * `scripts/seed.ts` / `scripts/backfill-food-links.ts`.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
   buildFoodNutritionRows,
-} from "~/server/db/seed-ingredients";
-import { foodAliases, foodItems, foodNutrition } from "~/server/db/schema";
-import * as schema from "~/server/db/schema";
+} from '~/server/db/seed-ingredients';
+import { foodAliases, foodItems, foodNutrition } from '~/server/db/schema';
+import * as schema from '~/server/db/schema';
 
-const dryRun = process.argv.includes("--dry");
+const dryRun = process.argv.includes('--dry');
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -44,9 +44,7 @@ async function main() {
   const itemRows = buildFoodItemRows();
   const aliasRows = buildFoodAliasRows();
   const nutritionRows = buildFoodNutritionRows();
-  const withAllergens = itemRows.filter(
-    (r) => (r.allergens?.length ?? 0) > 0,
-  ).length;
+  const withAllergens = itemRows.filter((r) => (r.allergens?.length ?? 0) > 0).length;
 
   console.log(
     `[seed-food-graph] Prepared ${itemRows.length} food item(s) ` +
@@ -55,14 +53,14 @@ async function main() {
   );
 
   if (dryRun) {
-    console.log("[seed-food-graph] --dry: no database writes performed.");
+    console.log('[seed-food-graph] --dry: no database writes performed.');
     return;
   }
 
   if (!url) {
     console.error(
-      "[seed-food-graph] No database URL set. Provide DATABASE_URL (or " +
-        "DATABASE_URL_UNPOOLED / POSTGRES_URL_NON_POOLING). See .env.example.",
+      '[seed-food-graph] No database URL set. Provide DATABASE_URL (or ' +
+        'DATABASE_URL_UNPOOLED / POSTGRES_URL_NON_POOLING). See .env.example.',
     );
     process.exit(1);
   }
@@ -72,7 +70,7 @@ async function main() {
     prepare: false,
     onnotice: () => undefined,
   });
-  const db = drizzle(client, { schema, casing: "snake_case" });
+  const db = drizzle(client, { schema, casing: 'snake_case' });
 
   try {
     await db.transaction(async (tx) => {
@@ -138,6 +136,6 @@ async function main() {
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error("[seed-food-graph] Failed:", error);
+    console.error('[seed-food-graph] Failed:', error);
     process.exit(1);
   });

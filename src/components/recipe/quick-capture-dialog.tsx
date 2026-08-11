@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { PencilLine, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { PencilLine, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import { createRecipeAction } from "~/server/recipes/actions";
-import { type RecipeInput } from "~/server/recipes/validation";
-import { Button } from "~/components/ui/button";
+import { createRecipeAction } from '~/server/recipes/actions';
+import { type RecipeInput } from '~/server/recipes/validation';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { ImageUploadField } from "~/components/ui/image-upload";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { recipeEditPath } from "~/lib/recipe-path";
+} from '~/components/ui/dialog';
+import { ImageUploadField } from '~/components/ui/image-upload';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
+import { recipeEditPath } from '~/lib/recipe-path';
 
 type SavedDraft = { id: string; slug: string | null; cook?: string | null };
 
@@ -34,20 +34,20 @@ type SavedDraft = { id: string; slug: string | null; cook?: string | null };
  * the recipe's notes so nothing is lost before the full editor is opened.
  */
 export function QuickCaptureDialog() {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [title, setTitle] = React.useState("");
-  const [photo, setPhoto] = React.useState("");
-  const [freeform, setFreeform] = React.useState("");
+  const [title, setTitle] = React.useState('');
+  const [photo, setPhoto] = React.useState('');
+  const [freeform, setFreeform] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [saved, setSaved] = React.useState<SavedDraft | null>(null);
   const [pending, startTransition] = React.useTransition();
 
   function reset() {
-    setTitle("");
-    setPhoto("");
-    setFreeform("");
+    setTitle('');
+    setPhoto('');
+    setFreeform('');
     setError(null);
     setSaved(null);
   }
@@ -61,7 +61,7 @@ export function QuickCaptureDialog() {
     event.preventDefault();
     if (pending) return;
     if (title.trim().length === 0) {
-      setError(t("quickCapture.titleError"));
+      setError(t('quickCapture.titleError'));
       return;
     }
     setError(null);
@@ -70,8 +70,8 @@ export function QuickCaptureDialog() {
       title: title.trim(),
       notes: freeform.trim().length > 0 ? freeform.trim() : undefined,
       coverImageUrl: photo.trim().length > 0 ? photo.trim() : undefined,
-      visibility: "private",
-      status: "draft",
+      visibility: 'private',
+      status: 'draft',
       ingredients: [],
       steps: [],
       tags: [],
@@ -85,7 +85,7 @@ export function QuickCaptureDialog() {
       const result = await createRecipeAction(input);
       if (result.ok) {
         setSaved({ id: result.id, slug: result.slug, cook: result.cook });
-        toast.success(t("quickCapture.toast.saved"));
+        toast.success(t('quickCapture.toast.saved'));
         router.refresh();
       } else {
         setError(result.error);
@@ -98,47 +98,41 @@ export function QuickCaptureDialog() {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="lg" variant="outline">
-          <Sparkles /> {t("quickCapture.trigger")}
+          <Sparkles /> {t('quickCapture.trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent size="md">
         {saved ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <DialogTitle>{t("quickCapture.savedTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("quickCapture.savedDescription")}
-              </DialogDescription>
+              <DialogTitle>{t('quickCapture.savedTitle')}</DialogTitle>
+              <DialogDescription>{t('quickCapture.savedDescription')}</DialogDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild className="sm:flex-1">
                 <Link href={recipeEditPath(saved)}>
-                  <PencilLine /> {t("quickCapture.finish")}
+                  <PencilLine /> {t('quickCapture.finish')}
                 </Link>
               </Button>
               <Button variant="outline" onClick={reset} className="sm:flex-1">
-                {t("quickCapture.addAnother")}
+                {t('quickCapture.addAnother')}
               </Button>
             </div>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <DialogTitle>{t("quickCapture.title")}</DialogTitle>
-              <DialogDescription>
-                {t("quickCapture.description")}
-              </DialogDescription>
+              <DialogTitle>{t('quickCapture.title')}</DialogTitle>
+              <DialogDescription>{t('quickCapture.description')}</DialogDescription>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quick-title">
-                {t("quickCapture.titleLabel")}
-              </Label>
+              <Label htmlFor="quick-title">{t('quickCapture.titleLabel')}</Label>
               <Input
                 id="quick-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={t("quickCapture.titlePlaceholder")}
+                placeholder={t('quickCapture.titlePlaceholder')}
                 autoFocus
                 maxLength={200}
                 aria-required
@@ -146,7 +140,7 @@ export function QuickCaptureDialog() {
             </div>
 
             <ImageUploadField
-              label={t("quickCapture.photoLabel")}
+              label={t('quickCapture.photoLabel')}
               value={photo}
               onChange={setPhoto}
               size="compact"
@@ -154,14 +148,12 @@ export function QuickCaptureDialog() {
             />
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quick-notes">
-                {t("quickCapture.notesLabel")}
-              </Label>
+              <Label htmlFor="quick-notes">{t('quickCapture.notesLabel')}</Label>
               <Textarea
                 id="quick-notes"
                 value={freeform}
                 onChange={(event) => setFreeform(event.target.value)}
-                placeholder={t("quickCapture.notesPlaceholder")}
+                placeholder={t('quickCapture.notesPlaceholder')}
                 rows={6}
                 maxLength={4000}
               />
@@ -175,7 +167,7 @@ export function QuickCaptureDialog() {
 
             <div className="flex justify-end">
               <Button type="submit" disabled={pending}>
-                {pending ? t("common.saving") : t("quickCapture.saveDraft")}
+                {pending ? t('common.saving') : t('quickCapture.saveDraft')}
               </Button>
             </div>
           </form>

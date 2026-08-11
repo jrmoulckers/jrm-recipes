@@ -1,14 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
 
-import {
-  mergeShoppingItems,
-  type ShoppingItemInput,
-} from "~/lib/shopping-list";
-import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
-import { isKnownUnit, normalizeUnit } from "~/lib/units";
-import { db } from "~/server/db";
+import { mergeShoppingItems, type ShoppingItemInput } from '~/lib/shopping-list';
+import { toCustomUnitDefs, toUnitPrefs } from '~/lib/unit-prefs';
+import { isKnownUnit, normalizeUnit } from '~/lib/units';
+import { db } from '~/server/db';
 import {
   customUnits,
   shoppingIngredientRoutes,
@@ -16,20 +13,20 @@ import {
   shoppingLists,
   userUnitPreferences,
   type User,
-} from "~/server/db/schema";
-import { type CustomUnitInput, type UnitPreferencesInput } from "./validation";
+} from '~/server/db/schema';
+import { type CustomUnitInput, type UnitPreferencesInput } from './validation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ShoppingRow = typeof shoppingListItems.$inferSelect;
 
 /** Postgres unique-violation code, raised when a custom-unit name repeats. */
-const PG_UNIQUE_VIOLATION = "23505";
+const PG_UNIQUE_VIOLATION = '23505';
 
 function isUniqueViolation(error: unknown): boolean {
   return (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error != null &&
-    "code" in error &&
+    'code' in error &&
     (error as { code?: string }).code === PG_UNIQUE_VIOLATION
   );
 }
@@ -53,10 +50,7 @@ function prefFields(input: UnitPreferencesInput) {
  * unique `user_id`), so an insert that collides updates the existing row in
  * place. The settings form always sends the full desired state.
  */
-export async function saveUnitPreferences(
-  input: UnitPreferencesInput,
-  user: User,
-) {
+export async function saveUnitPreferences(input: UnitPreferencesInput, user: User) {
   const [row] = await db
     .insert(userUnitPreferences)
     .values({ ...prefFields(input), userId: user.id })
@@ -65,7 +59,7 @@ export async function saveUnitPreferences(
       set: prefFields(input),
     })
     .returning({ id: userUnitPreferences.id });
-  if (!row) throw new Error("CONFLICT");
+  if (!row) throw new Error('CONFLICT');
   return row;
 }
 
@@ -85,23 +79,23 @@ async function requireOwnedCustomUnit(tx: Tx, id: string, user: User) {
   const unit = await tx.query.customUnits.findFirst({
     where: and(eq(customUnits.id, id), eq(customUnits.userId, user.id)),
   });
-  if (!unit) throw new Error("NOT_FOUND");
+  if (!unit) throw new Error('NOT_FOUND');
   return unit;
 }
 
 function shoppingInput(
   item: Pick<
     ShoppingRow,
-    | "item"
-    | "foodId"
-    | "quantity"
-    | "quantityMax"
-    | "unit"
-    | "requiredBaseQuantity"
-    | "requiredBaseQuantityMax"
-    | "requiredBaseUnit"
-    | "optional"
-    | "recipeId"
+    | 'item'
+    | 'foodId'
+    | 'quantity'
+    | 'quantityMax'
+    | 'unit'
+    | 'requiredBaseQuantity'
+    | 'requiredBaseQuantityMax'
+    | 'requiredBaseUnit'
+    | 'optional'
+    | 'recipeId'
   >,
 ): ShoppingItemInput {
   return item;
@@ -126,17 +120,11 @@ async function canonicalizeMatchingRows(
     .from(shoppingListItems)
     .innerJoin(
       shoppingLists,
-      and(
-        eq(shoppingLists.id, shoppingListItems.listId),
-        eq(shoppingLists.userId, userId),
-      ),
+      and(eq(shoppingLists.id, shoppingListItems.listId), eq(shoppingLists.userId, userId)),
     )
     .where(
       or(
-        inArray(
-          sql<string>`lower(trim(${shoppingListItems.requiredBaseUnit}))`,
-          names,
-        ),
+        inArray(sql<string>`lower(trim(${shoppingListItems.requiredBaseUnit}))`, names),
         inArray(sql<string>`lower(trim(${shoppingListItems.unit}))`, names),
       ),
     );
@@ -208,10 +196,7 @@ async function canonicalizeMatchingPackageRoutes(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(shoppingIngredientRoutes.id, route.id),
-          eq(shoppingIngredientRoutes.userId, userId),
-        ),
+        and(eq(shoppingIngredientRoutes.id, route.id), eq(shoppingIngredientRoutes.userId, userId)),
       );
   }
   return matching.length > 0;
@@ -223,10 +208,7 @@ async function loadOwnedShoppingRows(tx: Tx, userId: string) {
     .from(shoppingListItems)
     .innerJoin(
       shoppingLists,
-      and(
-        eq(shoppingLists.id, shoppingListItems.listId),
-        eq(shoppingLists.userId, userId),
-      ),
+      and(eq(shoppingLists.id, shoppingListItems.listId), eq(shoppingLists.userId, userId)),
     )
     .where(eq(shoppingLists.userId, userId));
   return rows.map(({ item }) => item);
@@ -236,11 +218,7 @@ function uniqueRows(rows: readonly ShoppingRow[]): ShoppingRow[] {
   return [...new Map(rows.map((row) => [row.id, row])).values()];
 }
 
-async function rerenderRows(
-  tx: Tx,
-  userId: string,
-  rows: readonly ShoppingRow[],
-) {
+async function rerenderRows(tx: Tx, userId: string, rows: readonly ShoppingRow[]) {
   if (rows.length === 0) return;
   const [preferenceRow, customUnitRows, routeRows] = await Promise.all([
     tx.query.userUnitPreferences.findFirst({
@@ -265,10 +243,10 @@ async function rerenderRows(
       packageLabel: route.packageLabel,
       packageRoundBehavior:
         route.packageRounding == null
-          ? ("inherit" as const)
+          ? ('inherit' as const)
           : route.packageRounding
-            ? ("enable" as const)
-            : ("disable" as const),
+            ? ('enable' as const)
+            : ('disable' as const),
     })),
     packageRounding: preferenceRow?.packageRounding ?? false,
   };
@@ -304,59 +282,41 @@ export async function createCustomUnit(input: CustomUnitInput, user: User) {
         .insert(customUnits)
         .values({ ...customFields(input), userId: user.id })
         .returning();
-      if (!unit) throw new Error("CONFLICT");
+      if (!unit) throw new Error('CONFLICT');
       const affected = await canonicalizeMatchingRows(tx, user.id, unit);
-      const routesChanged = await canonicalizeMatchingPackageRoutes(
-        tx,
-        user.id,
-        unit,
-      );
+      const routesChanged = await canonicalizeMatchingPackageRoutes(tx, user.id, unit);
       const rerender = routesChanged
-        ? uniqueRows([
-            ...affected,
-            ...(await loadOwnedShoppingRows(tx, user.id)),
-          ])
+        ? uniqueRows([...affected, ...(await loadOwnedShoppingRows(tx, user.id))])
         : affected;
       await rerenderRows(tx, user.id, rerender);
       return { id: unit.id };
     });
   } catch (error) {
-    if (isUniqueViolation(error)) throw new Error("DUPLICATE");
+    if (isUniqueViolation(error)) throw new Error('DUPLICATE');
     throw error;
   }
 }
 
-export async function updateCustomUnit(
-  id: string,
-  input: CustomUnitInput,
-  user: User,
-) {
+export async function updateCustomUnit(id: string, input: CustomUnitInput, user: User) {
   try {
     return await db.transaction(async (tx) => {
       const oldUnit = await requireOwnedCustomUnit(tx, id, user);
       const affected = await canonicalizeMatchingRows(tx, user.id, oldUnit);
-      const routesChanged = await canonicalizeMatchingPackageRoutes(
-        tx,
-        user.id,
-        oldUnit,
-      );
+      const routesChanged = await canonicalizeMatchingPackageRoutes(tx, user.id, oldUnit);
       const rerender = routesChanged
-        ? uniqueRows([
-            ...affected,
-            ...(await loadOwnedShoppingRows(tx, user.id)),
-          ])
+        ? uniqueRows([...affected, ...(await loadOwnedShoppingRows(tx, user.id))])
         : affected;
       const [row] = await tx
         .update(customUnits)
         .set(customFields(input))
         .where(and(eq(customUnits.id, id), eq(customUnits.userId, user.id)))
         .returning({ id: customUnits.id });
-      if (!row) throw new Error("NOT_FOUND");
+      if (!row) throw new Error('NOT_FOUND');
       await rerenderRows(tx, user.id, rerender);
       return row;
     });
   } catch (error) {
-    if (isUniqueViolation(error)) throw new Error("DUPLICATE");
+    if (isUniqueViolation(error)) throw new Error('DUPLICATE');
     throw error;
   }
 }
@@ -365,11 +325,7 @@ export async function deleteCustomUnit(id: string, user: User) {
   return db.transaction(async (tx) => {
     const oldUnit = await requireOwnedCustomUnit(tx, id, user);
     const affected = await canonicalizeMatchingRows(tx, user.id, oldUnit);
-    const routesChanged = await canonicalizeMatchingPackageRoutes(
-      tx,
-      user.id,
-      oldUnit,
-    );
+    const routesChanged = await canonicalizeMatchingPackageRoutes(tx, user.id, oldUnit);
     const rerender = routesChanged
       ? uniqueRows([...affected, ...(await loadOwnedShoppingRows(tx, user.id))])
       : affected;
@@ -377,7 +333,7 @@ export async function deleteCustomUnit(id: string, user: User) {
       .delete(customUnits)
       .where(and(eq(customUnits.id, id), eq(customUnits.userId, user.id)))
       .returning({ id: customUnits.id });
-    if (!row) throw new Error("NOT_FOUND");
+    if (!row) throw new Error('NOT_FOUND');
     await rerenderRows(tx, user.id, rerender);
     return row;
   });

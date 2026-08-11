@@ -1,17 +1,10 @@
-import { relations, sql } from "drizzle-orm";
-import {
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { relations, sql } from 'drizzle-orm';
+import { index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
-import { groups } from "./groups";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
+import { groups } from './groups';
 
 /**
  * A single "I cooked this" entry. One row each time a user makes a recipe.
@@ -19,15 +12,15 @@ import { groups } from "./groups";
  * of every time a dish actually hit the table, with an optional note + photo.
  */
 export const cookLogEntries = pgTable(
-  "cook_log_entries",
+  'cook_log_entries',
   {
     id: pk(),
     recipeId: fk()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => recipes.id, { onDelete: 'cascade' }),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     // When the cook happened. Defaults to now, but can be backdated.
     cookedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     note: text(),
@@ -36,22 +29,22 @@ export const cookLogEntries = pgTable(
     // Share to family (issue #352): when set, this cook is shared to the given
     // group and surfaces in that group's activity feed + the recipe's "Made by
     // your family" strip. NULL keeps the cook private to the cook.
-    sharedToGroupId: fk().references(() => groups.id, { onDelete: "set null" }),
+    sharedToGroupId: fk().references(() => groups.id, { onDelete: 'set null' }),
     // Moderation hide (issue #357): a set timestamp removes this from member
     // (and always kid) views. `hiddenBy` records the actioning moderator.
     hiddenAt: timestamp({ withTimezone: true }),
-    hiddenBy: fk().references(() => users.id, { onDelete: "set null" }),
+    hiddenBy: fk().references(() => users.id, { onDelete: 'set null' }),
     ...timestamps(),
   },
   (t) => [
-    index("cook_log_entries_recipe_idx").on(t.recipeId),
-    index("cook_log_entries_user_idx").on(t.userId),
+    index('cook_log_entries_recipe_idx').on(t.recipeId),
+    index('cook_log_entries_user_idx').on(t.userId),
     // Fast "my recent cooks" feed (newest first per user).
-    index("cook_log_entries_user_cooked_idx").on(t.userId, t.cookedAt),
+    index('cook_log_entries_user_cooked_idx').on(t.userId, t.cookedAt),
     // Fast "cooks shared to this family" feed for the group activity view.
-    index("cook_log_entries_shared_group_idx").on(t.sharedToGroupId),
+    index('cook_log_entries_shared_group_idx').on(t.sharedToGroupId),
     // Media-library usage lookup (issue #658). Partial: most cooks have no photo.
-    index("cook_log_entries_photo_url_idx")
+    index('cook_log_entries_photo_url_idx')
       .on(t.photoUrl)
       .where(sql`${t.photoUrl} is not null`),
   ],

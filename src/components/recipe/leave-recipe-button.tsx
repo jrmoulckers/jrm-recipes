@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 
-import { leaveRecipeAsCreatorAction } from "~/server/recipes/creators-actions";
-import { useServerAction } from "~/lib/use-server-action";
-import { useConfirm } from "~/components/ui/confirm-dialog";
-import { Button } from "~/components/ui/button";
+import { leaveRecipeAsCreatorAction } from '~/server/recipes/creators-actions';
+import { useServerAction } from '~/lib/use-server-action';
+import { useConfirm } from '~/components/ui/confirm-dialog';
+import { Button } from '~/components/ui/button';
 
 /**
  * Lets an accepted co-creator step down from a recipe (issue #668).
@@ -26,13 +26,13 @@ import { Button } from "~/components/ui/button";
  * either 404 or, for a public recipe, silently drop them into a stranger's view.
  */
 export function LeaveRecipeButton({ recipeId }: { recipeId: string }) {
-  const t = useTranslations("recipeCreators.leave");
+  const t = useTranslations('recipeCreators.leave');
   const router = useRouter();
   const confirm = useConfirm();
   const leave = useServerAction(leaveRecipeAsCreatorAction, {
-    successToast: t("toast"),
+    successToast: t('toast'),
     errorToast: true,
-    onSuccess: () => router.push("/recipes"),
+    onSuccess: () => router.push('/recipes'),
   });
 
   return (
@@ -43,16 +43,16 @@ export function LeaveRecipeButton({ recipeId }: { recipeId: string }) {
       disabled={leave.pending}
       onClick={async () => {
         const ok = await confirm({
-          title: t("confirm.title"),
-          description: t("confirm.description"),
-          confirmLabel: t("confirm.confirmLabel"),
+          title: t('confirm.title'),
+          description: t('confirm.description'),
+          confirmLabel: t('confirm.confirmLabel'),
         });
         if (!ok) return;
         leave.run({ recipeId });
       }}
     >
       <LogOut />
-      {leave.pending ? t("pending") : t("action")}
+      {leave.pending ? t('pending') : t('action')}
     </Button>
   );
 }

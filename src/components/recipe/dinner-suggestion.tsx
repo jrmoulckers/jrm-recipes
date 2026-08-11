@@ -1,28 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Check,
-  ChefHat,
-  Clock3,
-  Shuffle,
-  Sparkles,
-  UtensilsCrossed,
-} from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Check, ChefHat, Clock3, Shuffle, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import type { DinnerCandidate } from "~/server/recipes/queries";
-import { addEntryAction } from "~/server/planner/actions";
-import { cn, formatMinutes } from "~/lib/utils";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { recipeCookPath, recipeDetailPath } from "~/lib/recipe-path";
+import type { DinnerCandidate } from '~/server/recipes/queries';
+import { addEntryAction } from '~/server/planner/actions';
+import { cn, formatMinutes } from '~/lib/utils';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Card, CardContent } from '~/components/ui/card';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { recipeCookPath, recipeDetailPath } from '~/lib/recipe-path';
 
 /** Fisher–Yates shuffle of a fresh index array, so consecutive picks differ. */
 function shuffledIndices(length: number): number[] {
@@ -47,7 +40,7 @@ export function DinnerSuggestion({
   candidates: DinnerCandidate[];
   today: string;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const router = useRouter();
   const [order, setOrder] = React.useState<number[]>([]);
   const [pos, setPos] = React.useState(0);
@@ -55,10 +48,7 @@ export function DinnerSuggestion({
   const [planned, setPlanned] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
-  const current =
-    revealed && order.length > 0
-      ? candidates[order[pos % order.length]!]
-      : undefined;
+  const current = revealed && order.length > 0 ? candidates[order[pos % order.length]!] : undefined;
 
   function pick() {
     setOrder(shuffledIndices(candidates.length));
@@ -77,12 +67,12 @@ export function DinnerSuggestion({
     startTransition(async () => {
       const result = await addEntryAction({
         date: today,
-        slot: "dinner",
+        slot: 'dinner',
         recipeId: current.id,
       });
       if (result.ok) {
         setPlanned(true);
-        toast.success(t("dinner.toast.planned", { title: current.title }));
+        toast.success(t('dinner.toast.planned', { title: current.title }));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -95,27 +85,23 @@ export function DinnerSuggestion({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="size-5 text-primary" />
-          <h2 className="font-display text-xl font-bold tracking-tight">
-            {t("dinner.title")}
-          </h2>
+          <h2 className="font-display text-xl font-bold tracking-tight">{t('dinner.title')}</h2>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {t("dinner.description")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('dinner.description')}</p>
       </div>
 
       {candidates.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-start gap-3 p-6">
-            <p className="text-sm text-muted-foreground">{t("dinner.empty")}</p>
+            <p className="text-sm text-muted-foreground">{t('dinner.empty')}</p>
             <div className="flex flex-wrap gap-2">
               <Button asChild>
                 <Link href="/recipes/new">
-                  <ChefHat /> {t("common.createRecipe")}
+                  <ChefHat /> {t('common.createRecipe')}
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/recipes">{t("common.browseRecipes")}</Link>
+                <Link href="/recipes">{t('common.browseRecipes')}</Link>
               </Button>
             </div>
           </CardContent>
@@ -123,7 +109,7 @@ export function DinnerSuggestion({
       ) : !current ? (
         <div>
           <Button size="xl" onClick={pick}>
-            <Sparkles /> {t("dinner.pick")}
+            <Sparkles /> {t('dinner.pick')}
           </Button>
         </div>
       ) : (
@@ -165,8 +151,7 @@ export function DinnerSuggestion({
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   {current.totalMinutes != null && (
                     <span className="inline-flex items-center gap-1">
-                      <Clock3 className="size-3.5" />{" "}
-                      {formatMinutes(current.totalMinutes)}
+                      <Clock3 className="size-3.5" /> {formatMinutes(current.totalMinutes)}
                     </span>
                   )}
                   {current.difficulty && (
@@ -179,7 +164,7 @@ export function DinnerSuggestion({
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button asChild>
                   <Link href={recipeCookPath(current)}>
-                    <ChefHat /> {t("common.cook")}
+                    <ChefHat /> {t('common.cook')}
                   </Link>
                 </Button>
                 <Button
@@ -190,22 +175,17 @@ export function DinnerSuggestion({
                 >
                   {planned ? (
                     <>
-                      <Check className={cn("text-primary")} />{" "}
-                      {t("dinner.onPlan")}
+                      <Check className={cn('text-primary')} /> {t('dinner.onPlan')}
                     </>
                   ) : (
                     <>
-                      <UtensilsCrossed /> {t("dinner.addToPlan")}
+                      <UtensilsCrossed /> {t('dinner.addToPlan')}
                     </>
                   )}
                 </Button>
                 {candidates.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    onClick={pickAgain}
-                    disabled={pending}
-                  >
-                    <Shuffle /> {t("dinner.pickAgain")}
+                  <Button variant="ghost" onClick={pickAgain} disabled={pending}>
+                    <Shuffle /> {t('dinner.pickAgain')}
                   </Button>
                 )}
               </div>

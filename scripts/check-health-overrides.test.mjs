@@ -29,37 +29,37 @@
  *      so the two ends of the check are anchored to independent sources.
  */
 
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = process.cwd();
 
 /** Directories GitHub resolves community health files from, in its own precedence order. */
-const SEARCH_DIRS = ["", ".github", "docs"];
+const SEARCH_DIRS = ['', '.github', 'docs'];
 
 /** Health files GitHub will prefer over the org-wide copy when present in this repo. */
 const HEALTH_FILENAMES = [
-  "SECURITY.md",
-  "CONTRIBUTING.md",
-  "CODE_OF_CONDUCT.md",
-  "SUPPORT.md",
-  "GOVERNANCE.md",
-  "PULL_REQUEST_TEMPLATE.md",
+  'SECURITY.md',
+  'CONTRIBUTING.md',
+  'CODE_OF_CONDUCT.md',
+  'SUPPORT.md',
+  'GOVERNANCE.md',
+  'PULL_REQUEST_TEMPLATE.md',
 ];
 
 /**
  * Hand-written, not derived from the file. Deriving the pattern from the thing it is
  * meant to pin is the tautology this repo shipped in #754 and reviewed in #757.
  */
-const MARKER_OPEN = "<!-- studio:health-override file=";
+const MARKER_OPEN = '<!-- studio:health-override file=';
 
 /** A marker buried below the fold is not a marker anyone reads before acting. */
 const MARKER_MAX_LINE = 20;
 
 /** Files this repo deliberately overrides. Adding one here is a deliberate act. */
-const EXPECTED_OVERRIDES = ["SECURITY.md"];
+const EXPECTED_OVERRIDES = ['SECURITY.md'];
 
 function findHealthFiles() {
   const found = [];
@@ -75,21 +75,19 @@ function findHealthFiles() {
   return found;
 }
 
-describe("community health file overrides", () => {
+describe('community health file overrides', () => {
   const found = findHealthFiles();
 
-  it("finds the health files this repo is known to override", () => {
+  it('finds the health files this repo is known to override', () => {
     // Concrete expected value: cannot be satisfied by an empty or broken enumeration.
-    expect(found.map((f) => f.rel).sort()).toEqual(
-      [...EXPECTED_OVERRIDES].sort(),
-    );
+    expect(found.map((f) => f.rel).sort()).toEqual([...EXPECTED_OVERRIDES].sort());
   });
 
-  it("marks every present health file as a deliberate override", () => {
+  it('marks every present health file as a deliberate override', () => {
     let checked = 0;
 
     for (const file of found) {
-      const source = readFileSync(file.abs, "utf8");
+      const source = readFileSync(file.abs, 'utf8');
       const lines = source.split(/\r?\n/);
       const head = lines.slice(0, MARKER_MAX_LINE);
       const markerLine = head.findIndex((line) => line.includes(MARKER_OPEN));
@@ -97,8 +95,8 @@ describe("community health file overrides", () => {
       expect(
         markerLine,
         `${file.rel} has no '${MARKER_OPEN}' marker in its first ${MARKER_MAX_LINE} lines. ` +
-          "This is NOT authority to delete it -- an unmarked health file means stop and ask. " +
-          "If the override is deliberate, add the marker; see #790.",
+          'This is NOT authority to delete it -- an unmarked health file means stop and ask. ' +
+          'If the override is deliberate, add the marker; see #790.',
       ).toBeGreaterThanOrEqual(0);
 
       // The marker must name the file it sits in, so it cannot be pasted in blindly.
@@ -116,20 +114,16 @@ describe("community health file overrides", () => {
   });
 
   it("keeps SECURITY.md's override substantive, not a marked-up verbatim copy", () => {
-    const source = readFileSync(join(REPO_ROOT, "SECURITY.md"), "utf8");
+    const source = readFileSync(join(REPO_ROOT, 'SECURITY.md'), 'utf8');
 
     // `Heirloom` is the measurement that reproduced across two independent sessions in
     // #790 (13 matching lines) when the alternation-based one did not. It is the reason
     // the override is deliberate, so it is what the marker is anchored to.
-    const heirloomLines = source
-      .split(/\r?\n/)
-      .filter((line) => line.includes("Heirloom"));
+    const heirloomLines = source.split(/\r?\n/).filter((line) => line.includes('Heirloom'));
 
     expect(heirloomLines.length).toBeGreaterThanOrEqual(10);
 
     // The override's own declaration of what it is, in the policy text rather than a comment.
-    expect(source).toContain(
-      "This policy extends the JRM Studio org-wide security policy",
-    );
+    expect(source).toContain('This policy extends the JRM Studio org-wide security policy');
   });
 });

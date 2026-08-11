@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { useThemeBehavior } from "~/components/theme/theme-provider";
+import { useThemeBehavior } from '~/components/theme/theme-provider';
 
 /**
  * Hides grown-up / destructive recipe actions (Delete, Adapt/fork, Share, reel

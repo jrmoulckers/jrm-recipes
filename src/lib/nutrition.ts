@@ -35,14 +35,14 @@ export type NutrientMeta = {
  * calories, fats, sodium, carbohydrates (with fiber/sugar), then protein.
  */
 export const NUTRIENTS: readonly NutrientMeta[] = [
-  { key: "calories", label: "Calories", unit: "kcal", decimals: 0 },
-  { key: "fatGrams", label: "Total fat", unit: "g", decimals: 1 },
-  { key: "saturatedFatGrams", label: "Saturated fat", unit: "g", decimals: 1 },
-  { key: "sodiumMg", label: "Sodium", unit: "mg", decimals: 0 },
-  { key: "carbsGrams", label: "Total carbohydrate", unit: "g", decimals: 1 },
-  { key: "fiberGrams", label: "Dietary fiber", unit: "g", decimals: 1 },
-  { key: "sugarGrams", label: "Sugars", unit: "g", decimals: 1 },
-  { key: "proteinGrams", label: "Protein", unit: "g", decimals: 1 },
+  { key: 'calories', label: 'Calories', unit: 'kcal', decimals: 0 },
+  { key: 'fatGrams', label: 'Total fat', unit: 'g', decimals: 1 },
+  { key: 'saturatedFatGrams', label: 'Saturated fat', unit: 'g', decimals: 1 },
+  { key: 'sodiumMg', label: 'Sodium', unit: 'mg', decimals: 0 },
+  { key: 'carbsGrams', label: 'Total carbohydrate', unit: 'g', decimals: 1 },
+  { key: 'fiberGrams', label: 'Dietary fiber', unit: 'g', decimals: 1 },
+  { key: 'sugarGrams', label: 'Sugars', unit: 'g', decimals: 1 },
+  { key: 'proteinGrams', label: 'Protein', unit: 'g', decimals: 1 },
 ];
 
 /** Pull just the nutrition fields out of a wider record (e.g. a recipe row). */
@@ -56,7 +56,7 @@ export function pickNutrition(row: Nutrition): Nutrition {
 export function hasNutrition(n: Nutrition): boolean {
   return NUTRIENTS.some((m) => {
     const v = n[m.key];
-    return typeof v === "number" && Number.isFinite(v);
+    return typeof v === 'number' && Number.isFinite(v);
   });
 }
 
@@ -66,15 +66,12 @@ export function hasNutrition(n: Nutrition): boolean {
  * ones are multiplied. A non-finite or negative factor is treated as 1 so the
  * panel can never show nonsense from a bad serving count.
  */
-export function scaleNutrition(
-  perServing: Nutrition,
-  factor: number,
-): Nutrition {
+export function scaleNutrition(perServing: Nutrition, factor: number): Nutrition {
   const safe = Number.isFinite(factor) && factor >= 0 ? factor : 1;
   const out: Nutrition = {};
   for (const { key } of NUTRIENTS) {
     const v = perServing[key];
-    out[key] = typeof v === "number" && Number.isFinite(v) ? v * safe : null;
+    out[key] = typeof v === 'number' && Number.isFinite(v) ? v * safe : null;
   }
   return out;
 }
@@ -91,7 +88,7 @@ export type NutritionRow = {
 export function nutritionRows(n: Nutrition): NutritionRow[] {
   return NUTRIENTS.flatMap((m) => {
     const v = n[m.key];
-    if (typeof v !== "number" || !Number.isFinite(v)) return [];
+    if (typeof v !== 'number' || !Number.isFinite(v)) return [];
     return [
       {
         key: m.key,
@@ -121,15 +118,15 @@ export function formatNutrient(value: number, decimals: number): string {
  * Note: the schema stores total sugars, which we treat as the added-sugar proxy
  * against the 50 g DV. Honest labelling ("Sugars") keeps that explicit.
  */
-export type NutrientLevel = "low" | "moderate" | "high";
+export type NutrientLevel = 'low' | 'moderate' | 'high';
 
 /**
  * FDA Daily Values used for %DV, kept in one place so thresholds are easy to
  * audit and adjust. Sodium 2300 mg. Added sugars 50 g (2000 kcal reference).
  */
 export const DAILY_VALUES = [
-  { key: "sodiumMg", label: "Sodium", unit: "mg", dailyValue: 2300 },
-  { key: "sugarGrams", label: "Sugars", unit: "g", dailyValue: 50 },
+  { key: 'sodiumMg', label: 'Sodium', unit: 'mg', dailyValue: 2300 },
+  { key: 'sugarGrams', label: 'Sugars', unit: 'g', dailyValue: 50 },
 ] as const satisfies readonly {
   key: NutrientKey;
   label: string;
@@ -147,9 +144,9 @@ export const LEVEL_THRESHOLDS = {
 } as const;
 
 export function classifyLevel(percentDV: number): NutrientLevel {
-  if (percentDV <= LEVEL_THRESHOLDS.lowMaxPercent) return "low";
-  if (percentDV >= LEVEL_THRESHOLDS.highMinPercent) return "high";
-  return "moderate";
+  if (percentDV <= LEVEL_THRESHOLDS.lowMaxPercent) return 'low';
+  if (percentDV >= LEVEL_THRESHOLDS.highMinPercent) return 'high';
+  return 'moderate';
 }
 
 export type DailyValueFlag = {
@@ -169,12 +166,12 @@ export type DailyValueFlag = {
  */
 export function assessDailyValue(
   perServing: Nutrition,
-  key: (typeof DAILY_VALUES)[number]["key"],
+  key: (typeof DAILY_VALUES)[number]['key'],
 ): DailyValueFlag | null {
   const meta = DAILY_VALUES.find((d) => d.key === key);
   if (!meta) return null;
   const value = perServing[key];
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   const exactPercent = (value / meta.dailyValue) * 100;
   return {
     key: meta.key,
@@ -208,18 +205,10 @@ export function caloriePercentOfGoal(
   calories: number | null | undefined,
   dailyGoal: number | null | undefined,
 ): number | null {
-  if (
-    typeof calories !== "number" ||
-    !Number.isFinite(calories) ||
-    calories < 0
-  ) {
+  if (typeof calories !== 'number' || !Number.isFinite(calories) || calories < 0) {
     return null;
   }
-  if (
-    typeof dailyGoal !== "number" ||
-    !Number.isFinite(dailyGoal) ||
-    dailyGoal <= 0
-  ) {
+  if (typeof dailyGoal !== 'number' || !Number.isFinite(dailyGoal) || dailyGoal <= 0) {
     return null;
   }
   return Math.round((calories / dailyGoal) * 100);

@@ -1,22 +1,16 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { canViewRecipe } from "~/server/recipes/queries";
-import { notify } from "~/server/notifications/notify";
-import {
-  comments,
-  cookLogEntries,
-  reactions,
-  reviews,
-  type User,
-} from "~/server/db/schema";
-import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
-import { REACTION_EMOJI } from "~/lib/reactions";
+import { db, isDbConfigured } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { canViewRecipe } from '~/server/recipes/queries';
+import { notify } from '~/server/notifications/notify';
+import { comments, cookLogEntries, reactions, reviews, type User } from '~/server/db/schema';
+import type { ReactionCount, ReactionEmojiKey } from '~/lib/reactions';
+import { REACTION_EMOJI } from '~/lib/reactions';
 
-export type ReactionTargetType = "comment" | "review" | "cook_log";
+export type ReactionTargetType = 'comment' | 'review' | 'cook_log';
 
 type RecipeAccessRow = {
   id: string;
@@ -35,9 +29,9 @@ type ReactionTargetInfo = {
 
 /** Human-readable label for the reacted-to content, used in the inbox copy. */
 const TARGET_LABEL: Record<ReactionTargetType, string> = {
-  comment: "comment",
-  review: "review",
-  cook_log: "cook",
+  comment: 'comment',
+  review: 'review',
+  cook_log: 'cook',
 };
 
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -59,7 +53,7 @@ async function loadReactionTarget(
     groupId: true,
   } as const;
 
-  if (targetType === "comment") {
+  if (targetType === 'comment') {
     const row = await exec.query.comments.findFirst({
       where: eq(comments.id, targetId),
       columns: { id: true, userId: true },
@@ -67,7 +61,7 @@ async function loadReactionTarget(
     });
     return row?.recipe ? { ownerId: row.userId, recipe: row.recipe } : null;
   }
-  if (targetType === "review") {
+  if (targetType === 'review') {
     const row = await exec.query.reviews.findFirst({
       where: eq(reviews.id, targetId),
       columns: { id: true, userId: true },
@@ -98,14 +92,9 @@ export async function toggleReaction(
   user: User,
 ): Promise<{ reacted: boolean }> {
   return db.transaction(async (tx) => {
-    const target = await loadReactionTarget(
-      tx,
-      input.targetType,
-      input.targetId,
-    );
-    if (!target) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(target.recipe, user)))
-      throw new DomainError("FORBIDDEN");
+    const target = await loadReactionTarget(tx, input.targetType, input.targetId);
+    if (!target) throw new DomainError('NOT_FOUND');
+    if (!(await canViewRecipe(target.recipe, user))) throw new DomainError('FORBIDDEN');
 
     const existing = await tx.query.reactions.findFirst({
       where: and(
@@ -141,7 +130,7 @@ export async function toggleReaction(
       await notify(tx, {
         recipientId: target.ownerId,
         actorId: user.id,
-        type: "reaction",
+        type: 'reaction',
         recipeId: target.recipe.id,
         entityId: input.targetId,
         context: TARGET_LABEL[input.targetType],
@@ -179,10 +168,7 @@ export async function getReactionsForTargets(
   if (!isDbConfigured() || targetIds.length === 0) return result;
 
   const rows = await db.query.reactions.findMany({
-    where: and(
-      eq(reactions.targetType, targetType),
-      inArray(reactions.targetId, targetIds),
-    ),
+    where: and(eq(reactions.targetType, targetType), inArray(reactions.targetId, targetIds)),
     with: {
       user: { columns: { id: true, name: true, handle: true } },
     },
@@ -223,10 +209,7 @@ export async function getReactionsForTargets(
       counts.push({ emoji, count: entry.count, reacted: entry.reacted });
       reactors[emoji] = entry.names;
     }
-    counts.sort(
-      (a, b) =>
-        (EMOJI_ORDER.get(a.emoji) ?? 0) - (EMOJI_ORDER.get(b.emoji) ?? 0),
-    );
+    counts.sort((a, b) => (EMOJI_ORDER.get(a.emoji) ?? 0) - (EMOJI_ORDER.get(b.emoji) ?? 0));
     result.set(targetId, { counts, reactors });
   }
 

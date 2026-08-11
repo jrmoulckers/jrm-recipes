@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 /**
  * Typographic primitives backed by the tokenized type scale in
@@ -10,16 +10,16 @@ import { cn } from "~/lib/utils";
  */
 
 const HEADING_SIZE = {
-  display: "text-display",
-  h1: "text-h1",
-  h2: "text-h2",
-  h3: "text-h3",
-  h4: "text-h4",
+  display: 'text-display',
+  h1: 'text-h1',
+  h2: 'text-h2',
+  h3: 'text-h3',
+  h4: 'text-h4',
 } as const;
 
 type HeadingLevel = 1 | 2 | 3 | 4;
 type HeadingSize = keyof typeof HEADING_SIZE;
-type HeadingElement = "h1" | "h2" | "h3" | "h4" | "p" | "div" | "span";
+type HeadingElement = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'div' | 'span';
 
 export interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   /** Semantic heading level. Also drives the default visual size. */
@@ -38,7 +38,7 @@ const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
       <Tag
         ref={ref}
         className={cn(
-          "text-balance font-display font-semibold text-foreground",
+          'text-balance font-display font-semibold text-foreground',
           HEADING_SIZE[visual],
           className,
         )}
@@ -47,16 +47,16 @@ const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
     );
   },
 );
-Heading.displayName = "Heading";
+Heading.displayName = 'Heading';
 
 const TEXT_VARIANT = {
-  body: "text-body text-foreground",
-  muted: "text-body text-muted-foreground",
-  small: "text-body-sm text-muted-foreground",
+  body: 'text-body text-foreground',
+  muted: 'text-body text-muted-foreground',
+  small: 'text-body-sm text-muted-foreground',
 } as const;
 
 type TextVariant = keyof typeof TEXT_VARIANT;
-type TextElement = "p" | "span" | "div";
+type TextElement = 'p' | 'span' | 'div';
 
 export interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {
   variant?: TextVariant;
@@ -64,17 +64,13 @@ export interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {
 }
 
 const Text = React.forwardRef<HTMLParagraphElement, TextProps>(
-  ({ className, variant = "body", as = "p", ...props }, ref) => {
+  ({ className, variant = 'body', as = 'p', ...props }, ref) => {
     const Tag = as as React.ElementType;
     return (
-      <Tag
-        ref={ref}
-        className={cn("text-pretty", TEXT_VARIANT[variant], className)}
-        {...props}
-      />
+      <Tag ref={ref} className={cn('text-pretty', TEXT_VARIANT[variant], className)} {...props} />
     );
   },
 );
-Text.displayName = "Text";
+Text.displayName = 'Text';
 
 export { Heading, Text, HEADING_SIZE, TEXT_VARIANT };

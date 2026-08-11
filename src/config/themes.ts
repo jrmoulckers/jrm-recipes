@@ -12,60 +12,57 @@
 
 export const UI_THEMES = [
   {
-    id: "kitchen",
-    label: "Kitchen",
-    description:
-      "Warm and cozy. Creams, terracotta, and a little home-baked charm.",
+    id: 'kitchen',
+    label: 'Kitchen',
+    description: 'Warm and cozy. Creams, terracotta, and a little home-baked charm.',
   },
   {
-    id: "whimsy",
-    label: "Whimsy",
-    description: "Playful and colorful. Bubbly shapes and joyful accents.",
+    id: 'whimsy',
+    label: 'Whimsy',
+    description: 'Playful and colorful. Bubbly shapes and joyful accents.',
   },
   {
-    id: "professional",
-    label: "Professional",
-    description: "Clean and editorial. Quiet, confident, magazine-grade.",
+    id: 'professional',
+    label: 'Professional',
+    description: 'Clean and editorial. Quiet, confident, magazine-grade.',
   },
   {
-    id: "kids",
-    label: "Kids",
-    description: "Big, bright, and friendly. Easy taps and cheerful colors.",
+    id: 'kids',
+    label: 'Kids',
+    description: 'Big, bright, and friendly. Easy taps and cheerful colors.',
   },
   {
-    id: "barebones",
-    label: "Simple",
-    description: "Ultra-simple and high-contrast. Just the essentials.",
+    id: 'barebones',
+    label: 'Simple',
+    description: 'Ultra-simple and high-contrast. Just the essentials.',
   },
 ] as const;
 
-export type UITheme = (typeof UI_THEMES)[number]["id"];
+export type UITheme = (typeof UI_THEMES)[number]['id'];
 export const UI_THEME_IDS = UI_THEMES.map((t) => t.id);
-export const DEFAULT_UI_THEME: UITheme = "kitchen";
+export const DEFAULT_UI_THEME: UITheme = 'kitchen';
 
-export const COLOR_SCHEMES = ["light", "dark", "system"] as const;
+export const COLOR_SCHEMES = ['light', 'dark', 'system'] as const;
 export type ColorScheme = (typeof COLOR_SCHEMES)[number];
-export const DEFAULT_COLOR_SCHEME: ColorScheme = "system";
+export const DEFAULT_COLOR_SCHEME: ColorScheme = 'system';
 
 /** Cookie names let the server render the correct theme with no flash. */
-export const THEME_COOKIE = "heirloom-theme";
-export const SCHEME_COOKIE = "heirloom-scheme";
+export const THEME_COOKIE = 'heirloom-theme';
+export const SCHEME_COOKIE = 'heirloom-scheme';
 /**
  * Remembers the UI mode that was active before Kids mode was switched on, so
  * turning Kids mode back off restores it instead of always dropping the family
  * into the default theme. Persisted alongside `heirloom-theme` so it survives a
  * reload. Never stores `kids` itself.
  */
-export const THEME_PREVIOUS_COOKIE = "heirloom-theme-prev";
+export const THEME_PREVIOUS_COOKIE = 'heirloom-theme-prev';
 
 export function isUITheme(value: unknown): value is UITheme {
-  return typeof value === "string" && UI_THEME_IDS.includes(value as UITheme);
+  return typeof value === 'string' && UI_THEME_IDS.includes(value as UITheme);
 }
 
 export function isColorScheme(value: unknown): value is ColorScheme {
-  return (
-    typeof value === "string" && COLOR_SCHEMES.includes(value as ColorScheme)
-  );
+  return typeof value === 'string' && COLOR_SCHEMES.includes(value as ColorScheme);
 }
 
 /**

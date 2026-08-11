@@ -15,44 +15,44 @@
  * namespace, `useMessages()`) is reported as a hard failure or widens the set to
  * the whole catalog rather than silently narrowing it.
  */
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
-import { repoRoot, walkSource } from "./walk-source.mjs";
+import { repoRoot, walkSource } from './walk-source.mjs';
 
-const SRC = join(repoRoot, "src");
-const APP = join(SRC, "app");
+const SRC = join(repoRoot, 'src');
+const APP = join(SRC, 'app');
 
 /** Extension/index candidates tried when resolving a module specifier. */
 const CANDIDATES = [
-  "",
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  "/index.ts",
-  "/index.tsx",
-  "/index.js",
-  "/index.jsx",
+  '',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '/index.ts',
+  '/index.tsx',
+  '/index.js',
+  '/index.jsx',
 ];
 
 /** Route files that are rendered *outside* a route's own scoped provider. */
 const SHELL_FILES = new Set([
-  "layout.tsx",
-  "template.tsx",
-  "error.tsx",
-  "global-error.tsx",
-  "not-found.tsx",
-  "loading.tsx",
-  "providers.tsx",
+  'layout.tsx',
+  'template.tsx',
+  'error.tsx',
+  'global-error.tsx',
+  'not-found.tsx',
+  'loading.tsx',
+  'providers.tsx',
 ]);
 
-const toPosix = (p) => p.replace(/\\/g, "/");
+const toPosix = (p) => p.replace(/\\/g, '/');
 
 function tryResolve(candidatePath) {
   for (const suffix of CANDIDATES) {
     const full = `${candidatePath}${suffix}`;
-    if (suffix === "" && !/\.[jt]sx?$/.test(full)) continue;
+    if (suffix === '' && !/\.[jt]sx?$/.test(full)) continue;
     try {
       readFileSync(full);
       return toPosix(full);
@@ -65,10 +65,10 @@ function tryResolve(candidatePath) {
 
 /** Resolve an import specifier to an absolute source path, or null if external. */
 function resolveSpecifier(specifier, fromFile) {
-  if (specifier.startsWith("~/")) {
+  if (specifier.startsWith('~/')) {
     return tryResolve(join(SRC, specifier.slice(2)));
   }
-  if (specifier.startsWith(".")) {
+  if (specifier.startsWith('.')) {
     return tryResolve(resolve(dirname(fromFile), specifier));
   }
   return null;
@@ -90,8 +90,7 @@ function readImports(file, source) {
   return out;
 }
 
-const USE_CLIENT_RE =
-  /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*["']use client["']/;
+const USE_CLIENT_RE = /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*["']use client["']/;
 
 /**
  * Namespace call sites. `useTranslations("x")` is the client hook; the analysis
@@ -103,13 +102,11 @@ const USE_MESSAGES_RE = /\buseMessages\s*\(/;
 
 /** Build the whole-`src` module graph plus per-file i18n facts. */
 export function buildGraph() {
-  const files = walkSource(SRC, [".ts", ".tsx"]).map((rel) =>
-    toPosix(join(repoRoot, rel)),
-  );
+  const files = walkSource(SRC, ['.ts', '.tsx']).map((rel) => toPosix(join(repoRoot, rel)));
   const graph = new Map();
 
   for (const file of files) {
-    const source = readFileSync(file, "utf8");
+    const source = readFileSync(file, 'utf8');
     const namespaces = new Set();
     const dynamicCallSites = [];
 
@@ -117,7 +114,7 @@ export function buildGraph() {
     let match;
     while ((match = NAMESPACE_RE.exec(source))) {
       if (match[2]) {
-        namespaces.add(match[2].split(".")[0]);
+        namespaces.add(match[2].split('.')[0]);
       } else if (match[1]) {
         dynamicCallSites.push(match[0]);
       }
@@ -131,9 +128,7 @@ export function buildGraph() {
       isClient: USE_CLIENT_RE.test(source),
       namespaces,
       dynamicCallSites,
-      wantsAll:
-        USE_MESSAGES_RE.test(source) ||
-        /\buseTranslations\s*\(\s*\)/.test(source),
+      wantsAll: USE_MESSAGES_RE.test(source) || /\buseTranslations\s*\(\s*\)/.test(source),
     });
   }
 
@@ -154,9 +149,7 @@ function closure(graph, roots) {
 
 /** Every file transitively reachable from a `"use client"` entry point. */
 function clientFiles(graph) {
-  const roots = [...graph.values()]
-    .filter((n) => n.isClient)
-    .map((n) => n.file);
+  const roots = [...graph.values()].filter((n) => n.isClient).map((n) => n.file);
   return closure(graph, roots);
 }
 
@@ -183,11 +176,11 @@ function collect(graph, files, clientSet) {
 export function routePatternFor(pagePath) {
   const rel = toPosix(pagePath).slice(toPosix(APP).length + 1);
   const segments = rel
-    .split("/")
+    .split('/')
     .slice(0, -1)
     .filter((segment) => !/^\(.*\)$/.test(segment))
-    .map((segment) => (segment.startsWith("[") ? ":" : segment));
-  return `/${segments.join("/")}`.replace(/\/+$/, "") || "/";
+    .map((segment) => (segment.startsWith('[') ? ':' : segment));
+  return `/${segments.join('/')}`.replace(/\/+$/, '') || '/';
 }
 
 /**
@@ -200,14 +193,10 @@ export function analyzeRoutes() {
   const graph = buildGraph();
   const clientSet = clientFiles(graph);
 
-  const appFiles = [...graph.keys()].filter((f) =>
-    f.startsWith(`${toPosix(APP)}/`),
-  );
-  const pages = appFiles.filter((f) => f.endsWith("/page.tsx")).sort();
-  const shellEntries = appFiles.filter((f) =>
-    SHELL_FILES.has(f.slice(f.lastIndexOf("/") + 1)),
-  );
-  shellEntries.push(toPosix(join(APP, "providers.tsx")));
+  const appFiles = [...graph.keys()].filter((f) => f.startsWith(`${toPosix(APP)}/`));
+  const pages = appFiles.filter((f) => f.endsWith('/page.tsx')).sort();
+  const shellEntries = appFiles.filter((f) => SHELL_FILES.has(f.slice(f.lastIndexOf('/') + 1)));
+  shellEntries.push(toPosix(join(APP, 'providers.tsx')));
 
   const shell = collect(graph, closure(graph, shellEntries), clientSet);
 

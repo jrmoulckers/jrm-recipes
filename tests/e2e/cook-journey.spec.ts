@@ -1,6 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from '@playwright/test';
 
-import { gotoSeededRecipe } from "./recipe-paths";
+import { gotoSeededRecipe } from './recipe-paths';
 
 /**
  * Cook Mode step-through journey (issue #240). Cook Mode is a client component,
@@ -12,7 +12,7 @@ import { gotoSeededRecipe } from "./recipe-paths";
  * database the immersive route 404s (no step heading), so the spec skips rather
  * than fail. Mirrors tests/e2e/offline.spec.ts.
  */
-const STEP_TITLE = "#current-step-title";
+const STEP_TITLE = '#current-step-title';
 
 async function openCookMode(page: Page): Promise<boolean> {
   // Cook Mode hangs off the canonical namespaced path, so resolve that from the
@@ -22,10 +22,10 @@ async function openCookMode(page: Page): Promise<boolean> {
   await page.goto(`${recipePath}/cook`);
   // A seeded recipe lists ingredients, so Cook Mode opens on the mise en place
   // pre-cook screen (#402), step through it to reach step 1.
-  const startCooking = page.getByTestId("cook-mode-start");
+  const startCooking = page.getByTestId('cook-mode-start');
   const title = page.locator(STEP_TITLE);
   try {
-    await startCooking.or(title).first().waitFor({ state: "visible" });
+    await startCooking.or(title).first().waitFor({ state: 'visible' });
   } catch {
     return false;
   }
@@ -36,26 +36,24 @@ async function openCookMode(page: Page): Promise<boolean> {
   return true;
 }
 
-test("steps forward and back through Cook Mode", async ({ page }) => {
+test('steps forward and back through Cook Mode', async ({ page }) => {
   const ready = await openCookMode(page);
-  test.skip(!ready, "No seeded database: Cook Mode route has no content.");
+  test.skip(!ready, 'No seeded database: Cook Mode route has no content.');
 
   const title = page.locator(STEP_TITLE);
-  const firstStep = (await title.textContent())?.trim() ?? "";
+  const firstStep = (await title.textContent())?.trim() ?? '';
   expect(firstStep.length).toBeGreaterThan(0);
 
   // "Previous" is unavailable on the first step.
-  const previous = page.getByRole("button", { name: /^previous$/i });
+  const previous = page.getByRole('button', { name: /^previous$/i });
   await expect(previous).toBeDisabled();
 
   // Advance one step, and the visible step heading must change.
   await page
-    .getByRole("button", { name: /^next$/i })
+    .getByRole('button', { name: /^next$/i })
     .first()
     .click();
-  await expect
-    .poll(async () => (await title.textContent())?.trim())
-    .not.toBe(firstStep);
+  await expect.poll(async () => (await title.textContent())?.trim()).not.toBe(firstStep);
 
   // "Previous" is now enabled and returns to the opening step.
   await expect(previous).toBeEnabled();
@@ -63,18 +61,16 @@ test("steps forward and back through Cook Mode", async ({ page }) => {
   await expect(title).toHaveText(firstStep);
 });
 
-test("keyboard shortcuts drive Cook Mode navigation", async ({ page }) => {
+test('keyboard shortcuts drive Cook Mode navigation', async ({ page }) => {
   const ready = await openCookMode(page);
-  test.skip(!ready, "No seeded database: Cook Mode route has no content.");
+  test.skip(!ready, 'No seeded database: Cook Mode route has no content.');
 
   const title = page.locator(STEP_TITLE);
-  const firstStep = (await title.textContent())?.trim() ?? "";
+  const firstStep = (await title.textContent())?.trim() ?? '';
 
-  await page.keyboard.press("ArrowRight");
-  await expect
-    .poll(async () => (await title.textContent())?.trim())
-    .not.toBe(firstStep);
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => (await title.textContent())?.trim()).not.toBe(firstStep);
 
-  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press('ArrowLeft');
   await expect(title).toHaveText(firstStep);
 });

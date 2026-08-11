@@ -1,7 +1,7 @@
-import { getViewerReview, listReviews } from "~/server/engagement/reviews";
-import { getReactionsForTargets } from "~/server/engagement/reactions";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import { ReviewsSection } from "~/components/engagement/reviews-section-lazy";
+import { getViewerReview, listReviews } from '~/server/engagement/reviews';
+import { getReactionsForTargets } from '~/server/engagement/reactions';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
+import { ReviewsSection } from '~/components/engagement/reviews-section-lazy';
 
 /**
  * Reviews tab content (#341): the recipe's written reviews + the viewer's own
@@ -23,12 +23,12 @@ export async function RecipeReviewsSection({
 }) {
   const hiddenAuthorIds = await getHiddenAuthorIds(currentUserId);
   const [reviews, viewerReview] = await Promise.all([
-    listReviews(recipeId, "recent", hiddenAuthorIds),
+    listReviews(recipeId, 'recent', hiddenAuthorIds),
     getViewerReview(recipeId, currentUserId),
   ]);
 
   const reactionMap = await getReactionsForTargets(
-    "review",
+    'review',
     reviews.map((review) => review.id),
     currentUserId,
     hiddenAuthorIds,

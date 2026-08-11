@@ -12,7 +12,7 @@
  */
 
 /** postMessage discriminator for a Cook-bundle warm request. */
-export const WARM_COOK_BUNDLE_MESSAGE_TYPE = "heirloom:warm-cook-bundle";
+export const WARM_COOK_BUNDLE_MESSAGE_TYPE = 'heirloom:warm-cook-bundle';
 
 export interface WarmCookBundleMessage {
   type: typeof WARM_COOK_BUNDLE_MESSAGE_TYPE;
@@ -51,14 +51,10 @@ const LARGEST_DEVICE_SIZE = 1920;
  */
 export function cookImageWidths(viewportWidth: number, dpr: number): number[] {
   const safeDpr = Math.min(Math.max(Number.isFinite(dpr) ? dpr : 1, 1), 3);
-  const safeWidth = Math.max(
-    Number.isFinite(viewportWidth) ? viewportWidth : 0,
-    1,
-  );
+  const safeWidth = Math.max(Number.isFinite(viewportWidth) ? viewportWidth : 0, 1);
   const target = Math.ceil(safeWidth * safeDpr);
 
-  const chosen =
-    DEVICE_SIZES.find((width) => width >= target) ?? LARGEST_DEVICE_SIZE;
+  const chosen = DEVICE_SIZES.find((width) => width >= target) ?? LARGEST_DEVICE_SIZE;
   const nextUp = DEVICE_SIZES[DEVICE_SIZES.indexOf(chosen) + 1] ?? chosen;
 
   return [...new Set<number>([chosen, nextUp])];
@@ -100,10 +96,8 @@ export function buildWarmCookBundleMessage(input: {
 }
 
 /** Narrow an arbitrary `postMessage` payload to a Cook-bundle warm request. */
-export function isWarmCookBundleMessage(
-  data: unknown,
-): data is WarmCookBundleMessage {
-  if (typeof data !== "object" || data === null) return false;
+export function isWarmCookBundleMessage(data: unknown): data is WarmCookBundleMessage {
+  if (typeof data !== 'object' || data === null) return false;
   const message = data as Record<string, unknown>;
   return (
     message.type === WARM_COOK_BUNDLE_MESSAGE_TYPE &&

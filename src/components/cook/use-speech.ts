@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * Hands-free "read aloud" for Cook Mode (issue #436). A thin wrapper over the
@@ -25,9 +25,9 @@ export type SpeechController = {
 
 function hasSpeech(): boolean {
   return (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
-    typeof window.SpeechSynthesisUtterance === "function"
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    typeof window.SpeechSynthesisUtterance === 'function'
   );
 }
 

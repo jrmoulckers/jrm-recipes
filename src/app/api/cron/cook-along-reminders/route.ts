@@ -1,11 +1,11 @@
-import { isCronAuthorized, isCronConfigured } from "~/server/cron/auth";
-import { sendDueCookAlongReminders } from "~/server/cookalong/mutations";
-import { isDbConfigured } from "~/server/db";
+import { isCronAuthorized, isCronConfigured } from '~/server/cron/auth';
+import { sendDueCookAlongReminders } from '~/server/cookalong/mutations';
+import { isDbConfigured } from '~/server/db';
 
 // Writes notifications + stamps reminderSentAt, so keep it on the Node runtime
 // and never cache. It's a scheduled side-effecting trigger.
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // Fire reminders for events starting within the next ~25 hours. Vercel Cron on
 // the Hobby plan runs at most once per day, so this job runs daily (see
@@ -27,12 +27,12 @@ const WINDOW_MS = 25 * 60 * 60 * 1000;
 async function handle(request: Request): Promise<Response> {
   if (!isCronConfigured()) {
     return Response.json(
-      { error: "Cook-along reminder endpoint is not configured." },
+      { error: 'Cook-along reminder endpoint is not configured.' },
       { status: 503 },
     );
   }
   if (!isCronAuthorized(request)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: 'Unauthorized.' }, { status: 401 });
   }
   if (!isDbConfigured()) {
     return Response.json({ ok: true, reminded: 0 });

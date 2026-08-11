@@ -1,20 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { type ImageProps } from "next/image";
+import { useState } from 'react';
+import { type ImageProps } from 'next/image';
 
-import {
-  recipeFallbackImage,
-  type RecipeFallbackContext,
-} from "~/lib/recipe-image-fallback";
-import { cn } from "~/lib/utils";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { recipeFallbackImage, type RecipeFallbackContext } from '~/lib/recipe-image-fallback';
+import { cn } from '~/lib/utils';
+import { CloudinaryImage } from '~/components/ui/cloudinary-image';
 
-type RecipeImageProps = Omit<ImageProps, "src"> & {
+type RecipeImageProps = Omit<ImageProps, 'src'> & {
   src?: string | null;
   fallbackKey: string;
   fallbackContext?: RecipeFallbackContext;
-  fallbackMode?: "editorial" | "hide";
+  fallbackMode?: 'editorial' | 'hide';
 };
 
 /**
@@ -25,20 +22,18 @@ export function RecipeImage({
   src,
   fallbackKey,
   fallbackContext,
-  fallbackMode = "editorial",
+  fallbackMode = 'editorial',
   className,
   onError,
   unoptimized,
   ...props
 }: RecipeImageProps) {
-  const candidateSrc = src?.trim() ?? "";
-  const normalizedSrc = isRenderableImageSrc(candidateSrc)
-    ? candidateSrc
-    : null;
+  const candidateSrc = src?.trim() ?? '';
+  const normalizedSrc = isRenderableImageSrc(candidateSrc) ? candidateSrc : null;
   const fallbackSrc = recipeFallbackImage(fallbackKey, fallbackContext);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const unavailable = !normalizedSrc || normalizedSrc === failedSrc;
-  if (unavailable && fallbackMode === "hide") return null;
+  if (unavailable && fallbackMode === 'hide') return null;
 
   const resolvedSrc = unavailable ? fallbackSrc : normalizedSrc;
   const isFallback = unavailable;
@@ -47,9 +42,9 @@ export function RecipeImage({
     <CloudinaryImage
       {...props}
       src={resolvedSrc}
-      className={cn(className, isFallback && "scale-[1.02]")}
+      className={cn(className, isFallback && 'scale-[1.02]')}
       {...(isFallback || unoptimized ? { unoptimized: true } : {})}
-      data-fallback={isFallback ? "" : undefined}
+      data-fallback={isFallback ? '' : undefined}
       onError={(event) => {
         onError?.(event);
         if (!isFallback && normalizedSrc) setFailedSrc(normalizedSrc);
@@ -59,10 +54,10 @@ export function RecipeImage({
 }
 
 function isRenderableImageSrc(src: string): boolean {
-  if (src.startsWith("/")) return true;
+  if (src.startsWith('/')) return true;
   try {
     const url = new URL(src);
-    return url.protocol === "https:" || url.protocol === "http:";
+    return url.protocol === 'https:' || url.protocol === 'http:';
   } catch {
     return false;
   }

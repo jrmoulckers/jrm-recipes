@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import { env } from "~/env";
+import { env } from '~/env';
 
 /**
  * Shared bearer-secret guard for the scheduled cron endpoints (#354/#353).
@@ -26,6 +26,6 @@ export function isCronConfigured(): boolean {
 export function isCronAuthorized(request: Request): boolean {
   const secret = env.CRON_SECRET;
   if (!secret) return false;
-  const header = request.headers.get("authorization");
+  const header = request.headers.get('authorization');
   return header === `Bearer ${secret}`;
 }

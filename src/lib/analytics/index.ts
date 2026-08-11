@@ -10,22 +10,19 @@
  * Server actions must use `./server` instead (this module targets the browser
  * where the backend holds the current distinct id).
  */
-import { getClientBackend } from "./backend";
-import { isCaptureAllowed } from "./consent";
-import { type AnalyticsEventName, type EventProperties } from "./events";
-import { scrubProperties } from "./scrub";
+import { getClientBackend } from './backend';
+import { isCaptureAllowed } from './consent';
+import { type AnalyticsEventName, type EventProperties } from './events';
+import { scrubProperties } from './scrub';
 
-export { type AnalyticsEvent, type AnalyticsEventName } from "./events";
+export { type AnalyticsEvent, type AnalyticsEventName } from './events';
 
 /**
  * Emit a taxonomy-valid event. The `name` constrains the allowed `properties`
  * shape, so `track("recipe_created", { … })` fails to compile if a property is
  * missing, misspelled, or the wrong type.
  */
-export function track<K extends AnalyticsEventName>(
-  name: K,
-  properties: EventProperties[K],
-): void {
+export function track<K extends AnalyticsEventName>(name: K, properties: EventProperties[K]): void {
   if (!isCaptureAllowed()) return;
   try {
     getClientBackend().capture(name, scrubProperties(properties));
@@ -35,10 +32,7 @@ export function track<K extends AnalyticsEventName>(
 }
 
 /** Associate the current browser with a stable distinct id (see #321). */
-export function identify(
-  distinctId: string,
-  properties?: Record<string, unknown>,
-): void {
+export function identify(distinctId: string, properties?: Record<string, unknown>): void {
   if (!isCaptureAllowed()) return;
   try {
     getClientBackend().identify(distinctId, scrubProperties(properties));

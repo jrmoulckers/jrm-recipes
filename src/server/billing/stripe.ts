@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import Stripe from "stripe";
+import Stripe from 'stripe';
 
-import { env } from "~/env";
+import { env } from '~/env';
 
 /**
  * The one place the rest of Heirloom touches the Stripe SDK (issue #299).
@@ -44,16 +44,16 @@ export function isWebhookConfigured(): boolean {
 export function getStripe(): Stripe {
   if (!env.STRIPE_SECRET_KEY) {
     throw new Error(
-      "Stripe is not configured. Set STRIPE_SECRET_KEY (see .env.example) to " +
-        "enable billing. Guard billing code with isBillingConfigured() so it " +
-        "no-ops when keys are absent.",
+      'Stripe is not configured. Set STRIPE_SECRET_KEY (see .env.example) to ' +
+        'enable billing. Guard billing code with isBillingConfigured() so it ' +
+        'no-ops when keys are absent.',
     );
   }
   cached ??= new Stripe(env.STRIPE_SECRET_KEY, {
     typescript: true,
     appInfo: {
-      name: "Heirloom",
-      url: "https://github.com/jrmoulckers/jrm-recipes",
+      name: 'Heirloom',
+      url: 'https://github.com/jrmoulckers/jrm-recipes',
     },
   });
   return cached;

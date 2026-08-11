@@ -1,12 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { slugify } from "~/lib/utils";
-import {
-  DIETARY_TAGS,
-  isDietaryTag,
-  type DietaryTag,
-} from "~/lib/substitutions";
-import type { SearchParams } from "~/lib/route-params";
+import { slugify } from '~/lib/utils';
+import { DIETARY_TAGS, isDietaryTag, type DietaryTag } from '~/lib/substitutions';
+import type { SearchParams } from '~/lib/route-params';
 
 /**
  * Pure search/filter/sort contract for the recipes browse page.
@@ -20,12 +16,12 @@ import type { SearchParams } from "~/lib/route-params";
  */
 
 export const recipeSortValues = [
-  "relevance",
-  "newest",
-  "quickest",
-  "az",
-  "top-rated",
-  "popular",
+  'relevance',
+  'newest',
+  'quickest',
+  'az',
+  'top-rated',
+  'popular',
 ] as const;
 export type RecipeSort = (typeof recipeSortValues)[number];
 
@@ -33,15 +29,15 @@ export type RecipeSort = (typeof recipeSortValues)[number];
  * The default sort for a *pure* browse/filter view (no text query). Text
  * queries default to `relevance` instead. See {@link defaultSortFor}.
  */
-export const DEFAULT_RECIPE_SORT: RecipeSort = "newest";
+export const DEFAULT_RECIPE_SORT: RecipeSort = 'newest';
 
 export const recipeSortLabels: Record<RecipeSort, string> = {
-  relevance: "Best match",
-  newest: "Newest",
-  quickest: "Quickest",
-  az: "A–Z",
-  "top-rated": "Top rated",
-  popular: "Popular",
+  relevance: 'Best match',
+  newest: 'Newest',
+  quickest: 'Quickest',
+  az: 'A–Z',
+  'top-rated': 'Top rated',
+  popular: 'Popular',
 };
 
 /**
@@ -51,10 +47,10 @@ export const recipeSortLabels: Record<RecipeSort, string> = {
  * the implicit default for a bare browse view.
  */
 export function defaultSortFor(q: string | undefined | null): RecipeSort {
-  return q != null && q.length > 0 ? "relevance" : DEFAULT_RECIPE_SORT;
+  return q != null && q.length > 0 ? 'relevance' : DEFAULT_RECIPE_SORT;
 }
 
-export const recipeDifficultyValues = ["easy", "medium", "hard"] as const;
+export const recipeDifficultyValues = ['easy', 'medium', 'hard'] as const;
 export type RecipeDifficultyFilter = (typeof recipeDifficultyValues)[number];
 
 /**
@@ -76,15 +72,12 @@ export const MAX_FACET_VALUES = 12;
  * de-duped (case-insensitive), length-capped list. Order of first appearance is
  * preserved so the URL round-trips predictably.
  */
-export function parseFacetList(
-  value: string | string[] | undefined,
-  itemMax: number,
-): string[] {
+export function parseFacetList(value: string | string[] | undefined, itemMax: number): string[] {
   const raw = Array.isArray(value) ? value : value == null ? [] : [value];
   const seen = new Set<string>();
   const out: string[] = [];
   for (const chunk of raw) {
-    for (const part of chunk.split(",")) {
+    for (const part of chunk.split(',')) {
       const item = part.trim();
       if (item.length === 0 || item.length > itemMax) continue;
       const key = item.toLowerCase();
@@ -104,9 +97,7 @@ export function parseFacetList(
  * comma/repeat/case handling, then narrows to known tags (lower-cased) so a
  * hand-edited or stale value can never inject a non-tag into the SQL filter.
  */
-export function parseDietList(
-  value: string | string[] | undefined,
-): DietaryTag[] {
+export function parseDietList(value: string | string[] | undefined): DietaryTag[] {
   const selected = new Set(
     parseFacetList(value, 20)
       .map((v) => v.toLowerCase())
@@ -134,7 +125,7 @@ const booleanFromParam = z
   .optional()
   .transform((v) => {
     if (v == null) return false;
-    return ["1", "true", "yes", "on"].includes(v.toLowerCase());
+    return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
   });
 
 /**
@@ -245,31 +236,25 @@ export function isDefaultRecipeView(search: RecipeSearch): boolean {
  * Build a clean `URLSearchParams` from a (partial) search. Omitting empty
  * values and the default sort so shared URLs stay tidy.
  */
-export function recipeSearchToParams(
-  search: Partial<RecipeSearch>,
-): URLSearchParams {
+export function recipeSearchToParams(search: Partial<RecipeSearch>): URLSearchParams {
   const params = new URLSearchParams();
-  if (search.q) params.set("q", search.q);
-  for (const meal of search.meals ?? []) params.append("meal", meal);
-  for (const cuisine of search.cuisines ?? [])
-    params.append("cuisine", cuisine);
-  if (search.difficulty) params.set("difficulty", search.difficulty);
-  if (search.maxTime != null) params.set("maxTime", String(search.maxTime));
-  for (const tag of search.tags ?? []) params.append("tag", tag);
-  for (const diet of search.diets ?? []) params.append("diet", diet);
-  if (search.safeFor) params.set("safeFor", search.safeFor);
-  if (search.group) params.set("group", search.group);
-  if (search.ingredient) params.set("ingredient", search.ingredient);
-  if (search.mine) params.set("mine", "1");
-  if (search.sort && search.sort !== defaultSortFor(search.q))
-    params.set("sort", search.sort);
+  if (search.q) params.set('q', search.q);
+  for (const meal of search.meals ?? []) params.append('meal', meal);
+  for (const cuisine of search.cuisines ?? []) params.append('cuisine', cuisine);
+  if (search.difficulty) params.set('difficulty', search.difficulty);
+  if (search.maxTime != null) params.set('maxTime', String(search.maxTime));
+  for (const tag of search.tags ?? []) params.append('tag', tag);
+  for (const diet of search.diets ?? []) params.append('diet', diet);
+  if (search.safeFor) params.set('safeFor', search.safeFor);
+  if (search.group) params.set('group', search.group);
+  if (search.ingredient) params.set('ingredient', search.ingredient);
+  if (search.mine) params.set('mine', '1');
+  if (search.sort && search.sort !== defaultSortFor(search.q)) params.set('sort', search.sort);
   return params;
 }
 
 /** Serialize a search to a query string (`""` when nothing is set). */
-export function recipeSearchToQueryString(
-  search: Partial<RecipeSearch>,
-): string {
+export function recipeSearchToQueryString(search: Partial<RecipeSearch>): string {
   return recipeSearchToParams(search).toString();
 }
 
@@ -292,7 +277,7 @@ export function parseHaveParam(value: string | string[] | undefined): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const chunk of raw) {
-    for (const part of chunk.split(",")) {
+    for (const part of chunk.split(',')) {
       const item = part.trim();
       if (item.length === 0 || item.length > 60) continue;
       const key = item.toLowerCase();

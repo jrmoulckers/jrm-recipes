@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 /**
  * Notification surface (issue #647).
@@ -18,17 +18,21 @@ import { describe, expect, it } from "vitest";
  *    shared surface.
  */
 const root = process.cwd();
+// Quote style is a formatting concern. Normalize it alongside whitespace so a
+// Prettier config change cannot turn these assertions into ones that match
+// nothing and pass.
 const read = (relative: string) =>
-  readFileSync(join(root, relative), "utf8").replace(/\s+/g, " ");
+  readFileSync(join(root, relative), 'utf8').replace(/'/g, '"').replace(/\s+/g, ' ');
 /** Source with comments removed, so prose about a pitfall never trips a check. */
 const readCode = (relative: string) =>
-  readFileSync(join(root, relative), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/\/\/[^\n]*/g, " ")
-    .replace(/\s+/g, " ");
+  readFileSync(join(root, relative), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/'/g, '"')
+    .replace(/\s+/g, ' ');
 
-const GLOBALS_CSS = read("src/styles/globals.css");
-const SONNER = readCode("src/components/ui/sonner.tsx");
+const GLOBALS_CSS = read('src/styles/globals.css');
+const SONNER = readCode('src/components/ui/sonner.tsx');
 
 /**
  * The Sonner prop that must stay off (#732).
@@ -41,7 +45,7 @@ const SONNER = readCode("src/components/ui/sonner.tsx");
  * fail if the prop is renamed or removed upstream — at which point the ban is
  * meaningless and should be revisited rather than quietly kept.
  */
-const RICH_COLORS = "richColors";
+const RICH_COLORS = 'richColors';
 
 /**
  * The hand-rolled card class the shared surface replaced (#750).
@@ -62,33 +66,33 @@ const RICH_COLORS = "richColors";
  * the alpha was silently green until it was written out here independently.
  * Derivation is safe exactly for the part that has a referent.
  */
-const CARD_COLOR = "card";
+const CARD_COLOR = 'card';
 const HAND_ROLLED_CARD = `bg-${CARD_COLOR}/95`;
 
-describe("toast surface", () => {
-  it("bans a prop Sonner really has, so the ban cannot rot", () => {
+describe('toast surface', () => {
+  it('bans a prop Sonner really has, so the ban cannot rot', () => {
     expect(
-      readFileSync(join(root, "node_modules/sonner/dist/index.d.ts"), "utf8"),
+      readFileSync(join(root, 'node_modules/sonner/dist/index.d.ts'), 'utf8'),
       `Sonner declares no "${RICH_COLORS}" prop, so the check below can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
     ).toContain(`${RICH_COLORS}?:`);
   });
 
-  it("never turns on rich colors. Tone is a tinted icon badge, not a fill", () => {
-    expect(readCode("src/app/providers.tsx")).not.toContain(RICH_COLORS);
+  it('never turns on rich colors. Tone is a tinted icon badge, not a fill', () => {
+    expect(readCode('src/app/providers.tsx')).not.toContain(RICH_COLORS);
     expect(SONNER).not.toContain(RICH_COLORS);
   });
 
-  it("owns placement and dismissal centrally so call sites cannot drift", () => {
+  it('owns placement and dismissal centrally so call sites cannot drift', () => {
     expect(SONNER).toContain('position="top-center"');
-    expect(SONNER).toContain("closeButton");
+    expect(SONNER).toContain('closeButton');
   });
 
-  it("tints the leading icon badge per toast type", () => {
+  it('tints the leading icon badge per toast type', () => {
     for (const [type, token] of [
-      ["success", "--success"],
-      ["error", "--destructive"],
-      ["warning", "--warning"],
-      ["info", "--info"],
+      ['success', '--success'],
+      ['error', '--destructive'],
+      ['warning', '--warning'],
+      ['info', '--info'],
     ]) {
       const rule = new RegExp(
         `\\[data-type="${type}"\\][^{]*\\[data-icon\\] \\{[^}]*hsl\\(var\\(${token}`,
@@ -97,51 +101,47 @@ describe("toast surface", () => {
     }
   });
 
-  it("keeps the dismiss button inside the card at the standard 24px size", () => {
-    const closeButtonRule = /\[data-close-button\] \{([^}]*)\}/.exec(
-      GLOBALS_CSS,
-    )?.[1];
+  it('keeps the dismiss button inside the card at the standard 24px size', () => {
+    const closeButtonRule = /\[data-close-button\] \{([^}]*)\}/.exec(GLOBALS_CSS)?.[1];
     expect(closeButtonRule).toBeDefined();
     // Parked on the trailing edge, not Sonner's leading-corner overhang.
-    expect(closeButtonRule).toContain("inset-inline-end: 0.5rem");
-    expect(closeButtonRule).toContain("transform: none");
+    expect(closeButtonRule).toContain('inset-inline-end: 0.5rem');
+    expect(closeButtonRule).toContain('transform: none');
     // Pinned against the global 44px tap-target floor for <button>.
-    expect(closeButtonRule).toContain("min-width: 1.5rem");
-    expect(closeButtonRule).toContain("min-height: 1.5rem");
+    expect(closeButtonRule).toContain('min-width: 1.5rem');
+    expect(closeButtonRule).toContain('min-height: 1.5rem');
   });
 
-  it("draws the card from theme tokens, never hard-coded color", () => {
-    const toastRule = /\[data-sonner-toast\]\[data-styled\] \{([^}]*)\}/.exec(
-      GLOBALS_CSS,
-    )?.[1];
-    expect(toastRule).toContain("hsl(var(--popover)");
-    expect(toastRule).toContain("var(--shadow-lg)");
+  it('draws the card from theme tokens, never hard-coded color', () => {
+    const toastRule = /\[data-sonner-toast\]\[data-styled\] \{([^}]*)\}/.exec(GLOBALS_CSS)?.[1];
+    expect(toastRule).toContain('hsl(var(--popover)');
+    expect(toastRule).toContain('var(--shadow-lg)');
   });
 });
 
-describe("notification banners", () => {
-  it("still matches the hand-rolled card class, so the ban can fire (#750)", () => {
+describe('notification banners', () => {
+  it('still matches the hand-rolled card class, so the ban can fire (#750)', () => {
     // The sample is built from the `card` colour that makes the class
     // writable, so it cannot go stale if that colour is renamed (#756).
     expect(
-      readFileSync(join(root, "tailwind.config.ts"), "utf8"),
+      readFileSync(join(root, 'tailwind.config.ts'), 'utf8'),
       `tailwind.config.ts defines no "${CARD_COLOR}" colour, so the ban below can never fire. If it was renamed, this ban needs revisiting, not just retyping.`,
     ).toMatch(new RegExp(`\\b${CARD_COLOR}:\\s*\\{`));
-    expect(
-      `<div className="rounded-lg border bg-${CARD_COLOR}/95 p-4 shadow-lg">`,
-    ).toContain(HAND_ROLLED_CARD);
+    expect(`<div className="rounded-lg border bg-${CARD_COLOR}/95 p-4 shadow-lg">`).toContain(
+      HAND_ROLLED_CARD,
+    );
   });
 
-  it.each([
-    "src/components/pwa/install-prompt.tsx",
-    "src/components/pwa/update-prompt.tsx",
-  ])("%s uses the shared surface instead of its own card", (file) => {
-    const source = readCode(file);
-    expect(source).toContain("notificationSurface()");
-    expect(source).toContain("notificationIcon(");
-    expect(source).toContain("notificationTitle");
-    expect(source).toContain("notificationDescription");
-    // The hand-rolled card these replaced.
-    expect(source).not.toContain(HAND_ROLLED_CARD);
-  });
+  it.each(['src/components/pwa/install-prompt.tsx', 'src/components/pwa/update-prompt.tsx'])(
+    '%s uses the shared surface instead of its own card',
+    (file) => {
+      const source = readCode(file);
+      expect(source).toContain('notificationSurface()');
+      expect(source).toContain('notificationIcon(');
+      expect(source).toContain('notificationTitle');
+      expect(source).toContain('notificationDescription');
+      // The hand-rolled card these replaced.
+      expect(source).not.toContain(HAND_ROLLED_CARD);
+    },
+  );
 });

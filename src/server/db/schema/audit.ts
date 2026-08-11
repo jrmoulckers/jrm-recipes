@@ -1,8 +1,8 @@
-import { relations } from "drizzle-orm";
-import { index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { index, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk } from "./_shared";
-import { users } from "./users";
+import { fk, pk } from './_shared';
+import { users } from './users';
 
 /**
  * Append-only security audit log (issue #219).
@@ -21,12 +21,12 @@ import { users } from "./users";
  * later removed. `metadata` carries a compact before/after change summary.
  */
 export const auditLog = pgTable(
-  "audit_log",
+  'audit_log',
   {
     id: pk(),
     // The user who performed the action. Nullable + set-null so audit rows
     // outlive the actor (and system/anonymous actions can be recorded).
-    actorId: fk().references(() => users.id, { onDelete: "set null" }),
+    actorId: fk().references(() => users.id, { onDelete: 'set null' }),
     // Machine action key, e.g. "group.member_role_updated", "recipe.deleted".
     action: varchar({ length: 80 }).notNull(),
     // The kind of entity affected ("group", "recipe", "user") and its id. The id
@@ -43,8 +43,8 @@ export const auditLog = pgTable(
   (t) => [
     // "What did this actor do, most-recent-first" and "what happened to this
     // target" are the two investigation reads the log is built to serve.
-    index("audit_log_actor_idx").on(t.actorId, t.createdAt),
-    index("audit_log_target_idx").on(t.targetType, t.targetId),
+    index('audit_log_actor_idx').on(t.actorId, t.createdAt),
+    index('audit_log_target_idx').on(t.targetType, t.targetId),
   ],
 );
 

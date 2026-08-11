@@ -49,16 +49,16 @@
  *    exactly one schema literal in this file and one scan, so a rot in either
  *    takes the control down with it.
  */
-import { pathToFileURL } from "node:url";
+import { pathToFileURL } from 'node:url';
 
-import postgres from "postgres";
+import postgres from 'postgres';
 
 /**
  * The only schema literal in this file. Both scans bind it, so a typo here
  * empties both and the internal-trigger control below fails rather than
  * reporting a clean database.
  */
-const SCHEMA = "public";
+const SCHEMA = 'public';
 
 /**
  * Triggers this repository deliberately installs, as `table.trigger_name`.
@@ -159,9 +159,9 @@ async function main(): Promise<void> {
 
   if (!url) {
     console.error(
-      "check-db-triggers: no DATABASE_URL set. This check inspects a real " +
-        "database, so skipping it would pass for the wrong reason. Run it " +
-        "after the migration chain has been applied.",
+      'check-db-triggers: no DATABASE_URL set. This check inspects a real ' +
+        'database, so skipping it would pass for the wrong reason. Run it ' +
+        'after the migration chain has been applied.',
     );
     process.exit(1);
   }
@@ -191,32 +191,32 @@ async function main(): Promise<void> {
 
     if (vacuous) {
       console.error(
-        "check-db-triggers: the scan found no internal triggers at all. " +
-          "Enforcing a foreign key installs them, so either the migration " +
-          "chain has not been applied to this database or this scan is not " +
-          "looking where it thinks it is. Either way its verdict on " +
-          "non-internal triggers proves nothing, so this fails rather than " +
-          "passing empty.",
+        'check-db-triggers: the scan found no internal triggers at all. ' +
+          'Enforcing a foreign key installs them, so either the migration ' +
+          'chain has not been applied to this database or this scan is not ' +
+          'looking where it thinks it is. Either way its verdict on ' +
+          'non-internal triggers proves nothing, so this fails rather than ' +
+          'passing empty.',
       );
       process.exit(1);
     }
 
     if (problems.length > 0) {
       console.error(
-        "check-db-triggers: the deployed database does not match the " +
-          "allowlist in scripts/check-db-triggers.ts.\n",
+        'check-db-triggers: the deployed database does not match the ' +
+          'allowlist in scripts/check-db-triggers.ts.\n',
       );
       for (const problem of problems) console.error(`  - ${problem}`);
       console.error(
-        "\nA trigger or rule decides what a write does without being a " +
-          "foreign key and without changing any call site, so db:check-fks, " +
-          "both migration passes, drizzle drift and the schema unit tests all " +
-          "stay green while it is installed (measured on #761). If one of " +
-          "these is intended, add it to the allowlist in the same PR that " +
-          "adds the migration and say what reads the state it touches -- in " +
-          "particular recipe_versions.author_id must stay ON DELETE set null " +
-          "AND its rows must survive the delete, because that row is the diff " +
-          "basis account erasure reads (src/server/users/erasure.ts).",
+        '\nA trigger or rule decides what a write does without being a ' +
+          'foreign key and without changing any call site, so db:check-fks, ' +
+          'both migration passes, drizzle drift and the schema unit tests all ' +
+          'stay green while it is installed (measured on #761). If one of ' +
+          'these is intended, add it to the allowlist in the same PR that ' +
+          'adds the migration and say what reads the state it touches -- in ' +
+          'particular recipe_versions.author_id must stay ON DELETE set null ' +
+          'AND its rows must survive the delete, because that row is the diff ' +
+          'basis account erasure reads (src/server/users/erasure.ts).',
       );
       process.exit(1);
     }
@@ -236,9 +236,6 @@ async function main(): Promise<void> {
  * not open a connection or call `process.exit`. Same guard, same reason, as
  * scripts/check-bundle-budget.mjs.
  */
-if (
-  process.argv[1] &&
-  pathToFileURL(process.argv[1]).href === import.meta.url
-) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   await main();
 }

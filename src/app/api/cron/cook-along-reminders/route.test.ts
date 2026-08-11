@@ -1,27 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { state, isCronConfigured, isCronAuthorized, isDbConfigured, sendDue } =
-  vi.hoisted(() => {
-    const state = { configured: true, authorized: true, db: true, reminded: 0 };
-    return {
-      state,
-      isCronConfigured: vi.fn(() => state.configured),
-      isCronAuthorized: vi.fn(() => state.authorized),
-      isDbConfigured: vi.fn(() => state.db),
-      sendDue: vi.fn(async () => state.reminded),
-    };
-  });
+const { state, isCronConfigured, isCronAuthorized, isDbConfigured, sendDue } = vi.hoisted(() => {
+  const state = { configured: true, authorized: true, db: true, reminded: 0 };
+  return {
+    state,
+    isCronConfigured: vi.fn(() => state.configured),
+    isCronAuthorized: vi.fn(() => state.authorized),
+    isDbConfigured: vi.fn(() => state.db),
+    sendDue: vi.fn(async () => state.reminded),
+  };
+});
 
-vi.mock("~/server/cron/auth", () => ({ isCronConfigured, isCronAuthorized }));
-vi.mock("~/server/db", () => ({ isDbConfigured }));
-vi.mock("~/server/cookalong/mutations", () => ({
+vi.mock('~/server/cron/auth', () => ({ isCronConfigured, isCronAuthorized }));
+vi.mock('~/server/db', () => ({ isDbConfigured }));
+vi.mock('~/server/cookalong/mutations', () => ({
   sendDueCookAlongReminders: sendDue,
 }));
 
-import { GET } from "./route";
+import { GET } from './route';
 
 function get(): Request {
-  return new Request("http://localhost/api/cron/cook-along-reminders");
+  return new Request('http://localhost/api/cron/cook-along-reminders');
 }
 
 beforeEach(() => {
@@ -32,22 +31,22 @@ beforeEach(() => {
   state.reminded = 0;
 });
 
-describe("GET /api/cron/cook-along-reminders", () => {
-  it("returns 503 when CRON_SECRET is unconfigured", async () => {
+describe('GET /api/cron/cook-along-reminders', () => {
+  it('returns 503 when CRON_SECRET is unconfigured', async () => {
     state.configured = false;
     const res = await GET(get());
     expect(res.status).toBe(503);
     expect(sendDue).not.toHaveBeenCalled();
   });
 
-  it("returns 401 on a bad/absent bearer", async () => {
+  it('returns 401 on a bad/absent bearer', async () => {
     state.authorized = false;
     const res = await GET(get());
     expect(res.status).toBe(401);
     expect(sendDue).not.toHaveBeenCalled();
   });
 
-  it("no-ops when the database is unconfigured", async () => {
+  it('no-ops when the database is unconfigured', async () => {
     state.db = false;
     const res = await GET(get());
     expect(res.status).toBe(200);
@@ -55,7 +54,7 @@ describe("GET /api/cron/cook-along-reminders", () => {
     expect(sendDue).not.toHaveBeenCalled();
   });
 
-  it("delegates to sendDueCookAlongReminders and reports the count", async () => {
+  it('delegates to sendDueCookAlongReminders and reports the count', async () => {
     state.reminded = 3;
     const res = await GET(get());
     expect(res.status).toBe(200);

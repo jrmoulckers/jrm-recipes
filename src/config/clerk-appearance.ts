@@ -1,9 +1,7 @@
-import type { ComponentProps } from "react";
-import type { ClerkProvider } from "@clerk/nextjs";
+import type { ComponentProps } from 'react';
+import type { ClerkProvider } from '@clerk/nextjs';
 
-type Appearance = NonNullable<
-  ComponentProps<typeof ClerkProvider>["appearance"]
->;
+type Appearance = NonNullable<ComponentProps<typeof ClerkProvider>['appearance']>;
 
 /**
  * Clerk appearance, mapped onto Heirloom's semantic design tokens.
@@ -22,34 +20,34 @@ type Appearance = NonNullable<
  */
 export const clerkAppearance: Appearance = {
   variables: {
-    colorPrimary: "hsl(var(--primary))",
-    colorPrimaryForeground: "hsl(var(--primary-foreground))",
-    colorForeground: "hsl(var(--foreground))",
-    colorMutedForeground: "hsl(var(--muted-foreground))",
-    colorMuted: "hsl(var(--muted))",
-    colorBackground: "hsl(var(--card))",
-    colorInput: "hsl(var(--background))",
-    colorInputForeground: "hsl(var(--foreground))",
-    colorNeutral: "hsl(var(--foreground))",
-    colorBorder: "hsl(var(--border))",
-    colorRing: "hsl(var(--ring))",
-    colorShadow: "hsl(var(--foreground))",
-    colorDanger: "hsl(var(--destructive))",
-    colorSuccess: "hsl(var(--success))",
-    colorWarning: "hsl(var(--warning))",
-    colorShimmer: "hsl(var(--muted))",
-    colorModalBackdrop: "hsl(var(--foreground) / 0.45)",
-    borderRadius: "var(--radius)",
-    fontFamily: "var(--font-body)",
-    fontFamilyButtons: "var(--font-body)",
+    colorPrimary: 'hsl(var(--primary))',
+    colorPrimaryForeground: 'hsl(var(--primary-foreground))',
+    colorForeground: 'hsl(var(--foreground))',
+    colorMutedForeground: 'hsl(var(--muted-foreground))',
+    colorMuted: 'hsl(var(--muted))',
+    colorBackground: 'hsl(var(--card))',
+    colorInput: 'hsl(var(--background))',
+    colorInputForeground: 'hsl(var(--foreground))',
+    colorNeutral: 'hsl(var(--foreground))',
+    colorBorder: 'hsl(var(--border))',
+    colorRing: 'hsl(var(--ring))',
+    colorShadow: 'hsl(var(--foreground))',
+    colorDanger: 'hsl(var(--destructive))',
+    colorSuccess: 'hsl(var(--success))',
+    colorWarning: 'hsl(var(--warning))',
+    colorShimmer: 'hsl(var(--muted))',
+    colorModalBackdrop: 'hsl(var(--foreground) / 0.45)',
+    borderRadius: 'var(--radius)',
+    fontFamily: 'var(--font-body)',
+    fontFamilyButtons: 'var(--font-body)',
   },
   elements: {
     // Match the site's primary Button: token shadow + no forced uppercasing.
-    formButtonPrimary: "shadow-token normal-case tracking-normal",
+    formButtonPrimary: 'shadow-token normal-case tracking-normal',
     // Give the card the app's large elevation used by dialogs/popovers.
-    card: "shadow-token-lg",
-    modalContent: "shadow-token-lg",
+    card: 'shadow-token-lg',
+    modalContent: 'shadow-token-lg',
     // Sign-in/up links should read like the app's link buttons.
-    footerActionLink: "text-primary hover:text-primary/90",
+    footerActionLink: 'text-primary hover:text-primary/90',
   },
 };

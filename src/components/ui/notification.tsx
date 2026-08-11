@@ -1,4 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva, type VariantProps } from 'class-variance-authority';
 
 /**
  * The one canonical notification surface for the whole app (issue #647).
@@ -17,7 +17,7 @@ import { cva, type VariantProps } from "class-variance-authority";
  * banners in `components/pwa/*` apply them directly.
  */
 export const notificationSurface = cva(
-  "pointer-events-auto flex w-full items-center gap-3 rounded-2xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-token-lg backdrop-blur",
+  'pointer-events-auto flex w-full items-center gap-3 rounded-2xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-token-lg backdrop-blur',
 );
 
 /**
@@ -27,32 +27,28 @@ export const notificationSurface = cva(
  * `brand` tone stays a tint because it backs the multi-color LogoMark, which
  * would clash with a solid fill.
  */
-export const notificationIcon = cva(
-  "inline-flex shrink-0 items-center justify-center rounded-xl",
-  {
-    variants: {
-      tone: {
-        neutral: "bg-muted text-muted-foreground",
-        brand: "bg-primary/15 text-primary",
-        success: "bg-success text-success-foreground",
-        warning: "bg-warning text-warning-foreground",
-        info: "bg-info text-info-foreground",
-        danger: "bg-destructive text-destructive-foreground",
-      },
-      size: {
-        sm: "size-9",
-        md: "size-11",
-      },
+export const notificationIcon = cva('inline-flex shrink-0 items-center justify-center rounded-xl', {
+  variants: {
+    tone: {
+      neutral: 'bg-muted text-muted-foreground',
+      brand: 'bg-primary/15 text-primary',
+      success: 'bg-success text-success-foreground',
+      warning: 'bg-warning text-warning-foreground',
+      info: 'bg-info text-info-foreground',
+      danger: 'bg-destructive text-destructive-foreground',
     },
-    defaultVariants: { tone: "neutral", size: "sm" },
+    size: {
+      sm: 'size-9',
+      md: 'size-11',
+    },
   },
-);
+  defaultVariants: { tone: 'neutral', size: 'sm' },
+});
 
 export type NotificationIconProps = VariantProps<typeof notificationIcon>;
 
 /** Title line: short, high-contrast, never competing with page headings. */
-export const notificationTitle = "text-sm font-semibold leading-tight";
+export const notificationTitle = 'text-sm font-semibold leading-tight';
 
 /** Supporting line: calm, secondary, optional. */
-export const notificationDescription =
-  "text-xs leading-snug text-muted-foreground";
+export const notificationDescription = 'text-xs leading-snug text-muted-foreground';

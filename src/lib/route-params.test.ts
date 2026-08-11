@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   firstSearchParam,
@@ -7,47 +7,45 @@ import {
   parseRecipeParams,
   parseSlugParams,
   parseTokenParams,
-} from "./route-params";
+} from './route-params';
 
-describe("route-params contract (#208)", () => {
-  describe("firstSearchParam", () => {
-    it("passes a single value through", () => {
-      expect(firstSearchParam("newest")).toBe("newest");
+describe('route-params contract (#208)', () => {
+  describe('firstSearchParam', () => {
+    it('passes a single value through', () => {
+      expect(firstSearchParam('newest')).toBe('newest');
     });
-    it("collapses a repeated value to the first entry", () => {
-      expect(firstSearchParam(["a", "b"])).toBe("a");
+    it('collapses a repeated value to the first entry', () => {
+      expect(firstSearchParam(['a', 'b'])).toBe('a');
     });
-    it("returns undefined for absent or empty repeated values", () => {
+    it('returns undefined for absent or empty repeated values', () => {
       expect(firstSearchParam(undefined)).toBeUndefined();
       expect(firstSearchParam([])).toBeUndefined();
     });
   });
 
-  describe("param parsers", () => {
-    it("awaits and returns the validated cook + recipe segments", async () => {
+  describe('param parsers', () => {
+    it('awaits and returns the validated cook + recipe segments', async () => {
       await expect(
-        parseRecipeParams(
-          Promise.resolve({ cook: "ada", recipe: "apple-pie" }),
-        ),
-      ).resolves.toEqual({ cook: "ada", recipe: "apple-pie" });
+        parseRecipeParams(Promise.resolve({ cook: 'ada', recipe: 'apple-pie' })),
+      ).resolves.toEqual({ cook: 'ada', recipe: 'apple-pie' });
     });
-    it("validates each keyed segment shape", async () => {
-      await expect(
-        parseCollectionParams(Promise.resolve({ id: "col_1" })),
-      ).resolves.toEqual({ id: "col_1" });
-      await expect(
-        parseSlugParams(Promise.resolve({ slug: "smith-family" })),
-      ).resolves.toEqual({ slug: "smith-family" });
-      await expect(
-        parseHandleParams(Promise.resolve({ handle: "chef-jo" })),
-      ).resolves.toEqual({ handle: "chef-jo" });
-      await expect(
-        parseTokenParams(Promise.resolve({ token: "tok_abc" })),
-      ).resolves.toEqual({ token: "tok_abc" });
+    it('validates each keyed segment shape', async () => {
+      await expect(parseCollectionParams(Promise.resolve({ id: 'col_1' }))).resolves.toEqual({
+        id: 'col_1',
+      });
+      await expect(parseSlugParams(Promise.resolve({ slug: 'smith-family' }))).resolves.toEqual({
+        slug: 'smith-family',
+      });
+      await expect(parseHandleParams(Promise.resolve({ handle: 'chef-jo' }))).resolves.toEqual({
+        handle: 'chef-jo',
+      });
+      await expect(parseTokenParams(Promise.resolve({ token: 'tok_abc' }))).resolves.toEqual({
+        token: 'tok_abc',
+      });
     });
-    it("rejects an empty dynamic segment at the boundary", async () => {
+    it('rejects an empty dynamic segment at the boundary', async () => {
       await expect(
-        parseRecipeParams(Promise.resolve({ cook: "ada", recipe: "" })),
+        parseRecipeParams(Promise.resolve({ cook: 'ada', recipe: '' })),
       ).rejects.toThrow();
     });
   });

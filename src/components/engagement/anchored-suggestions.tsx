@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Lightbulb, Check, Sparkles, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Lightbulb, Check, Sparkles, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-import { addCommentAction } from "~/server/engagement/actions";
-import type { AnchoredSuggestion } from "~/server/engagement/queries";
-import { friendlyError } from "~/lib/error-copy";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Textarea } from "~/components/ui/textarea";
+import { addCommentAction } from '~/server/engagement/actions';
+import type { AnchoredSuggestion } from '~/server/engagement/queries';
+import { friendlyError } from '~/lib/error-copy';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { Textarea } from '~/components/ui/textarea';
 
-function authorName(author: AnchoredSuggestion["author"]) {
-  return author?.name ?? author?.handle ?? "A family cook";
+function authorName(author: AnchoredSuggestion['author']) {
+  return author?.name ?? author?.handle ?? 'A family cook';
 }
 
 /**
@@ -27,7 +27,7 @@ function authorName(author: AnchoredSuggestion["author"]) {
 export type AnchoredSuggestionsProps = {
   recipeId: string;
   recipeSlug: string;
-  anchorType: "ingredient" | "step";
+  anchorType: 'ingredient' | 'step';
   anchorId: string;
   anchorLabel: string;
   canInteract: boolean;
@@ -44,9 +44,9 @@ export function AnchoredSuggestions({
   suggestions,
 }: AnchoredSuggestionsProps) {
   const router = useRouter();
-  const t = useTranslations("engagement.anchoredSuggestions");
+  const t = useTranslations('engagement.anchoredSuggestions');
   const [open, setOpen] = React.useState(false);
-  const [body, setBody] = React.useState("");
+  const [body, setBody] = React.useState('');
   const [pending, startTransition] = React.useTransition();
 
   const openSuggestions = suggestions.filter(
@@ -61,15 +61,15 @@ export function AnchoredSuggestions({
       const result = await addCommentAction({
         recipeId,
         recipeSlug,
-        kind: "suggestion",
+        kind: 'suggestion',
         body: trimmed,
         anchorType,
         anchorId,
         anchorLabel,
       });
       if (result.ok) {
-        toast.success(t("toast.sent"));
-        setBody("");
+        toast.success(t('toast.sent'));
+        setBody('');
         setOpen(false);
         router.refresh();
         return;
@@ -96,17 +96,17 @@ export function AnchoredSuggestions({
                 <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
                   <Lightbulb className="size-3.5 shrink-0" aria-hidden />
                   <span className="font-medium">
-                    {t("authorSuggests", {
+                    {t('authorSuggests', {
                       name: authorName(suggestion.author),
                     })}
                   </span>
                   {applied ? (
                     <span className="inline-flex items-center gap-0.5 text-success">
-                      <Sparkles className="size-3" aria-hidden /> {t("applied")}
+                      <Sparkles className="size-3" aria-hidden /> {t('applied')}
                     </span>
                   ) : resolved ? (
                     <span className="inline-flex items-center gap-0.5 text-muted-foreground">
-                      <Check className="size-3" aria-hidden /> {t("resolved")}
+                      <Check className="size-3" aria-hidden /> {t('resolved')}
                     </span>
                   ) : null}
                 </div>
@@ -128,21 +128,17 @@ export function AnchoredSuggestions({
               rows={2}
               maxLength={4000}
               autoFocus
-              placeholder={t("placeholder", { label: anchorLabel })}
+              placeholder={t('placeholder', { label: anchorLabel })}
               disabled={pending}
             />
             <div className="flex items-center gap-2">
-              <Button
-                type="submit"
-                size="sm"
-                disabled={pending || !body.trim()}
-              >
+              <Button type="submit" size="sm" disabled={pending || !body.trim()}>
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <Lightbulb className="size-4" />
                 )}
-                {t("send")}
+                {t('send')}
               </Button>
               <Button
                 type="button"
@@ -151,10 +147,10 @@ export function AnchoredSuggestions({
                 disabled={pending}
                 onClick={() => {
                   setOpen(false);
-                  setBody("");
+                  setBody('');
                 }}
               >
-                {t("cancel")}
+                {t('cancel')}
               </Button>
             </div>
           </form>
@@ -163,12 +159,12 @@ export function AnchoredSuggestions({
             type="button"
             onClick={() => setOpen(true)}
             className={cn(
-              "inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary",
-              openSuggestions.length > 0 && "text-primary",
+              'inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary',
+              openSuggestions.length > 0 && 'text-primary',
             )}
           >
             <Lightbulb className="size-3.5" aria-hidden />
-            {t("trigger")}
+            {t('trigger')}
           </button>
         )
       ) : null}

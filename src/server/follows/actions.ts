@@ -1,42 +1,28 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { revalidatePath } from 'next/cache';
+import { eq } from 'drizzle-orm';
 
-import { captureServer } from "~/lib/analytics/server";
-import { getCurrentUser, requireUser } from "~/server/auth";
-import { db, isDbConfigured } from "~/server/db";
-import { users } from "~/server/db/schema";
-import {
-  type ActionResult,
-  fail,
-  fromZodError,
-  ok,
-} from "~/server/action-result";
-import { messageForError } from "~/server/errors";
-import type { ActivityPage } from "~/server/activity/queries";
-import { followUserInput, unfollowUserInput } from "./validation";
-import { followUser, unfollowUser } from "./mutations";
-import {
-  getFollowingActivity,
-  listFollowers,
-  listFollowing,
-  type FollowList,
-} from "./queries";
+import { captureServer } from '~/lib/analytics/server';
+import { getCurrentUser, requireUser } from '~/server/auth';
+import { db, isDbConfigured } from '~/server/db';
+import { users } from '~/server/db/schema';
+import { type ActionResult, fail, fromZodError, ok } from '~/server/action-result';
+import { messageForError } from '~/server/errors';
+import type { ActivityPage } from '~/server/activity/queries';
+import { followUserInput, unfollowUserInput } from './validation';
+import { followUser, unfollowUser } from './mutations';
+import { getFollowingActivity, listFollowers, listFollowing, type FollowList } from './queries';
 
 const EMPTY: ActivityPage = { events: [], nextCursor: null };
 const EMPTY_LIST: FollowList = { people: [], nextCursor: null };
 
 function dbGuard(): ActionResult | null {
-  return isDbConfigured()
-    ? null
-    : { ok: false, error: "That needs a database connection." };
+  return isDbConfigured() ? null : { ok: false, error: 'That needs a database connection.' };
 }
 
 /** Follow another cook (opt-in public graph). */
-export async function followUserAction(input: {
-  followeeId: string;
-}): Promise<ActionResult> {
+export async function followUserAction(input: { followeeId: string }): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
   const parsed = followUserInput.safeParse(input);
@@ -45,7 +31,7 @@ export async function followUserAction(input: {
   const user = await requireUser();
   try {
     await followUser(user.id, parsed.data.followeeId);
-    void captureServer(user.id, "followed_cook", {
+    void captureServer(user.id, 'followed_cook', {
       followeeId: parsed.data.followeeId,
     });
     revalidatePath(`/cooks`);
@@ -65,9 +51,7 @@ export async function followUserAction(input: {
 }
 
 /** Stop following a cook. */
-export async function unfollowUserAction(input: {
-  followeeId: string;
-}): Promise<ActionResult> {
+export async function unfollowUserAction(input: { followeeId: string }): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
   const parsed = unfollowUserInput.safeParse(input);
@@ -76,7 +60,7 @@ export async function unfollowUserAction(input: {
   const user = await requireUser();
   try {
     await unfollowUser(user.id, parsed.data.followeeId);
-    void captureServer(user.id, "unfollowed_cook", {
+    void captureServer(user.id, 'unfollowed_cook', {
       followeeId: parsed.data.followeeId,
     });
     revalidatePath(`/cooks`);
@@ -91,20 +75,15 @@ export async function unfollowUserAction(input: {
  * on makes them discoverable/followable and lets their public activity surface
  * in followers' feeds. Turning it off is honored at read time immediately.
  */
-export async function setPublicActivityOptInAction(
-  optedIn: boolean,
-): Promise<ActionResult> {
+export async function setPublicActivityOptInAction(optedIn: boolean): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
 
   const user = await requireUser();
   try {
-    await db
-      .update(users)
-      .set({ publicActivityOptIn: optedIn })
-      .where(eq(users.id, user.id));
-    void captureServer(user.id, "public_activity_opt_in_changed", { optedIn });
-    revalidatePath("/settings/following");
+    await db.update(users).set({ publicActivityOptIn: optedIn }).where(eq(users.id, user.id));
+    void captureServer(user.id, 'public_activity_opt_in_changed', { optedIn });
+    revalidatePath('/settings/following');
     return ok();
   } catch {
     return fail("We couldn't update your preference. Please try again.");

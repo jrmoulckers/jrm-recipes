@@ -1,15 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { canViewRecipe } from "~/server/recipes/queries";
-import { notify } from "~/server/notifications/notify";
-import { reviews, recipes, type Review, type User } from "~/server/db/schema";
-import type { ReviewInput } from "./validation";
+import { db, isDbConfigured } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { canViewRecipe } from '~/server/recipes/queries';
+import { notify } from '~/server/notifications/notify';
+import { reviews, recipes, type Review, type User } from '~/server/db/schema';
+import type { ReviewInput } from './validation';
 
-export type ReviewSort = "recent" | "rating";
+export type ReviewSort = 'recent' | 'rating';
 
 /** One review shaped for the reviews section list. */
 export type ReviewListItem = {
@@ -41,7 +41,7 @@ function emptyToNull(value: string | undefined): string | null {
  */
 export async function listReviews(
   recipeId: string,
-  sort: ReviewSort = "recent",
+  sort: ReviewSort = 'recent',
   hiddenAuthorIds = new Set<string>(),
 ): Promise<ReviewListItem[]> {
   if (!isDbConfigured()) return [];
@@ -49,7 +49,7 @@ export async function listReviews(
   const rows = await db.query.reviews.findMany({
     where: and(eq(reviews.recipeId, recipeId), isNull(reviews.hiddenAt)),
     orderBy:
-      sort === "rating"
+      sort === 'rating'
         ? [desc(reviews.rating), desc(reviews.createdAt)]
         : [desc(reviews.createdAt)],
     with: {
@@ -98,10 +98,7 @@ export async function getViewerReview(
  * edits in place and stamps `editedAt`. A brand-new review notifies the recipe
  * author (notify() no-ops on a self-review).
  */
-export async function upsertReview(
-  input: ReviewInput,
-  user: User,
-): Promise<Review> {
+export async function upsertReview(input: ReviewInput, user: User): Promise<Review> {
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
@@ -113,15 +110,11 @@ export async function upsertReview(
         groupId: true,
       },
     });
-    if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user)))
-      throw new DomainError("FORBIDDEN");
+    if (!recipe) throw new DomainError('NOT_FOUND');
+    if (!(await canViewRecipe(recipe, user))) throw new DomainError('FORBIDDEN');
 
     const existing = await tx.query.reviews.findFirst({
-      where: and(
-        eq(reviews.recipeId, input.recipeId),
-        eq(reviews.userId, user.id),
-      ),
+      where: and(eq(reviews.recipeId, input.recipeId), eq(reviews.userId, user.id)),
       columns: { id: true },
     });
 
@@ -157,7 +150,7 @@ export async function upsertReview(
       await notify(tx, {
         recipientId: recipe.authorId,
         actorId: user.id,
-        type: "review",
+        type: 'review',
         recipeId: recipe.id,
         entityId: row!.id,
         context: recipe.title,
@@ -172,10 +165,7 @@ export async function upsertReview(
  * Delete a review. The author can delete their own. The recipe owner can delete
  * any review on their recipe (lightweight moderation before #357).
  */
-export async function deleteReview(
-  reviewId: string,
-  user: User,
-): Promise<void> {
+export async function deleteReview(reviewId: string, user: User): Promise<void> {
   await db.transaction(async (tx) => {
     const review = await tx.query.reviews.findFirst({
       where: eq(reviews.id, reviewId),
@@ -186,12 +176,12 @@ export async function deleteReview(
         },
       },
     });
-    if (!review) throw new DomainError("NOT_FOUND");
+    if (!review) throw new DomainError('NOT_FOUND');
     if (!(await canViewRecipe(review.recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
     if (review.userId !== user.id && review.recipe.authorId !== user.id) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
     await tx.delete(reviews).where(eq(reviews.id, reviewId));
   });

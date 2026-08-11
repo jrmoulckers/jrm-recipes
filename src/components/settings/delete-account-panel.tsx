@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { AlertTriangle, Download, Loader2, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { AlertTriangle, Download, Loader2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button, buttonVariants } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { deleteAccountAction } from "~/server/users/actions";
-import { DELETION_CONFIRM_PHRASE } from "~/server/users/deletion-notice";
-import type { DeletionPreview } from "~/server/users/deletion-preview";
+import { Button, buttonVariants } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { deleteAccountAction } from '~/server/users/actions';
+import { DELETION_CONFIRM_PHRASE } from '~/server/users/deletion-notice';
+import type { DeletionPreview } from '~/server/users/deletion-preview';
 
 /**
  * The pre-confirmation deletion notice (issue #678, PR B).
@@ -31,14 +31,13 @@ import type { DeletionPreview } from "~/server/users/deletion-preview";
  * and instantaneous, so a misclick has no remedy at all.
  */
 export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
-  const t = useTranslations("settings.dataPage.delete");
+  const t = useTranslations('settings.dataPage.delete');
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [phrase, setPhrase] = React.useState("");
+  const [phrase, setPhrase] = React.useState('');
   const [isPending, startTransition] = React.useTransition();
 
-  const matches =
-    phrase.trim().toUpperCase() === DELETION_CONFIRM_PHRASE.toUpperCase();
+  const matches = phrase.trim().toUpperCase() === DELETION_CONFIRM_PHRASE.toUpperCase();
 
   // The erasure will be held rather than executed (#787). `heldRecipeCount`
   // comes from the same `findEntanglement` the erasure path calls, so this is
@@ -53,18 +52,18 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
         // A hold is the expected outcome for an entangled account, not an
         // error, so it gets the translated explanation rather than the server's
         // English fallback string and does not read as a failure.
-        if (result.code === "ERASURE_HELD") {
-          toast.info(t("held.toast"));
+        if (result.code === 'ERASURE_HELD') {
+          toast.info(t('held.toast'));
           setConfirmOpen(false);
-          setPhrase("");
+          setPhrase('');
           router.refresh();
           return;
         }
         toast.error(result.error);
         return;
       }
-      toast.success(t("toasts.deleted"));
-      router.replace("/");
+      toast.success(t('toasts.deleted'));
+      router.replace('/');
       router.refresh();
     });
   }
@@ -76,48 +75,42 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
           <Trash2 className="size-6" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold">{t("title")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("description")}
-          </p>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
         </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface/40 p-5">
-        <h3 className="text-sm font-semibold">{t("consequences.title")}</h3>
+        <h3 className="text-sm font-semibold">{t('consequences.title')}</h3>
         <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
+          <li>{t('consequences.recipes', { count: preview.ownedRecipeCount })}</li>
           <li>
-            {t("consequences.recipes", { count: preview.ownedRecipeCount })}
-          </li>
-          <li>
-            {t("consequences.cooking", {
+            {t('consequences.cooking', {
               cookLogs: preview.cookLogEntryCount,
               reviews: preview.reviewCount,
               collections: preview.collectionCount,
             })}
           </li>
-          <li>{t("consequences.photos")}</li>
+          <li>{t('consequences.photos')}</li>
           {preview.coCreatedRecipeCount > 0 ? (
             <li className="text-foreground">
-              {t("consequences.coCreated", {
+              {t('consequences.coCreated', {
                 count: preview.coCreatedRecipeCount,
               })}
             </li>
           ) : null}
           {preview.pendingInviteCount > 0 ? (
             <li>
-              {t("consequences.pendingInvites", {
+              {t('consequences.pendingInvites', {
                 count: preview.pendingInviteCount,
               })}
             </li>
           ) : null}
           {preview.hasActiveSubscription ? (
-            <li className="text-foreground">
-              {t("consequences.subscription")}
-            </li>
+            <li className="text-foreground">{t('consequences.subscription')}</li>
           ) : null}
-          <li>{t("consequences.links")}</li>
-          <li>{t("consequences.irreversible")}</li>
+          <li>{t('consequences.links')}</li>
+          <li>{t('consequences.irreversible')}</li>
         </ul>
 
         {preview.soleOwnerGroups.length > 0 ? (
@@ -127,12 +120,10 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
               aria-hidden="true"
             />
             <div className="min-w-0 text-sm">
-              <p className="font-medium">{t("groups.title")}</p>
+              <p className="font-medium">{t('groups.title')}</p>
               <p className="mt-1 text-muted-foreground">
-                {t("groups.body", {
-                  groups: preview.soleOwnerGroups
-                    .map((group) => group.name)
-                    .join(", "),
+                {t('groups.body', {
+                  groups: preview.soleOwnerGroups.map((group) => group.name).join(', '),
                 })}
               </p>
             </div>
@@ -146,28 +137,28 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
               aria-hidden="true"
             />
             <div className="min-w-0 text-sm">
-              <p className="font-medium">{t("held.title")}</p>
+              <p className="font-medium">{t('held.title')}</p>
               <p className="mt-1 text-muted-foreground">
-                {t("held.body", { count: preview.heldRecipeCount })}
+                {t('held.body', { count: preview.heldRecipeCount })}
               </p>
-              <p className="mt-2 text-muted-foreground">{t("held.what")}</p>
+              <p className="mt-2 text-muted-foreground">{t('held.what')}</p>
             </div>
           </div>
         ) : null}
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">{t("export.body")}</p>
+        <p className="text-sm text-muted-foreground">{t('export.body')}</p>
         <a
           href="/api/backup"
           className={buttonVariants({
-            variant: "outline",
-            className: "w-full sm:w-auto",
+            variant: 'outline',
+            className: 'w-full sm:w-auto',
           })}
           download
         >
           <Download className="size-4" aria-hidden="true" />
-          {t("export.cta")}
+          {t('export.cta')}
         </a>
       </div>
 
@@ -178,12 +169,12 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
           onClick={() => setConfirmOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden="true" />
-          {t("start")}
+          {t('start')}
         </Button>
       ) : (
         <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6">
           <Label htmlFor="delete-confirm">
-            {t("confirm.label", { phrase: DELETION_CONFIRM_PHRASE })}
+            {t('confirm.label', { phrase: DELETION_CONFIRM_PHRASE })}
           </Label>
           <Input
             id="delete-confirm"
@@ -195,30 +186,26 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
             className="max-w-xs"
           />
           <p id="delete-confirm-help" className="text-xs text-muted-foreground">
-            {willBeHeld ? t("held.confirmHelp") : t("confirm.help")}
+            {willBeHeld ? t('held.confirmHelp') : t('confirm.help')}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button
-              variant="destructive"
-              disabled={!matches || isPending}
-              onClick={handleDelete}
-            >
+            <Button variant="destructive" disabled={!matches || isPending} onClick={handleDelete}>
               {isPending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Trash2 className="size-4" aria-hidden="true" />
               )}
-              {t(willBeHeld ? "held.cta" : "confirm.cta")}
+              {t(willBeHeld ? 'held.cta' : 'confirm.cta')}
             </Button>
             <Button
               variant="ghost"
               disabled={isPending}
               onClick={() => {
                 setConfirmOpen(false);
-                setPhrase("");
+                setPhrase('');
               }}
             >
-              {t("confirm.cancel")}
+              {t('confirm.cancel')}
             </Button>
           </div>
         </div>

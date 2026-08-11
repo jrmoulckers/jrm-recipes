@@ -1,28 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   cookLogEntries,
   groupMembers,
-  groups,
   mealPlanEntries,
   recipes,
   type User,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 /**
  * Meal-plan entries for a user between two calendar dates (inclusive). Dates are
@@ -34,11 +21,7 @@ import {
  * double-show here. Historic entries all have a null group, so this is a no-op
  * for existing plans.
  */
-export async function listEntriesInRange(
-  userId: string,
-  startDate: string,
-  endDate: string,
-) {
+export async function listEntriesInRange(userId: string, startDate: string, endDate: string) {
   if (!isDbConfigured()) return [];
   return db.query.mealPlanEntries.findMany({
     where: and(
@@ -60,9 +43,7 @@ export async function listEntriesInRange(
   });
 }
 
-export type PlannerEntry = Awaited<
-  ReturnType<typeof listEntriesInRange>
->[number];
+export type PlannerEntry = Awaited<ReturnType<typeof listEntriesInRange>>[number];
 
 /**
  * Entries planned for a single date, each with enough recipe text (step
@@ -91,9 +72,7 @@ export async function listEntriesWithPrepText(userId: string, date: string) {
   });
 }
 
-export type PrepTextEntry = Awaited<
-  ReturnType<typeof listEntriesWithPrepText>
->[number];
+export type PrepTextEntry = Awaited<ReturnType<typeof listEntriesWithPrepText>>[number];
 
 /**
  * Dinner entries for a week, with just enough recipe detail (title + total
@@ -109,10 +88,7 @@ export async function listWeekDinners(
   if (!isDbConfigured()) return [];
   if (groupId != null) {
     const membership = await db.query.groupMembers.findFirst({
-      where: and(
-        eq(groupMembers.groupId, groupId),
-        eq(groupMembers.userId, userId),
-      ),
+      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
       columns: { id: true },
     });
     if (!membership) return [];
@@ -120,14 +96,11 @@ export async function listWeekDinners(
   const scope =
     groupId != null
       ? eq(mealPlanEntries.groupId, groupId)
-      : and(
-          eq(mealPlanEntries.userId, userId),
-          isNull(mealPlanEntries.groupId),
-        );
+      : and(eq(mealPlanEntries.userId, userId), isNull(mealPlanEntries.groupId));
   return db.query.mealPlanEntries.findMany({
     where: and(
       scope,
-      eq(mealPlanEntries.slot, "dinner"),
+      eq(mealPlanEntries.slot, 'dinner'),
       gte(mealPlanEntries.date, startDate),
       lte(mealPlanEntries.date, endDate),
     ),
@@ -139,9 +112,7 @@ export async function listWeekDinners(
   });
 }
 
-export type WeekDinnerEntry = Awaited<
-  ReturnType<typeof listWeekDinners>
->[number];
+export type WeekDinnerEntry = Awaited<ReturnType<typeof listWeekDinners>>[number];
 
 async function viewerGroupIds(userId: string): Promise<string[]> {
   const rows = await db.query.groupMembers.findMany({
@@ -193,9 +164,7 @@ export async function listPlannableRecipes(viewer: User | null) {
       ),
     )
     .orderBy(cookLogEntries.recipeId, desc(cookLogEntries.cookedAt));
-  const latestByRecipe = new Map(
-    latest.map((entry) => [entry.recipeId, entry.servingsMade]),
-  );
+  const latestByRecipe = new Map(latest.map((entry) => [entry.recipeId, entry.servingsMade]));
 
   return rows.map((recipe) => ({
     ...recipe,
@@ -203,9 +172,7 @@ export async function listPlannableRecipes(viewer: User | null) {
   }));
 }
 
-export type PlannableRecipe = Awaited<
-  ReturnType<typeof listPlannableRecipes>
->[number];
+export type PlannableRecipe = Awaited<ReturnType<typeof listPlannableRecipes>>[number];
 
 /**
  * The groups a viewer belongs to, lightweight enough to populate the planner's
@@ -243,10 +210,7 @@ export async function listGroupEntriesInRange(
   if (!isDbConfigured()) return null;
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, viewer.id),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, viewer.id)),
     columns: { id: true },
   });
   if (!membership) return null;

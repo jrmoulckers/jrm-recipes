@@ -1,10 +1,10 @@
-import * as React from "react";
-import { NextIntlClientProvider } from "next-intl";
+import * as React from 'react';
+import { NextIntlClientProvider } from 'next-intl';
 
-import { DEFAULT_LOCALE, type Locale } from "~/config/i18n";
-import enMessages from "~/messages/en.json";
+import { DEFAULT_LOCALE, type Locale } from '~/config/i18n';
+import enMessages from '~/messages/en.json';
 
-type Messages = React.ComponentProps<typeof NextIntlClientProvider>["messages"];
+type Messages = React.ComponentProps<typeof NextIntlClientProvider>['messages'];
 
 /**
  * Wrap a component under test in the i18n provider with the English catalog so

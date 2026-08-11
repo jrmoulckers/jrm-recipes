@@ -1,20 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import {
-  Archive,
-  Check,
-  Plus,
-  Settings2,
-  Star,
-  Store,
-  Trash2,
-} from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import * as React from 'react';
+import { Archive, Check, Plus, Settings2, Star, Store, Trash2 } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
 
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Checkbox } from '~/components/ui/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -24,10 +16,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { NativeSelect } from "~/components/ui/native-select";
-import { planStoreDisplay, type StoreSummary } from "~/lib/shopping-stores";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { NativeSelect } from '~/components/ui/native-select';
+import { planStoreDisplay, type StoreSummary } from '~/lib/shopping-stores';
 
 export type ShoppingListSummary = {
   id: string;
@@ -79,11 +71,10 @@ export function ShoppingListNavigation({
   onRenameStore?: (storeId: string, name: string) => void;
   onDeleteStore?: (storeId: string) => boolean | Promise<boolean>;
 }) {
-  const t = useTranslations("shopping.lists");
+  const t = useTranslations('shopping.lists');
   const active = lists.filter((list) => !list.archived);
   const archived = lists.filter((list) => list.archived);
-  const selected =
-    active.find((list) => list.id === selectedListId) ?? active[0];
+  const selected = active.find((list) => list.id === selectedListId) ?? active[0];
   const storesById = new Map(stores.map((store) => [store.id, store]));
   const selectedStores = (selected?.storeIds ?? [])
     .map((id) => storesById.get(id))
@@ -95,19 +86,16 @@ export function ShoppingListNavigation({
       className="rounded-2xl border border-border bg-surface/70 p-4 shadow-token-sm"
     >
       <h2 id="shopping-lists-heading" className="sr-only">
-        {t("heading")}
+        {t('heading')}
       </h2>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0 flex-1">
-          <label
-            htmlFor="shopping-list-select"
-            className="mb-1.5 block text-sm font-medium"
-          >
-            {t("current")}
+          <label htmlFor="shopping-list-select" className="mb-1.5 block text-sm font-medium">
+            {t('current')}
           </label>
           <NativeSelect
             id="shopping-list-select"
-            value={selected?.id ?? ""}
+            value={selected?.id ?? ''}
             disabled={disabled || active.length === 0}
             onChange={(event) => onSelect(event.target.value)}
           >
@@ -122,14 +110,10 @@ export function ShoppingListNavigation({
           {selected?.isDefault && (
             <Badge variant="muted" className="min-h-8 gap-1.5 px-3">
               <Star className="size-3.5" aria-hidden="true" />
-              {t("defaultBadge")}
+              {t('defaultBadge')}
             </Badge>
           )}
-          <CreateListDialog
-            disabled={disabled}
-            stores={stores}
-            onCreate={onCreate}
-          />
+          <CreateListDialog disabled={disabled} stores={stores} onCreate={onCreate} />
           {selected && (
             <ManageListDialog
               list={selected}
@@ -157,7 +141,7 @@ export function ShoppingListNavigation({
  * concise count when they don't. The complete set is always announced.
  */
 function StoreChips({ stores }: { stores: ShoppingStoreSummary[] }) {
-  const t = useTranslations("shopping.lists");
+  const t = useTranslations('shopping.lists');
   const format = useFormatter();
   if (stores.length === 0) return null;
   const { visible, overflowCount } = planStoreDisplay(stores);
@@ -166,7 +150,7 @@ function StoreChips({ stores }: { stores: ShoppingStoreSummary[] }) {
   return (
     <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
       <Store className="size-4 shrink-0 text-primary" aria-hidden="true" />
-      <span className="sr-only">{t("storeCaption", { stores: allNames })}</span>
+      <span className="sr-only">{t('storeCaption', { stores: allNames })}</span>
       {visible.map((store) => (
         <Badge key={store.id} variant="muted" aria-hidden="true">
           {store.name}
@@ -174,7 +158,7 @@ function StoreChips({ stores }: { stores: ShoppingStoreSummary[] }) {
       ))}
       {overflowCount > 0 && (
         <Badge variant="muted" aria-hidden="true" title={allNames}>
-          {t("storeOverflow", { count: overflowCount })}
+          {t('storeOverflow', { count: overflowCount })}
         </Badge>
       )}
     </p>
@@ -190,17 +174,16 @@ function CreateListDialog({
   stores: ShoppingStoreSummary[];
   onCreate: (name: string, stores: StoreSelection) => void;
 }) {
-  const t = useTranslations("shopping.lists");
+  const t = useTranslations('shopping.lists');
   const [open, setOpen] = React.useState(false);
-  const [name, setName] = React.useState("");
-  const [selection, setSelection] =
-    React.useState<StoreSelection>(EMPTY_SELECTION);
+  const [name, setName] = React.useState('');
+  const [selection, setSelection] = React.useState<StoreSelection>(EMPTY_SELECTION);
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
     onCreate(name.trim(), selection);
-    setName("");
+    setName('');
     setSelection(EMPTY_SELECTION);
     setOpen(false);
   }
@@ -210,14 +193,14 @@ function CreateListDialog({
       <DialogTrigger asChild>
         <Button type="button" size="sm" variant="outline" disabled={disabled}>
           <Plus aria-hidden="true" />
-          {t("new")}
+          {t('new')}
         </Button>
       </DialogTrigger>
       <DialogContent size="sm">
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>{t("create.title")}</DialogTitle>
-            <DialogDescription>{t("create.description")}</DialogDescription>
+            <DialogTitle>{t('create.title')}</DialogTitle>
+            <DialogDescription>{t('create.description')}</DialogDescription>
           </DialogHeader>
           <ListFields
             prefix="create-list"
@@ -230,11 +213,11 @@ function CreateListDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">
-                {t("cancel")}
+                {t('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={!name.trim()}>
-              {t("create.confirm")}
+              {t('create.confirm')}
             </Button>
           </DialogFooter>
         </form>
@@ -268,7 +251,7 @@ function ManageListDialog({
   onRenameStore?: (storeId: string, name: string) => void;
   onDeleteStore?: (storeId: string) => boolean | Promise<boolean>;
 }) {
-  const t = useTranslations("shopping.lists");
+  const t = useTranslations('shopping.lists');
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState(list.name);
   const [selection, setSelection] = React.useState<StoreSelection>({
@@ -294,14 +277,14 @@ function ManageListDialog({
       <DialogTrigger asChild>
         <Button type="button" size="sm" variant="ghost" disabled={disabled}>
           <Settings2 aria-hidden="true" />
-          {t("manage")}
+          {t('manage')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="grid gap-5">
           <DialogHeader>
-            <DialogTitle>{t("manageTitle", { name: list.name })}</DialogTitle>
-            <DialogDescription>{t("manageDescription")}</DialogDescription>
+            <DialogTitle>{t('manageTitle', { name: list.name })}</DialogTitle>
+            <DialogDescription>{t('manageDescription')}</DialogDescription>
           </DialogHeader>
           <ListFields
             prefix={`manage-list-${list.id}`}
@@ -329,7 +312,7 @@ function ManageListDialog({
                 }}
               >
                 <Star aria-hidden="true" />
-                {t("makeDefault")}
+                {t('makeDefault')}
               </Button>
             )}
             <Button
@@ -340,7 +323,7 @@ function ManageListDialog({
               }}
             >
               <Archive aria-hidden="true" />
-              {t("archive")}
+              {t('archive')}
             </Button>
             <Button
               type="button"
@@ -351,30 +334,28 @@ function ManageListDialog({
               }}
             >
               <Trash2 aria-hidden="true" />
-              {t("delete")}
+              {t('delete')}
             </Button>
           </div>
           {archived.length > 0 && (
             <section className="grid gap-2 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold">{t("archived")}</h3>
+              <h3 className="text-sm font-semibold">{t('archived')}</h3>
               {archived.map((archivedList) => (
                 <div
                   key={archivedList.id}
                   className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-muted/50 px-3 py-2"
                 >
-                  <span className="min-w-0 truncate text-sm">
-                    {archivedList.name}
-                  </span>
+                  <span className="min-w-0 truncate text-sm">{archivedList.name}</span>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={t("restoreNamed", {
+                    aria-label={t('restoreNamed', {
                       name: archivedList.name,
                     })}
                     onClick={() => onRestore(archivedList.id)}
                   >
-                    {t("restore")}
+                    {t('restore')}
                   </Button>
                 </div>
               ))}
@@ -383,11 +364,11 @@ function ManageListDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">
-                {t("cancel")}
+                {t('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={!name.trim()}>
-              {t("save")}
+              {t('save')}
             </Button>
           </DialogFooter>
         </form>
@@ -411,8 +392,8 @@ function ListFields({
   onNameChange: (value: string) => void;
   onSelectionChange: (value: StoreSelection) => void;
 }) {
-  const t = useTranslations("shopping.lists");
-  const [draftStore, setDraftStore] = React.useState("");
+  const t = useTranslations('shopping.lists');
+  const [draftStore, setDraftStore] = React.useState('');
 
   function toggleStore(storeId: string, checked: boolean) {
     onSelectionChange({
@@ -426,31 +407,27 @@ function ListFields({
   function addDraftStore() {
     const value = draftStore.trim();
     if (!value) return;
-    const existing = stores.find(
-      (store) => store.name.toLowerCase() === value.toLowerCase(),
-    );
+    const existing = stores.find((store) => store.name.toLowerCase() === value.toLowerCase());
     if (existing) {
       if (!selection.storeIds.includes(existing.id)) {
         toggleStore(existing.id, true);
       }
     } else if (
-      !selection.newStoreNames.some(
-        (pending) => pending.toLowerCase() === value.toLowerCase(),
-      )
+      !selection.newStoreNames.some((pending) => pending.toLowerCase() === value.toLowerCase())
     ) {
       onSelectionChange({
         ...selection,
         newStoreNames: [...selection.newStoreNames, value],
       });
     }
-    setDraftStore("");
+    setDraftStore('');
   }
 
   return (
     <div className="grid gap-4">
       <div className="grid gap-1.5">
         <label htmlFor={`${prefix}-name`} className="text-sm font-medium">
-          {t("fields.name")}
+          {t('fields.name')}
         </label>
         <Input
           id={`${prefix}-name`}
@@ -461,8 +438,8 @@ function ListFields({
         />
       </div>
       <fieldset className="grid gap-2">
-        <legend className="text-sm font-medium">{t("fields.stores")}</legend>
-        <p className="text-xs text-muted-foreground">{t("fields.storeHint")}</p>
+        <legend className="text-sm font-medium">{t('fields.stores')}</legend>
+        <p className="text-xs text-muted-foreground">{t('fields.storeHint')}</p>
         {stores.length > 0 && (
           <div className="grid gap-1">
             {stores.map((store) => (
@@ -472,9 +449,7 @@ function ListFields({
               >
                 <Checkbox
                   checked={selection.storeIds.includes(store.id)}
-                  onCheckedChange={(value) =>
-                    toggleStore(store.id, value === true)
-                  }
+                  onCheckedChange={(value) => toggleStore(store.id, value === true)}
                 />
                 {store.name}
               </label>
@@ -490,7 +465,7 @@ function ListFields({
                   <button
                     type="button"
                     className="text-muted-foreground hover:text-foreground"
-                    aria-label={t("fields.removeStore", { store: pending })}
+                    aria-label={t('fields.removeStore', { store: pending })}
                     onClick={() =>
                       onSelectionChange({
                         ...selection,
@@ -513,13 +488,13 @@ function ListFields({
             value={draftStore}
             onChange={(event) => setDraftStore(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key !== "Enter") return;
+              if (event.key !== 'Enter') return;
               // Adding a store must not submit the surrounding list form.
               event.preventDefault();
               addDraftStore();
             }}
-            placeholder={t("fields.storePlaceholder")}
-            aria-label={t("fields.addStore")}
+            placeholder={t('fields.storePlaceholder')}
+            aria-label={t('fields.addStore')}
             maxLength={120}
           />
           <Button
@@ -529,7 +504,7 @@ function ListFields({
             onClick={addDraftStore}
           >
             <Plus aria-hidden="true" />
-            {t("fields.addStore")}
+            {t('fields.addStore')}
           </Button>
         </div>
       </fieldset>
@@ -547,14 +522,14 @@ function StoreLibrary({
   onRenameStore: (storeId: string, name: string) => void;
   onDeleteStore: (storeId: string) => boolean | Promise<boolean>;
 }) {
-  const t = useTranslations("shopping.lists");
+  const t = useTranslations('shopping.lists');
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [draft, setDraft] = React.useState("");
+  const [draft, setDraft] = React.useState('');
 
   return (
     <section className="grid gap-2 border-t border-border pt-4">
-      <h3 className="text-sm font-semibold">{t("stores.heading")}</h3>
-      <p className="text-xs text-muted-foreground">{t("stores.hint")}</p>
+      <h3 className="text-sm font-semibold">{t('stores.heading')}</h3>
+      <p className="text-xs text-muted-foreground">{t('stores.hint')}</p>
       {stores.map((store) => (
         <div
           key={store.id}
@@ -565,7 +540,7 @@ function StoreLibrary({
               <Input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                aria-label={t("stores.renameNamed", { store: store.name })}
+                aria-label={t('stores.renameNamed', { store: store.name })}
                 maxLength={120}
               />
               <Button
@@ -573,7 +548,7 @@ function StoreLibrary({
                 size="sm"
                 variant="ghost"
                 disabled={!draft.trim()}
-                aria-label={t("stores.saveNamed", { store: store.name })}
+                aria-label={t('stores.saveNamed', { store: store.name })}
                 onClick={() => {
                   onRenameStore(store.id, draft.trim());
                   setEditingId(null);
@@ -590,7 +565,7 @@ function StoreLibrary({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  aria-label={t("stores.renameNamed", { store: store.name })}
+                  aria-label={t('stores.renameNamed', { store: store.name })}
                   onClick={() => {
                     setEditingId(store.id);
                     setDraft(store.name);
@@ -603,7 +578,7 @@ function StoreLibrary({
                   size="sm"
                   variant="ghost"
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  aria-label={t("stores.deleteNamed", { store: store.name })}
+                  aria-label={t('stores.deleteNamed', { store: store.name })}
                   onClick={() => void onDeleteStore(store.id)}
                 >
                   <Trash2 aria-hidden="true" />

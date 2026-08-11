@@ -21,7 +21,7 @@ export type RecipePreset = {
 };
 
 /** Params that can carry several values at once (repeated in the URL). */
-export const MULTI_VALUE_PRESET_KEYS = new Set(["tag", "cuisine"]);
+export const MULTI_VALUE_PRESET_KEYS = new Set(['tag', 'cuisine']);
 
 /**
  * The preset chips, in display order. `weeknight` is the headline: it composes
@@ -29,42 +29,37 @@ export const MULTI_VALUE_PRESET_KEYS = new Set(["tag", "cuisine"]);
  */
 export const RECIPE_PRESETS: RecipePreset[] = [
   {
-    id: "weeknight",
-    label: "Weeknight",
-    description: "Easy dinners in 30 minutes or less, quickest first.",
+    id: 'weeknight',
+    label: 'Weeknight',
+    description: 'Easy dinners in 30 minutes or less, quickest first.',
     params: [
-      { key: "maxTime", value: "30" },
-      { key: "difficulty", value: "easy" },
-      { key: "sort", value: "quickest" },
+      { key: 'maxTime', value: '30' },
+      { key: 'difficulty', value: 'easy' },
+      { key: 'sort', value: 'quickest' },
     ],
   },
   {
-    id: "quick-15",
-    label: "≤15 min",
-    description: "The fastest recipes you can make.",
+    id: 'quick-15',
+    label: '≤15 min',
+    description: 'The fastest recipes you can make.',
     params: [
-      { key: "maxTime", value: "15" },
-      { key: "sort", value: "quickest" },
+      { key: 'maxTime', value: '15' },
+      { key: 'sort', value: 'quickest' },
     ],
   },
   {
-    id: "kid-friendly",
-    label: "Kid-friendly",
-    description: "Recipes tagged kid-friendly.",
-    params: [{ key: "tag", value: "kid-friendly" }],
+    id: 'kid-friendly',
+    label: 'Kid-friendly',
+    description: 'Recipes tagged kid-friendly.',
+    params: [{ key: 'tag', value: 'kid-friendly' }],
   },
 ];
 
 /** True when every param the preset owns is present in the current URL. */
-export function isPresetActive(
-  current: URLSearchParams,
-  preset: RecipePreset,
-): boolean {
+export function isPresetActive(current: URLSearchParams, preset: RecipePreset): boolean {
   return preset.params.every((param) =>
     MULTI_VALUE_PRESET_KEYS.has(param.key)
-      ? current
-          .getAll(param.key)
-          .some((value) => value.toLowerCase() === param.value.toLowerCase())
+      ? current.getAll(param.key).some((value) => value.toLowerCase() === param.value.toLowerCase())
       : current.get(param.key) === param.value,
   );
 }
@@ -75,10 +70,7 @@ export function isPresetActive(
  * owns is cleared. Otherwise each is applied (multi-value keys append the value
  * without disturbing the others already selected).
  */
-export function togglePreset(
-  current: URLSearchParams,
-  preset: RecipePreset,
-): URLSearchParams {
+export function togglePreset(current: URLSearchParams, preset: RecipePreset): URLSearchParams {
   const next = new URLSearchParams(current.toString());
   const active = isPresetActive(current, preset);
 

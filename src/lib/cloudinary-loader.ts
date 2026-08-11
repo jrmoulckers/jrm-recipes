@@ -1,7 +1,7 @@
-import type { ImageLoaderProps } from "next/image";
+import type { ImageLoaderProps } from 'next/image';
 
-const CLOUDINARY_HOST = "res.cloudinary.com";
-const UPLOAD_SEGMENT = "/image/upload/";
+const CLOUDINARY_HOST = 'res.cloudinary.com';
+const UPLOAD_SEGMENT = '/image/upload/';
 
 /**
  * True when `src` is a Cloudinary image-delivery URL we can rewrite. We only
@@ -15,9 +15,7 @@ export function isCloudinaryUrl(src: string): boolean {
   } catch {
     return false;
   }
-  return (
-    url.hostname === CLOUDINARY_HOST && url.pathname.includes(UPLOAD_SEGMENT)
-  );
+  return url.hostname === CLOUDINARY_HOST && url.pathname.includes(UPLOAD_SEGMENT);
 }
 
 /**
@@ -31,11 +29,7 @@ export function isCloudinaryUrl(src: string): boolean {
  * responsive width in so the `srcset` stays correct. Non-Cloudinary URLs are
  * returned untouched so Clerk avatars and pasted image URLs are unaffected.
  */
-export function cloudinaryLoader({
-  src,
-  width,
-  quality,
-}: ImageLoaderProps): string {
+export function cloudinaryLoader({ src, width, quality }: ImageLoaderProps): string {
   if (!isCloudinaryUrl(src)) return src;
 
   const url = new URL(src);
@@ -44,7 +38,7 @@ export function cloudinaryLoader({
   const idx = url.pathname.indexOf(UPLOAD_SEGMENT);
   const head = url.pathname.slice(0, idx);
   const tail = url.pathname.slice(idx + UPLOAD_SEGMENT.length);
-  const transforms = `f_auto,q_${quality ?? "auto"},c_limit,w_${width}`;
+  const transforms = `f_auto,q_${quality ?? 'auto'},c_limit,w_${width}`;
   url.pathname = `${head}${UPLOAD_SEGMENT}${transforms}/${tail}`;
   return url.toString();
 }

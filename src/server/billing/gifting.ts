@@ -1,12 +1,12 @@
-import "server-only";
+import 'server-only';
 
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
 
-import { and, eq } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
 
-import { GIFT_CONFIG, type PlanId } from "~/config/plans";
-import { db, isDbConfigured } from "~/server/db";
-import { giftCodes } from "~/server/db/schema";
+import { GIFT_CONFIG, type PlanId } from '~/config/plans';
+import { db, isDbConfigured } from '~/server/db';
+import { giftCodes } from '~/server/db/schema';
 
 /**
  * Gift purchases + redemption (issue #331).
@@ -25,12 +25,12 @@ import { giftCodes } from "~/server/db/schema";
  */
 
 /** Thrown by {@link redeemGiftCode} when no code matches. */
-export const GIFT_NOT_FOUND = "GIFT_NOT_FOUND";
+export const GIFT_NOT_FOUND = 'GIFT_NOT_FOUND';
 /** Thrown by {@link redeemGiftCode} when the code was already used. */
-export const GIFT_ALREADY_REDEEMED = "GIFT_ALREADY_REDEEMED";
+export const GIFT_ALREADY_REDEEMED = 'GIFT_ALREADY_REDEEMED';
 
 /** Ambiguous characters are dropped so codes are easy to read + retype. */
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 /** Grouped for legibility (e.g. `GIFT-AB3D-7F9K-2QX4`). 12 random symbols. */
 const CODE_SYMBOLS = 12;
 
@@ -41,11 +41,11 @@ const CODE_SYMBOLS = 12;
  */
 export function generateGiftCode(): string {
   const bytes = randomBytes(CODE_SYMBOLS);
-  let out = "";
+  let out = '';
   for (let i = 0; i < CODE_SYMBOLS; i++) {
     out += CODE_ALPHABET[bytes[i]! % CODE_ALPHABET.length];
   }
-  const grouped = out.replace(/(.{4})(.{4})(.{4})/, "$1-$2-$3");
+  const grouped = out.replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3');
   return `GIFT-${grouped}`;
 }
 
@@ -82,7 +82,7 @@ export async function mintGiftCode(input: {
       durationMonths: input.durationMonths ?? GIFT_CONFIG.durationMonths,
       purchaserUserId: input.purchaserUserId ?? null,
       stripeSessionId: input.stripeSessionId,
-      status: "issued",
+      status: 'issued',
     })
     .onConflictDoNothing();
   return code;
@@ -112,12 +112,12 @@ export async function redeemGiftCode(input: {
   const [claimed] = await db
     .update(giftCodes)
     .set({
-      status: "redeemed",
+      status: 'redeemed',
       redeemedByUserId: input.userId,
       redeemedAt: now,
       updatedAt: now,
     })
-    .where(and(eq(giftCodes.code, code), eq(giftCodes.status, "issued")))
+    .where(and(eq(giftCodes.code, code), eq(giftCodes.status, 'issued')))
     .returning({
       planId: giftCodes.planId,
       durationMonths: giftCodes.durationMonths,
@@ -151,17 +151,14 @@ export async function getActiveGiftPlanId(
   if (!isDbConfigured()) return null;
 
   const rows = await db.query.giftCodes.findMany({
-    where: and(
-      eq(giftCodes.redeemedByUserId, userId),
-      eq(giftCodes.status, "redeemed"),
-    ),
+    where: and(eq(giftCodes.redeemedByUserId, userId), eq(giftCodes.status, 'redeemed')),
     columns: { planId: true, durationMonths: true, redeemedAt: true },
   });
 
   for (const row of rows) {
     if (!row.redeemedAt) continue;
     const expiresAt = addMonths(row.redeemedAt, row.durationMonths);
-    if (expiresAt > now && row.planId !== "free") return row.planId;
+    if (expiresAt > now && row.planId !== 'free') return row.planId;
   }
   return null;
 }

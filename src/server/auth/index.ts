@@ -1,24 +1,24 @@
-import "server-only";
+import 'server-only';
 
-import { cache } from "react";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { cache } from 'react';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
-import { env } from "~/env";
-import { db, isDbConfigured } from "~/server/db";
-import { groupMembers, recipes, users, type User } from "~/server/db/schema";
+import { env } from '~/env';
+import { db, isDbConfigured } from '~/server/db';
+import { groupMembers, recipes, users, type User } from '~/server/db/schema';
 import {
   DEV_USER,
   DEV_IDENTITY_COOKIE,
   isIdentitySelectorEnabled,
   resolveDevIdentity,
-} from "~/server/auth/dev-user";
-import { getEntitlements } from "~/server/billing/entitlements";
-import type { Entitlements } from "~/config/plans";
-import { isAnalyticsConfigured } from "~/lib/analytics/config";
-import { buildIdentityTraits } from "~/lib/analytics/identity";
-import { captureServer, identifyServer } from "~/lib/analytics/server";
-import { allocateUserSlug } from "~/server/users/slug";
-import { eraseUserAccount, type ErasureResult } from "~/server/users/erasure";
+} from '~/server/auth/dev-user';
+import { getEntitlements } from '~/server/billing/entitlements';
+import type { Entitlements } from '~/config/plans';
+import { isAnalyticsConfigured } from '~/lib/analytics/config';
+import { buildIdentityTraits } from '~/lib/analytics/identity';
+import { captureServer, identifyServer } from '~/lib/analytics/server';
+import { allocateUserSlug } from '~/server/users/slug';
+import { eraseUserAccount, type ErasureResult } from '~/server/users/erasure';
 
 /**
  * Heirloom auth module.
@@ -68,7 +68,7 @@ export { DEV_USER };
 async function selectDevIdentity(): Promise<User> {
   if (!isIdentitySelectorEnabled()) return DEV_USER;
   try {
-    const { cookies } = await import("next/headers");
+    const { cookies } = await import('next/headers');
     const requested = (await cookies()).get(DEV_IDENTITY_COOKIE)?.value;
     return resolveDevIdentity(requested);
   } catch {
@@ -87,11 +87,11 @@ export function assertDevBypassAllowed(
   skipValidation = Boolean(process.env.SKIP_ENV_VALIDATION),
 ): void {
   if (skipValidation) return;
-  if (nodeEnv === "production") {
+  if (nodeEnv === 'production') {
     throw new Error(
-      "Refusing to serve the shared dev-bypass user in production. Configure " +
-        "Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset " +
-        "NEXT_PUBLIC_DEV_AUTH_BYPASS. Dev-bypass is a local/test-only affordance.",
+      'Refusing to serve the shared dev-bypass user in production. Configure ' +
+        'Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset ' +
+        'NEXT_PUBLIC_DEV_AUTH_BYPASS. Dev-bypass is a local/test-only affordance.',
     );
   }
 }
@@ -100,7 +100,7 @@ export function assertDevBypassAllowed(
 export function isAuthConfigured(): boolean {
   return (
     Boolean(env.CLERK_SECRET_KEY && env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
-    env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== "1"
+    env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== '1'
   );
 }
 
@@ -141,19 +141,14 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   if (existing) return existing;
 
   // First time we've seen this Clerk user. Pull their profile and store it.
-  const { clerkClient } = await import("@clerk/nextjs/server");
+  const { clerkClient } = await import('@clerk/nextjs/server');
   const client = await clerkClient();
   const profile = await client.users.getUser(clerkId);
 
   const email =
-    profile.primaryEmailAddress?.emailAddress ??
-    profile.emailAddresses[0]?.emailAddress ??
-    null;
-  const joinedName = [profile.firstName, profile.lastName]
-    .filter(Boolean)
-    .join(" ");
-  const name =
-    joinedName.length > 0 ? joinedName : (profile.username ?? "Cook");
+    profile.primaryEmailAddress?.emailAddress ?? profile.emailAddresses[0]?.emailAddress ?? null;
+  const joinedName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+  const name = joinedName.length > 0 ? joinedName : (profile.username ?? 'Cook');
 
   const [created] = await db
     .insert(users)
@@ -179,14 +174,10 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   // race that hits onConflictDoNothing doesn't double-count. Attributed to the
   // internal user id (never PII) so it stitches to identify.
   if (created) {
-    void captureServer(created.id, "signup_completed", {});
+    void captureServer(created.id, 'signup_completed', {});
   }
 
-  return (
-    created ??
-    (await db.query.users.findFirst({ where: eq(users.clerkId, clerkId) })) ??
-    null
-  );
+  return created ?? (await db.query.users.findFirst({ where: eq(users.clerkId, clerkId) })) ?? null;
 }
 
 /**
@@ -225,7 +216,7 @@ async function resolveCurrentUser(): Promise<User | null> {
     assertDevBypassAllowed();
     return getOrCreateDevUser();
   }
-  const { auth } = await import("@clerk/nextjs/server");
+  const { auth } = await import('@clerk/nextjs/server');
   const { userId } = await auth();
   if (!userId) return null;
   return syncClerkUser(userId);
@@ -264,7 +255,7 @@ export async function getAuthState(): Promise<AuthState> {
 export async function requireUser(): Promise<User> {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("UNAUTHENTICATED");
+    throw new Error('UNAUTHENTICATED');
   }
   return user;
 }
@@ -315,7 +306,7 @@ export async function applyClerkUserUpdate(
     .update(users)
     .set({
       email: profile.email,
-      name: profile.name && profile.name.length > 0 ? profile.name : "Cook",
+      name: profile.name && profile.name.length > 0 ? profile.name : 'Cook',
       handle: profile.handle,
       avatarUrl: sql`case when ${users.avatarUserManaged} then ${users.avatarUrl} else ${profile.avatarUrl} end`,
     })
@@ -342,17 +333,17 @@ export async function applyClerkUserUpdate(
  */
 export async function applyClerkUserDeletion(
   clerkId: string,
-): Promise<ErasureResult["status"] | "unknown_subject"> {
-  if (!isDbConfigured() || !clerkId) return "unknown_subject";
+): Promise<ErasureResult['status'] | 'unknown_subject'> {
+  if (!isDbConfigured() || !clerkId) return 'unknown_subject';
 
   const existing = await db.query.users.findFirst({
     where: eq(users.clerkId, clerkId),
     columns: { id: true },
   });
-  if (!existing) return "unknown_subject";
+  if (!existing) return 'unknown_subject';
 
   const result = await eraseUserAccount(existing.id, {
-    trigger: "clerk_webhook",
+    trigger: 'clerk_webhook',
   });
   return result.status;
 }

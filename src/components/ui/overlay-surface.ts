@@ -8,14 +8,14 @@
  * surface's density (see `OVERLAY_PADDING`).
  */
 export const OVERLAY_SURFACE =
-  "rounded-xl border border-border bg-popover text-popover-foreground shadow-token-lg";
+  'rounded-xl border border-border bg-popover text-popover-foreground shadow-token-lg';
 
 /** Padding scale for overlay surfaces, keyed by density. */
 export const OVERLAY_PADDING = {
   /** Item lists (dropdown, select). Tight. The items carry their own padding. */
-  menu: "p-1.5",
+  menu: 'p-1.5',
   /** Free-form popovers. */
-  popover: "p-4",
+  popover: 'p-4',
   /** Modal dialogs. Roomy, with a comfortable measure. */
-  dialog: "p-6",
+  dialog: 'p-6',
 } as const;

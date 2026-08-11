@@ -11,11 +11,7 @@
  * Kept free of React / DB imports so it can be unit-tested in isolation and
  * reused on the client.
  */
-import type {
-  IngredientInput,
-  RecipeInput,
-  StepInput,
-} from "~/server/recipes/validation";
+import type { IngredientInput, RecipeInput, StepInput } from '~/server/recipes/validation';
 
 /** A changed scalar field (title, times, servings, notes, …). */
 export type FieldChange = {
@@ -25,7 +21,7 @@ export type FieldChange = {
   after: string | null;
 };
 
-export type LineChangeKind = "added" | "removed" | "changed" | "unchanged";
+export type LineChangeKind = 'added' | 'removed' | 'changed' | 'unchanged';
 
 /** One aligned line in an ingredient or step diff. */
 export type LineDiff = {
@@ -53,33 +49,31 @@ export type RecipeDiff = {
 };
 
 function str(value: unknown): string {
-  if (value == null) return "";
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean") {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value).trim();
   }
-  return "";
+  return '';
 }
 
 function num(value: number | null | undefined): string {
-  return value == null ? "" : String(value);
+  return value == null ? '' : String(value);
 }
 
 /** Human-readable one-line rendering of an ingredient row. */
 export function formatIngredientLine(ing: IngredientInput): string {
   const qty =
-    ing.quantity != null &&
-    ing.quantityMax != null &&
-    ing.quantityMax !== ing.quantity
+    ing.quantity != null && ing.quantityMax != null && ing.quantityMax !== ing.quantity
       ? `${ing.quantity}–${ing.quantityMax}`
       : num(ing.quantity);
   const parts = [qty, str(ing.unit), str(ing.item)].filter(Boolean);
-  let line = parts.join(" ");
+  let line = parts.join(' ');
   const extras: string[] = [];
   if (str(ing.prep)) extras.push(str(ing.prep));
   if (str(ing.note)) extras.push(str(ing.note));
-  if (extras.length) line += ` (${extras.join(", ")})`;
-  if (ing.optional) line += " · optional";
+  if (extras.length) line += ` (${extras.join(', ')})`;
+  if (ing.optional) line += ' · optional';
   return line.trim();
 }
 
@@ -97,15 +91,10 @@ export function formatStepLine(step: StepInput): string {
 function lcsPairs(a: string[], b: string[]): Array<[number, number]> {
   const n = a.length;
   const m = b.length;
-  const dp: number[][] = Array.from({ length: n + 1 }, () =>
-    new Array<number>(m + 1).fill(0),
-  );
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      dp[i]![j] =
-        a[i] === b[j]
-          ? dp[i + 1]![j + 1]! + 1
-          : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!);
+      dp[i]![j] = a[i] === b[j] ? dp[i + 1]![j + 1]! + 1 : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!);
     }
   }
   const pairs: Array<[number, number]> = [];
@@ -151,16 +140,16 @@ function diffLines<T>(
       const beforeText = display(bItem);
       const afterText = display(aItem);
       if (beforeText === afterText) {
-        lines.push({ kind: "unchanged", before: beforeText, after: afterText });
+        lines.push({ kind: 'unchanged', before: beforeText, after: afterText });
       } else {
-        lines.push({ kind: "changed", before: beforeText, after: afterText });
+        lines.push({ kind: 'changed', before: beforeText, after: afterText });
         changed++;
       }
     } else if (bItem != null) {
-      lines.push({ kind: "removed", before: display(bItem), after: null });
+      lines.push({ kind: 'removed', before: display(bItem), after: null });
       removed++;
     } else if (aItem != null) {
-      lines.push({ kind: "added", before: null, after: display(aItem) });
+      lines.push({ kind: 'added', before: null, after: display(aItem) });
       added++;
     }
   };
@@ -197,45 +186,42 @@ const SCALAR_FIELDS: Array<{
   key: keyof RecipeInput;
   label: string;
 }> = [
-  { key: "title", label: "Title" },
-  { key: "description", label: "Description" },
-  { key: "servings", label: "Servings" },
-  { key: "servingsNoun", label: "Serving unit" },
-  { key: "prepMinutes", label: "Prep time" },
-  { key: "cookMinutes", label: "Cook time" },
-  { key: "totalMinutes", label: "Total time" },
-  { key: "restMinutes", label: "Rest time" },
-  { key: "difficulty", label: "Difficulty" },
-  { key: "cuisine", label: "Cuisine" },
-  { key: "cuisines", label: "Cuisines" },
-  { key: "mealTypes", label: "Meals & courses" },
-  { key: "notes", label: "Notes" },
+  { key: 'title', label: 'Title' },
+  { key: 'description', label: 'Description' },
+  { key: 'servings', label: 'Servings' },
+  { key: 'servingsNoun', label: 'Serving unit' },
+  { key: 'prepMinutes', label: 'Prep time' },
+  { key: 'cookMinutes', label: 'Cook time' },
+  { key: 'totalMinutes', label: 'Total time' },
+  { key: 'restMinutes', label: 'Rest time' },
+  { key: 'difficulty', label: 'Difficulty' },
+  { key: 'cuisine', label: 'Cuisine' },
+  { key: 'cuisines', label: 'Cuisines' },
+  { key: 'mealTypes', label: 'Meals & courses' },
+  { key: 'notes', label: 'Notes' },
 ];
 
 const EMPTY_RECIPE: Partial<RecipeInput> = {
-  title: "",
+  title: '',
   ingredients: [],
   steps: [],
 };
 
-function fieldValue(
-  recipe: Partial<RecipeInput>,
-  key: keyof RecipeInput,
-): string {
+function fieldValue(recipe: Partial<RecipeInput>, key: keyof RecipeInput): string {
   const value = recipe[key];
-  if (value == null) return "";
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean") {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value).trim();
   }
   if (Array.isArray(value)) {
     return value
-      .filter((item): item is string => typeof item === "string")
+      .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
       .filter(Boolean)
-      .join(", ");
+      .join(', ');
   }
-  return "";
+  return '';
 }
 
 /**

@@ -1,6 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from '@playwright/test';
 
-import { gotoSeededRecipe } from "./recipe-paths";
+import { gotoSeededRecipe } from './recipe-paths';
 
 // A public, published recipe from the seed (src/server/db/seed.ts) whose first
 // step carries a timer, so the offline Cook Mode assertions have a "Start"
@@ -14,10 +14,10 @@ import { gotoSeededRecipe } from "./recipe-paths";
  * `controller` is the main source of flakiness this guards against.
  */
 async function bootServiceWorker(page: Page): Promise<void> {
-  await page.goto("/");
+  await page.goto('/');
   await page.waitForFunction(
     async () => {
-      if (!("serviceWorker" in navigator)) return false;
+      if (!('serviceWorker' in navigator)) return false;
       await navigator.serviceWorker.ready;
       return navigator.serviceWorker.controller != null;
     },
@@ -32,8 +32,8 @@ async function bootServiceWorker(page: Page): Promise<void> {
  * `#current-step-title` heading is present. Mirrors tests/e2e/cook-journey.spec.ts.
  */
 async function startCooking(page: Page): Promise<void> {
-  const startCooking = page.getByTestId("cook-mode-start");
-  const currentStep = page.locator("#current-step-title");
+  const startCooking = page.getByTestId('cook-mode-start');
+  const currentStep = page.locator('#current-step-title');
 
   await expect(startCooking.first().or(currentStep).first()).toBeVisible();
   if (await startCooking.first().isVisible()) {
@@ -42,28 +42,20 @@ async function startCooking(page: Page): Promise<void> {
   await expect(currentStep).toBeVisible();
 }
 
-test("serves the offline fallback for an uncached navigation", async ({
-  page,
-  context,
-}) => {
+test('serves the offline fallback for an uncached navigation', async ({ page, context }) => {
   await bootServiceWorker(page);
 
   // A route that was never visited (so never cached): offline, the SW must
   // serve the precached /~offline page rather than a network error.
   await context.setOffline(true);
-  await page.goto("/never-visited-offline-e2e-route");
+  await page.goto('/never-visited-offline-e2e-route');
 
-  await expect(
-    page.getByRole("heading", { name: /you.?re offline/i }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /you.?re offline/i })).toBeVisible();
 
   await context.setOffline(false);
 });
 
-test("a previously opened recipe and Cook Mode work offline", async ({
-  page,
-  context,
-}) => {
+test('a previously opened recipe and Cook Mode work offline', async ({ page, context }) => {
   await bootServiceWorker(page);
 
   // Warm the recipe + Cook Mode documents into the runtime cache while online.
@@ -88,7 +80,7 @@ test("a previously opened recipe and Cook Mode work offline", async ({
 
   await page.goto(cookPath);
   await startCooking(page);
-  await expect(page.locator("#current-step-title")).toBeVisible();
+  await expect(page.locator('#current-step-title')).toBeVisible();
 
   // Drop the connection and confirm both still load from the SW cache, not the
   // network.
@@ -99,20 +91,16 @@ test("a previously opened recipe and Cook Mode work offline", async ({
 
   await page.goto(cookPath);
   await startCooking(page);
-  await expect(page.locator("#current-step-title")).toBeVisible();
+  await expect(page.locator('#current-step-title')).toBeVisible();
   // The seeded recipe's real first-step content proves Cook Mode rendered from
   // cache, not a generic offline shell.
-  await expect(page.locator("#current-step-title")).toContainText(
-    /brown the pork ribs/i,
-  );
+  await expect(page.locator('#current-step-title')).toContainText(/brown the pork ribs/i);
 
   // Timers are client-side, so Cook Mode stays fully functional offline.
-  const startTimer = page.getByRole("button", { name: /^start$/i }).first();
+  const startTimer = page.getByRole('button', { name: /^start$/i }).first();
   await startTimer.click();
-  await expect(
-    page.getByRole("button", { name: /^pause$/i }).first(),
-  ).toBeVisible();
-  await expect(page.locator("[role=timer]").first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /^pause$/i }).first()).toBeVisible();
+  await expect(page.locator('[role=timer]').first()).toBeVisible();
 
   await context.setOffline(false);
 });

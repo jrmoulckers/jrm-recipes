@@ -1,8 +1,8 @@
-import { relations } from "drizzle-orm";
-import { index, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { index, pgEnum, pgTable, unique } from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
 
 /**
  * The kind of thing a reaction is attached to (issue #342). Reactions are
@@ -10,29 +10,25 @@ import { users } from "./users";
  * cook-log posts, so `targetType` + `targetId` identify the target rather than
  * a per-kind foreign key.
  */
-export const reactionTarget = pgEnum("reaction_target", [
-  "comment",
-  "review",
-  "cook_log",
-]);
+export const reactionTarget = pgEnum('reaction_target', ['comment', 'review', 'cook_log']);
 
 /**
  * The fixed, family-appropriate emoji set. Stored as a semantic key (not the
  * glyph) so the rendered emoji can be tweaked without a data migration and the
  * set can never drift to something unmoderated.
  */
-export const reactionEmoji = pgEnum("reaction_emoji", [
-  "love",
-  "yum",
-  "clap",
-  "wow",
-  "fire",
-  "party",
+export const reactionEmoji = pgEnum('reaction_emoji', [
+  'love',
+  'yum',
+  'clap',
+  'wow',
+  'fire',
+  'party',
 ]);
 
 /** A single emoji reaction by a user on a comment / review / cook-log post. */
 export const reactions = pgTable(
-  "reactions",
+  'reactions',
   {
     id: pk(),
     targetType: reactionTarget().notNull(),
@@ -41,23 +37,18 @@ export const reactions = pgTable(
     targetId: fk().notNull(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     emoji: reactionEmoji().notNull(),
     ...timestamps(),
   },
   (t) => [
     // At most one of a given emoji per user per target. The toggle upserts
     // against this constraint.
-    unique("reactions_target_user_emoji_uq").on(
-      t.targetType,
-      t.targetId,
-      t.userId,
-      t.emoji,
-    ),
+    unique('reactions_target_user_emoji_uq').on(t.targetType, t.targetId, t.userId, t.emoji),
     // "All reactions for this target" (the bar) is the hot read.
-    index("reactions_target_idx").on(t.targetType, t.targetId),
+    index('reactions_target_idx').on(t.targetType, t.targetId),
     // Covering index for the userId FK cascade + "my reactions" reads (#153).
-    index("reactions_user_idx").on(t.userId),
+    index('reactions_user_idx').on(t.userId),
   ],
 );
 

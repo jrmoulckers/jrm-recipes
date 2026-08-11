@@ -1,4 +1,4 @@
-import { env } from "~/env";
+import { env } from '~/env';
 
 /**
  * The tiny part of the media picker (#656) that callers need *before* deciding

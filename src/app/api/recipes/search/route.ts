@@ -1,12 +1,12 @@
-import { getCurrentUser } from "~/server/auth";
-import { searchRecipes } from "~/server/recipes/queries";
-import { parseRecipeSearch } from "~/server/recipes/search";
+import { getCurrentUser } from '~/server/auth';
+import { searchRecipes } from '~/server/recipes/queries';
+import { parseRecipeSearch } from '~/server/recipes/search';
 
 // Resolves visibility per-request against the signed-in viewer (a recipe can be
 // made private at any time), and reuses the pooled Postgres query, so keep it on
 // the Node runtime and never cache.
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /** Top matches surfaced inline in the ⌘K command palette. */
 const PALETTE_LIMIT = 6;
@@ -30,7 +30,7 @@ export type CommandRecipeResult = {
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = (searchParams.get("q") ?? "").trim();
+  const q = (searchParams.get('q') ?? '').trim();
   if (q.length === 0) {
     return Response.json({ items: [] as CommandRecipeResult[] });
   }
@@ -48,8 +48,5 @@ export async function GET(request: Request) {
     tags: recipe.tags.map(({ tag }) => tag.name),
   }));
 
-  return Response.json(
-    { items: results },
-    { headers: { "cache-control": "no-store" } },
-  );
+  return Response.json({ items: results }, { headers: { 'cache-control': 'no-store' } });
 }

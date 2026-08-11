@@ -1,26 +1,23 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { ImageOff, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { ImageOff, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { formatDate } from "~/lib/dates";
-import { cn } from "~/lib/utils";
+import { formatDate } from '~/lib/dates';
+import { cn } from '~/lib/utils';
 import {
   deleteAssetAction,
   getAssetUsageAction,
   listAssetsAction,
   updateAltTextAction,
-} from "~/server/media/actions";
-import {
-  ASSET_USAGE_SURFACES,
-  type AssetUsageSurface,
-} from "~/server/media/usage-surfaces";
-import { Button } from "~/components/ui/button";
-import { useConfirm } from "~/components/ui/confirm-dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+} from '~/server/media/actions';
+import { ASSET_USAGE_SURFACES, type AssetUsageSurface } from '~/server/media/usage-surfaces';
+import { Button } from '~/components/ui/button';
+import { useConfirm } from '~/components/ui/confirm-dialog';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 
 /**
  * The photo library grid for `/settings/photos` (issue #658, epic #655).
@@ -66,21 +63,17 @@ export function PhotoLibrary({
   initialAssets: LibraryAsset[];
   initialCursor: string | null;
 }) {
-  const t = useTranslations("settings.photosPage");
+  const t = useTranslations('settings.photosPage');
   const locale = useLocale();
   const confirm = useConfirm();
 
   const [assets, setAssets] = React.useState(initialAssets);
   const [cursor, setCursor] = React.useState(initialCursor);
   const [loading, setLoading] = React.useState(false);
-  const [selectedId, setSelectedId] = React.useState<string | null>(
-    initialAssets[0]?.id ?? null,
-  );
+  const [selectedId, setSelectedId] = React.useState<string | null>(initialAssets[0]?.id ?? null);
   const [focusIndex, setFocusIndex] = React.useState(0);
-  const [altDraft, setAltDraft] = React.useState(
-    initialAssets[0]?.altText ?? "",
-  );
-  const [status, setStatus] = React.useState("");
+  const [altDraft, setAltDraft] = React.useState(initialAssets[0]?.altText ?? '');
+  const [status, setStatus] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [broken, setBroken] = React.useState<Record<string, boolean>>({});
@@ -91,13 +84,13 @@ export function PhotoLibrary({
   const selected = assets.find((asset) => asset.id === selectedId) ?? null;
 
   function describe(asset: LibraryAsset): string {
-    return asset.altText ?? t("untitledPhoto");
+    return asset.altText ?? t('untitledPhoto');
   }
 
   function select(asset: LibraryAsset) {
     setSelectedId(asset.id);
-    setAltDraft(asset.altText ?? "");
-    setStatus("");
+    setAltDraft(asset.altText ?? '');
+    setStatus('');
     setError(null);
   }
 
@@ -117,21 +110,21 @@ export function PhotoLibrary({
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     switch (event.key) {
-      case "ArrowRight":
-      case "ArrowDown":
+      case 'ArrowRight':
+      case 'ArrowDown':
         event.preventDefault();
         move(focusIndex + 1);
         break;
-      case "ArrowLeft":
-      case "ArrowUp":
+      case 'ArrowLeft':
+      case 'ArrowUp':
         event.preventDefault();
         move(focusIndex - 1);
         break;
-      case "Home":
+      case 'Home':
         event.preventDefault();
         move(0);
         break;
-      case "End":
+      case 'End':
         event.preventDefault();
         move(assets.length - 1);
         break;
@@ -176,12 +169,10 @@ export function PhotoLibrary({
       const next = altDraft.trim();
       setAssets((prev) =>
         prev.map((asset) =>
-          asset.id === selected.id
-            ? { ...asset, altText: next.length > 0 ? next : null }
-            : asset,
+          asset.id === selected.id ? { ...asset, altText: next.length > 0 ? next : null } : asset,
         ),
       );
-      setStatus(t("altSaved"));
+      setStatus(t('altSaved'));
       setError(null);
     } else {
       setError(result.error);
@@ -207,23 +198,21 @@ export function PhotoLibrary({
     }
 
     const { total, bySurface } = usageResult.usage;
-    const places = USAGE_SURFACES.filter(
-      (surface) => bySurface[surface] > 0,
-    ).map((surface) =>
+    const places = USAGE_SURFACES.filter((surface) => bySurface[surface] > 0).map((surface) =>
       t(`usage.surfaces.${surface}`, { count: bySurface[surface] }),
     );
 
     const ok = await confirm({
       // The dialog names the exact photo, never "this item".
-      title: t("deleteConfirm.title", { name: describe(selected) }),
+      title: t('deleteConfirm.title', { name: describe(selected) }),
       description:
         total > 0
-          ? t("deleteConfirm.inUse", {
+          ? t('deleteConfirm.inUse', {
               count: total,
-              places: places.join(t("usage.separator")),
+              places: places.join(t('usage.separator')),
             })
-          : t("deleteConfirm.unused"),
-      confirmLabel: t("deleteConfirm.confirmLabel"),
+          : t('deleteConfirm.unused'),
+      confirmLabel: t('deleteConfirm.confirmLabel'),
     });
     if (!ok) return;
 
@@ -239,11 +228,11 @@ export function PhotoLibrary({
     const remaining = assets.filter((asset) => asset.id !== selected.id);
     setAssets(remaining);
     setSelectedId(remaining[0]?.id ?? null);
-    setAltDraft(remaining[0]?.altText ?? "");
+    setAltDraft(remaining[0]?.altText ?? '');
     setFocusIndex(0);
     setError(null);
-    setStatus("");
-    toast.success(t("deleteConfirm.deleted"));
+    setStatus('');
+    toast.success(t('deleteConfirm.deleted'));
   }
 
   if (assets.length === 0) {
@@ -254,7 +243,7 @@ export function PhotoLibrary({
     <div className="flex flex-col gap-6">
       <div
         role="listbox"
-        aria-label={t("gridLabel")}
+        aria-label={t('gridLabel')}
         onKeyDown={onKeyDown}
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
       >
@@ -274,14 +263,14 @@ export function PhotoLibrary({
               onFocus={() => setFocusIndex(index)}
               onClick={() => select(asset)}
               className={cn(
-                "relative aspect-square overflow-hidden rounded-xl border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isSelected && "ring-2 ring-primary",
+                'relative aspect-square overflow-hidden rounded-xl border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                isSelected && 'ring-2 ring-primary',
               )}
             >
               {broken[asset.id] ? (
                 <span className="flex size-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-muted-foreground">
                   <ImageOff className="size-5" aria-hidden="true" />
-                  {t("unavailable")}
+                  {t('unavailable')}
                 </span>
               ) : (
                 /* Decorative: the button already carries the photo's name, so a
@@ -292,9 +281,7 @@ export function PhotoLibrary({
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  onError={() =>
-                    setBroken((prev) => ({ ...prev, [asset.id]: true }))
-                  }
+                  onError={() => setBroken((prev) => ({ ...prev, [asset.id]: true }))}
                   className="size-full object-cover"
                 />
               )}
@@ -311,13 +298,13 @@ export function PhotoLibrary({
           loading={loading}
           onClick={() => void loadMore()}
         >
-          {t("loadMore")}
+          {t('loadMore')}
         </Button>
       ) : null}
 
       {selected ? (
         <section
-          aria-label={t("detailsLabel")}
+          aria-label={t('detailsLabel')}
           className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-token"
         >
           <div className="flex flex-col gap-1">
@@ -333,27 +320,27 @@ export function PhotoLibrary({
                     )}`
                   : null,
                 selected.bytes ? formatBytes(selected.bytes, locale) : null,
-                t("uploaded", {
-                  date: formatDate(new Date(selected.createdAt), "PP", locale),
+                t('uploaded', {
+                  date: formatDate(new Date(selected.createdAt), 'PP', locale),
                 }),
               ]
                 .filter(Boolean)
-                .join(" · ")}
+                .join(' · ')}
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor={altId}>{t("altLabel")}</Label>
+            <Label htmlFor={altId}>{t('altLabel')}</Label>
             <div className="flex flex-wrap items-center gap-2">
               <Input
                 id={altId}
                 value={altDraft}
                 maxLength={300}
                 className="flex-1"
-                placeholder={t("altPlaceholder")}
+                placeholder={t('altPlaceholder')}
                 onChange={(event) => {
                   setAltDraft(event.target.value);
-                  setStatus("");
+                  setStatus('');
                 }}
               />
               <Button
@@ -362,10 +349,10 @@ export function PhotoLibrary({
                 disabled={busy}
                 onClick={() => void saveAltText()}
               >
-                {t("altSave")}
+                {t('altSave')}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">{t("altHint")}</p>
+            <p className="text-xs text-muted-foreground">{t('altHint')}</p>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -380,7 +367,7 @@ export function PhotoLibrary({
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => void onDelete()}
             >
-              <Trash2 /> {t("delete")}
+              <Trash2 /> {t('delete')}
             </Button>
           </div>
 

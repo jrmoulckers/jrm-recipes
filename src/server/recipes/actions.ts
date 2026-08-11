@@ -1,33 +1,29 @@
-"use server";
+'use server';
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath, revalidateTag } from 'next/cache';
+import { redirect } from 'next/navigation';
 
-import { requireUser } from "~/server/auth";
-import { db, isDbConfigured } from "~/server/db";
-import { recipes } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
-import {
-  type ActionResult as BaseActionResult,
-  fail,
-  ok,
-} from "~/server/action-result";
-import { authedAction, NEEDS_DATABASE } from "~/server/action";
-import { revalidateRecipePaths, revalidateRecipeTags } from "./revalidate";
-import { absoluteUrl } from "~/lib/utils";
-import { domainCodeOf, messageForError } from "~/server/errors";
-import { isAnalyticsConfigured } from "~/lib/analytics/config";
-import { captureServer } from "~/lib/analytics/server";
-import { getLimitStatus } from "~/server/billing/entitlements";
-import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
-import { importRecipeFromUrl, type ImportResult } from "./import";
-import { parseRecipeText } from "./import-text";
-import { recipeInput, type RecipeInput } from "./validation";
-import { recipeTag } from "./cache-tags";
-import { diffRecipeSnapshots, type RecipeDiff } from "~/lib/recipe-diff";
-import { recipeToInput } from "./timeline";
-import { getRecipeForViewer } from "./loaders";
-import { getRecipeVersion, parseSnapshot } from "./queries";
+import { requireUser } from '~/server/auth';
+import { db, isDbConfigured } from '~/server/db';
+import { recipes } from '~/server/db/schema';
+import { eq } from 'drizzle-orm';
+import { type ActionResult as BaseActionResult, fail, ok } from '~/server/action-result';
+import { authedAction, NEEDS_DATABASE } from '~/server/action';
+import { revalidateRecipePaths, revalidateRecipeTags } from './revalidate';
+import { absoluteUrl } from '~/lib/utils';
+import { domainCodeOf, messageForError } from '~/server/errors';
+import { isAnalyticsConfigured } from '~/lib/analytics/config';
+import { captureServer } from '~/lib/analytics/server';
+import { getLimitStatus } from '~/server/billing/entitlements';
+import { checkRateLimit, RATE_LIMITED_MESSAGE } from '~/server/rate-limit';
+import { importRecipeFromUrl, type ImportResult } from './import';
+import { parseRecipeText } from './import-text';
+import { recipeInput, type RecipeInput } from './validation';
+import { recipeTag } from './cache-tags';
+import { diffRecipeSnapshots, type RecipeDiff } from '~/lib/recipe-diff';
+import { recipeToInput } from './timeline';
+import { getRecipeForViewer } from './loaders';
+import { getRecipeVersion, parseSnapshot } from './queries';
 import {
   createRecipe,
   deleteRecipe,
@@ -36,7 +32,7 @@ import {
   revertRecipe,
   setShareLinkState,
   updateRecipe,
-} from "./mutations";
+} from './mutations';
 
 /** Recipe mutations resolve to the new/affected recipe's id + slug. */
 export type ActionResult = BaseActionResult<{
@@ -51,12 +47,11 @@ export type ActionResult = BaseActionResult<{
  * to. Mirrors the `FORBIDDEN` guard in {@link createRecipe}/{@link updateRecipe}
  * back onto the `groupId` field so the editor highlights the group picker.
  */
-const GROUP_FORBIDDEN =
-  "You can only share a recipe with a group you belong to.";
+const GROUP_FORBIDDEN = 'You can only share a recipe with a group you belong to.';
 
 /** True when a mutation rejected a group assignment for lack of membership. */
 function isForbidden(error: unknown): boolean {
-  return domainCodeOf(error) === "FORBIDDEN";
+  return domainCodeOf(error) === 'FORBIDDEN';
 }
 
 function groupForbiddenResult(): ActionResult {
@@ -67,14 +62,13 @@ const runCreateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user): Promise<ActionResult> => {
     // Throttle write spam / storage exhaustion (issue #199).
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     // Soft-limit (issue #318): free tiers cap the number of saved recipes. Refuse
     // only *new* creates once at/over the cap and hand the UI an upgrade-flagged
     // result. Existing recipes stay fully editable/viewable, and an unlimited plan
     // (or unconfigured billing) resolves to `ok`, so nothing is ever hard-blocked.
-    const limit = await getLimitStatus(user, "maxRecipes", "recipes");
-    if (limit.state === "blocked") {
+    const limit = await getLimitStatus(user, 'maxRecipes', 'recipes');
+    if (limit.state === 'blocked') {
       return {
         ok: false,
         upgrade: true,
@@ -83,13 +77,13 @@ const runCreateRecipe = authedAction({
     }
     try {
       const recipe = await createRecipe(data, user);
-      void captureServer(user.id, "recipe_created", {
+      void captureServer(user.id, 'recipe_created', {
         recipeId: recipe.id,
         ingredientCount: data.ingredients.length,
         stepCount: data.steps.length,
         hasPhoto: Boolean(data.coverImageUrl),
         visibility: data.visibility,
-        source: "manual",
+        source: 'manual',
       });
       // Activation funnel (#328): emit first_recipe_created exactly once, when
       // the author's recipe count first reaches 1. Gated on analytics being
@@ -100,12 +94,9 @@ const runCreateRecipe = authedAction({
       if (isAnalyticsConfigured()) {
         void (async () => {
           try {
-            const authored = await db.$count(
-              recipes,
-              eq(recipes.authorId, user.id),
-            );
+            const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
             if (authored === 1) {
-              void captureServer(user.id, "first_recipe_created", {
+              void captureServer(user.id, 'first_recipe_created', {
                 recipeId: recipe.id,
               });
             }
@@ -114,8 +105,8 @@ const runCreateRecipe = authedAction({
           }
         })();
       }
-      revalidatePath("/recipes");
-      revalidatePath("/");
+      revalidatePath('/recipes');
+      revalidatePath('/');
       await revalidateRecipePaths({ ...recipe, cook: user.slug });
       revalidateRecipeTags(recipe.id);
       return ok({ id: recipe.id, slug: recipe.slug, cook: user.slug });
@@ -126,27 +117,24 @@ const runCreateRecipe = authedAction({
   },
 });
 
-export async function createRecipeAction(
-  input: RecipeInput,
-): Promise<ActionResult> {
+export async function createRecipeAction(input: RecipeInput): Promise<ActionResult> {
   return runCreateRecipe(input);
 }
 
 const runUpdateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user, id: string): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       const recipe = await updateRecipe(id, data, user);
-      void captureServer(user.id, "recipe_updated", {
+      void captureServer(user.id, 'recipe_updated', {
         recipeId: id,
         ingredientCount: data.ingredients.length,
         stepCount: data.steps.length,
         hasPhoto: Boolean(data.coverImageUrl),
         visibility: data.visibility,
       });
-      revalidatePath("/recipes");
+      revalidatePath('/recipes');
       // The canonical path is namespaced under the *owner*, who is not
       // necessarily the editor once co-creators can save (#668), so the owner's
       // slug is taken from the mutation rather than from the acting user.
@@ -160,28 +148,21 @@ const runUpdateRecipe = authedAction({
   },
 });
 
-export async function updateRecipeAction(
-  id: string,
-  input: RecipeInput,
-): Promise<ActionResult> {
+export async function updateRecipeAction(id: string, input: RecipeInput): Promise<ActionResult> {
   return runUpdateRecipe(id, input);
 }
 
-export async function forkRecipeAction(
-  sourceId: string,
-  forkNote?: string,
-): Promise<ActionResult> {
+export async function forkRecipeAction(sourceId: string, forkNote?: string): Promise<ActionResult> {
   if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   try {
     const user = await requireUser();
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     const recipe = await forkRecipe(sourceId, user, forkNote);
-    void captureServer(user.id, "recipe_forked", {
+    void captureServer(user.id, 'recipe_forked', {
       recipeId: recipe.id,
       sourceId,
     });
-    revalidatePath("/recipes");
+    revalidatePath('/recipes');
     await revalidateRecipePaths(recipe.source);
     revalidateRecipeTags(recipe.id);
     revalidateTag(recipeTag(sourceId));
@@ -210,12 +191,12 @@ export async function revertRecipeAction(
   try {
     const user = await requireUser();
     const recipe = await revertRecipe(recipeId, versionNumber, user);
-    void captureServer(user.id, "recipe_reverted", {
+    void captureServer(user.id, 'recipe_reverted', {
       recipeId: recipe.id,
       versionNumber,
     });
     await revalidateRecipePaths({ ...recipe, cook: user.slug });
-    revalidatePath("/recipes");
+    revalidatePath('/recipes');
     revalidateRecipeTags(recipe.id);
     return ok({ id: recipe.id, slug: recipe.slug });
   } catch (error) {
@@ -230,10 +211,9 @@ export async function revertRecipeAction(
 }
 
 /** One end of a version comparison: a saved version number, or the live recipe. */
-export type CompareSelection = number | "current";
+export type CompareSelection = number | 'current';
 
-export type CompareVersionsResult =
-  { ok: true; diff: RecipeDiff } | { ok: false; error: string };
+export type CompareVersionsResult = { ok: true; diff: RecipeDiff } | { ok: false; error: string };
 
 /**
  * Diff two points in a recipe's history for the Timeline "Compare" view (#358).
@@ -251,10 +231,8 @@ export async function compareRecipeVersionsAction(
   const { recipe } = await getRecipeForViewer(recipeId);
   if (!recipe) return { ok: false, error: "We couldn't find that recipe." };
 
-  const resolve = async (
-    selection: CompareSelection,
-  ): Promise<RecipeInput | null> => {
-    if (selection === "current") return recipeToInput(recipe);
+  const resolve = async (selection: CompareSelection): Promise<RecipeInput | null> => {
+    if (selection === 'current') return recipeToInput(recipe);
     const version = await getRecipeVersion(recipe.id, selection);
     return version ? parseSnapshot(version.snapshot) : null;
   };
@@ -263,18 +241,16 @@ export async function compareRecipeVersionsAction(
   return { ok: true, diff: diffRecipeSnapshots(before, after) };
 }
 
-export async function importRecipeFromUrlAction(
-  url: string,
-): Promise<ImportResult> {
+export async function importRecipeFromUrlAction(url: string): Promise<ImportResult> {
   // Tie the fetch to an authenticated session so it isn't an open proxy.
   const user = await requireUser();
   // Bound outbound fetches per user so import can't be used for SSRF
   // amplification / high-volume third-party fetches (issue #199).
-  if (!checkRateLimit("import", user.id).ok) {
+  if (!checkRateLimit('import', user.id).ok) {
     return { ok: false, error: RATE_LIMITED_MESSAGE };
   }
   const result = await importRecipeFromUrl(url);
-  void captureServer(user.id, "recipe_imported", { ok: result.ok });
+  void captureServer(user.id, 'recipe_imported', { ok: result.ok });
   return result;
 }
 
@@ -283,42 +259,36 @@ export async function importRecipeFromUrlAction(
  * and offline - no fetch, no AI - so it only needs an authenticated session to
  * curb abuse. The editor applies the result for the user to review before save.
  */
-export async function importRecipeTextAction(
-  text: string,
-): Promise<ImportResult> {
+export async function importRecipeTextAction(text: string): Promise<ImportResult> {
   const user = await requireUser();
-  if (!checkRateLimit("import", user.id).ok) {
+  if (!checkRateLimit('import', user.id).ok) {
     return { ok: false, error: RATE_LIMITED_MESSAGE };
   }
-  const recipe = parseRecipeText(text ?? "");
-  if (
-    !recipe.title &&
-    recipe.ingredients.length === 0 &&
-    recipe.steps.length === 0
-  ) {
+  const recipe = parseRecipeText(text ?? '');
+  if (!recipe.title && recipe.ingredients.length === 0 && recipe.steps.length === 0) {
     return {
       ok: false,
       error:
         "We couldn't find a recipe in that text. Try including the title, ingredients, and steps.",
     };
   }
-  void captureServer(user.id, "recipe_imported", { ok: true });
+  void captureServer(user.id, 'recipe_imported', { ok: true });
   return { ok: true, recipe };
 }
 
 export async function deleteRecipeAction(id: string): Promise<void> {
   if (!isDbConfigured()) return;
   const user = await requireUser();
-  if (!checkRateLimit("recipeWrite", user.id).ok) return;
+  if (!checkRateLimit('recipeWrite', user.id).ok) return;
   try {
     await deleteRecipe(id, user);
-    void captureServer(user.id, "recipe_deleted", { recipeId: id });
+    void captureServer(user.id, 'recipe_deleted', { recipeId: id });
   } catch {
     // Already gone. Fall through to the library.
   }
-  revalidatePath("/recipes");
+  revalidatePath('/recipes');
   revalidateRecipeTags(id);
-  redirect("/recipes");
+  redirect('/recipes');
 }
 
 /**
@@ -336,7 +306,7 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
   } catch {
     return false;
   }
-  revalidatePath("/recipes");
+  revalidatePath('/recipes');
   await revalidateRecipePaths({ ...restored, cook: user.slug });
   revalidateRecipeTags(restored.id);
   return true;
@@ -360,15 +330,12 @@ export async function setShareLinkStateAction(
 ): Promise<ShareLinkActionResult> {
   if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   const user = await requireUser();
-  if (!checkRateLimit("recipeWrite", user.id).ok)
-    return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
   try {
     const state = await setShareLinkState(recipeId, user, change);
     revalidateRecipeTags(recipeId);
     const url =
-      state.shareToken && state.shareLinkEnabled
-        ? absoluteUrl(`/r/${state.shareToken}`)
-        : null;
+      state.shareToken && state.shareLinkEnabled ? absoluteUrl(`/r/${state.shareToken}`) : null;
     return ok({ url, enabled: state.shareLinkEnabled });
   } catch {
     return fail("We couldn't update that share link.");

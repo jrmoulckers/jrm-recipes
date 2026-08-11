@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import type { Route } from "next";
-import { useTranslations } from "next-intl";
-import { ChevronRight } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import type { Route } from 'next';
+import { useTranslations } from 'next-intl';
+import { ChevronRight } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 export type BreadcrumbItem = {
   label: string;
@@ -24,29 +24,17 @@ export type BreadcrumbItem = {
  * comes from the `nav` catalog, the separator flips for RTL, and the last crumb
  * is marked `aria-current="page"`.
  */
-export function Breadcrumbs({
-  items,
-  className,
-}: {
-  items: BreadcrumbItem[];
-  className?: string;
-}) {
-  const t = useTranslations("nav");
+export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; className?: string }) {
+  const t = useTranslations('nav');
   if (items.length === 0) return null;
 
   return (
-    <nav
-      aria-label={t("landmarks.breadcrumb")}
-      className={cn("min-w-0", className)}
-    >
+    <nav aria-label={t('landmarks.breadcrumb')} className={cn('min-w-0', className)}>
       <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li
-              key={`${item.label}-${index}`}
-              className="flex items-center gap-1.5"
-            >
+            <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
@@ -56,8 +44,8 @@ export function Breadcrumbs({
                 </Link>
               ) : (
                 <span
-                  aria-current={isLast ? "page" : undefined}
-                  className={cn(isLast && "font-medium text-foreground")}
+                  aria-current={isLast ? 'page' : undefined}
+                  className={cn(isLast && 'font-medium text-foreground')}
                 >
                   {item.label}
                 </span>

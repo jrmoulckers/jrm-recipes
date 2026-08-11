@@ -1,8 +1,8 @@
-import { relations } from "drizzle-orm";
-import { index, pgTable, text, unique, varchar } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { index, pgTable, text, unique, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
 
 /**
  * A user's saved recipe search. A friendly name plus the normalized recipe
@@ -11,20 +11,20 @@ import { users } from "./users";
  * name updates it instead of piling up duplicates.
  */
 export const savedSearches = pgTable(
-  "saved_searches",
+  'saved_searches',
   {
     id: pk(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     name: varchar({ length: 80 }).notNull(),
     // The normalized querystring (without a leading "?").
     query: text().notNull(),
     ...timestamps(),
   },
   (t) => [
-    unique("saved_searches_user_name_uq").on(t.userId, t.name),
-    index("saved_searches_user_created_idx").on(t.userId, t.createdAt),
+    unique('saved_searches_user_name_uq').on(t.userId, t.name),
+    index('saved_searches_user_created_idx').on(t.userId, t.createdAt),
   ],
 );
 

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Printer } from "lucide-react";
+import { Printer } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
 
 /**
  * Generic "print this page" trigger (issues #397/#407). Kept as a tiny client
@@ -10,11 +10,11 @@ import { Button } from "~/components/ui/button";
  * paper with `print:hidden` at the call site.
  */
 export function PrintNowButton({
-  label = "Print",
-  variant = "default",
+  label = 'Print',
+  variant = 'default',
 }: {
   label?: string;
-  variant?: "default" | "outline" | "secondary" | "ghost";
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost';
 }) {
   return (
     <Button type="button" variant={variant} onClick={() => window.print()}>

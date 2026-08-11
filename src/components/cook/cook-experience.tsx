@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import * as ProgressPrimitive from "@radix-ui/react-progress";
+import * as React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import * as ProgressPrimitive from '@radix-ui/react-progress';
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,13 +31,13 @@ import {
   Volume2,
   VolumeX,
   X,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { Input } from "~/components/ui/input";
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { Input } from '~/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -45,8 +45,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Separator } from "~/components/ui/separator";
+} from '~/components/ui/dialog';
+import { Separator } from '~/components/ui/separator';
 import {
   formatCountdown,
   makeTimer,
@@ -55,38 +55,34 @@ import {
   type CustomTimer,
   type TimerRecord,
   type TimerStatus,
-} from "~/lib/cook-state";
-import { cn, formatMinutes } from "~/lib/utils";
-import { displayUnit, formatQuantity, scaleQuantity } from "~/lib/units";
-import { detectStepHazards } from "~/lib/kid-safety";
-import { HAPTICS, vibrate } from "~/lib/haptics";
-import { useReducedMotion } from "~/lib/use-reduced-motion";
-import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
+} from '~/lib/cook-state';
+import { cn, formatMinutes } from '~/lib/utils';
+import { displayUnit, formatQuantity, scaleQuantity } from '~/lib/units';
+import { detectStepHazards } from '~/lib/kid-safety';
+import { HAPTICS, vibrate } from '~/lib/haptics';
+import { useReducedMotion } from '~/lib/use-reduced-motion';
+import type { IngredientsPanelControls } from '~/components/recipe/ingredients-panel';
 
-import { IngredientsDrawer } from "./ingredients-drawer";
-import { CookAllergenBanner } from "./cook-allergen-banner";
-import { TechniqueChips } from "./technique-chips";
-import { KidSafetyCallout } from "./kid-safety-callout";
-import { PreCookChecklist } from "./pre-cook-checklist";
-import { MiseEnPlaceScreen } from "./mise-en-place-screen";
-import { CookCompletion } from "./cook-completion";
-import { CookCompletionFeedback } from "./cook-completion-feedback";
-import { KidsBadgeReward } from "./kids-badge-reward";
-import { awardForCompletion, type KidBadge } from "./kids-rewards";
-import { OfflineReadyBadge } from "./offline-ready-badge";
-import type { CookRecipe, CookStep } from "./types";
-import { useCookSession, type ActiveTimer } from "./use-cook-session";
-import {
-  findPreheatCue,
-  formatStepTemperature,
-  isIngredientForStep,
-} from "~/lib/cook-cues";
-import { useScreenWakeLock } from "./use-screen-wake-lock";
-import { useSpeech } from "./use-speech";
-import { useStepNarration } from "./use-step-narration";
-import { useOneHandedNav } from "./use-one-handed-nav";
-import { useHousehold } from "~/components/household/household-provider";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
+import { IngredientsDrawer } from './ingredients-drawer';
+import { CookAllergenBanner } from './cook-allergen-banner';
+import { TechniqueChips } from './technique-chips';
+import { KidSafetyCallout } from './kid-safety-callout';
+import { PreCookChecklist } from './pre-cook-checklist';
+import { MiseEnPlaceScreen } from './mise-en-place-screen';
+import { CookCompletion } from './cook-completion';
+import { CookCompletionFeedback } from './cook-completion-feedback';
+import { KidsBadgeReward } from './kids-badge-reward';
+import { awardForCompletion, type KidBadge } from './kids-rewards';
+import { OfflineReadyBadge } from './offline-ready-badge';
+import type { CookRecipe, CookStep } from './types';
+import { useCookSession, type ActiveTimer } from './use-cook-session';
+import { findPreheatCue, formatStepTemperature, isIngredientForStep } from '~/lib/cook-cues';
+import { useScreenWakeLock } from './use-screen-wake-lock';
+import { useSpeech } from './use-speech';
+import { useStepNarration } from './use-step-narration';
+import { useOneHandedNav } from './use-one-handed-nav';
+import { useHousehold } from '~/components/household/household-provider';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
 
 export function CookExperience({
   recipe,
@@ -99,8 +95,8 @@ export function CookExperience({
   const speech = useSpeech();
   const household = useHousehold();
   const router = useRouter();
-  const tToasts = useTranslations("cook.toasts");
-  const tCook = useTranslations("cook");
+  const tToasts = useTranslations('cook.toasts');
+  const tCook = useTranslations('cook');
   // Kids mode's large-target flag genuinely upsizes the primary controls (#439),
   // and kidSafe drives the young-cook affordances (safety callout, get-ready
   // gate). Both come from the active theme mode's behavior.
@@ -168,15 +164,7 @@ export function CookExperience({
       onToggleChecked: toggleChecked,
       householdSize: household.size,
     }),
-    [
-      servings,
-      setServings,
-      system,
-      setSystem,
-      checked,
-      toggleChecked,
-      household.size,
-    ],
+    [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
   const [celebrating, setCelebrating] = React.useState(false);
@@ -184,10 +172,10 @@ export function CookExperience({
 
   const finishAndLeave = React.useCallback(() => {
     clearSession();
-    toast.success(tToasts("complete.title"), {
-      description: tToasts("complete.description", { title: recipe.title }),
+    toast.success(tToasts('complete.title'), {
+      description: tToasts('complete.description', { title: recipe.title }),
       action: {
-        label: tToasts("complete.action"),
+        label: tToasts('complete.action'),
         onClick: () => router.push(`/recipes/${recipe.slug}`),
       },
     });
@@ -216,8 +204,7 @@ export function CookExperience({
   const [precookReady, setPrecookReady] = React.useState(false);
   React.useEffect(() => {
     try {
-      if (sessionStorage.getItem(readyStorageKey) === "1")
-        setPrecookReady(true);
+      if (sessionStorage.getItem(readyStorageKey) === '1') setPrecookReady(true);
     } catch {
       /* storage unavailable. The gate simply shows once this session */
     }
@@ -225,7 +212,7 @@ export function CookExperience({
   const confirmPrecookReady = React.useCallback(() => {
     setPrecookReady(true);
     try {
-      sessionStorage.setItem(readyStorageKey, "1");
+      sessionStorage.setItem(readyStorageKey, '1');
     } catch {
       /* storage unavailable. Proceeding still works for this session */
     }
@@ -239,7 +226,7 @@ export function CookExperience({
   const [miseReady, setMiseReady] = React.useState(false);
   React.useEffect(() => {
     try {
-      if (sessionStorage.getItem(miseStorageKey) === "1") setMiseReady(true);
+      if (sessionStorage.getItem(miseStorageKey) === '1') setMiseReady(true);
     } catch {
       /* storage unavailable. The screen simply shows once this session */
     }
@@ -247,7 +234,7 @@ export function CookExperience({
   const confirmMiseReady = React.useCallback(() => {
     setMiseReady(true);
     try {
-      sessionStorage.setItem(miseStorageKey, "1");
+      sessionStorage.setItem(miseStorageKey, '1');
     } catch {
       /* storage unavailable. Proceeding still works for this session */
     }
@@ -262,9 +249,7 @@ export function CookExperience({
     // Kids collect an on-device badge each finish (#413). Grown-up cooks don't.
     if (kidSafe) {
       try {
-        setEarnedBadges(
-          awardForCompletion(recipe.title, recipe.slug).newlyEarned,
-        );
+        setEarnedBadges(awardForCompletion(recipe.title, recipe.slug).newlyEarned);
       } catch {
         /* storage unavailable. Celebrate without badges */
       }
@@ -281,10 +266,7 @@ export function CookExperience({
     if (!reducedMotion) {
       setCelebrating(true);
       vibrate(HAPTICS.timerComplete);
-      celebrationTimeoutRef.current = window.setTimeout(
-        () => setCelebrating(false),
-        750,
-      );
+      celebrationTimeoutRef.current = window.setTimeout(() => setCelebrating(false), 750);
     }
     openCompletion();
   }, [reducedMotion, openCompletion]);
@@ -306,17 +288,17 @@ export function CookExperience({
       if (!shortcut) return;
 
       event.preventDefault();
-      if (shortcut === "previous") navPrevious();
+      if (shortcut === 'previous') navPrevious();
       else navNext();
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navNext, navPrevious, totalSteps]);
 
   const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
   const hasNavigatedRef = React.useRef(false);
-  const [stepAnnouncement, setStepAnnouncement] = React.useState("");
+  const [stepAnnouncement, setStepAnnouncement] = React.useState('');
 
   // On step navigation (arrow keys, Prev/Next, or an overview jump) move focus
   // to the new step's heading and announce the new position politely. Without
@@ -339,7 +321,7 @@ export function CookExperience({
   // navigation never stacks up. Destructured so the effect depends on the stable
   // callback, not the controller object's per-render identity.
   const { enabled: readAloud, speak } = speech;
-  const currentInstruction = recipe.steps[stepIndex]?.instruction ?? "";
+  const currentInstruction = recipe.steps[stepIndex]?.instruction ?? '';
   const currentStepId = recipe.steps[stepIndex]?.id ?? null;
   React.useEffect(() => {
     if (readAloud && currentInstruction) speak(currentInstruction);
@@ -348,7 +330,7 @@ export function CookExperience({
   // Step-transition direction refs (#76) are declared before the empty-state
   // early return below so hooks always run in the same order.
   const prevStepIndexRef = React.useRef(stepIndex);
-  const stepDirectionRef = React.useRef<"forward" | "back" | null>(null);
+  const stepDirectionRef = React.useRef<'forward' | 'back' | null>(null);
 
   if (!firstStep) {
     return (
@@ -397,11 +379,8 @@ export function CookExperience({
   // front so the oven is hot by the time the cook gets there. Hidden once the
   // cook reaches (or passes) that step, since the badge takes over from there.
   const preheatCue = findPreheatCue(recipe.steps);
-  const showPreheatCue =
-    preheatCue != null && stepIndex < preheatCue.stepNumber - 1;
-  const preheatTemp = preheatCue
-    ? formatStepTemperature(preheatCue.targetTempC, system)
-    : null;
+  const showPreheatCue = preheatCue != null && stepIndex < preheatCue.stepNumber - 1;
+  const preheatTemp = preheatCue ? formatStepTemperature(preheatCue.targetTempC, system) : null;
 
   // Directional step transition (#76): compare the live step index to the
   // previous render's to classify a nav as forward/back, so the re-mounted step
@@ -409,16 +388,15 @@ export function CookExperience({
   // has no direction yet and simply fades. Reduced motion is handled globally by
   // the `motion-safe:` prefix + globals.css / a11y.css.
   if (prevStepIndexRef.current !== stepIndex) {
-    stepDirectionRef.current =
-      stepIndex > prevStepIndexRef.current ? "forward" : "back";
+    stepDirectionRef.current = stepIndex > prevStepIndexRef.current ? 'forward' : 'back';
     prevStepIndexRef.current = stepIndex;
   }
   const stepEnterAnimation =
-    stepDirectionRef.current === "forward"
-      ? "motion-safe:animate-step-in-from-right"
-      : stepDirectionRef.current === "back"
-        ? "motion-safe:animate-step-in-from-left"
-        : "motion-safe:animate-fade-in";
+    stepDirectionRef.current === 'forward'
+      ? 'motion-safe:animate-step-in-from-right'
+      : stepDirectionRef.current === 'back'
+        ? 'motion-safe:animate-step-in-from-left'
+        : 'motion-safe:animate-fade-in';
 
   return (
     <div className="flex min-h-dvh flex-col overscroll-y-contain bg-background text-foreground">
@@ -453,12 +431,10 @@ export function CookExperience({
           <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
             <Bell className="size-4 shrink-0 text-primary" />
             <p>
-              <span className="font-semibold">
-                {tCook("step.preheat.heading")}
-              </span>{" "}
-              {tCook("step.preheat.body", {
+              <span className="font-semibold">{tCook('step.preheat.heading')}</span>{' '}
+              {tCook('step.preheat.body', {
                 number: preheatCue.stepNumber,
-                temp: preheatTemp ? ` at ${preheatTemp}` : "",
+                temp: preheatTemp ? ` at ${preheatTemp}` : '',
               })}
             </p>
           </div>
@@ -480,9 +456,9 @@ export function CookExperience({
           onPointerCancel={oneHandedNav.onPointerCancel}
           style={oneHandedNav.dragStyle}
           className={cn(
-            "relative min-w-0 touch-pan-y overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg",
+            'relative min-w-0 touch-pan-y overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg',
             stepEnterAnimation,
-            oneHandedNav.dragging && "cursor-grabbing select-none",
+            oneHandedNav.dragging && 'cursor-grabbing select-none',
           )}
         >
           {canGoPrevious && (
@@ -502,11 +478,7 @@ export function CookExperience({
             </span>
           )}
 
-          <StepMedia
-            step={currentStep}
-            stepNumber={stepIndex + 1}
-            recipeTitle={recipe.title}
-          />
+          <StepMedia step={currentStep} stepNumber={stepIndex + 1} recipeTitle={recipe.title} />
 
           <div className="flex flex-col gap-8 p-5 short-landscape:gap-4 short-landscape:p-4 sm:p-8 lg:p-10">
             <div className="flex flex-wrap items-center gap-2">
@@ -515,10 +487,7 @@ export function CookExperience({
                   {currentStep.section}
                 </Badge>
               )}
-              <TechniqueChips
-                techniques={currentStep.techniques}
-                className="text-sm"
-              />
+              <TechniqueChips techniques={currentStep.techniques} className="text-sm" />
               {currentStep.timerSeconds != null && (
                 <Badge variant="accent" className="gap-1 text-sm">
                   <Timer className="size-3.5" />
@@ -546,20 +515,17 @@ export function CookExperience({
               )}
             </div>
 
-            <KidSafetyCallout
-              text={currentStep.instruction}
-              techniques={currentStep.techniques}
-            />
+            <KidSafetyCallout text={currentStep.instruction} techniques={currentStep.techniques} />
 
             <div className="flex flex-col gap-4">
               <p className="text-sm font-semibold text-muted-foreground">
-                {tCook("step.stepOf", {
+                {tCook('step.stepOf', {
                   current: stepIndex + 1,
                   total: totalSteps,
                 })}
                 {!canGoNext && totalSteps > 1 && (
                   <span className="ms-2 font-medium text-primary">
-                    {`· ${tCook("step.lastStep")}`}
+                    {`· ${tCook('step.lastStep')}`}
                   </span>
                 )}
               </p>
@@ -577,17 +543,11 @@ export function CookExperience({
                 prominent={kidSafe}
               />
               {totalSteps > 1 && (
-                <p className="text-xs text-muted-foreground/80">
-                  {tCook("step.swipeHint")}
-                </p>
+                <p className="text-xs text-muted-foreground/80">{tCook('step.swipeHint')}</p>
               )}
             </div>
 
-            <StepIngredients
-              recipe={recipe}
-              step={currentStep}
-              servings={servings}
-            />
+            <StepIngredients recipe={recipe} step={currentStep} servings={servings} />
           </div>
         </section>
 
@@ -644,17 +604,15 @@ export function CookExperience({
             size="xl"
             variant="outline"
             className={cn(
-              "justify-start",
-              largeTargets
-                ? "h-[4.5rem] text-xl sm:h-20"
-                : "h-16 text-lg sm:h-[4.5rem]",
-              "short-landscape:h-12 short-landscape:text-base",
+              'justify-start',
+              largeTargets ? 'h-[4.5rem] text-xl sm:h-20' : 'h-16 text-lg sm:h-[4.5rem]',
+              'short-landscape:h-12 short-landscape:text-base',
             )}
             onClick={navPrevious}
             disabled={!canGoPrevious}
           >
             <ArrowLeft />
-            {tCook("nav.previous")}
+            {tCook('nav.previous')}
           </Button>
 
           {/* Phone-only Ingredients trigger. On sm+ the Ingredients control
@@ -682,26 +640,20 @@ export function CookExperience({
             type="button"
             size="xl"
             className={cn(
-              "justify-end",
-              largeTargets
-                ? "h-[4.5rem] text-xl sm:h-20"
-                : "h-16 text-lg sm:h-[4.5rem]",
-              "short-landscape:h-12 short-landscape:text-base",
+              'justify-end',
+              largeTargets ? 'h-[4.5rem] text-xl sm:h-20' : 'h-16 text-lg sm:h-[4.5rem]',
+              'short-landscape:h-12 short-landscape:text-base',
             )}
             onClick={canGoNext ? navNext : handleFinish}
           >
-            {tCook(canGoNext ? "nav.next" : "nav.finish")}
+            {tCook(canGoNext ? 'nav.next' : 'nav.finish')}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
           </Button>
         </div>
       </footer>
 
       {finished && (
-        <CookCompletion
-          recipeTitle={recipe.title}
-          celebratory={kidSafe}
-          onDone={finishAndLeave}
-        >
+        <CookCompletion recipeTitle={recipe.title} celebratory={kidSafe} onDone={finishAndLeave}>
           {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
           {feedback ? (
             <CookCompletionFeedback
@@ -739,8 +691,8 @@ function CookHeader({
   onStepSelect: (index: number) => void;
   ingredientControls: IngredientsPanelControls;
 }) {
-  const t = useTranslations("cook.a11y");
-  const tH = useTranslations("cook.header");
+  const t = useTranslations('cook.a11y');
+  const tH = useTranslations('cook.header');
   const { kidSafe } = useThemeBehavior();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
@@ -748,20 +700,20 @@ function CookHeader({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline" className="hidden sm:inline-flex">
-              {tH("cookMode")}
+              {tH('cookMode')}
             </Badge>
             <span className="font-medium">
-              {tH("stepOf", { current: currentIndex + 1, total: totalSteps })}
+              {tH('stepOf', { current: currentIndex + 1, total: totalSteps })}
             </span>
             {runningTimerCount > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Timer className="size-3.5" />
-                {tH("activeTimers", { count: runningTimerCount })}
+                {tH('activeTimers', { count: runningTimerCount })}
               </span>
             )}
-            {wakeLockStatus === "active" && (
+            {wakeLockStatus === 'active' && (
               <Badge variant="success" className="hidden md:inline-flex">
-                {tH("screenAwake")}
+                {tH('screenAwake')}
               </Badge>
             )}
             <OfflineReadyBadge className="hidden md:inline-flex" />
@@ -776,17 +728,13 @@ function CookHeader({
           currentIndex={currentIndex}
           onStepSelect={onStepSelect}
         />
-        <IngredientsDrawer
-          recipe={recipe}
-          className="md:hidden"
-          controls={ingredientControls}
-        />
+        <IngredientsDrawer recipe={recipe} className="md:hidden" controls={ingredientControls} />
         <IngredientsDrawer
           recipe={recipe}
           className="hidden md:inline-flex"
           controls={ingredientControls}
         />
-        <Button asChild variant="ghost" size="icon" aria-label={t("exit")}>
+        <Button asChild variant="ghost" size="icon" aria-label={t('exit')}>
           <Link href={`/recipes/${recipe.slug}`}>
             <X />
           </Link>
@@ -798,18 +746,18 @@ function CookHeader({
           totalSteps={totalSteps}
           currentIndex={currentIndex}
           onStepSelect={onStepSelect}
-          label={t("progress")}
+          label={t('progress')}
         />
       ) : (
         <ProgressPrimitive.Root
           value={progressValue}
           className="h-2 w-full overflow-hidden bg-muted"
-          aria-label={t("progress")}
+          aria-label={t('progress')}
         >
           <ProgressPrimitive.Indicator
             className={cn(
-              "h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none",
-              celebrating && "motion-safe:animate-progress-flourish",
+              'h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none',
+              celebrating && 'motion-safe:animate-progress-flourish',
             )}
             style={{ width: `${progressValue}%` }}
           />
@@ -837,7 +785,7 @@ function StepTrail({
   onStepSelect: (index: number) => void;
   label: string;
 }) {
-  const tT = useTranslations("cook.trail");
+  const tT = useTranslations('cook.trail');
   return (
     <nav
       aria-label={label}
@@ -852,19 +800,17 @@ function StepTrail({
               <button
                 type="button"
                 onClick={() => onStepSelect(i)}
-                aria-label={tT("goToStep", {
+                aria-label={tT('goToStep', {
                   current: i + 1,
                   total: totalSteps,
                 })}
-                aria-current={isCurrent ? "step" : undefined}
+                aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  "flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  isDone && "border-success bg-success text-success-foreground",
+                  'flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  isDone && 'border-success bg-success text-success-foreground',
                   isCurrent &&
-                    "border-primary bg-primary/15 text-primary ring-2 ring-primary/40 motion-safe:animate-pulse",
-                  !isDone &&
-                    !isCurrent &&
-                    "border-border bg-muted text-muted-foreground",
+                    'border-primary bg-primary/15 text-primary ring-2 ring-primary/40 motion-safe:animate-pulse',
+                  !isDone && !isCurrent && 'border-border bg-muted text-muted-foreground',
                 )}
               >
                 {isDone ? <Check className="size-5" /> : i + 1}
@@ -873,8 +819,8 @@ function StepTrail({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "h-1 w-4 shrink-0 rounded-full sm:w-6",
-                    i < currentIndex ? "bg-success" : "bg-border",
+                    'h-1 w-4 shrink-0 rounded-full sm:w-6',
+                    i < currentIndex ? 'bg-success' : 'bg-border',
                   )}
                 />
               )}
@@ -895,29 +841,29 @@ function ReadAloudControls({
   onToggle: () => void;
   onRepeat: () => void;
 }) {
-  const t = useTranslations("cook.readAloud");
+  const t = useTranslations('cook.readAloud');
   return (
     <div className="ms-auto flex items-center gap-2">
       <Button
         type="button"
         size="sm"
-        variant={enabled ? "default" : "outline"}
+        variant={enabled ? 'default' : 'outline'}
         aria-pressed={enabled}
         onClick={onToggle}
       >
         {enabled ? <Volume2 /> : <VolumeX />}
-        {t("toggle")}
+        {t('toggle')}
       </Button>
       {enabled && (
         <Button
           type="button"
           size="sm"
           variant="outline"
-          aria-label={t("repeatLabel")}
+          aria-label={t('repeatLabel')}
           onClick={onRepeat}
         >
           <Repeat />
-          {t("repeat")}
+          {t('repeat')}
         </Button>
       )}
     </div>
@@ -942,7 +888,7 @@ function StepNarrationButton({
   prominent: boolean;
 }) {
   const narration = useStepNarration();
-  const tN = useTranslations("cook.narration");
+  const tN = useTranslations('cook.narration');
   const { stop } = narration;
 
   React.useEffect(() => {
@@ -955,17 +901,14 @@ function StepNarrationButton({
   return (
     <Button
       type="button"
-      size={prominent ? "xl" : "sm"}
-      variant={speaking ? "default" : prominent ? "accent" : "ghost"}
+      size={prominent ? 'xl' : 'sm'}
+      variant={speaking ? 'default' : prominent ? 'accent' : 'ghost'}
       aria-pressed={speaking}
       onClick={() => narration.toggle(instruction)}
-      className={cn(
-        "gap-2 self-start",
-        prominent && "w-full justify-center gap-3 sm:w-auto",
-      )}
+      className={cn('gap-2 self-start', prominent && 'w-full justify-center gap-3 sm:w-auto')}
     >
       {speaking ? <Square /> : <Volume2 />}
-      {tN(speaking ? "stopReading" : "readItToMe")}
+      {tN(speaking ? 'stopReading' : 'readItToMe')}
     </Button>
   );
 }
@@ -979,14 +922,14 @@ function StepMedia({
   stepNumber: number;
   recipeTitle: string;
 }) {
-  const tS = useTranslations("cook.step");
+  const tS = useTranslations('cook.step');
   if (!step.imageUrl && !step.videoUrl) return null;
 
   return (
     <div
       className={cn(
-        "grid gap-3 border-b border-border bg-muted p-3",
-        step.imageUrl && step.videoUrl && "lg:grid-cols-2",
+        'grid gap-3 border-b border-border bg-muted p-3',
+        step.imageUrl && step.videoUrl && 'lg:grid-cols-2',
       )}
     >
       {step.imageUrl && (
@@ -995,10 +938,7 @@ function StepMedia({
             src={step.imageUrl}
             fallbackKey={`${recipeTitle}-step-${stepNumber}`}
             fallbackMode="hide"
-            alt={
-              step.imageAlt ??
-              tS("imageAlt", { number: stepNumber, title: recipeTitle })
-            }
+            alt={step.imageAlt ?? tS('imageAlt', { number: stepNumber, title: recipeTitle })}
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 70vw"
@@ -1014,7 +954,7 @@ function StepMedia({
           className="aspect-video w-full rounded-xl bg-background short-landscape:aspect-auto short-landscape:h-[28dvh]"
         >
           <source src={step.videoUrl} />
-          {tS("videoFallback")}
+          {tS('videoFallback')}
         </video>
       )}
     </div>
@@ -1034,17 +974,11 @@ function TimerRing({ timer }: { timer: TimerRecord }) {
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
   const fraction =
-    timer.duration > 0
-      ? Math.min(1, Math.max(0, timer.remaining / timer.duration))
-      : 0;
-  const isComplete = timer.status === "complete";
-  const active = timer.status === "running" || timer.status === "paused";
+    timer.duration > 0 ? Math.min(1, Math.max(0, timer.remaining / timer.duration)) : 0;
+  const isComplete = timer.status === 'complete';
+  const active = timer.status === 'running' || timer.status === 'paused';
   const almostDone = active && fraction > 0 && fraction <= 0.15;
-  const ringColor = isComplete
-    ? "text-success"
-    : almostDone
-      ? "text-warning"
-      : "text-primary";
+  const ringColor = isComplete ? 'text-success' : almostDone ? 'text-warning' : 'text-primary';
   // Full ring when complete (celebratory). Otherwise deplete with time left.
   const offset = isComplete ? 0 : circumference * (1 - fraction);
 
@@ -1079,7 +1013,7 @@ function TimerRing({ timer }: { timer: TimerRecord }) {
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className={cn(
-            "stroke-current motion-safe:transition-[stroke-dashoffset] motion-safe:duration-1000 motion-safe:ease-linear",
+            'stroke-current motion-safe:transition-[stroke-dashoffset] motion-safe:duration-1000 motion-safe:ease-linear',
             ringColor,
           )}
         />
@@ -1106,12 +1040,12 @@ function StepTimerCard({
   onPause: (step: CookStep) => void;
   onReset: (step: CookStep) => void;
 }) {
-  const t = useTranslations("cook.timer");
-  const tC = useTranslations("cook.timerCard");
-  const tA11y = useTranslations("cook.a11y");
+  const t = useTranslations('cook.timer');
+  const tC = useTranslations('cook.timerCard');
+  const tA11y = useTranslations('cook.a11y');
   const { kidSafe } = useThemeBehavior();
-  const isRunning = timer.status === "running";
-  const isComplete = timer.status === "complete";
+  const isRunning = timer.status === 'running';
+  const isComplete = timer.status === 'complete';
   // Rising-tension cue in the final seconds of a *running* countdown only.
   const urgent = isRunning && timer.remaining > 0 && timer.remaining <= 10;
   const critical = urgent && timer.remaining <= 5;
@@ -1119,8 +1053,8 @@ function StepTimerCard({
   return (
     <section
       className={cn(
-        "relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token",
-        isComplete && "border-success/40 bg-success/10 ring-2 ring-success/20",
+        'relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token',
+        isComplete && 'border-success/40 bg-success/10 ring-2 ring-success/20',
       )}
       aria-labelledby="step-timer-title"
     >
@@ -1136,12 +1070,12 @@ function StepTimerCard({
           className="flex items-center gap-2 font-display text-xl font-semibold"
         >
           <Timer className="size-5 text-primary" />
-          {tC("heading")}
+          {tC('heading')}
         </h2>
         {isComplete && (
           <Badge variant="success" className="gap-1">
             <Bell className="size-3.5" />
-            {tC("done")}
+            {tC('done')}
           </Badge>
         )}
       </div>
@@ -1150,7 +1084,7 @@ function StepTimerCard({
         className="mt-5 rounded-2xl bg-muted px-4 py-5 text-center"
         role="timer"
         aria-live="off"
-        aria-label={tA11y("stepTimer", {
+        aria-label={tA11y('stepTimer', {
           time: formatCountdown(timer.remaining),
         })}
       >
@@ -1159,20 +1093,13 @@ function StepTimerCard({
         ) : (
           <div
             className={cn(
-              "font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl",
-              critical
-                ? "text-destructive"
-                : urgent
-                  ? "text-warning"
-                  : undefined,
+              'font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl',
+              critical ? 'text-destructive' : urgent ? 'text-warning' : undefined,
             )}
           >
             <span
-              key={urgent ? timer.remaining : "steady"}
-              className={cn(
-                "inline-block",
-                urgent && "motion-safe:animate-tick-pulse",
-              )}
+              key={urgent ? timer.remaining : 'steady'}
+              className={cn('inline-block', urgent && 'motion-safe:animate-tick-pulse')}
             >
               {formatCountdown(timer.remaining)}
             </span>
@@ -1188,12 +1115,12 @@ function StepTimerCard({
         <Button
           type="button"
           size="lg"
-          variant={isRunning ? "secondary" : "default"}
+          variant={isRunning ? 'secondary' : 'default'}
           className="h-14"
           onClick={() => (isRunning ? onPause(step) : onStart(step))}
         >
           {isRunning ? <Pause /> : <Play />}
-          {tC(isRunning ? "pause" : isComplete ? "restart" : "start")}
+          {tC(isRunning ? 'pause' : isComplete ? 'restart' : 'start')}
         </Button>
         <Button
           type="button"
@@ -1203,7 +1130,7 @@ function StepTimerCard({
           onClick={() => onReset(step)}
         >
           <RotateCcw />
-          {tC("reset")}
+          {tC('reset')}
         </Button>
       </div>
     </section>
@@ -1216,7 +1143,7 @@ function StepTimerCard({
  * speaks at meaningful transitions: start, pause, and completion.
  */
 function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
-  const [message, setMessage] = React.useState("");
+  const [message, setMessage] = React.useState('');
   const previousStatusRef = React.useRef<TimerStatus>(timer.status);
 
   React.useEffect(() => {
@@ -1224,14 +1151,12 @@ function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
     if (previous === timer.status) return;
     previousStatusRef.current = timer.status;
 
-    if (timer.status === "running") {
-      setMessage(
-        `Timer started, ${formatCountdown(timer.remaining)} remaining`,
-      );
-    } else if (timer.status === "paused") {
+    if (timer.status === 'running') {
+      setMessage(`Timer started, ${formatCountdown(timer.remaining)} remaining`);
+    } else if (timer.status === 'paused') {
       setMessage(`Timer paused, ${formatCountdown(timer.remaining)} remaining`);
-    } else if (timer.status === "complete") {
-      setMessage("Timer complete");
+    } else if (timer.status === 'complete') {
+      setMessage('Timer complete');
     }
   }, [timer.status, timer.remaining]);
 
@@ -1257,7 +1182,7 @@ function StepIngredients({
   servings: number;
 }) {
   const locale = useLocale();
-  const tSI = useTranslations("cook.stepIngredients");
+  const tSI = useTranslations('cook.stepIngredients');
   const linked = recipe.ingredients.filter((ing) =>
     isIngredientForStep(ing.stepPosition, step.position),
   );
@@ -1268,7 +1193,7 @@ function StepIngredients({
     <div className="rounded-xl border border-border bg-muted/40 p-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
         <ListOrdered className="size-4 text-primary" />
-        {tSI("heading")}
+        {tSI('heading')}
       </h2>
       <ul className="mt-2 flex flex-col gap-1.5 text-base">
         {linked.map((ing) => {
@@ -1276,20 +1201,15 @@ function StepIngredients({
           const amount = formatQuantity(scaled, ing.unit, locale);
           const unit = displayUnit(ing.unit, scaled, locale);
           return (
-            <li
-              key={ing.id}
-              className="flex flex-wrap items-baseline gap-x-1.5"
-            >
+            <li key={ing.id} className="flex flex-wrap items-baseline gap-x-1.5">
               {amount && (
                 <span className="font-semibold tabular-nums text-foreground">
                   {amount}
-                  {unit ? ` ${unit}` : ""}
+                  {unit ? ` ${unit}` : ''}
                 </span>
               )}
               <span>{ing.item}</span>
-              {ing.prep && (
-                <span className="text-muted-foreground">, {ing.prep}</span>
-              )}
+              {ing.prep && <span className="text-muted-foreground">, {ing.prep}</span>}
             </li>
           );
         })}
@@ -1304,14 +1224,14 @@ function StepIngredients({
  * ephemeral (per mount). It's a staging aid, not persisted state.
  */
 function EquipmentPanel({ equipment }: { equipment: string[] }) {
-  const tEq = useTranslations("cook.equipment");
+  const tEq = useTranslations('cook.equipment');
   const [checked, setChecked] = React.useState<Set<string>>(new Set());
   if (equipment.length === 0) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
         <Utensils className="size-5 text-primary" />
-        {tEq("heading")}
+        {tEq('heading')}
       </h2>
       <ul className="mt-4 flex flex-col gap-1.5">
         {equipment.map((tool) => {
@@ -1333,19 +1253,14 @@ function EquipmentPanel({ equipment }: { equipment: string[] }) {
               >
                 <span
                   className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-md border border-input",
-                    isChecked &&
-                      "border-primary bg-primary text-primary-foreground",
+                    'flex size-5 shrink-0 items-center justify-center rounded-md border border-input',
+                    isChecked && 'border-primary bg-primary text-primary-foreground',
                   )}
                   aria-hidden="true"
                 >
                   {isChecked && <Check className="size-3.5" />}
                 </span>
-                <span
-                  className={cn(
-                    isChecked && "text-muted-foreground line-through",
-                  )}
-                >
+                <span className={cn(isChecked && 'text-muted-foreground line-through')}>
                   {tool}
                 </span>
               </button>
@@ -1363,14 +1278,14 @@ function EquipmentPanel({ equipment }: { equipment: string[] }) {
  * survive a reload but never touch the shared recipe or leave the device.
  */
 function CookNotepad({ recipeId }: { recipeId: string }) {
-  const tNp = useTranslations("cook.notepad");
+  const tNp = useTranslations('cook.notepad');
   const storageKey = `cook-notes:${recipeId}`;
-  const [note, setNote] = React.useState("");
+  const [note, setNote] = React.useState('');
   const [loaded, setLoaded] = React.useState(false);
 
   React.useEffect(() => {
     try {
-      setNote(window.localStorage.getItem(storageKey) ?? "");
+      setNote(window.localStorage.getItem(storageKey) ?? '');
     } catch {
       // Private mode / storage disabled. Notes just won't persist.
     }
@@ -1391,15 +1306,15 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
     <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
         <BookOpen className="size-5 text-primary" />
-        {tNp("heading")}
+        {tNp('heading')}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">{tNp("hint")}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{tNp('hint')}</p>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={4}
-        placeholder={tNp("placeholder")}
-        aria-label={tNp("ariaLabel")}
+        placeholder={tNp('placeholder')}
+        aria-label={tNp('ariaLabel')}
         className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
       />
     </section>
@@ -1407,7 +1322,7 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
 }
 
 function RecipeAtAGlance({ recipe }: { recipe: CookRecipe }) {
-  const tG = useTranslations("cook.atAGlance");
+  const tG = useTranslations('cook.atAGlance');
   const hasMeta =
     recipe.totalMinutes != null ||
     recipe.prepMinutes != null ||
@@ -1418,7 +1333,7 @@ function RecipeAtAGlance({ recipe }: { recipe: CookRecipe }) {
 
   return (
     <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
-      <h2 className="font-display text-xl font-semibold">{tG("heading")}</h2>
+      <h2 className="font-display text-xl font-semibold">{tG('heading')}</h2>
       <div className="mt-4 grid gap-3 text-sm">
         {recipe.totalMinutes != null && (
           <span className="flex items-center gap-2 text-muted-foreground">
@@ -1426,32 +1341,28 @@ function RecipeAtAGlance({ recipe }: { recipe: CookRecipe }) {
             <span className="font-medium text-foreground">
               {formatMinutes(recipe.totalMinutes)}
             </span>
-            {tG("total")}
+            {tG('total')}
           </span>
         )}
         {recipe.prepMinutes != null && (
           <span className="flex items-center gap-2 text-muted-foreground">
             <ChefHat className="size-4 text-primary" />
-            <span className="font-medium text-foreground">
-              {formatMinutes(recipe.prepMinutes)}
-            </span>
-            {tG("prep")}
+            <span className="font-medium text-foreground">{formatMinutes(recipe.prepMinutes)}</span>
+            {tG('prep')}
           </span>
         )}
         {recipe.cookMinutes != null && (
           <span className="flex items-center gap-2 text-muted-foreground">
             <Timer className="size-4 text-primary" />
-            <span className="font-medium text-foreground">
-              {formatMinutes(recipe.cookMinutes)}
-            </span>
-            {tG("cooking")}
+            <span className="font-medium text-foreground">{formatMinutes(recipe.cookMinutes)}</span>
+            {tG('cooking')}
           </span>
         )}
         {recipe.servings != null && (
           <span className="flex items-center gap-2 text-muted-foreground">
             <BookOpen className="size-4 text-primary" />
             <span className="font-medium text-foreground">
-              {recipe.servings} {recipe.servingsNoun ?? tG("servings")}
+              {recipe.servings} {recipe.servingsNoun ?? tG('servings')}
             </span>
           </span>
         )}
@@ -1475,30 +1386,29 @@ function ActiveTimersPanel({
   onPause: (step: CookStep) => void;
   onReset: (step: CookStep) => void;
 }) {
-  const t = useTranslations("cook.a11y");
-  const tAT = useTranslations("cook.activeTimers");
+  const t = useTranslations('cook.a11y');
+  const tAT = useTranslations('cook.activeTimers');
   return (
     <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
         <Timer className="size-5 text-primary" />
-        {tAT("heading")}
+        {tAT('heading')}
       </h2>
       <div className="mt-4 flex flex-col gap-2">
         {activeTimers.map(({ step, stepIndex, timer }) => {
           const isCurrent = currentStepId === step.id;
-          const isRunning = timer.status === "running";
+          const isRunning = timer.status === 'running';
 
           return (
             <div
               key={step.id}
               className={cn(
-                "relative rounded-xl border border-border bg-background p-3",
-                isCurrent && "border-primary/40 bg-primary/10",
-                timer.status === "complete" &&
-                  "border-success/40 bg-success/10",
+                'relative rounded-xl border border-border bg-background p-3',
+                isCurrent && 'border-primary/40 bg-primary/10',
+                timer.status === 'complete' && 'border-success/40 bg-success/10',
               )}
             >
-              {timer.status === "complete" && (
+              {timer.status === 'complete' && (
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 rounded-xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
@@ -1508,8 +1418,8 @@ function ActiveTimersPanel({
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-start"
                 onClick={() => onSelect(stepIndex)}
-                aria-current={isCurrent ? "step" : undefined}
-                aria-label={t("jumpToStep", {
+                aria-current={isCurrent ? 'step' : undefined}
+                aria-label={t('jumpToStep', {
                   position: stepIndex + 1,
                   title: step.section ?? step.instruction,
                   time: formatCountdown(timer.remaining),
@@ -1517,7 +1427,7 @@ function ActiveTimersPanel({
               >
                 <span className="min-w-0">
                   <span className="block font-medium">
-                    {tAT("step", { number: stepIndex + 1 })}
+                    {tAT('step', { number: stepIndex + 1 })}
                   </span>
                   <span className="line-clamp-1 text-sm text-muted-foreground">
                     {step.section ?? step.instruction}
@@ -1536,16 +1446,11 @@ function ActiveTimersPanel({
                   onClick={() => (isRunning ? onPause(step) : onStart(step))}
                 >
                   {isRunning ? <Pause /> : <Play />}
-                  {tAT(isRunning ? "pause" : "start")}
+                  {tAT(isRunning ? 'pause' : 'start')}
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onReset(step)}
-                >
+                <Button type="button" size="sm" variant="ghost" onClick={() => onReset(step)}>
                   <RotateCcw />
-                  {tAT("reset")}
+                  {tAT('reset')}
                 </Button>
               </div>
             </div>
@@ -1588,10 +1493,10 @@ function CookTimersPanel({
   onReset: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
-  const tTim = useTranslations("cook.timers");
-  const [label, setLabel] = React.useState("");
-  const [minutes, setMinutes] = React.useState("");
-  const [seconds, setSeconds] = React.useState("");
+  const tTim = useTranslations('cook.timers');
+  const [label, setLabel] = React.useState('');
+  const [minutes, setMinutes] = React.useState('');
+  const [seconds, setSeconds] = React.useState('');
 
   const parsedMinutes = Number.parseInt(minutes, 10);
   const parsedSeconds = Number.parseInt(seconds, 10);
@@ -1600,14 +1505,14 @@ function CookTimersPanel({
     (Number.isFinite(parsedSeconds) ? Math.max(0, parsedSeconds) : 0);
   const canAdd = totalSeconds > 0;
 
-  const stepDefaultLabel = tTim("stepDefaultLabel", {
+  const stepDefaultLabel = tTim('stepDefaultLabel', {
     number: currentStepNumber,
   });
 
   function reset() {
-    setLabel("");
-    setMinutes("");
-    setSeconds("");
+    setLabel('');
+    setMinutes('');
+    setSeconds('');
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -1644,30 +1549,25 @@ function CookTimersPanel({
           className="flex items-center gap-2 font-display text-xl font-semibold"
         >
           <Timer className="size-5 text-primary" />
-          {tTim("heading")}
+          {tTim('heading')}
         </h2>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={addStepTimer}
-        >
+        <Button type="button" size="sm" variant="secondary" onClick={addStepTimer}>
           <Plus />
-          {tTim("forThisStep")}
+          {tTim('forThisStep')}
         </Button>
       </div>
 
       {customTimers.length > 0 && (
         <ul className="mt-4 flex flex-col gap-2">
           {customTimers.map((timer) => {
-            const isRunning = timer.status === "running";
-            const isComplete = timer.status === "complete";
+            const isRunning = timer.status === 'running';
+            const isComplete = timer.status === 'complete';
             return (
               <li
                 key={timer.id}
                 className={cn(
-                  "relative rounded-xl border border-border bg-background p-3",
-                  isComplete && "border-success/40 bg-success/10",
+                  'relative rounded-xl border border-border bg-background p-3',
+                  isComplete && 'border-success/40 bg-success/10',
                 )}
               >
                 {isComplete && (
@@ -1681,14 +1581,14 @@ function CookTimersPanel({
                     <p className="truncate font-medium">{timer.label}</p>
                     <p
                       className={cn(
-                        "font-mono text-lg font-semibold tabular-nums",
-                        isComplete && "text-success",
+                        'font-mono text-lg font-semibold tabular-nums',
+                        isComplete && 'text-success',
                       )}
                     >
                       {formatCountdown(timer.remaining)}
                       {isComplete && (
                         <span className="ms-2 font-sans text-sm font-normal text-success">
-                          {tTim("done")}
+                          {tTim('done')}
                         </span>
                       )}
                     </p>
@@ -1697,7 +1597,7 @@ function CookTimersPanel({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={tTim("dismissTimer", { label: timer.label })}
+                    aria-label={tTim('dismissTimer', { label: timer.label })}
                     onClick={() => onRemove(timer.id)}
                   >
                     <Trash2 />
@@ -1708,25 +1608,21 @@ function CookTimersPanel({
                     type="button"
                     size="sm"
                     variant="secondary"
-                    className={cn(largeTargets && "h-11 text-base")}
-                    onClick={() =>
-                      isRunning ? onPause(timer.id) : onStart(timer.id)
-                    }
+                    className={cn(largeTargets && 'h-11 text-base')}
+                    onClick={() => (isRunning ? onPause(timer.id) : onStart(timer.id))}
                   >
                     {isRunning ? <Pause /> : <Play />}
-                    {tTim(
-                      isRunning ? "pause" : isComplete ? "restart" : "start",
-                    )}
+                    {tTim(isRunning ? 'pause' : isComplete ? 'restart' : 'start')}
                   </Button>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className={cn(largeTargets && "h-11 text-base")}
+                    className={cn(largeTargets && 'h-11 text-base')}
                     onClick={() => onReset(timer.id)}
                   >
                     <RotateCcw />
-                    {tTim("reset")}
+                    {tTim('reset')}
                   </Button>
                 </div>
               </li>
@@ -1737,19 +1633,19 @@ function CookTimersPanel({
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2">
         <label htmlFor="cook-timer-label" className="sr-only">
-          {tTim("timerLabel")}
+          {tTim('timerLabel')}
         </label>
         <Input
           id="cook-timer-label"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder={tTim("labelPlaceholder", { example: stepDefaultLabel })}
-          className={cn(largeTargets && "h-12 text-base")}
+          placeholder={tTim('labelPlaceholder', { example: stepDefaultLabel })}
+          className={cn(largeTargets && 'h-12 text-base')}
         />
         <div className="flex items-center gap-2">
           <div className="flex flex-1 items-center gap-1">
             <label htmlFor="cook-timer-min" className="sr-only">
-              {tTim("minutesLabel")}
+              {tTim('minutesLabel')}
             </label>
             <Input
               id="cook-timer-min"
@@ -1758,14 +1654,14 @@ function CookTimersPanel({
               min={0}
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
-              placeholder={tTim("minutesPlaceholder")}
-              className={cn("w-full", largeTargets && "h-12 text-base")}
+              placeholder={tTim('minutesPlaceholder')}
+              className={cn('w-full', largeTargets && 'h-12 text-base')}
             />
             <span aria-hidden="true" className="text-muted-foreground">
               :
             </span>
             <label htmlFor="cook-timer-sec" className="sr-only">
-              {tTim("secondsLabel")}
+              {tTim('secondsLabel')}
             </label>
             <Input
               id="cook-timer-sec"
@@ -1775,18 +1671,18 @@ function CookTimersPanel({
               max={59}
               value={seconds}
               onChange={(event) => setSeconds(event.target.value)}
-              placeholder={tTim("secondsPlaceholder")}
-              className={cn("w-full", largeTargets && "h-12 text-base")}
+              placeholder={tTim('secondsPlaceholder')}
+              className={cn('w-full', largeTargets && 'h-12 text-base')}
             />
           </div>
           <Button
             type="submit"
             size="lg"
             disabled={!canAdd}
-            className={cn("shrink-0", largeTargets && "h-12 text-base")}
+            className={cn('shrink-0', largeTargets && 'h-12 text-base')}
           >
             <Plus />
-            {tTim("addButton")}
+            {tTim('addButton')}
           </Button>
         </div>
       </form>
@@ -1795,11 +1691,11 @@ function CookTimersPanel({
 }
 
 function CookNotes({ notes }: { notes: string }) {
-  const tCN = useTranslations("cook.cookNotes");
+  const tCN = useTranslations('cook.cookNotes');
   return (
     <details className="group rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-xl font-semibold [&::-webkit-details-marker]:hidden">
-        {tCN("heading")}
+        {tCN('heading')}
         <ChevronDown className="size-5 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
       </summary>
       <Separator className="my-4" />
@@ -1819,27 +1715,22 @@ function OverviewDialog({
   currentIndex: number;
   onStepSelect: (index: number) => void;
 }) {
-  const t = useTranslations("cook.a11y");
-  const tOv = useTranslations("cook.overview");
+  const t = useTranslations('cook.a11y');
+  const tOv = useTranslations('cook.overview');
   const [open, setOpen] = React.useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="h-12 sm:h-14"
-        >
+        <Button type="button" variant="outline" size="lg" className="h-12 sm:h-14">
           <ListOrdered />
-          <span className="hidden sm:inline">{tOv("button")}</span>
+          <span className="hidden sm:inline">{tOv('button')}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b border-border p-5 pe-14 text-start">
-          <DialogTitle className="text-2xl">{tOv("title")}</DialogTitle>
-          <DialogDescription>{tOv("description")}</DialogDescription>
+          <DialogTitle className="text-2xl">{tOv('title')}</DialogTitle>
+          <DialogDescription>{tOv('description')}</DialogDescription>
         </DialogHeader>
         <ol className="max-h-[70dvh] overflow-y-auto overscroll-contain p-3">
           {steps.map((step, index) => {
@@ -1849,14 +1740,14 @@ function OverviewDialog({
               <li key={step.id}>
                 <button
                   type="button"
-                  aria-current={isCurrent ? "step" : undefined}
-                  aria-label={t("goToStep", {
+                  aria-current={isCurrent ? 'step' : undefined}
+                  aria-label={t('goToStep', {
                     position: index + 1,
                     title: step.section ?? step.instruction,
                   })}
                   className={cn(
-                    "flex w-full gap-4 rounded-xl p-3 text-start transition-colors hover:bg-muted",
-                    isCurrent && "bg-primary/10 text-foreground",
+                    'flex w-full gap-4 rounded-xl p-3 text-start transition-colors hover:bg-muted',
+                    isCurrent && 'bg-primary/10 text-foreground',
                   )}
                   onClick={() => {
                     onStepSelect(index);
@@ -1865,9 +1756,8 @@ function OverviewDialog({
                 >
                   <span
                     className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-full border border-border font-display text-lg font-semibold",
-                      isCurrent &&
-                        "border-primary bg-primary text-primary-foreground",
+                      'flex size-10 shrink-0 items-center justify-center rounded-full border border-border font-display text-lg font-semibold',
+                      isCurrent && 'border-primary bg-primary text-primary-foreground',
                     )}
                   >
                     {index + 1}
@@ -1878,9 +1768,7 @@ function OverviewDialog({
                         {step.section}
                       </span>
                     )}
-                    <span className="block text-base leading-relaxed">
-                      {step.instruction}
-                    </span>
+                    <span className="block text-base leading-relaxed">{step.instruction}</span>
                     {(step.timerSeconds != null || step.techniques?.length) && (
                       <span className="mt-2 flex flex-wrap gap-2">
                         {step.timerSeconds != null && (
@@ -1897,9 +1785,7 @@ function OverviewDialog({
                       </span>
                     )}
                   </span>
-                  {isCurrent && (
-                    <CheckCircle2 className="mt-1 size-5 shrink-0 text-primary" />
-                  )}
+                  {isCurrent && <CheckCircle2 className="mt-1 size-5 shrink-0 text-primary" />}
                 </button>
               </li>
             );
@@ -1919,33 +1805,31 @@ function EmptyCookExperience({
   wakeLockStatus: string;
   ingredientControls: IngredientsPanelControls;
 }) {
-  const t = useTranslations("cook.a11y");
-  const tH = useTranslations("cook.header");
-  const tEmpty = useTranslations("cook.empty");
+  const t = useTranslations('cook.a11y');
+  const tH = useTranslations('cook.header');
+  const tEmpty = useTranslations('cook.empty');
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center gap-3 py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{tH("cookMode")}</Badge>
-              {wakeLockStatus === "active" && (
+              <Badge variant="outline">{tH('cookMode')}</Badge>
+              {wakeLockStatus === 'active' && (
                 <Badge variant="success" className="hidden md:inline-flex">
-                  {tH("screenAwake")}
+                  {tH('screenAwake')}
                 </Badge>
               )}
               <OfflineReadyBadge className="hidden md:inline-flex" />
             </div>
-            <h1 className="truncate font-display text-xl font-semibold">
-              {recipe.title}
-            </h1>
+            <h1 className="truncate font-display text-xl font-semibold">{recipe.title}</h1>
           </div>
           <IngredientsDrawer
             recipe={recipe}
             className="hidden sm:inline-flex"
             controls={ingredientControls}
           />
-          <Button asChild variant="ghost" size="icon" aria-label={t("exit")}>
+          <Button asChild variant="ghost" size="icon" aria-label={t('exit')}>
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
             </Link>
@@ -1959,16 +1843,16 @@ function EmptyCookExperience({
             <ChefHat className="size-8" />
           </div>
           <h2 className="mt-6 font-display text-3xl font-semibold tracking-tight">
-            {tEmpty("heading")}
+            {tEmpty('heading')}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-muted-foreground">
-            {tEmpty("body")}
+            {tEmpty('body')}
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
               <Link href={`/recipes/${recipe.slug}`}>
                 <ArrowLeft />
-                {tEmpty("back")}
+                {tEmpty('back')}
               </Link>
             </Button>
             {recipe.ingredients.length > 0 && (

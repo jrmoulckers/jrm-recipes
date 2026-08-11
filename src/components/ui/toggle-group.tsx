@@ -1,17 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 type ToggleGroupContextValue = {
   value: string;
   setValue: (value: string) => void;
 };
 
-const ToggleGroupContext = React.createContext<ToggleGroupContextValue | null>(
-  null,
-);
+const ToggleGroupContext = React.createContext<ToggleGroupContextValue | null>(null);
 
 function useToggleGroupContext(component: string) {
   const context = React.useContext(ToggleGroupContext);
@@ -21,10 +19,7 @@ function useToggleGroupContext(component: string) {
   return context;
 }
 
-export interface ToggleGroupProps extends Omit<
-  React.HTMLAttributes<HTMLDivElement>,
-  "onChange"
-> {
+export interface ToggleGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** The currently selected item value. */
   value: string;
   /** Called with the next value when a different item is selected. */
@@ -49,7 +44,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(
           ref={ref}
           role="group"
           className={cn(
-            "inline-flex items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground",
+            'inline-flex items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground',
             className,
           )}
           {...props}
@@ -60,45 +55,41 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(
     );
   },
 );
-ToggleGroup.displayName = "ToggleGroup";
+ToggleGroup.displayName = 'ToggleGroup';
 
 export interface ToggleGroupItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** The value this item represents within the group. */
   value: string;
 }
 
-const ToggleGroupItem = React.forwardRef<
-  HTMLButtonElement,
-  ToggleGroupItemProps
->(({ className, value, children, onClick, ...props }, ref) => {
-  const { value: groupValue, setValue } =
-    useToggleGroupContext("ToggleGroupItem");
-  const selected = groupValue === value;
-  return (
-    <button
-      ref={ref}
-      type="button"
-      aria-pressed={selected}
-      data-state={selected ? "on" : "off"}
-      onClick={(event) => {
-        onClick?.(event);
-        if (!event.defaultPrevented) {
-          setValue(value);
-        }
-      }}
-      className={cn(
-        "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        selected
-          ? "bg-card text-foreground shadow-token"
-          : "hover:text-foreground",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-});
-ToggleGroupItem.displayName = "ToggleGroupItem";
+const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItemProps>(
+  ({ className, value, children, onClick, ...props }, ref) => {
+    const { value: groupValue, setValue } = useToggleGroupContext('ToggleGroupItem');
+    const selected = groupValue === value;
+    return (
+      <button
+        ref={ref}
+        type="button"
+        aria-pressed={selected}
+        data-state={selected ? 'on' : 'off'}
+        onClick={(event) => {
+          onClick?.(event);
+          if (!event.defaultPrevented) {
+            setValue(value);
+          }
+        }}
+        className={cn(
+          'inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+          selected ? 'bg-card text-foreground shadow-token' : 'hover:text-foreground',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  },
+);
+ToggleGroupItem.displayName = 'ToggleGroupItem';
 
 export { ToggleGroup, ToggleGroupItem };

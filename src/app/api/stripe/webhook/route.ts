@@ -1,8 +1,8 @@
-import type Stripe from "stripe";
+import type Stripe from 'stripe';
 
-import { env } from "~/env";
-import { getStripe, isBillingConfigured } from "~/server/billing/stripe";
-import { handleStripeEvent } from "~/server/billing/webhook";
+import { env } from '~/env';
+import { getStripe, isBillingConfigured } from '~/server/billing/stripe';
+import { handleStripeEvent } from '~/server/billing/webhook';
 
 /**
  * Stripe webhook (issue #304). The channel that keeps our `subscriptions`
@@ -16,20 +16,17 @@ import { handleStripeEvent } from "~/server/billing/webhook";
  * 503 when billing/webhook secrets are absent. It is idempotent, so Stripe's
  * at-least-once retries are safe.
  */
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
 export async function POST(request: Request): Promise<Response> {
   const secret = env.STRIPE_WEBHOOK_SECRET;
   if (!isBillingConfigured() || !secret) {
-    return Response.json(
-      { error: "Billing webhook is not configured." },
-      { status: 503 },
-    );
+    return Response.json({ error: 'Billing webhook is not configured.' }, { status: 503 });
   }
 
-  const signature = request.headers.get("stripe-signature");
+  const signature = request.headers.get('stripe-signature');
   if (!signature) {
-    return Response.json({ error: "Missing signature." }, { status: 400 });
+    return Response.json({ error: 'Missing signature.' }, { status: 400 });
   }
 
   // Read the raw body. Verification is an HMAC over these exact bytes.
@@ -39,17 +36,14 @@ export async function POST(request: Request): Promise<Response> {
   try {
     event = getStripe().webhooks.constructEvent(rawBody, signature, secret);
   } catch {
-    return Response.json({ error: "Invalid signature." }, { status: 400 });
+    return Response.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
   try {
     await handleStripeEvent(event);
   } catch {
     // Return 5xx so Stripe retries. Handlers are idempotent, so replay is safe.
-    return Response.json(
-      { error: "Webhook processing failed." },
-      { status: 500 },
-    );
+    return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
   }
 
   return Response.json({ received: true });

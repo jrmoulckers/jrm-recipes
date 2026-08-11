@@ -1,17 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, inArray, isNull, lt, type Column } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, type Column } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import {
-  cookLogEntries,
-  follows,
-  recipes,
-  reviews,
-  users,
-} from "~/server/db/schema";
-import type { ActivityEvent, ActivityPage } from "~/server/activity/queries";
+import { db, isDbConfigured } from '~/server/db';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
+import { cookLogEntries, follows, recipes, reviews, users } from '~/server/db/schema';
+import type { ActivityEvent, ActivityPage } from '~/server/activity/queries';
 
 /** A cook shaped for a followers / following list row. */
 export type FollowPerson = {
@@ -43,10 +37,7 @@ export async function isFollowing(
     return false;
   }
   const row = await db.query.follows.findFirst({
-    where: and(
-      eq(follows.followerId, followerId),
-      eq(follows.followeeId, followeeId),
-    ),
+    where: and(eq(follows.followerId, followerId), eq(follows.followeeId, followeeId)),
     columns: { id: true },
   });
   return Boolean(row);
@@ -198,9 +189,7 @@ export async function getFollowingActivity(
     }),
     getHiddenAuthorIds(userId),
   ]);
-  const authorIds = optedInRows
-    .map((u) => u.id)
-    .filter((id) => !hidden.has(id));
+  const authorIds = optedInRows.map((u) => u.id).filter((id) => !hidden.has(id));
   if (authorIds.length === 0) return { events: [], nextCursor: null };
 
   return collectPublicActivity(authorIds, opts);
@@ -218,9 +207,7 @@ function isPublicRecipe(
     | undefined,
 ): boolean {
   return Boolean(
-    recipe?.visibility === "public" &&
-    recipe.status === "published" &&
-    recipe.deletedAt === null,
+    recipe?.visibility === 'public' && recipe.status === 'published' && recipe.deletedAt === null,
   );
 }
 
@@ -238,8 +225,7 @@ async function collectPublicActivity(
   if (authorIds.length === 0) return { events: [], nextCursor: null };
 
   const before = opts.before ?? null;
-  const beforeFilter = (column: Column) =>
-    before ? lt(column, before) : undefined;
+  const beforeFilter = (column: Column) => (before ? lt(column, before) : undefined);
 
   const events: ActivityEvent[] = [];
 
@@ -247,8 +233,8 @@ async function collectPublicActivity(
   const authoredRecipes = await db.query.recipes.findMany({
     where: and(
       inArray(recipes.authorId, authorIds),
-      eq(recipes.visibility, "public"),
-      eq(recipes.status, "published"),
+      eq(recipes.visibility, 'public'),
+      eq(recipes.status, 'published'),
       isNull(recipes.deletedAt),
       beforeFilter(recipes.createdAt),
     ),
@@ -270,7 +256,7 @@ async function collectPublicActivity(
   for (const recipe of authoredRecipes) {
     events.push({
       id: `recipe:${recipe.id}`,
-      kind: "recipe_added",
+      kind: 'recipe_added',
       at: recipe.createdAt,
       actor: recipe.author ?? null,
       recipe: {
@@ -322,7 +308,7 @@ async function collectPublicActivity(
     if (!isPublicRecipe(review.recipe)) continue;
     events.push({
       id: `review:${review.id}`,
-      kind: "review",
+      kind: 'review',
       at: review.createdAt,
       actor: review.user ?? null,
       recipe: {
@@ -375,7 +361,7 @@ async function collectPublicActivity(
     if (!isPublicRecipe(cook.recipe)) continue;
     events.push({
       id: `cook:${cook.id}`,
-      kind: "cook_shared",
+      kind: 'cook_shared',
       at: cook.createdAt,
       actor: cook.user ?? null,
       recipe: {
@@ -394,9 +380,7 @@ async function collectPublicActivity(
   events.sort((a, b) => b.at.getTime() - a.at.getTime());
   const page = events.slice(0, limit);
   const nextCursor =
-    events.length > limit && page.length > 0
-      ? page[page.length - 1]!.at.toISOString()
-      : null;
+    events.length > limit && page.length > 0 ? page[page.length - 1]!.at.toISOString() : null;
 
   return { events: page, nextCursor };
 }

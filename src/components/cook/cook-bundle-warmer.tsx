@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import type { Route } from "next";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import type { Route } from 'next';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { cloudinaryLoader } from "~/lib/cloudinary-loader";
-import {
-  buildWarmCookBundleMessage,
-  cookImageUrlsToWarm,
-} from "~/lib/cook-warm";
+import { cloudinaryLoader } from '~/lib/cloudinary-loader';
+import { buildWarmCookBundleMessage, cookImageUrlsToWarm } from '~/lib/cook-warm';
 
 /**
  * The Cook route as a typed `Route` for `router.prefetch` (#483 enabled Next
@@ -69,27 +66,21 @@ export function CookBundleWarmer({
           window.devicePixelRatio,
           (src, width) => cloudinaryLoader({ src, width }),
         );
-        controller.postMessage(
-          buildWarmCookBundleMessage({ recipePath, imageUrls }),
-        );
+        controller.postMessage(buildWarmCookBundleMessage({ recipePath, imageUrls }));
       } catch {
         // Warming is best-effort. Never surface an error to the cook.
       }
     };
 
     const idleHandle =
-      typeof window.requestIdleCallback === "function"
+      typeof window.requestIdleCallback === 'function'
         ? window.requestIdleCallback(run)
         : undefined;
-    const timeoutHandle =
-      idleHandle === undefined ? setTimeout(run, 1200) : undefined;
+    const timeoutHandle = idleHandle === undefined ? setTimeout(run, 1200) : undefined;
 
     return () => {
       cancelled = true;
-      if (
-        idleHandle !== undefined &&
-        typeof window.cancelIdleCallback === "function"
-      ) {
+      if (idleHandle !== undefined && typeof window.cancelIdleCallback === 'function') {
         window.cancelIdleCallback(idleHandle);
       }
       if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);

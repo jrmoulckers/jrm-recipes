@@ -1,14 +1,14 @@
-import { requireUser } from "~/server/auth";
-import { type User } from "~/server/db/schema";
-import { checkRateLimit } from "~/server/rate-limit";
-import { buildCookbookArchive } from "~/server/recipes/backup";
-import { listOwnedRecipesForBackup } from "~/server/recipes/queries";
-import { toPrintRecipe } from "~/server/recipes/serialize";
+import { requireUser } from '~/server/auth';
+import { type User } from '~/server/db/schema';
+import { checkRateLimit } from '~/server/rate-limit';
+import { buildCookbookArchive } from '~/server/recipes/backup';
+import { listOwnedRecipesForBackup } from '~/server/recipes/queries';
+import { toPrintRecipe } from '~/server/recipes/serialize';
 
 // Buffers the whole archive in memory and reads the DB, so keep it on Node.
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 // Always reflects the user's live recipes. Never cache the download.
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 /**
  * "Download my whole cookbook" (issue #420).
@@ -25,19 +25,16 @@ export async function GET() {
   try {
     user = await requireUser();
   } catch {
-    return Response.json(
-      { error: "Sign in to download your recipes." },
-      { status: 401 },
-    );
+    return Response.json({ error: 'Sign in to download your recipes.' }, { status: 401 });
   }
 
-  const limit = checkRateLimit("backup", user.id);
+  const limit = checkRateLimit('backup', user.id);
   if (!limit.ok) {
     return Response.json(
-      { error: "Too many backups. Please try again in a moment." },
+      { error: 'Too many backups. Please try again in a moment.' },
       {
         status: 429,
-        headers: { "retry-after": String(limit.retryAfterSeconds) },
+        headers: { 'retry-after': String(limit.retryAfterSeconds) },
       },
     );
   }
@@ -51,10 +48,10 @@ export async function GET() {
   return new Response(body, {
     status: 200,
     headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="${archive.filename}"`,
-      "content-length": String(body.byteLength),
-      "cache-control": "no-store",
+      'content-type': 'application/zip',
+      'content-disposition': `attachment; filename="${archive.filename}"`,
+      'content-length': String(body.byteLength),
+      'cache-control': 'no-store',
     },
   });
 }

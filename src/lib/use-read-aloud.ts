@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * "Read this to me". Step-by-step recipe narration (issue #387).
@@ -19,7 +19,7 @@ import * as React from "react";
  *  - Everything is a no-op when the API is missing (`supported: false`) so the
  *    control can hide itself instead of erroring on unsupported browsers.
  */
-export type ReadAloudStatus = "idle" | "playing" | "paused";
+export type ReadAloudStatus = 'idle' | 'playing' | 'paused';
 
 export type ReadAloudController = {
   /** Whether SpeechSynthesis is usable in this browser. */
@@ -39,15 +39,15 @@ export type ReadAloudController = {
 
 function hasSpeech(): boolean {
   return (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
-    typeof window.SpeechSynthesisUtterance === "function"
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    typeof window.SpeechSynthesisUtterance === 'function'
   );
 }
 
 export function useReadAloud(steps: string[]): ReadAloudController {
   const [supported, setSupported] = React.useState(false);
-  const [status, setStatus] = React.useState<ReadAloudStatus>("idle");
+  const [status, setStatus] = React.useState<ReadAloudStatus>('idle');
   const [index, setIndex] = React.useState(-1);
 
   // Latest steps + status without rebuilding callbacks or re-arming utterances.
@@ -69,20 +69,20 @@ export function useReadAloud(steps: string[]): ReadAloudController {
     window.speechSynthesis.cancel();
 
     if (start < 0 || start >= list.length) {
-      setStatus("idle");
+      setStatus('idle');
       setIndex(-1);
       return;
     }
 
-    const text = (list[start] ?? "").trim();
+    const text = (list[start] ?? '').trim();
     setIndex(start);
-    setStatus("playing");
+    setStatus('playing');
 
     // A blank step shouldn't stall the queue. Skip straight to the next.
     if (!text) {
       if (start + 1 < list.length) speakFrom(start + 1);
       else {
-        setStatus("idle");
+        setStatus('idle');
         setIndex(-1);
       }
       return;
@@ -96,7 +96,7 @@ export function useReadAloud(steps: string[]): ReadAloudController {
       const nextIndex = start + 1;
       if (nextIndex < stepsRef.current.length) speakFrom(nextIndex);
       else {
-        setStatus("idle");
+        setStatus('idle');
         setIndex(-1);
       }
     };
@@ -105,25 +105,25 @@ export function useReadAloud(steps: string[]): ReadAloudController {
 
   const play = React.useCallback(() => {
     if (!hasSpeech()) return;
-    if (statusRef.current === "paused") {
+    if (statusRef.current === 'paused') {
       window.speechSynthesis.resume();
-      setStatus("playing");
+      setStatus('playing');
       return;
     }
-    if (statusRef.current === "playing") return;
+    if (statusRef.current === 'playing') return;
     speakFrom(0);
   }, [speakFrom]);
 
   const pause = React.useCallback(() => {
-    if (!hasSpeech() || statusRef.current !== "playing") return;
+    if (!hasSpeech() || statusRef.current !== 'playing') return;
     window.speechSynthesis.pause();
-    setStatus("paused");
+    setStatus('paused');
   }, []);
 
   const stop = React.useCallback(() => {
     tokenRef.current += 1; // invalidate any pending auto-advance
     if (hasSpeech()) window.speechSynthesis.cancel();
-    setStatus("idle");
+    setStatus('idle');
     setIndex(-1);
   }, []);
 

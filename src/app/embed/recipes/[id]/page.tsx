@@ -1,22 +1,19 @@
-import { type Metadata } from "next";
-import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
+import { type Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from 'lucide-react';
 
-import { brand } from "~/config/brand";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { absoluteUrl, formatMinutes } from "~/lib/utils";
-import { getPublicRecipeCard } from "~/server/recipes/queries";
-import {
-  parseEmbedRecipeParams,
-  type EmbedRecipeRouteParams,
-} from "~/lib/route-params";
-import { recipeDetailPath } from "~/lib/recipe-path";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { brand } from '~/config/brand';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { absoluteUrl, formatMinutes } from '~/lib/utils';
+import { getPublicRecipeCard } from '~/server/recipes/queries';
+import { parseEmbedRecipeParams, type EmbedRecipeRouteParams } from '~/lib/route-params';
+import { recipeDetailPath } from '~/lib/recipe-path';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 // A recipe can be unpublished/made private at any time, so never cache the
 // public/private decision at build time.
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -26,7 +23,7 @@ export async function generateMetadata({
   const { id } = await parseEmbedRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   return {
-    title: recipe ? `${recipe.title} · Embed` : "Recipe",
+    title: recipe ? `${recipe.title} · Embed` : 'Recipe',
     // The canonical recipe page carries the indexable metadata. The embed is a
     // widget, so keep it out of search results.
     robots: { index: false, follow: false },
@@ -39,17 +36,13 @@ export async function generateMetadata({
  * `public` + `published` recipes. Anything else 404s, never leaking private
  * data. Every embed carries the brand mark + a "View full recipe" backlink.
  */
-async function EmbedRecipePage({
-  params,
-}: {
-  params: Promise<EmbedRecipeRouteParams>;
-}) {
+async function EmbedRecipePage({ params }: { params: Promise<EmbedRecipeRouteParams> }) {
   const { id } = await parseEmbedRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   if (!recipe) notFound();
 
-  const t = await getTranslations("embed");
-  const tRecipe = await getTranslations("recipeDetail");
+  const t = await getTranslations('embed');
+  const tRecipe = await getTranslations('recipeDetail');
   const href = absoluteUrl(
     recipeDetailPath({
       id: recipe.id,
@@ -65,7 +58,7 @@ async function EmbedRecipePage({
     recipe.servings != null
       ? {
           icon: Users,
-          label: `${recipe.servings} ${recipe.servingsNoun ?? tRecipe("servingsNoun")}`,
+          label: `${recipe.servings} ${recipe.servingsNoun ?? tRecipe('servingsNoun')}`,
         }
       : null,
     recipe.difficulty ? { icon: Flame, label: recipe.difficulty } : null,
@@ -108,7 +101,7 @@ async function EmbedRecipePage({
             </h1>
             {authorName ? (
               <p className="mt-1 truncate text-sm text-muted-foreground">
-                {t("byAuthor", { name: authorName })}
+                {t('byAuthor', { name: authorName })}
               </p>
             ) : null}
             {recipe.description ? (
@@ -130,7 +123,7 @@ async function EmbedRecipePage({
               </ul>
             ) : null}
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
-              {t("viewFullRecipe")}
+              {t('viewFullRecipe')}
               <ArrowUpRight
                 className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 aria-hidden="true"

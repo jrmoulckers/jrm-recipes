@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import * as React from 'react';
+import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
-import { cn } from "~/lib/utils";
-import { buttonVariants } from "./button";
-import { OVERLAY_PADDING, OVERLAY_SURFACE } from "./overlay-surface";
-import { Heading, Text } from "./typography";
+import { cn } from '~/lib/utils';
+import { buttonVariants } from './button';
+import { OVERLAY_PADDING, OVERLAY_SURFACE } from './overlay-surface';
+import { Heading, Text } from './typography';
 
 /**
  * Alert dialog for destructive confirmations (#copy-standard).
@@ -28,7 +28,7 @@ const AlertDialogOverlay = React.forwardRef<
   <AlertDialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
+      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
       className,
     )}
     {...props}
@@ -45,11 +45,11 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in",
+        'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
         OVERLAY_SURFACE,
         OVERLAY_PADDING.dialog,
         // Clear the home indicator on notched phones (issue #291).
-        "pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+        'pb-[calc(1.5rem+env(safe-area-inset-bottom))]',
         className,
       )}
       {...props}
@@ -58,31 +58,16 @@ const AlertDialogContent = React.forwardRef<
 ));
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
-function AlertDialogHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function AlertDialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-1.5 text-center sm:text-start",
-        className,
-      )}
-      {...props}
-    />
+    <div className={cn('flex flex-col gap-1.5 text-center sm:text-start', className)} {...props} />
   );
 }
 
-function AlertDialogFooter({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function AlertDialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );
@@ -106,8 +91,7 @@ const AlertDialogDescription = React.forwardRef<
     <Text ref={ref} variant="small" className={className} {...props} />
   </AlertDialogPrimitive.Description>
 ));
-AlertDialogDescription.displayName =
-  AlertDialogPrimitive.Description.displayName;
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
 
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
@@ -117,10 +101,7 @@ const AlertDialogAction = React.forwardRef<
 >(({ className, destructive, ...props }, ref) => (
   <AlertDialogPrimitive.Action
     ref={ref}
-    className={cn(
-      buttonVariants({ variant: destructive ? "destructive" : "default" }),
-      className,
-    )}
+    className={cn(buttonVariants({ variant: destructive ? 'destructive' : 'default' }), className)}
     {...props}
   />
 ));
@@ -132,7 +113,7 @@ const AlertDialogCancel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Cancel
     ref={ref}
-    className={cn(buttonVariants({ variant: "outline" }), className)}
+    className={cn(buttonVariants({ variant: 'outline' }), className)}
     {...props}
   />
 ));

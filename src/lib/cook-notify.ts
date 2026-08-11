@@ -6,8 +6,8 @@
  * `notificationclick` handler (which imports `matchesCookClient`).
  */
 
-export const COOK_NOTIFICATION_TAG_PREFIX = "heirloom-cook-timer";
-export const COOK_NOTIFICATION_TYPE = "cook-timer";
+export const COOK_NOTIFICATION_TAG_PREFIX = 'heirloom-cook-timer';
+export const COOK_NOTIFICATION_TYPE = 'cook-timer';
 
 /**
  * Cook Mode route for a recipe, used as the notification's focus target.
@@ -45,16 +45,14 @@ export function buildCookTimerNotification(input: {
   stepId: string;
 }): CookTimerNotification {
   const url = cookTimerNotificationUrl(input.recipePath);
-  const body = input.section
-    ? `${input.recipeTitle} · ${input.section}`
-    : input.recipeTitle;
+  const body = input.section ? `${input.recipeTitle} · ${input.section}` : input.recipeTitle;
   return {
     title: `Step ${input.stepNumber} timer is done`,
     options: {
       body,
       tag: `${COOK_NOTIFICATION_TAG_PREFIX}:${input.recipeSlug}:${input.stepId}`,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       renotify: true,
       requireInteraction: false,
       data: { url, type: COOK_NOTIFICATION_TYPE },
@@ -73,7 +71,7 @@ export function shouldSendTimerNotification(opts: {
   permission: NotificationPermission;
   documentHidden: boolean;
 }): boolean {
-  return opts.supported && opts.permission === "granted" && opts.documentHidden;
+  return opts.supported && opts.permission === 'granted' && opts.documentHidden;
 }
 
 /**
@@ -89,8 +87,8 @@ export async function requestTimerNotificationPermission(
       }
     | undefined,
 ): Promise<NotificationPermission> {
-  if (!notification) return "denied";
-  if (notification.permission !== "default") return notification.permission;
+  if (!notification) return 'denied';
+  if (notification.permission !== 'default') return notification.permission;
   try {
     return await notification.requestPermission();
   } catch {
@@ -104,10 +102,7 @@ export async function requestTimerNotificationPermission(
  * `notificationclick` handler to focus an existing Cook Mode tab instead of
  * opening a duplicate.
  */
-export function matchesCookClient(
-  clientUrl: string,
-  targetUrl: string,
-): boolean {
+export function matchesCookClient(clientUrl: string, targetUrl: string): boolean {
   try {
     return new URL(clientUrl).pathname === new URL(targetUrl).pathname;
   } catch {

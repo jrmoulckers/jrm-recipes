@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, inArray, isNull, lt, type Column } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, type Column } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
+import { db, isDbConfigured } from '~/server/db';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
 import {
   comments,
   cookLogEntries,
@@ -11,16 +11,11 @@ import {
   recipes,
   reviews,
   type MemberRole,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 /** The kinds of event the family activity feed surfaces (issue #349). */
 export type ActivityKind =
-  | "recipe_added"
-  | "cook_shared"
-  | "review"
-  | "comment"
-  | "suggestion"
-  | "member_joined";
+  'recipe_added' | 'cook_shared' | 'review' | 'comment' | 'suggestion' | 'member_joined';
 
 type Actor = {
   id: string;
@@ -122,8 +117,7 @@ async function collectActivityForGroups(
   }
 
   const before = opts.before ?? null;
-  const beforeFilter = (column: Column) =>
-    before ? lt(column, before) : undefined;
+  const beforeFilter = (column: Column) => (before ? lt(column, before) : undefined);
 
   // Recipes that belong to these group scopes scope reviews/comments below.
   const groupRecipes = await db.query.recipes.findMany({
@@ -153,7 +147,7 @@ async function collectActivityForGroups(
     if (before && recipe.createdAt >= before) continue;
     events.push({
       id: `recipe:${recipe.id}`,
-      kind: "recipe_added",
+      kind: 'recipe_added',
       at: recipe.createdAt,
       actor: recipe.author ?? null,
       recipe: {
@@ -195,7 +189,7 @@ async function collectActivityForGroups(
     if (hidden.has(cook.userId)) continue;
     events.push({
       id: `cook:${cook.id}`,
-      kind: "cook_shared",
+      kind: 'cook_shared',
       at: cook.createdAt,
       actor: cook.user ?? null,
       recipe: recipeById.get(cook.recipeId)
@@ -242,7 +236,7 @@ async function collectActivityForGroups(
       const recipe = recipeById.get(review.recipeId);
       events.push({
         id: `review:${review.id}`,
-        kind: "review",
+        kind: 'review',
         at: review.createdAt,
         actor: review.user ?? null,
         recipe: recipe
@@ -287,7 +281,7 @@ async function collectActivityForGroups(
       const recipe = recipeById.get(comment.recipeId);
       events.push({
         id: `comment:${comment.id}`,
-        kind: comment.kind === "suggestion" ? "suggestion" : "comment",
+        kind: comment.kind === 'suggestion' ? 'suggestion' : 'comment',
         at: comment.createdAt,
         actor: comment.user ?? null,
         recipe: recipe
@@ -307,10 +301,7 @@ async function collectActivityForGroups(
 
   // 5) New members joining.
   const joins = await db.query.groupMembers.findMany({
-    where: and(
-      inArray(groupMembers.groupId, groupIds),
-      beforeFilter(groupMembers.createdAt),
-    ),
+    where: and(inArray(groupMembers.groupId, groupIds), beforeFilter(groupMembers.createdAt)),
     orderBy: [desc(groupMembers.createdAt)],
     limit,
     columns: { id: true, userId: true, createdAt: true },
@@ -323,7 +314,7 @@ async function collectActivityForGroups(
   for (const join of joins) {
     events.push({
       id: `member:${join.id}`,
-      kind: "member_joined",
+      kind: 'member_joined',
       at: join.createdAt,
       actor: join.user ?? null,
       recipe: null,
@@ -337,9 +328,7 @@ async function collectActivityForGroups(
   events.sort((a, b) => b.at.getTime() - a.at.getTime());
   const page = events.slice(0, limit);
   const nextCursor =
-    events.length > limit && page.length > 0
-      ? page[page.length - 1]!.at.toISOString()
-      : null;
+    events.length > limit && page.length > 0 ? page[page.length - 1]!.at.toISOString() : null;
 
   return { events: page, nextCursor };
 }

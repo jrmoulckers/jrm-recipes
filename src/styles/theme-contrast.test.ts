@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { UI_THEME_IDS } from "~/config/themes";
+import { UI_THEME_IDS } from '~/config/themes';
 
 /**
  * WCAG contrast regression guard for the design tokens (issue #132).
@@ -18,7 +18,9 @@ import { UI_THEME_IDS } from "~/config/themes";
  * ≥ 3:1 (1.4.11). See the pair lists for exactly what is guarded.
  */
 
-const css = readFileSync(join(process.cwd(), "src/styles/themes.css"), "utf8");
+// Quote style is a formatter choice, not a CSS semantic, so normalize it here and
+// keep the selector assertions below written with double quotes.
+const css = readFileSync(join(process.cwd(), 'src/styles/themes.css'), 'utf8').replace(/'/g, '"');
 
 const HSL_RE = /^([\d.]+)\s+([\d.]+)%\s+([\d.]+)%$/;
 type RGB = [number, number, number];
@@ -48,8 +50,7 @@ function hslToRgb(value: string): RGB {
 }
 
 function relativeLuminance([r, g, b]: RGB) {
-  const f = (c: number) =>
-    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const f = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 }
 
@@ -66,8 +67,7 @@ function contrast(a: string, b: string) {
 
 function composite(foreground: RGB, background: RGB, alpha: number): RGB {
   return foreground.map(
-    (channel, index) =>
-      channel * alpha + (background[index] ?? 0) * (1 - alpha),
+    (channel, index) => channel * alpha + (background[index] ?? 0) * (1 - alpha),
   ) as RGB;
 }
 
@@ -100,13 +100,11 @@ const BLOCKS = parseBlocks(css);
 function resolveTokens(theme: string, dark: boolean): Record<string, string> {
   const acc: Record<string, string> = {};
   for (const { selector, tokens } of BLOCKS) {
-    for (const sel of selector.split(",").map((s) => s.trim())) {
-      const isDark = sel.includes(".dark");
+    for (const sel of selector.split(',').map((s) => s.trim())) {
+      const isDark = sel.includes('.dark');
       if (isDark !== dark) continue;
       const matchesTheme =
-        sel.includes(`[data-theme="${theme}"]`) ||
-        sel === ":root" ||
-        sel === ".dark";
+        sel.includes(`[data-theme="${theme}"]`) || sel === ':root' || sel === '.dark';
       if (matchesTheme) Object.assign(acc, tokens);
     }
   }
@@ -115,95 +113,84 @@ function resolveTokens(theme: string, dark: boolean): Record<string, string> {
 
 // Small body text / control labels → AA 1.4.3 (4.5:1).
 const TEXT_PAIRS: [fg: string, bg: string][] = [
-  ["foreground", "background"],
-  ["surface-foreground", "surface"],
-  ["card-foreground", "card"],
-  ["popover-foreground", "popover"],
-  ["muted-foreground", "muted"],
-  ["muted-foreground", "background"],
-  ["primary-foreground", "primary"],
-  ["secondary-foreground", "secondary"],
-  ["accent-foreground", "accent"],
-  ["destructive-foreground", "destructive"],
-  ["success-foreground", "success"],
-  ["warning-foreground", "warning"],
-  ["info-foreground", "info"],
+  ['foreground', 'background'],
+  ['surface-foreground', 'surface'],
+  ['card-foreground', 'card'],
+  ['popover-foreground', 'popover'],
+  ['muted-foreground', 'muted'],
+  ['muted-foreground', 'background'],
+  ['primary-foreground', 'primary'],
+  ['secondary-foreground', 'secondary'],
+  ['accent-foreground', 'accent'],
+  ['destructive-foreground', 'destructive'],
+  ['success-foreground', 'success'],
+  ['warning-foreground', 'warning'],
+  ['info-foreground', 'info'],
 ];
 
 // Form-control borders + focus ring → AA 1.4.11 non-text (3:1).
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
-  ["input", "background"],
-  ["ring", "background"],
+  ['input', 'background'],
+  ['ring', 'background'],
 ];
 
 const WARNING_TINT_ALPHAS = [0.1, 0.15, 0.2, 0.25];
-const WARNING_TINT_BACKDROPS = ["background", "surface", "card"];
+const WARNING_TINT_BACKDROPS = ['background', 'surface', 'card'];
 
 const COMBOS = UI_THEME_IDS.flatMap((theme) =>
   [false, true].map((dark) => ({
     theme,
     dark,
-    label: `${theme}/${dark ? "dark" : "light"}`,
+    label: `${theme}/${dark ? 'dark' : 'light'}`,
   })),
 );
 
-describe("theme token contrast (issue #132)", () => {
-  it.each(COMBOS)(
-    "$label. Body text pairs meet AA 4.5:1",
-    ({ theme, dark }) => {
-      const tok = resolveTokens(theme, dark);
-      for (const [fg, bg] of TEXT_PAIRS) {
-        const fgVal = tok[fg];
-        const bgVal = tok[bg];
-        expect(fgVal, `missing --${fg}`).toBeDefined();
-        expect(bgVal, `missing --${bg}`).toBeDefined();
-        if (fgVal === undefined || bgVal === undefined) continue;
-        const ratio = contrast(fgVal, bgVal);
+describe('theme token contrast (issue #132)', () => {
+  it.each(COMBOS)('$label. Body text pairs meet AA 4.5:1', ({ theme, dark }) => {
+    const tok = resolveTokens(theme, dark);
+    for (const [fg, bg] of TEXT_PAIRS) {
+      const fgVal = tok[fg];
+      const bgVal = tok[bg];
+      expect(fgVal, `missing --${fg}`).toBeDefined();
+      expect(bgVal, `missing --${bg}`).toBeDefined();
+      if (fgVal === undefined || bgVal === undefined) continue;
+      const ratio = contrast(fgVal, bgVal);
+      expect(ratio, `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 4.5)`).toBeGreaterThanOrEqual(
+        4.5,
+      );
+    }
+  });
+
+  it.each(COMBOS)('$label. Control/focus pairs meet AA 3:1', ({ theme, dark }) => {
+    const tok = resolveTokens(theme, dark);
+    for (const [fg, bg] of NON_TEXT_PAIRS) {
+      const fgVal = tok[fg];
+      const bgVal = tok[bg];
+      expect(fgVal, `missing --${fg}`).toBeDefined();
+      expect(bgVal, `missing --${bg}`).toBeDefined();
+      if (fgVal === undefined || bgVal === undefined) continue;
+      const ratio = contrast(fgVal, bgVal);
+      expect(ratio, `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 3.0)`).toBeGreaterThanOrEqual(
+        3.0,
+      );
+    }
+  });
+
+  it.each(COMBOS)('$label. Foreground text on warning tints meets AA 4.5:1', ({ theme, dark }) => {
+    const tok = resolveTokens(theme, dark);
+    const foreground = hslToRgb(tok.foreground ?? '');
+    const warning = hslToRgb(tok.warning ?? '');
+
+    for (const backdropName of WARNING_TINT_BACKDROPS) {
+      const backdrop = hslToRgb(tok[backdropName] ?? '');
+      for (const alpha of WARNING_TINT_ALPHAS) {
+        const tint = composite(warning, backdrop, alpha);
+        const ratio = contrastRgb(foreground, tint);
         expect(
           ratio,
-          `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 4.5)`,
+          `--foreground on --warning/${alpha} over --${backdropName} = ${ratio.toFixed(2)}:1 (need 4.5)`,
         ).toBeGreaterThanOrEqual(4.5);
       }
-    },
-  );
-
-  it.each(COMBOS)(
-    "$label. Control/focus pairs meet AA 3:1",
-    ({ theme, dark }) => {
-      const tok = resolveTokens(theme, dark);
-      for (const [fg, bg] of NON_TEXT_PAIRS) {
-        const fgVal = tok[fg];
-        const bgVal = tok[bg];
-        expect(fgVal, `missing --${fg}`).toBeDefined();
-        expect(bgVal, `missing --${bg}`).toBeDefined();
-        if (fgVal === undefined || bgVal === undefined) continue;
-        const ratio = contrast(fgVal, bgVal);
-        expect(
-          ratio,
-          `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 3.0)`,
-        ).toBeGreaterThanOrEqual(3.0);
-      }
-    },
-  );
-
-  it.each(COMBOS)(
-    "$label. Foreground text on warning tints meets AA 4.5:1",
-    ({ theme, dark }) => {
-      const tok = resolveTokens(theme, dark);
-      const foreground = hslToRgb(tok.foreground ?? "");
-      const warning = hslToRgb(tok.warning ?? "");
-
-      for (const backdropName of WARNING_TINT_BACKDROPS) {
-        const backdrop = hslToRgb(tok[backdropName] ?? "");
-        for (const alpha of WARNING_TINT_ALPHAS) {
-          const tint = composite(warning, backdrop, alpha);
-          const ratio = contrastRgb(foreground, tint);
-          expect(
-            ratio,
-            `--foreground on --warning/${alpha} over --${backdropName} = ${ratio.toFixed(2)}:1 (need 4.5)`,
-          ).toBeGreaterThanOrEqual(4.5);
-        }
-      }
-    },
-  );
+    }
+  });
 });

@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { Skeleton } from "~/components/ui/skeleton";
+import { Skeleton } from '~/components/ui/skeleton';
 
 /**
  * Loading placeholder for the recipe editor (create + edit). Mirrors

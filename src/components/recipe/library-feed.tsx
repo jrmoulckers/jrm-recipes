@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { loadMoreLibraryAction } from "~/server/recipes/library-actions";
-import { Button } from "~/components/ui/button";
+import { loadMoreLibraryAction } from '~/server/recipes/library-actions';
+import { Button } from '~/components/ui/button';
 import {
   RecipeCard,
   type CardRecipe,
   type QuickPlanContext,
-} from "~/components/recipe/recipe-card";
-import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
+} from '~/components/recipe/recipe-card';
+import { type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
 
 /**
  * The viewer's personal cookbook with a "Load more" button (#57).
@@ -42,16 +42,11 @@ export function LibraryFeed({
   members?: CardDietaryMember[];
   quickPlan?: QuickPlanContext;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
-  const [nextOffset, setNextOffset] = React.useState<number | null>(
-    initialNextOffset,
-  );
+  const [nextOffset, setNextOffset] = React.useState<number | null>(initialNextOffset);
   const [pending, startTransition] = React.useTransition();
-  const favoritedSet = React.useMemo(
-    () => new Set(favoritedIds),
-    [favoritedIds],
-  );
+  const favoritedSet = React.useMemo(() => new Set(favoritedIds), [favoritedIds]);
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
@@ -83,14 +78,8 @@ export function LibraryFeed({
       </div>
       {nextOffset != null && (
         <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onLoadMore}
-            disabled={pending}
-          >
-            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
+          <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>
+            {pending ? t('common.loading') : t('common.loadMoreRecipes')}
           </Button>
         </div>
       )}

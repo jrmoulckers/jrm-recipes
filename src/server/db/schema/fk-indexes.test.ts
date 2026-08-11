@@ -1,20 +1,15 @@
-import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { getTableConfig, type PgTable } from 'drizzle-orm/pg-core';
+import { describe, expect, it } from 'vitest';
 
-import { comments, ratings } from "./engagement";
-import { follows } from "./follows";
-import {
-  recipeCreators,
-  recipeEvents,
-  recipeIngredients,
-  recipeVersions,
-} from "./recipes";
+import { comments, ratings } from './engagement';
+import { follows } from './follows';
+import { recipeCreators, recipeEvents, recipeIngredients, recipeVersions } from './recipes';
 import {
   shoppingIngredientRouteAlternatives,
   shoppingIngredientRoutes,
   shoppingListItems,
   shoppingLists,
-} from "./shopping";
+} from './shopping';
 
 /**
  * Issue #153. Every foreign-key column that reverse-lookups or cascades on it
@@ -33,132 +28,125 @@ interface Expectation {
 
 const expectations: Expectation[] = [
   {
-    label: "comments.userId",
+    label: 'comments.userId',
     table: comments,
-    index: "comments_user_idx",
-    columns: ["userId"],
+    index: 'comments_user_idx',
+    columns: ['userId'],
   },
   {
-    label: "ratings.userId",
+    label: 'ratings.userId',
     table: ratings,
-    index: "ratings_user_idx",
-    columns: ["userId"],
+    index: 'ratings_user_idx',
+    columns: ['userId'],
   },
   {
-    label: "recipeVersions.authorId",
+    label: 'recipeVersions.authorId',
     table: recipeVersions,
-    index: "recipe_versions_author_idx",
-    columns: ["authorId"],
+    index: 'recipe_versions_author_idx',
+    columns: ['authorId'],
   },
   {
-    label: "recipeEvents.actorId",
+    label: 'recipeEvents.actorId',
     table: recipeEvents,
-    index: "recipe_events_actor_idx",
-    columns: ["actorId"],
+    index: 'recipe_events_actor_idx',
+    columns: ['actorId'],
   },
   {
-    label: "recipeEvents.relatedRecipeId",
+    label: 'recipeEvents.relatedRecipeId',
     table: recipeEvents,
-    index: "recipe_events_related_idx",
-    columns: ["relatedRecipeId"],
+    index: 'recipe_events_related_idx',
+    columns: ['relatedRecipeId'],
   },
   {
-    label: "shoppingListItems.recipeId",
+    label: 'shoppingListItems.recipeId',
     table: shoppingListItems,
-    index: "shopping_list_items_recipe_idx",
-    columns: ["recipeId"],
+    index: 'shopping_list_items_recipe_idx',
+    columns: ['recipeId'],
   },
   {
-    label: "shoppingListItems.foodId",
+    label: 'shoppingListItems.foodId',
     table: shoppingListItems,
-    index: "shopping_list_items_food_idx",
-    columns: ["foodId"],
+    index: 'shopping_list_items_food_idx',
+    columns: ['foodId'],
   },
   {
-    label: "shoppingLists.userId",
+    label: 'shoppingLists.userId',
     table: shoppingLists,
-    index: "shopping_lists_user_idx",
-    columns: ["userId"],
+    index: 'shopping_lists_user_idx',
+    columns: ['userId'],
   },
   {
-    label: "shoppingIngredientRoutes.userId",
+    label: 'shoppingIngredientRoutes.userId',
     table: shoppingIngredientRoutes,
-    index: "shopping_ingredient_routes_user_idx",
-    columns: ["userId"],
+    index: 'shopping_ingredient_routes_user_idx',
+    columns: ['userId'],
   },
   {
-    label: "shoppingIngredientRoutes.foodId",
+    label: 'shoppingIngredientRoutes.foodId',
     table: shoppingIngredientRoutes,
-    index: "shopping_ingredient_routes_food_idx",
-    columns: ["foodId"],
+    index: 'shopping_ingredient_routes_food_idx',
+    columns: ['foodId'],
   },
   {
-    label: "shoppingIngredientRoutes.preferredListId",
+    label: 'shoppingIngredientRoutes.preferredListId',
     table: shoppingIngredientRoutes,
-    index: "shopping_ingredient_routes_preferred_list_idx",
-    columns: ["preferredListId"],
+    index: 'shopping_ingredient_routes_preferred_list_idx',
+    columns: ['preferredListId'],
   },
   {
-    label: "shoppingIngredientRouteAlternatives.routeId",
+    label: 'shoppingIngredientRouteAlternatives.routeId',
     table: shoppingIngredientRouteAlternatives,
-    index: "shopping_ingredient_route_alternatives_route_position_idx",
-    columns: ["routeId", "position"],
+    index: 'shopping_ingredient_route_alternatives_route_position_idx',
+    columns: ['routeId', 'position'],
   },
   {
-    label: "shoppingIngredientRouteAlternatives.listId",
+    label: 'shoppingIngredientRouteAlternatives.listId',
     table: shoppingIngredientRouteAlternatives,
-    index: "shopping_ingredient_route_alternatives_list_idx",
-    columns: ["listId"],
+    index: 'shopping_ingredient_route_alternatives_list_idx',
+    columns: ['listId'],
   },
   {
-    label: "recipeIngredients.foodId",
+    label: 'recipeIngredients.foodId',
     table: recipeIngredients,
-    index: "recipe_ingredients_food_idx",
-    columns: ["foodId"],
+    index: 'recipe_ingredients_food_idx',
+    columns: ['foodId'],
   },
   {
-    label: "follows.followerId",
+    label: 'follows.followerId',
     table: follows,
-    index: "follows_follower_idx",
-    columns: ["followerId"],
+    index: 'follows_follower_idx',
+    columns: ['followerId'],
   },
   {
-    label: "follows.followeeId",
+    label: 'follows.followeeId',
     table: follows,
-    index: "follows_followee_idx",
-    columns: ["followeeId"],
+    index: 'follows_followee_idx',
+    columns: ['followeeId'],
   },
   {
-    label: "recipeCreators.userId",
+    label: 'recipeCreators.userId',
     table: recipeCreators,
-    index: "recipe_creators_user_idx",
-    columns: ["userId"],
+    index: 'recipe_creators_user_idx',
+    columns: ['userId'],
   },
   {
-    label: "recipeCreators.recipeId",
+    label: 'recipeCreators.recipeId',
     table: recipeCreators,
-    index: "recipe_creators_recipe_idx",
-    columns: ["recipeId"],
+    index: 'recipe_creators_recipe_idx',
+    columns: ['recipeId'],
   },
   {
-    label: "recipeCreators.invitedById",
+    label: 'recipeCreators.invitedById',
     table: recipeCreators,
-    index: "recipe_creators_invited_by_idx",
-    columns: ["invitedById"],
+    index: 'recipe_creators_invited_by_idx',
+    columns: ['invitedById'],
   },
 ];
 
-describe("schema covers unindexed foreign keys (issue #153)", () => {
-  it.each(expectations)(
-    "declares $index on $label",
-    ({ table, index, columns }) => {
-      const found = getTableConfig(table).indexes.find(
-        (i) => i.config.name === index,
-      );
-      expect(found, `expected index "${index}"`).toBeDefined();
-      expect(
-        found?.config.columns.map((c) => (c as { name: string }).name),
-      ).toEqual(columns);
-    },
-  );
+describe('schema covers unindexed foreign keys (issue #153)', () => {
+  it.each(expectations)('declares $index on $label', ({ table, index, columns }) => {
+    const found = getTableConfig(table).indexes.find((i) => i.config.name === index);
+    expect(found, `expected index "${index}"`).toBeDefined();
+    expect(found?.config.columns.map((c) => (c as { name: string }).name)).toEqual(columns);
+  });
 });

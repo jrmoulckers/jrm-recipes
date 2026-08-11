@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
-import { Label } from "./label";
+import { cn } from '~/lib/utils';
+import { Label } from './label';
 
 /**
  * Shared, accessible form-field primitive (#161 follow-up).
@@ -27,11 +27,9 @@ import { Label } from "./label";
  */
 
 /** Normalize a Zod-style `string[]` or a single string to the first message. */
-function firstMessage(
-  error?: string | readonly string[] | null,
-): string | undefined {
+function firstMessage(error?: string | readonly string[] | null): string | undefined {
   if (error == null) return undefined;
-  const message = typeof error === "string" ? error : error[0];
+  const message = typeof error === 'string' ? error : error[0];
   return message && message.length > 0 ? message : undefined;
 }
 
@@ -46,7 +44,7 @@ export function FieldHint({
   children: React.ReactNode;
 }) {
   return (
-    <p id={id} className={cn("text-xs text-muted-foreground", className)}>
+    <p id={id} className={cn('text-xs text-muted-foreground', className)}>
       {children}
     </p>
   );
@@ -66,11 +64,7 @@ export function FieldError({
   children: React.ReactNode;
 }) {
   return (
-    <p
-      id={id}
-      aria-live="polite"
-      className={cn("text-sm text-destructive", className)}
-    >
+    <p id={id} aria-live="polite" className={cn('text-sm text-destructive', className)}>
       {children}
     </p>
   );
@@ -110,8 +104,7 @@ export function FormField({
     ? (children as React.ReactElement<Record<string, unknown>>)
     : null;
 
-  const existingId =
-    child && typeof child.props.id === "string" ? child.props.id : undefined;
+  const existingId = child && typeof child.props.id === 'string' ? child.props.id : undefined;
   const controlId = htmlFor ?? existingId ?? reactId;
 
   const message = firstMessage(error);
@@ -121,23 +114,22 @@ export function FormField({
   const describedBy = hasError ? errorId : hint ? hintId : undefined;
 
   const existingDescribedBy =
-    child && typeof child.props["aria-describedby"] === "string"
-      ? child.props["aria-describedby"]
+    child && typeof child.props['aria-describedby'] === 'string'
+      ? child.props['aria-describedby']
       : undefined;
 
   const control = child
     ? React.cloneElement(child, {
         id: controlId,
-        "aria-required": required ? true : undefined,
-        "aria-invalid": hasError ? true : undefined,
-        "aria-describedby":
-          [existingDescribedBy, describedBy].filter(Boolean).join(" ") ||
-          undefined,
+        'aria-required': required ? true : undefined,
+        'aria-invalid': hasError ? true : undefined,
+        'aria-describedby':
+          [existingDescribedBy, describedBy].filter(Boolean).join(' ') || undefined,
       })
     : children;
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor={controlId} className="flex items-center gap-1">
         {label}
         {required ? (

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { ListChecks, Utensils } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { ListChecks, Utensils } from 'lucide-react';
 
-import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
-import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
-import { Button } from "~/components/ui/button";
+import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
+import type { IngredientsPanelControls } from '~/components/recipe/ingredients-panel';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,16 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { cn } from "~/lib/utils";
+} from '~/components/ui/dialog';
+import { cn } from '~/lib/utils';
 
-import type { CookRecipe } from "./types";
+import type { CookRecipe } from './types';
 
 type IngredientsDrawerProps = {
-  recipe: Pick<
-    CookRecipe,
-    "ingredients" | "servings" | "servingsNoun" | "nutrition"
-  >;
+  recipe: Pick<CookRecipe, 'ingredients' | 'servings' | 'servingsNoun' | 'nutrition'>;
   className?: string;
   label?: string;
   /**
@@ -46,23 +43,23 @@ type IngredientsDrawerProps = {
 export function IngredientsDrawer({
   recipe,
   className,
-  label = "Ingredients",
-  compactLabel = "List",
+  label = 'Ingredients',
+  compactLabel = 'List',
   prominent = false,
   controls,
 }: IngredientsDrawerProps) {
-  const t = useTranslations("ingredientsDrawer");
+  const t = useTranslations('ingredientsDrawer');
   // Kids mode promises "big buttons". Honor behavior.largeTargets so the
   // Ingredients trigger grows with the rest of Cook Mode's primary controls
   // (#439). Sizing is centralized here so callers only pass layout/visibility.
   const { largeTargets } = useThemeBehavior();
   const sizeClasses = prominent
     ? largeTargets
-      ? "h-[4.5rem] px-8 text-xl sm:h-20"
-      : "h-16 px-6 text-lg"
+      ? 'h-[4.5rem] px-8 text-xl sm:h-20'
+      : 'h-16 px-6 text-lg'
     : largeTargets
-      ? "h-16 px-5 text-lg sm:h-[4.25rem]"
-      : "h-12 px-4 sm:h-14 sm:px-5";
+      ? 'h-16 px-5 text-lg sm:h-[4.25rem]'
+      : 'h-12 px-4 sm:h-14 sm:px-5';
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -70,7 +67,7 @@ export function IngredientsDrawer({
           type="button"
           variant="secondary"
           size="lg"
-          aria-label={t("region", { label })}
+          aria-label={t('region', { label })}
           className={cn(sizeClasses, className)}
         >
           <ListChecks aria-hidden="true" />
@@ -85,9 +82,9 @@ export function IngredientsDrawer({
         <DialogHeader className="border-b border-border p-5 pe-14 pt-[max(1.25rem,env(safe-area-inset-top))] text-start">
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Utensils className="size-5 text-primary" />
-            {t("title")}
+            {t('title')}
           </DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pr-[max(1.25rem,env(safe-area-inset-right))]">
@@ -101,12 +98,8 @@ export function IngredientsDrawer({
             />
           ) : (
             <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground">
-              <p className="font-display text-xl font-semibold">
-                {t("emptyHeading")}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {t("emptyBody")}
-              </p>
+              <p className="font-display text-xl font-semibold">{t('emptyHeading')}</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t('emptyBody')}</p>
             </div>
           )}
         </div>

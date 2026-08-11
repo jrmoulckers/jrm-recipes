@@ -12,19 +12,19 @@
  * theme id). This is intentionally NOT a full i18n layer. Just the core flows.
  */
 
-import { THEME_BEHAVIOR, type UITheme } from "~/config/themes";
+import { THEME_BEHAVIOR, type UITheme } from '~/config/themes';
 
 export const KID_COPY = {
   /** Primary create call-to-action (library empty state). */
-  "cta.create": "Add a recipe!",
+  'cta.create': 'Add a recipe!',
   /** Empty recipe library headline. */
-  "empty.recipes.title": "No recipes yet!",
+  'empty.recipes.title': 'No recipes yet!',
   /** Empty recipe library body. */
-  "empty.recipes.body": "Let's add your favorite food.",
+  'empty.recipes.body': "Let's add your favorite food.",
   /** Cook-mode completion headline (mirrors cook-completion's celebratory copy). */
-  "cook.complete": "You did it! 🎉",
+  'cook.complete': 'You did it! 🎉',
   /** Missing-title validation when saving a recipe. */
-  "validation.title": "Give your recipe a name!",
+  'validation.title': 'Give your recipe a name!',
 } as const satisfies Record<string, string>;
 
 export type KidCopyKey = keyof typeof KID_COPY;
@@ -33,11 +33,7 @@ export type KidCopyKey = keyof typeof KID_COPY;
  * Return the kid-friendly variant when `kidSafe` is on, else the caller's
  * original copy. Pair with `useThemeBehavior().kidSafe` in client components.
  */
-export function pickKidCopy(
-  kidSafe: boolean,
-  key: KidCopyKey,
-  fallback: string,
-): string {
+export function pickKidCopy(kidSafe: boolean, key: KidCopyKey, fallback: string): string {
   return kidSafe ? KID_COPY[key] : fallback;
 }
 
@@ -45,10 +41,6 @@ export function pickKidCopy(
  * Theme-id variant of {@link pickKidCopy} for callers that only have the active
  * UI mode (e.g. Server-resolved theme) rather than the behavior flags.
  */
-export function pickCopy(
-  theme: UITheme,
-  key: KidCopyKey,
-  fallback: string,
-): string {
+export function pickCopy(theme: UITheme, key: KidCopyKey, fallback: string): string {
   return pickKidCopy(THEME_BEHAVIOR[theme]?.kidSafe ?? false, key, fallback);
 }

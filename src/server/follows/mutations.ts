@@ -1,12 +1,12 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import { notify } from "~/server/notifications/notify";
-import { follows, users } from "~/server/db/schema";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
+import { notify } from '~/server/notifications/notify';
+import { follows, users } from '~/server/db/schema';
 
 /**
  * The public follow graph (opt-in, privacy-preserving). A follow only ever
@@ -28,20 +28,20 @@ import { follows, users } from "~/server/db/schema";
  * followee. Re-following an already-followed user is a silent no-op.
  */
 export async function followUser(followerId: string, followeeId: string) {
-  if (followerId === followeeId) throw new DomainError("FORBIDDEN");
+  if (followerId === followeeId) throw new DomainError('FORBIDDEN');
 
   const followee = await db.query.users.findFirst({
     where: eq(users.id, followeeId),
     columns: { id: true, publicActivityOptIn: true, deletedAt: true },
   });
   // Unknown or deleted accounts aren't followable.
-  if (!followee || followee.deletedAt) throw new DomainError("USER_NOT_FOUND");
+  if (!followee || followee.deletedAt) throw new DomainError('USER_NOT_FOUND');
   // Opt-in gate: you can only follow someone who has made their profile public.
-  if (!followee.publicActivityOptIn) throw new DomainError("FORBIDDEN");
+  if (!followee.publicActivityOptIn) throw new DomainError('FORBIDDEN');
 
   // Blocks win over follows, in both directions (symmetric hidden set).
   const hidden = await getHiddenAuthorIds(followerId);
-  if (hidden.has(followeeId)) throw new DomainError("FORBIDDEN");
+  if (hidden.has(followeeId)) throw new DomainError('FORBIDDEN');
 
   await db.transaction(async (tx) => {
     const inserted = await tx
@@ -57,7 +57,7 @@ export async function followUser(followerId: string, followeeId: string) {
       await notify(tx, {
         recipientId: followeeId,
         actorId: followerId,
-        type: "follow",
+        type: 'follow',
       });
     }
   });
@@ -67,10 +67,5 @@ export async function followUser(followerId: string, followeeId: string) {
 export async function unfollowUser(followerId: string, followeeId: string) {
   await db
     .delete(follows)
-    .where(
-      and(
-        eq(follows.followerId, followerId),
-        eq(follows.followeeId, followeeId),
-      ),
-    );
+    .where(and(eq(follows.followerId, followerId), eq(follows.followeeId, followeeId)));
 }

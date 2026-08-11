@@ -1,24 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import {
-  AlertTriangle,
-  Clapperboard,
-  Download,
-  Loader2,
-  Share,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { AlertTriangle, Clapperboard, Download, Loader2, Share } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { slugify } from "~/lib/utils";
-import { track } from "~/lib/analytics";
-import { useReducedMotion } from "~/lib/use-reduced-motion";
-import {
-  buildReelScenes,
-  type ReelExportMode,
-  type ReelRecipe,
-} from "~/lib/reel/scenes";
+import { slugify } from '~/lib/utils';
+import { track } from '~/lib/analytics';
+import { useReducedMotion } from '~/lib/use-reduced-motion';
+import { buildReelScenes, type ReelExportMode, type ReelRecipe } from '~/lib/reel/scenes';
 import {
   detectReelExportMode,
   canEncodeReelVideo,
@@ -29,17 +19,17 @@ import {
   renderPoster,
   type LoadedImages,
   type PreviewHandle,
-} from "~/components/recipe/reel/renderer";
-import { Button } from "~/components/ui/button";
+} from '~/components/recipe/reel/renderer';
+import { Button } from '~/components/ui/button';
 import {
   DialogClose,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 
-type LoadState = "idle" | "loading" | "ready" | "error";
+type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
  * The reel/video studio: canvas preview + MediaRecorder export. Split out of
@@ -58,12 +48,12 @@ export function ReelStudio({
   reel: ReelRecipe;
   busyRef: React.RefObject<boolean>;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const reducedMotion = useReducedMotion();
   const scenes = React.useMemo(() => buildReelScenes(reel), [reel]);
 
-  const [state, setState] = React.useState<LoadState>("idle");
-  const [busy, setBusy] = React.useState<null | "download" | "share">(null);
+  const [state, setState] = React.useState<LoadState>('idle');
+  const [busy, setBusy] = React.useState<null | 'download' | 'share'>(null);
   const [progress, setProgress] = React.useState(0);
 
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
@@ -71,18 +61,12 @@ export function ReelStudio({
   const previewRef = React.useRef<PreviewHandle | null>(null);
   const abortRef = React.useRef<AbortController | null>(null);
 
-  const exportMode = React.useMemo<ReelExportMode>(
-    () => detectReelExportMode(),
-    [],
-  );
+  const exportMode = React.useMemo<ReelExportMode>(() => detectReelExportMode(), []);
   const videoSupported = React.useMemo(() => canEncodeReelVideo(), []);
-  const nativeShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
-  const slug = slugify(reel.title || "recipe");
+  const nativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const slug = slugify(reel.title || 'recipe');
   const fileName =
-    exportMode === "image"
-      ? `heirloom-reel-${slug}.png`
-      : `heirloom-reel-${slug}.webm`;
+    exportMode === 'image' ? `heirloom-reel-${slug}.png` : `heirloom-reel-${slug}.webm`;
 
   // Mirror `busy` into the parent's ref so its onOpenChange can refuse to close
   // the dialog mid-render without pulling this chunk into the initial bundle.
@@ -101,15 +85,15 @@ export function ReelStudio({
   // Load images + start the preview on mount (the dialog is open while mounted).
   React.useEffect(() => {
     let cancelled = false;
-    setState("loading");
+    setState('loading');
     void (async () => {
       try {
         const images = await preloadReelImages(scenes);
         if (cancelled) return;
         imagesRef.current = images;
-        setState("ready");
+        setState('ready');
       } catch {
-        if (!cancelled) setState("error");
+        if (!cancelled) setState('error');
       }
     })();
     return () => {
@@ -120,14 +104,14 @@ export function ReelStudio({
 
   // Paint the poster (reduced motion) or run the looping preview once ready.
   React.useEffect(() => {
-    if (state !== "ready") return;
+    if (state !== 'ready') return;
     const canvas = canvasRef.current;
     const images = imagesRef.current;
     if (!canvas || !images) return;
 
     stopPreview();
-    if (reducedMotion || busy || exportMode === "image") {
-      const ctx = canvas.getContext("2d");
+    if (reducedMotion || busy || exportMode === 'image') {
+      const ctx = canvas.getContext('2d');
       if (ctx) drawPoster(ctx, scenes, images);
       return;
     }
@@ -142,11 +126,11 @@ export function ReelStudio({
     };
   }, [stopPreview]);
 
-  const noun = exportMode === "image" ? t("reel.image") : t("reel.video");
+  const noun = exportMode === 'image' ? t('reel.image') : t('reel.video');
 
   function saveBlob(blob: Blob) {
     const href = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = href;
     a.download = fileName;
     document.body.appendChild(a);
@@ -181,23 +165,21 @@ export function ReelStudio({
 
   async function onDownload() {
     if (busy) return;
-    setBusy("download");
+    setBusy('download');
     try {
       const blob = await render();
-      if (!blob) throw new Error("no-blob");
+      if (!blob) throw new Error('no-blob');
       saveBlob(blob);
-      track("reel_exported", {
-        kind: exportMode === "video" ? "video" : "image",
-        method: "download",
+      track('reel_exported', {
+        kind: exportMode === 'video' ? 'video' : 'image',
+        method: 'download',
       });
       toast.success(
-        exportMode === "image"
-          ? t("reel.toast.imageDownloaded")
-          : t("reel.toast.reelDownloaded"),
+        exportMode === 'image' ? t('reel.toast.imageDownloaded') : t('reel.toast.reelDownloaded'),
       );
     } catch (error) {
-      if ((error as { name?: string }).name !== "AbortError") {
-        toast.error(t("reel.toast.createError", { type: noun }));
+      if ((error as { name?: string }).name !== 'AbortError') {
+        toast.error(t('reel.toast.createError', { type: noun }));
       }
     } finally {
       setBusy(null);
@@ -207,40 +189,37 @@ export function ReelStudio({
 
   async function onShare() {
     if (busy) return;
-    setBusy("share");
+    setBusy('share');
     try {
       const blob = await render();
-      if (!blob) throw new Error("no-blob");
+      if (!blob) throw new Error('no-blob');
       const file = new File([blob], fileName, { type: blob.type });
       const canShareFile =
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files: [file] });
+        typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
       if (nativeShare && canShareFile) {
-        track("reel_exported", {
-          kind: exportMode === "video" ? "video" : "image",
-          method: "share",
+        track('reel_exported', {
+          kind: exportMode === 'video' ? 'video' : 'image',
+          method: 'share',
         });
         await navigator.share({
           files: [file],
           title: reel.title,
-          text: t("reel.shareText", { title: reel.title }),
+          text: t('reel.shareText', { title: reel.title }),
         });
       } else {
         // Fall back to a download when file-sharing isn't available.
         saveBlob(blob);
-        track("reel_exported", {
-          kind: exportMode === "video" ? "video" : "image",
-          method: "download",
+        track('reel_exported', {
+          kind: exportMode === 'video' ? 'video' : 'image',
+          method: 'download',
         });
         toast.success(
-          exportMode === "image"
-            ? t("reel.toast.imageSaved")
-            : t("reel.toast.reelSaved"),
+          exportMode === 'image' ? t('reel.toast.imageSaved') : t('reel.toast.reelSaved'),
         );
       }
     } catch (error) {
-      if ((error as { name?: string }).name !== "AbortError") {
-        toast.error(t("reel.toast.shareError", { type: noun }));
+      if ((error as { name?: string }).name !== 'AbortError') {
+        toast.error(t('reel.toast.shareError', { type: noun }));
       }
     } finally {
       setBusy(null);
@@ -254,26 +233,26 @@ export function ReelStudio({
         <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Clapperboard className="size-5" aria-hidden="true" />
         </div>
-        <DialogTitle>{t("reel.title")}</DialogTitle>
+        <DialogTitle>{t('reel.title')}</DialogTitle>
         <DialogDescription>
-          {exportMode === "image"
-            ? t("reel.imageDescription", { title: reel.title })
-            : t("reel.videoDescription", { title: reel.title })}
+          {exportMode === 'image'
+            ? t('reel.imageDescription', { title: reel.title })
+            : t('reel.videoDescription', { title: reel.title })}
         </DialogDescription>
       </DialogHeader>
 
       <div className="flex flex-col items-center gap-3">
         <div className="relative aspect-[9/16] w-full max-w-[260px] overflow-hidden rounded-xl border border-border bg-muted">
-          {state === "loading" && (
+          {state === 'loading' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-              <span className="text-sm">{t("reel.preparing")}</span>
+              <span className="text-sm">{t('reel.preparing')}</span>
             </div>
           )}
-          {state === "error" && (
+          {state === 'error' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
               <AlertTriangle className="size-6" aria-hidden="true" />
-              <span className="text-sm">{t("reel.previewError")}</span>
+              <span className="text-sm">{t('reel.previewError')}</span>
             </div>
           )}
           <canvas
@@ -283,10 +262,10 @@ export function ReelStudio({
             className="size-full"
             aria-label={`Reel preview for ${reel.title}`}
           />
-          {busy && exportMode === "video" && (
+          {busy && exportMode === 'video' && (
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-foreground/70 p-3">
               <span className="text-center text-xs font-medium text-background">
-                {t("reel.renderingVideo", {
+                {t('reel.renderingVideo', {
                   percent: Math.round(progress * 100),
                 })}
               </span>
@@ -300,27 +279,21 @@ export function ReelStudio({
           )}
         </div>
 
-        {reducedMotion && exportMode === "video" && state === "ready" && (
-          <p className="text-center text-xs text-muted-foreground">
-            {t("reel.reducedMotion")}
-          </p>
+        {reducedMotion && exportMode === 'video' && state === 'ready' && (
+          <p className="text-center text-xs text-muted-foreground">{t('reel.reducedMotion')}</p>
         )}
-        {exportMode === "image" && state === "ready" && (
-          <p className="text-center text-xs text-muted-foreground">
-            {t("reel.imageFallback")}
-          </p>
+        {exportMode === 'image' && state === 'ready' && (
+          <p className="text-center text-xs text-muted-foreground">{t('reel.imageFallback')}</p>
         )}
-        {exportMode === "none" && state === "ready" && (
-          <p className="text-center text-xs text-muted-foreground">
-            {t("reel.unsupported")}
-          </p>
+        {exportMode === 'none' && state === 'ready' && (
+          <p className="text-center text-xs text-muted-foreground">{t('reel.unsupported')}</p>
         )}
       </div>
 
       <DialogFooter className="sm:justify-center">
         <DialogClose asChild>
           <Button type="button" variant="ghost" disabled={Boolean(busy)}>
-            {t("common.close")}
+            {t('common.close')}
           </Button>
         </DialogClose>
         {nativeShare && (
@@ -328,31 +301,19 @@ export function ReelStudio({
             type="button"
             variant="outline"
             onClick={() => void onShare()}
-            disabled={
-              Boolean(busy) || state !== "ready" || exportMode === "none"
-            }
+            disabled={Boolean(busy) || state !== 'ready' || exportMode === 'none'}
           >
-            {busy === "share" ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Share />
-            )}
-            {t("share.trigger")}
+            {busy === 'share' ? <Loader2 className="animate-spin" /> : <Share />}
+            {t('share.trigger')}
           </Button>
         )}
         <Button
           type="button"
           onClick={() => void onDownload()}
-          disabled={Boolean(busy) || state !== "ready" || exportMode === "none"}
+          disabled={Boolean(busy) || state !== 'ready' || exportMode === 'none'}
         >
-          {busy === "download" ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <Download />
-          )}
-          {exportMode === "image"
-            ? t("reel.downloadImage")
-            : t("common.download")}
+          {busy === 'download' ? <Loader2 className="animate-spin" /> : <Download />}
+          {exportMode === 'image' ? t('reel.downloadImage') : t('common.download')}
         </Button>
       </DialogFooter>
     </>

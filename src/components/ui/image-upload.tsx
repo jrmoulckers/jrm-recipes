@@ -1,18 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import dynamic from "next/dynamic";
-import { useTranslations } from "next-intl";
-import { ImageOff, ImagePlus } from "lucide-react";
+import * as React from 'react';
+import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { ImageOff, ImagePlus } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { CloseButton } from "~/components/ui/close-button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import {
-  cloudinaryConfigured,
-  type MediaSelection,
-} from "~/components/ui/media-picker-config";
+import { cn } from '~/lib/utils';
+import { CloseButton } from '~/components/ui/close-button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { cloudinaryConfigured, type MediaSelection } from '~/components/ui/media-picker-config';
 
 /**
  * The picker dialog — its tabs, the photo grid, and the Cloudinary upload
@@ -22,7 +19,7 @@ import {
  * first-load JS, which is budgeted in `bundle-budgets.json`.
  */
 const MediaPicker = dynamic(
-  () => import("~/components/ui/media-picker").then((mod) => mod.MediaPicker),
+  () => import('~/components/ui/media-picker').then((mod) => mod.MediaPicker),
   { ssr: false },
 );
 
@@ -43,8 +40,8 @@ export function ImageUploadField({
   onChange,
   label,
   hint,
-  folder = "heirloom",
-  size = "default",
+  folder = 'heirloom',
+  size = 'default',
   altText,
   onAltTextChange,
 }: {
@@ -53,7 +50,7 @@ export function ImageUploadField({
   label?: string;
   hint?: string;
   folder?: string;
-  size?: "default" | "compact";
+  size?: 'default' | 'compact';
   /**
    * Opt in to caller-owned alt text (issue #659). Callers that store a
    * description on their own row (the recipe cover, a step photo) pass both, and
@@ -63,8 +60,8 @@ export function ImageUploadField({
   altText?: string;
   onAltTextChange?: (altText: string) => void;
 }) {
-  const t = useTranslations("imageUpload");
-  const compact = size === "compact";
+  const t = useTranslations('imageUpload');
+  const compact = size === 'compact';
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const altId = React.useId();
 
@@ -89,63 +86,52 @@ export function ImageUploadField({
       {value ? (
         <figure
           className={cn(
-            "relative overflow-hidden rounded-xl border border-border bg-muted",
-            compact ? "aspect-[3/2] max-w-56" : "aspect-video",
+            'relative overflow-hidden rounded-xl border border-border bg-muted',
+            compact ? 'aspect-[3/2] max-w-56' : 'aspect-video',
           )}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- editor preview accepts arbitrary user-pasted URLs that can't be pre-allowlisted for next/image */}
           <img
             src={value}
-            alt={t("previewAlt")}
+            alt={t('previewAlt')}
             loading="lazy"
             decoding="async"
             onError={() => setErrored(true)}
             onLoad={() => setErrored(false)}
-            className={cn("size-full object-cover", errored && "hidden")}
+            className={cn('size-full object-cover', errored && 'hidden')}
           />
           {errored ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-muted p-3 text-center text-muted-foreground">
-              <ImageOff
-                className={compact ? "size-5" : "size-6"}
-                aria-hidden="true"
-              />
-              <span
-                className={cn("font-medium", compact ? "text-xs" : "text-sm")}
-              >
-                {t("errorTitle")}
+              <ImageOff className={compact ? 'size-5' : 'size-6'} aria-hidden="true" />
+              <span className={cn('font-medium', compact ? 'text-xs' : 'text-sm')}>
+                {t('errorTitle')}
               </span>
-              {compact ? null : (
-                <span className="text-xs">{t("errorHint")}</span>
-              )}
+              {compact ? null : <span className="text-xs">{t('errorHint')}</span>}
             </div>
           ) : null}
           <CloseButton
             variant="overlay"
-            onClick={() => onChange("", null)}
-            label={t("remove")}
+            onClick={() => onChange('', null)}
+            label={t('remove')}
             className="absolute end-2 top-2"
           />
         </figure>
       ) : cloudinaryConfigured ? (
-        <div className={cn(compact ? "aspect-[3/2] max-w-56" : "aspect-video")}>
+        <div className={cn(compact ? 'aspect-[3/2] max-w-56' : 'aspect-video')}>
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
             className={cn(
-              "flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              compact ? "p-3" : "p-6",
+              'flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              compact ? 'p-3' : 'p-6',
             )}
           >
-            <ImagePlus className={compact ? "size-5" : "size-6"} />
-            <span
-              className={cn("font-medium", compact ? "text-xs" : "text-sm")}
-            >
-              {compact ? t("addPhoto") : t("uploadPhoto")}
+            <ImagePlus className={compact ? 'size-5' : 'size-6'} />
+            <span className={cn('font-medium', compact ? 'text-xs' : 'text-sm')}>
+              {compact ? t('addPhoto') : t('uploadPhoto')}
             </span>
             {compact ? null : (
-              <span className="text-xs text-muted-foreground">
-                {t("dropHint")}
-              </span>
+              <span className="text-xs text-muted-foreground">{t('dropHint')}</span>
             )}
           </button>
         </div>
@@ -159,8 +145,8 @@ export function ImageUploadField({
           inputMode="url"
           value={value}
           onChange={(e) => onChange(e.target.value, null)}
-          placeholder={t("urlPlaceholder")}
-          aria-label={label ? t("urlLabelFor", { label }) : t("urlLabel")}
+          placeholder={t('urlPlaceholder')}
+          aria-label={label ? t('urlLabelFor', { label }) : t('urlLabel')}
         />
       )}
 
@@ -169,13 +155,13 @@ export function ImageUploadField({
           deployment could never describe an image at all. */}
       {onAltTextChange && !cloudinaryConfigured && value ? (
         <div className="flex flex-col gap-1">
-          <Label htmlFor={altId}>{t("altLabel")}</Label>
+          <Label htmlFor={altId}>{t('altLabel')}</Label>
           <Input
             id={altId}
-            value={altText ?? ""}
+            value={altText ?? ''}
             maxLength={300}
             onChange={(e) => onAltTextChange(e.target.value)}
-            placeholder={t("altPlaceholder")}
+            placeholder={t('altPlaceholder')}
           />
         </div>
       ) : null}
@@ -187,7 +173,7 @@ export function ImageUploadField({
           onClick={() => setPickerOpen(true)}
           className="self-start rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {t("change")}
+          {t('change')}
         </button>
       ) : null}
 

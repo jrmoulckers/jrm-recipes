@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
-import { createBillingPortalSessionAction } from "~/server/billing/actions";
-import { Button, type ButtonProps } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { createBillingPortalSessionAction } from '~/server/billing/actions';
+import { Button, type ButtonProps } from '~/components/ui/button';
 
 /**
  * "Manage billing" entry point into the Stripe Customer Portal (issue #319).
@@ -17,12 +17,8 @@ import { Button, type ButtonProps } from "~/components/ui/button";
  * yet", or "you don't have a billing account yet") rather than throwing, so an
  * unconfigured environment degrades to a readable note instead of a dead end.
  */
-export function ManageBillingButton({
-  children,
-  className,
-  ...props
-}: ButtonProps) {
-  const t = useTranslations("billing.manage");
+export function ManageBillingButton({ children, className, ...props }: ButtonProps) {
+  const t = useTranslations('billing.manage');
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
@@ -49,7 +45,7 @@ export function ManageBillingButton({
         className={cn(className)}
         {...props}
       >
-        {children ?? t("label")}
+        {children ?? t('label')}
       </Button>
       {error ? (
         <p role="alert" className="text-sm text-destructive">

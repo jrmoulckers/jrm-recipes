@@ -8,10 +8,10 @@
  */
 
 /** Cloudinary host that serves every recipe + step image (see next.config.js). */
-export const CLOUDINARY_IMAGE_HOSTNAME = "res.cloudinary.com";
+export const CLOUDINARY_IMAGE_HOSTNAME = 'res.cloudinary.com';
 
 /** Dedicated cache for recipe images, separate from Serwist's defaults. */
-export const RECIPE_IMAGE_CACHE_NAME = "heirloom-recipe-images";
+export const RECIPE_IMAGE_CACHE_NAME = 'heirloom-recipe-images';
 
 /**
  * Bound the cache so it can't grow without limit. A single `next/image` render
@@ -34,7 +34,7 @@ export interface RecipeImageRequest {
   /** Absolute request URL (`url.href` from the Serwist route matcher). */
   url: string;
   /** `RequestDestination`. `"image"` for `<img>` / `next/image` requests. */
-  destination: Request["destination"];
+  destination: Request['destination'];
 }
 
 /** Whether `hostname` is exactly the Cloudinary image host (no subdomain spoofing). */
@@ -59,7 +59,7 @@ function isCloudinaryHost(hostname: string): boolean {
  * large and stream via range requests, never land in this bounded cache.
  */
 export function isRecipeImageRequest(request: RecipeImageRequest): boolean {
-  if (request.destination !== "image") {
+  if (request.destination !== 'image') {
     return false;
   }
 
@@ -74,8 +74,8 @@ export function isRecipeImageRequest(request: RecipeImageRequest): boolean {
     return true;
   }
 
-  if (url.pathname === "/_next/image") {
-    const proxied = url.searchParams.get("url");
+  if (url.pathname === '/_next/image') {
+    const proxied = url.searchParams.get('url');
     if (proxied) {
       try {
         return isCloudinaryHost(new URL(proxied, url.origin).hostname);

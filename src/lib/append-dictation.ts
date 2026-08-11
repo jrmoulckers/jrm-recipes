@@ -12,5 +12,5 @@ export function appendDictation(existing: string, added: string): string {
   if (!trimmedAdd) return existing;
   if (!existing.trim()) return trimmedAdd;
   const needsSpace = !/\s$/.test(existing);
-  return `${existing}${needsSpace ? " " : ""}${trimmedAdd}`;
+  return `${existing}${needsSpace ? ' ' : ''}${trimmedAdd}`;
 }

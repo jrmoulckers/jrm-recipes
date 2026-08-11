@@ -1,64 +1,43 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import {
-  EyeOff,
-  ShieldCheck,
-  MessageSquare,
-  NotebookPen,
-  CookingPot,
-} from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { EyeOff, ShieldCheck, MessageSquare, NotebookPen, CookingPot } from 'lucide-react';
 
-import {
-  dismissReportAction,
-  hideContentAction,
-} from "~/server/moderation/actions";
-import type {
-  ModerationQueueItem,
-  ModerationQueue,
-} from "~/server/moderation/queries";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { useServerAction } from "~/lib/use-server-action";
+import { dismissReportAction, hideContentAction } from '~/server/moderation/actions';
+import type { ModerationQueueItem, ModerationQueue } from '~/server/moderation/queries';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { useServerAction } from '~/lib/use-server-action';
 
 const TARGET_META: Record<
-  ModerationQueueItem["targetType"],
+  ModerationQueueItem['targetType'],
   {
-    labelKey: "comment" | "review" | "cookLog";
+    labelKey: 'comment' | 'review' | 'cookLog';
     icon: React.ComponentType<{ className?: string }>;
   }
 > = {
-  comment: { labelKey: "comment", icon: MessageSquare },
-  review: { labelKey: "review", icon: NotebookPen },
-  cook_log: { labelKey: "cookLog", icon: CookingPot },
+  comment: { labelKey: 'comment', icon: MessageSquare },
+  review: { labelKey: 'review', icon: NotebookPen },
+  cook_log: { labelKey: 'cookLog', icon: CookingPot },
 };
 
-const REASON_KEY: Record<
-  string,
-  "spam" | "harassment" | "inappropriate" | "other"
-> = {
-  spam: "spam",
-  harassment: "harassment",
-  inappropriate: "inappropriate",
-  other: "other",
+const REASON_KEY: Record<string, 'spam' | 'harassment' | 'inappropriate' | 'other'> = {
+  spam: 'spam',
+  harassment: 'harassment',
+  inappropriate: 'inappropriate',
+  other: 'other',
 };
 
-function QueueRow({
-  groupSlug,
-  item,
-}: {
-  groupSlug: string;
-  item: ModerationQueueItem;
-}) {
-  const t = useTranslations("groups.moderation");
+function QueueRow({ groupSlug, item }: { groupSlug: string; item: ModerationQueueItem }) {
+  const t = useTranslations('groups.moderation');
   const hide = useServerAction(hideContentAction, {
-    successToast: t("toast.hidden"),
+    successToast: t('toast.hidden'),
     errorToast: true,
     refresh: true,
   });
   const dismiss = useServerAction(dismissReportAction, {
-    successToast: t("toast.dismissed"),
+    successToast: t('toast.dismissed'),
     errorToast: true,
     refresh: true,
   });
@@ -66,8 +45,7 @@ function QueueRow({
 
   const meta = TARGET_META[item.targetType];
   const Icon = meta.icon;
-  const authorName =
-    item.author?.name ?? item.author?.handle ?? t("fallbackAuthor");
+  const authorName = item.author?.name ?? item.author?.handle ?? t('fallbackAuthor');
 
   return (
     <li className="rounded-xl border border-border bg-card p-4 shadow-token">
@@ -76,17 +54,13 @@ function QueueRow({
           <Icon className="size-3" />
           {t(`target.${meta.labelKey}`)}
         </Badge>
-        <Badge variant="destructive">
-          {t("reportCount", { count: item.reportCount })}
-        </Badge>
+        <Badge variant="destructive">{t('reportCount', { count: item.reportCount })}</Badge>
         {item.hidden ? (
           <Badge variant="secondary" className="gap-1">
-            <EyeOff className="size-3" /> {t("hidden")}
+            <EyeOff className="size-3" /> {t('hidden')}
           </Badge>
         ) : null}
-        <span className="text-xs text-muted-foreground">
-          {t("byAuthor", { name: authorName })}
-        </span>
+        <span className="text-xs text-muted-foreground">{t('byAuthor', { name: authorName })}</span>
       </div>
 
       <p className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-muted/50 p-3 text-sm text-foreground">
@@ -116,7 +90,7 @@ function QueueRow({
               })
             }
           >
-            <EyeOff /> {t("actions.hide")}
+            <EyeOff /> {t('actions.hide')}
           </Button>
         ) : null}
         <Button
@@ -133,7 +107,7 @@ function QueueRow({
           }
         >
           <ShieldCheck />
-          {item.hidden ? t("actions.dismissReports") : t("actions.dismissFine")}
+          {item.hidden ? t('actions.dismissReports') : t('actions.dismissFine')}
         </Button>
       </div>
     </li>
@@ -145,13 +119,13 @@ function QueueRow({
  * with Hide / Dismiss actions for owners and admins.
  */
 export function ModerationQueue({ queue }: { queue: ModerationQueue }) {
-  const t = useTranslations("groups.moderation");
+  const t = useTranslations('groups.moderation');
   if (queue.items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-10 text-center text-muted-foreground">
         <ShieldCheck className="mx-auto mb-2 size-7" aria-hidden="true" />
-        <p className="font-medium text-foreground">{t("empty.title")}</p>
-        <p className="mt-1 text-sm">{t("empty.description")}</p>
+        <p className="font-medium text-foreground">{t('empty.title')}</p>
+        <p className="mt-1 text-sm">{t('empty.description')}</p>
       </div>
     );
   }

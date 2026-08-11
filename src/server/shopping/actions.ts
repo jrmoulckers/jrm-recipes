@@ -1,13 +1,13 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { getLocale } from "next-intl/server";
+import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { getLocale } from 'next-intl/server';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { type PlanSafetyWarning } from "~/server/dietary/gating";
-import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { type PlanSafetyWarning } from '~/server/dietary/gating';
+import { HOUSEHOLD_COOKIE, parseHousehold } from '~/config/household';
 import {
   addManualItem,
   addRecipeToList,
@@ -34,11 +34,8 @@ import {
   uncheckAll,
   type BulkMoveUndoToken,
   type RestorePointReference,
-} from "./mutations";
-import {
-  getShoppingListHistory,
-  type ShoppingListHistoryPoint,
-} from "./queries";
+} from './mutations';
+import { getShoppingListHistory, type ShoppingListHistoryPoint } from './queries';
 import {
   addRecipeToListInput,
   bulkMoveShoppingItemsInput,
@@ -71,19 +68,14 @@ import {
   type RestoreShoppingListPointsInput,
   type SaveIngredientPackageInput,
   type ShoppingStoreIdInput,
-} from "./validation";
-import { type ShoppingCategory } from "~/lib/shopping-list";
-import {
-  getPlannerWeek,
-  parseDateParam,
-  toDateParam,
-} from "~/server/planner/week";
+} from './validation';
+import { type ShoppingCategory } from '~/lib/shopping-list';
+import { getPlannerWeek, parseDateParam, toDateParam } from '~/server/planner/week';
 
 export type { BulkMoveUndoToken, RestorePointReference };
 
 export type ActionResult =
-  | { ok: true }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+  { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 type ActionFailure = Extract<ActionResult, { ok: false }>;
 export type CreateShoppingListActionResult =
   { ok: true; id: string; listId: string } | ActionFailure;
@@ -91,10 +83,8 @@ export type MakeShoppingListDefaultActionResult =
   { ok: true; defaultListId: string } | ActionFailure;
 export type UnavailableShoppingListActionResult =
   { ok: true; fallbackListId: string } | ActionFailure;
-export type RestoreShoppingListActionResult =
-  { ok: true; listId: string } | ActionFailure;
-export type RestorePointActionResult =
-  { ok: true; restorePointId: string } | ActionFailure;
+export type RestoreShoppingListActionResult = { ok: true; listId: string } | ActionFailure;
+export type RestorePointActionResult = { ok: true; restorePointId: string } | ActionFailure;
 export type BulkMoveShoppingItemsActionResult =
   | {
       ok: true;
@@ -113,17 +103,17 @@ export type ShoppingListHistoryActionResult =
   { ok: true; history: ShoppingListHistoryPoint[] } | ActionFailure;
 
 const NO_DB =
-  "Set DATABASE_URL (see .env.example) to sync your shopping list across devices. Until then it lives in this browser.";
+  'Set DATABASE_URL (see .env.example) to sync your shopping list across devices. Until then it lives in this browser.';
 
 function messageFor(error: unknown): string {
-  const code = error instanceof Error ? error.message : "";
+  const code = error instanceof Error ? error.message : '';
   switch (code) {
-    case "NOT_FOUND":
+    case 'NOT_FOUND':
       return "We couldn't find that item.";
-    case "UNAUTHENTICATED":
-      return "Sign in to use a synced shopping list.";
-    case "CONFLICT":
-      return "You already have a store with that name.";
+    case 'UNAUTHENTICATED':
+      return 'Sign in to use a synced shopping list.';
+    case 'CONFLICT':
+      return 'You already have a store with that name.';
     default:
       return "We couldn't update your shopping list. Please try again.";
   }
@@ -137,7 +127,7 @@ export async function addRecipeToShoppingListAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please choose a recipe and servings.",
+      error: 'Please choose a recipe and servings.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -148,16 +138,10 @@ export async function addRecipeToShoppingListAction(
     let desiredServings = parsed.data.desiredServings;
     if (desiredServings == null) {
       const store = await cookies();
-      desiredServings =
-        parseHousehold(store.get(HOUSEHOLD_COOKIE)?.value) ?? undefined;
+      desiredServings = parseHousehold(store.get(HOUSEHOLD_COOKIE)?.value) ?? undefined;
     }
-    await addRecipeToList(
-      user,
-      parsed.data.recipeId,
-      desiredServings,
-      parsed.data.includeStaples,
-    );
-    revalidatePath("/shopping");
+    await addRecipeToList(user, parsed.data.recipeId, desiredServings, parsed.data.includeStaples);
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -187,44 +171,39 @@ export async function buildListFromPlanAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = buildFromPlanInput.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: "Please choose a valid planner week." };
+    return { ok: false, error: 'Please choose a valid planner week.' };
   }
   const user = await requireUser();
   try {
     const locale = await getLocale();
-    const { start, end } = getPlannerWeek(
-      parseDateParam(parsed.data.week),
-      locale,
-    );
+    const { start, end } = getPlannerWeek(parseDateParam(parsed.data.week), locale);
     const result = await buildListFromPlan(
       user,
       toDateParam(start),
       toDateParam(end),
       parsed.data.groupId,
     );
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, ...result };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
 }
 
-export async function addManualItemAction(
-  input: ManualItemInput,
-): Promise<ActionResult> {
+export async function addManualItemAction(input: ManualItemInput): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = manualItemInput.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     await addManualItem(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -243,7 +222,7 @@ export async function setItemCheckedAction(
   const user = await requireUser();
   try {
     await setItemChecked(user, parsed.data.itemId, parsed.data.checked);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -261,21 +240,15 @@ export async function setItemCategoryAction(
   }
   const user = await requireUser();
   try {
-    await setItemCategory(
-      user,
-      parsed.data.itemId,
-      parsed.data.category as ShoppingCategory,
-    );
-    revalidatePath("/shopping");
+    await setItemCategory(user, parsed.data.itemId, parsed.data.category as ShoppingCategory);
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
 }
 
-export async function removeShoppingItemAction(
-  itemId: string,
-): Promise<ActionResult> {
+export async function removeShoppingItemAction(itemId: string): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = itemIdInput.safeParse({ itemId });
   if (!parsed.success) {
@@ -284,7 +257,7 @@ export async function removeShoppingItemAction(
   const user = await requireUser();
   try {
     await removeItem(user, parsed.data.itemId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -302,7 +275,7 @@ export async function clearCheckedItemsAction(
   const user = await requireUser();
   try {
     const result = await clearChecked(user, parsed.data.listId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, restorePointId: result.restorePointId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -320,16 +293,14 @@ export async function clearShoppingListAction(
   const user = await requireUser();
   try {
     const result = await clearList(user, parsed.data.listId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, restorePointId: result.restorePointId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
 }
 
-export async function uncheckAllShoppingItemsAction(
-  input: ListIdInput,
-): Promise<ActionResult> {
+export async function uncheckAllShoppingItemsAction(input: ListIdInput): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = listIdInput.safeParse(input);
   if (!parsed.success) {
@@ -338,7 +309,7 @@ export async function uncheckAllShoppingItemsAction(
   const user = await requireUser();
   try {
     await uncheckAll(user, parsed.data.listId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -353,14 +324,14 @@ export async function createShoppingListAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     const created = await createShoppingList(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, id: created.id, listId: created.id };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -375,22 +346,21 @@ export async function renameShoppingListAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     await renameShoppingList(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
 }
 
-export type CreateShoppingStoreActionResult =
-  { ok: true; storeId: string } | ActionFailure;
+export type CreateShoppingStoreActionResult = { ok: true; storeId: string } | ActionFailure;
 
 export async function createShoppingStoreAction(
   input: CreateShoppingStoreInput,
@@ -400,14 +370,14 @@ export async function createShoppingStoreAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     const created = await createShoppingStore(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, storeId: created.storeId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -422,14 +392,14 @@ export async function renameShoppingStoreAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     await renameShoppingStore(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -447,7 +417,7 @@ export async function deleteShoppingStoreAction(
   const user = await requireUser();
   try {
     await deleteShoppingStore(user, parsed.data.storeId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -456,10 +426,7 @@ export async function deleteShoppingStoreAction(
 
 async function runListAction<TResult, TSuccess extends { ok: true }>(
   input: ListIdInput,
-  mutation: (
-    user: Awaited<ReturnType<typeof requireUser>>,
-    listId: string,
-  ) => Promise<TResult>,
+  mutation: (user: Awaited<ReturnType<typeof requireUser>>, listId: string) => Promise<TResult>,
   success: (result: TResult) => TSuccess,
 ): Promise<TSuccess | ActionFailure> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
@@ -470,7 +437,7 @@ async function runListAction<TResult, TSuccess extends { ok: true }>(
   const user = await requireUser();
   try {
     const result = await mutation(user, parsed.data.listId);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return success(result);
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -513,22 +480,20 @@ export async function deleteShoppingListAction(
   }));
 }
 
-export async function moveShoppingItemAction(
-  input: MoveShoppingItemInput,
-): Promise<ActionResult> {
+export async function moveShoppingItemAction(input: MoveShoppingItemInput): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = moveShoppingItemInput.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     await moveShoppingItem(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -543,14 +508,14 @@ export async function bulkMoveShoppingItemsAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     const result = await bulkMoveShoppingItems(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return {
       ok: true,
       restorePoints: result.restorePoints,
@@ -569,14 +534,14 @@ export async function saveIngredientPackageAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     await saveIngredientPackage(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -591,14 +556,14 @@ export async function restoreShoppingListPointsAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please fix the highlighted fields.",
+      error: 'Please fix the highlighted fields.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
   try {
     const result = await restoreShoppingListPoints(user, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return {
       ok: true,
       restorePoints: result.restorePoints,
@@ -624,7 +589,7 @@ export async function restoreShoppingListPointAction(
       parsed.data.listId,
       parsed.data.restorePointId,
     );
-    revalidatePath("/shopping");
+    revalidatePath('/shopping');
     return { ok: true, restorePointId: result.restorePointId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };

@@ -1,27 +1,22 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import {
-  comments,
-  ratings,
-  recipes,
-  type CommentKind,
-} from "~/server/db/schema";
-import { canViewRecipe } from "~/server/recipes/queries";
-import { excludeOwnerRatings, ratingBreakdown } from "~/lib/ratings";
-import type { RatingBreakdown } from "~/lib/ratings";
-import type { User } from "~/server/db/schema";
-import type { MentionCandidate } from "~/lib/mentions";
-import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
-import { loadMentionCandidates } from "./mention-targets";
+import { db, isDbConfigured } from '~/server/db';
+import { comments, ratings, recipes, type CommentKind } from '~/server/db/schema';
+import { canViewRecipe } from '~/server/recipes/queries';
+import { excludeOwnerRatings, ratingBreakdown } from '~/lib/ratings';
+import type { RatingBreakdown } from '~/lib/ratings';
+import type { User } from '~/server/db/schema';
+import type { MentionCandidate } from '~/lib/mentions';
+import { filterBlocked, getHiddenAuthorIds } from '~/server/moderation/blocks';
+import { loadMentionCandidates } from './mention-targets';
 
 export type ThreadedComment = {
   id: string;
   kind: CommentKind;
   body: string;
-  anchorType: "ingredient" | "step" | null;
+  anchorType: 'ingredient' | 'step' | null;
   anchorId: string | null;
   anchorLabel: string | null;
   resolvedAt: Date | null;
@@ -121,7 +116,7 @@ export async function getRecipeComments(
 /** An open suggestion anchored to a specific ingredient/step (issue #346). */
 export type AnchoredSuggestion = {
   id: string;
-  anchorType: "ingredient" | "step";
+  anchorType: 'ingredient' | 'step';
   anchorId: string;
   anchorLabel: string | null;
   body: string;
@@ -140,15 +135,13 @@ export type AnchoredSuggestion = {
  * next to their target. Excludes hidden (moderated) rows. The caller indexes
  * these by `anchorId` to attach them to each ingredient row / method step.
  */
-export async function getAnchoredSuggestions(
-  recipeId: string,
-): Promise<AnchoredSuggestion[]> {
+export async function getAnchoredSuggestions(recipeId: string): Promise<AnchoredSuggestion[]> {
   if (!isDbConfigured()) return [];
 
   const rows = await db.query.comments.findMany({
     where: and(
       eq(comments.recipeId, recipeId),
-      eq(comments.kind, "suggestion"),
+      eq(comments.kind, 'suggestion'),
       isNotNull(comments.anchorId),
       isNull(comments.hiddenAt),
     ),
@@ -170,9 +163,7 @@ export async function getAnchoredSuggestions(
       resolvedAt: row.resolvedAt,
       appliedAt: row.appliedAt,
       createdAt: row.createdAt,
-      author: row.user
-        ? { id: row.user.id, name: row.user.name, handle: row.user.handle }
-        : null,
+      author: row.user ? { id: row.user.id, name: row.user.name, handle: row.user.handle } : null,
     });
   }
   return result;

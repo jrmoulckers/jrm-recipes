@@ -1,6 +1,6 @@
-import type { MetadataRoute } from "next";
+import type { MetadataRoute } from 'next';
 
-import { absoluteUrl } from "~/lib/utils";
+import { absoluteUrl } from '~/lib/utils';
 
 /**
  * robots.txt (issue #323): let crawlers reach public content (recipes, discover,
@@ -12,28 +12,28 @@ import { absoluteUrl } from "~/lib/utils";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
-      userAgent: "*",
-      allow: "/",
+      userAgent: '*',
+      allow: '/',
       disallow: [
-        "/api/",
-        "/import",
-        "/~offline",
-        "/design",
-        "/recipes/new",
-        "/recipes/cook-with",
+        '/api/',
+        '/import',
+        '/~offline',
+        '/design',
+        '/recipes/new',
+        '/recipes/cook-with',
         // Recipe sub-routes moved a segment deeper when recipe URLs became
         // `/recipes/<cook>/<slug>` (#666).
-        "/recipes/*/*/edit",
-        "/recipes/*/*/cook",
-        "/recipes/*/*/print",
-        "/recipes/*/*/keepsake",
-        "/settings",
-        "/plan",
-        "/shopping",
-        "/journal",
+        '/recipes/*/*/edit',
+        '/recipes/*/*/cook',
+        '/recipes/*/*/print',
+        '/recipes/*/*/keepsake',
+        '/settings',
+        '/plan',
+        '/shopping',
+        '/journal',
       ],
     },
-    sitemap: absoluteUrl("/sitemap.xml"),
-    host: absoluteUrl("/"),
+    sitemap: absoluteUrl('/sitemap.xml'),
+    host: absoluteUrl('/'),
   };
 }

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Shared, validated contract for App Router `params` / `searchParams` (#208).
@@ -22,9 +22,7 @@ import { z } from "zod";
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 /** Collapse a possibly-repeated query value to its first entry (or undefined). */
-export function firstSearchParam(
-  value: string | string[] | undefined,
-): string | undefined {
+export function firstSearchParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
@@ -95,9 +93,7 @@ export async function parseCollectionParams(
 }
 
 /** Await + validate a group route's `{ slug }` segment. */
-export async function parseSlugParams(
-  params: Promise<SlugRouteParams>,
-): Promise<SlugRouteParams> {
+export async function parseSlugParams(params: Promise<SlugRouteParams>): Promise<SlugRouteParams> {
   return slugParamsSchema.parse(await params);
 }
 

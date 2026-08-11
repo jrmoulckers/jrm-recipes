@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-import { friendlyError } from "~/lib/error-copy";
-import { updateAvatarAction } from "~/server/users/actions";
-import { ImageUploadField } from "~/components/ui/image-upload";
+import { friendlyError } from '~/lib/error-copy';
+import { updateAvatarAction } from '~/server/users/actions';
+import { ImageUploadField } from '~/components/ui/image-upload';
 
 /**
  * In-app profile photo (issue #659). Until now the avatar could only come from
@@ -18,14 +18,10 @@ import { ImageUploadField } from "~/components/ui/image-upload";
  * `user.updated` sync no longer overwrites it. Clearing the photo hands the
  * column back to Clerk.
  */
-export function ProfileAvatarField({
-  avatarUrl,
-}: {
-  avatarUrl: string | null;
-}) {
-  const t = useTranslations("profile.avatar");
+export function ProfileAvatarField({ avatarUrl }: { avatarUrl: string | null }) {
+  const t = useTranslations('profile.avatar');
   const router = useRouter();
-  const [value, setValue] = React.useState(avatarUrl ?? "");
+  const [value, setValue] = React.useState(avatarUrl ?? '');
   const [isPending, startTransition] = React.useTransition();
 
   function save(next: string) {
@@ -40,7 +36,7 @@ export function ProfileAvatarField({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(next ? t("saved") : t("cleared"));
+        toast.success(next ? t('saved') : t('cleared'));
         router.refresh();
       });
     });
@@ -49,8 +45,8 @@ export function ProfileAvatarField({
   return (
     <div aria-busy={isPending}>
       <ImageUploadField
-        label={t("label")}
-        hint={t("hint")}
+        label={t('label')}
+        hint={t('hint')}
         value={value}
         onChange={save}
         folder="heirloom/avatars"

@@ -1,20 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import {
-  Copy,
-  ExternalLink,
-  Gift,
-  Link2,
-  Link2Off,
-  RefreshCw,
-  Share,
-  Share2,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Copy, ExternalLink, Gift, Link2, Link2Off, RefreshCw, Share, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -23,33 +14,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { track } from "~/lib/analytics";
-import {
-  buildKeepsakePath,
-  KEEPSAKE_FROM_MAX,
-  KEEPSAKE_NOTE_MAX,
-} from "~/lib/keepsake";
-import { shareText, shareMessageWithUrl } from "~/lib/share-text";
-import { setShareLinkStateAction } from "~/server/recipes/actions";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
+import { track } from '~/lib/analytics';
+import { buildKeepsakePath, KEEPSAKE_FROM_MAX, KEEPSAKE_NOTE_MAX } from '~/lib/keepsake';
+import { shareText, shareMessageWithUrl } from '~/lib/share-text';
+import { setShareLinkStateAction } from '~/server/recipes/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from '~/components/ui/dropdown-menu';
 
 function slugify(value: string): string {
   return (
     value
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 60) || "recipe"
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'recipe'
   );
 }
 
@@ -57,12 +44,10 @@ function slugify(value: string): string {
 function cardImageUrl(): string {
   // Next emits the (build-hashed) opengraph-image URL into this meta tag, so
   // read it rather than guessing the path.
-  const meta = document.querySelector<HTMLMetaElement>(
-    'meta[property="og:image"]',
-  );
+  const meta = document.querySelector<HTMLMetaElement>('meta[property="og:image"]');
   if (meta?.content) return meta.content;
   const { origin, pathname } = window.location;
-  return `${origin}${pathname.replace(/\/$/, "")}/opengraph-image`;
+  return `${origin}${pathname.replace(/\/$/, '')}/opengraph-image`;
 }
 
 export function ShareButton({
@@ -108,13 +93,12 @@ export function ShareButton({
   // Personalize ("hand down") dialog state (issue #407): a name + note carried
   // in the keepsake URL, no server round-trip and nothing to store.
   const [personalizeOpen, setPersonalizeOpen] = React.useState(false);
-  const [from, setFrom] = React.useState(defaultFrom ?? "");
-  const [note, setNote] = React.useState("");
+  const [from, setFrom] = React.useState(defaultFrom ?? '');
+  const [note, setNote] = React.useState('');
 
-  const t = useTranslations("share");
+  const t = useTranslations('share');
 
-  const nativeShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const nativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const text = shareText({ title, author });
 
@@ -123,31 +107,28 @@ export function ShareButton({
     return currentUrl ?? window.location.href;
   }
 
-  async function changeShareLink(change: {
-    enabled?: boolean;
-    rotate?: boolean;
-  }) {
+  async function changeShareLink(change: { enabled?: boolean; rotate?: boolean }) {
     if (!recipeId || pending) return;
     setPending(true);
     try {
       const result = await setShareLinkStateAction(recipeId, change);
       if (!result.ok) {
-        toast.error(result.error ?? t("toast.linkUpdateError"));
+        toast.error(result.error ?? t('toast.linkUpdateError'));
         return;
       }
       setEnabled(result.enabled);
       setCurrentUrl(result.url ?? undefined);
       if (change.rotate) {
-        track("share_link_rotated", {});
-        toast.success(t("toast.linkReset"));
+        track('share_link_rotated', {});
+        toast.success(t('toast.linkReset'));
       } else if (change.enabled === false) {
-        track("share_link_disabled", {});
-        toast.success(t("toast.linkDisabled"));
+        track('share_link_disabled', {});
+        toast.success(t('toast.linkDisabled'));
       } else {
-        toast.success(t("toast.linkEnabled"));
+        toast.success(t('toast.linkEnabled'));
       }
     } catch {
-      toast.error(t("toast.linkUpdateError"));
+      toast.error(t('toast.linkUpdateError'));
     } finally {
       setPending(false);
     }
@@ -160,12 +141,12 @@ export function ShareButton({
       if (!res.ok) return null;
       const blob = await res.blob();
       const file = new File([blob], `heirloom-${slugify(title)}.png`, {
-        type: blob.type || "image/png",
+        type: blob.type || 'image/png',
       });
       fileRef.current = file;
       if (
-        typeof navigator !== "undefined" &&
-        typeof navigator.canShare === "function" &&
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
         navigator.canShare({ files: [file] })
       ) {
         setCanShareFiles(true);
@@ -187,16 +168,16 @@ export function ShareButton({
     try {
       if (
         file &&
-        typeof navigator.canShare === "function" &&
+        typeof navigator.canShare === 'function' &&
         navigator.canShare({ files: [file] })
       ) {
         // Track inside the gesture. Never await before navigator.share (Safari).
-        track("recipe_shared", { method: "file" });
+        track('recipe_shared', { method: 'file' });
         await navigator.share({ files: [file], title, text, url });
         return;
       }
       if (nativeShare) {
-        track("recipe_shared", { method: "native" });
+        track('recipe_shared', { method: 'native' });
         await navigator.share({ title, text, url });
         return;
       }
@@ -208,14 +189,12 @@ export function ShareButton({
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(
-        shareMessageWithUrl({ title, author }, linkToShare()),
-      );
-      track("recipe_shared", { method: "copy_link" });
-      track("share_link_copied", {});
-      toast.success(t("toast.linkCopied"));
+      await navigator.clipboard.writeText(shareMessageWithUrl({ title, author }, linkToShare()));
+      track('recipe_shared', { method: 'copy_link' });
+      track('share_link_copied', {});
+      toast.success(t('toast.linkCopied'));
     } catch {
-      toast.error(t("toast.copyError"));
+      toast.error(t('toast.copyError'));
     }
   }
 
@@ -226,22 +205,22 @@ export function ShareButton({
       note,
       token: keepsakeToken,
     });
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}${path}`;
   }
 
   async function copyKeepsakeLink() {
     try {
       await navigator.clipboard.writeText(keepsakeUrl());
-      track("recipe_shared", { method: "keepsake" });
-      toast.success(t("toast.personalizedCopied"));
+      track('recipe_shared', { method: 'keepsake' });
+      toast.success(t('toast.personalizedCopied'));
     } catch {
-      toast.error(t("toast.copyError"));
+      toast.error(t('toast.copyError'));
     }
   }
 
   function previewKeepsake() {
-    window.open(keepsakeUrl(), "_blank", "noopener,noreferrer");
+    window.open(keepsakeUrl(), '_blank', 'noopener,noreferrer');
   }
 
   return (
@@ -249,20 +228,20 @@ export function ShareButton({
       <DropdownMenu onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
           <Button type="button" variant="outline">
-            <Share2 /> {t("button")}
+            <Share2 /> {t('button')}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           {nativeShare ? (
             <DropdownMenuItem onSelect={() => void shareCard()}>
               <Share />
-              {canShareFiles ? t("menu.shareCard") : t("menu.share")}
+              {canShareFiles ? t('menu.shareCard') : t('menu.share')}
             </DropdownMenuItem>
           ) : null}
           {nativeShare ? <DropdownMenuSeparator /> : null}
           <DropdownMenuItem onSelect={() => void copyLink()}>
             <Link2 />
-            {t("menu.copyLink")}
+            {t('menu.copyLink')}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(event) => {
@@ -271,7 +250,7 @@ export function ShareButton({
             }}
           >
             <Gift />
-            {t("menu.personalize")}
+            {t('menu.personalize')}
           </DropdownMenuItem>
           {manageable ? (
             <>
@@ -284,7 +263,7 @@ export function ShareButton({
                 }}
               >
                 <Link2Off />
-                {enabled ? t("menu.disableLink") : t("menu.enableLink")}
+                {enabled ? t('menu.disableLink') : t('menu.enableLink')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={pending}
@@ -294,7 +273,7 @@ export function ShareButton({
                 }}
               >
                 <RefreshCw />
-                {t("menu.resetLink")}
+                {t('menu.resetLink')}
               </DropdownMenuItem>
             </>
           ) : null}
@@ -304,35 +283,29 @@ export function ShareButton({
       <Dialog open={personalizeOpen} onOpenChange={setPersonalizeOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("personalize.title")}</DialogTitle>
-            <DialogDescription>
-              {t("personalize.description")}
-            </DialogDescription>
+            <DialogTitle>{t('personalize.title')}</DialogTitle>
+            <DialogDescription>{t('personalize.description')}</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="keepsake-from">
-                {t("personalize.nameLabel")}
-              </Label>
+              <Label htmlFor="keepsake-from">{t('personalize.nameLabel')}</Label>
               <Input
                 id="keepsake-from"
                 value={from}
                 onChange={(event) => setFrom(event.target.value)}
-                placeholder={t("personalize.namePlaceholder")}
+                placeholder={t('personalize.namePlaceholder')}
                 maxLength={KEEPSAKE_FROM_MAX}
                 autoComplete="name"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="keepsake-note">
-                {t("personalize.messageLabel")}
-              </Label>
+              <Label htmlFor="keepsake-note">{t('personalize.messageLabel')}</Label>
               <Textarea
                 id="keepsake-note"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder={t("personalize.messagePlaceholder")}
+                placeholder={t('personalize.messagePlaceholder')}
                 rows={4}
                 maxLength={KEEPSAKE_NOTE_MAX}
               />
@@ -341,14 +314,14 @@ export function ShareButton({
 
           <DialogFooter className="gap-2 sm:justify-start">
             <Button type="button" onClick={() => void copyKeepsakeLink()}>
-              <Copy /> {t("personalize.copy")}
+              <Copy /> {t('personalize.copy')}
             </Button>
             <Button type="button" variant="outline" onClick={previewKeepsake}>
-              <ExternalLink /> {t("personalize.preview")}
+              <ExternalLink /> {t('personalize.preview')}
             </Button>
             <DialogClose asChild>
               <Button type="button" variant="ghost">
-                {t("personalize.done")}
+                {t('personalize.done')}
               </Button>
             </DialogClose>
           </DialogFooter>

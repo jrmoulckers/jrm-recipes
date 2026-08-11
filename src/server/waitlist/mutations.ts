@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { db, isDbConfigured } from "~/server/db";
-import { waitlistSignups } from "~/server/db/schema";
-import { type WaitlistData } from "./validation";
+import { db, isDbConfigured } from '~/server/db';
+import { waitlistSignups } from '~/server/db/schema';
+import { type WaitlistData } from './validation';
 
 /**
  * Outcome of a waitlist submission:
@@ -10,7 +10,7 @@ import { type WaitlistData } from "./validation";
  * - `duplicate`  . The email was already on the list (deduped, no-op).
  * - `unavailable`. No database configured, nothing persisted (degrade safely).
  */
-export type WaitlistResult = "created" | "duplicate" | "unavailable";
+export type WaitlistResult = 'created' | 'duplicate' | 'unavailable';
 
 /**
  * Persist a waitlist signup, deduped by email (issue #351). Relies on the
@@ -18,10 +18,8 @@ export type WaitlistResult = "created" | "duplicate" | "unavailable";
  * repeat submission is a silent no-op rather than an error or a duplicate row.
  * Returns `unavailable` (never throws) when `DATABASE_URL` is unset.
  */
-export async function addToWaitlist(
-  data: WaitlistData,
-): Promise<WaitlistResult> {
-  if (!isDbConfigured()) return "unavailable";
+export async function addToWaitlist(data: WaitlistData): Promise<WaitlistResult> {
+  if (!isDbConfigured()) return 'unavailable';
 
   const [row] = await db
     .insert(waitlistSignups)
@@ -29,5 +27,5 @@ export async function addToWaitlist(
     .onConflictDoNothing({ target: waitlistSignups.email })
     .returning({ id: waitlistSignups.id });
 
-  return row ? "created" : "duplicate";
+  return row ? 'created' : 'duplicate';
 }

@@ -1,8 +1,8 @@
-"use server";
+'use server';
 
-import { addToWaitlist } from "./mutations";
-import { createRateLimiter } from "./rate-limit";
-import { waitlistInput, type WaitlistInput } from "./validation";
+import { addToWaitlist } from './mutations';
+import { createRateLimiter } from './rate-limit';
+import { waitlistInput, type WaitlistInput } from './validation';
 
 export type WaitlistActionResult =
   | { ok: true; duplicate: boolean }
@@ -23,14 +23,12 @@ const limiter = createRateLimiter(30, 10_000);
  * success analytics event is emitted client-side (browser distinct id) so no
  * PII, not even the email, is ever attached to an event.
  */
-export async function joinWaitlistAction(
-  input: WaitlistInput,
-): Promise<WaitlistActionResult> {
+export async function joinWaitlistAction(input: WaitlistInput): Promise<WaitlistActionResult> {
   const parsed = waitlistInput.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please enter a valid email.",
+      error: 'Please enter a valid email.',
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
@@ -38,7 +36,7 @@ export async function joinWaitlistAction(
   if (!limiter.hit()) {
     return {
       ok: false,
-      error: "Too many requests right now. Please try again in a moment.",
+      error: 'Too many requests right now. Please try again in a moment.',
     };
   }
 
@@ -46,7 +44,7 @@ export async function joinWaitlistAction(
     const result = await addToWaitlist(parsed.data);
     // `unavailable` (no DB) still reports success so cold traffic isn't shown a
     // scary error for a misconfiguration they can't fix, since nothing was persisted.
-    return { ok: true, duplicate: result === "duplicate" };
+    return { ok: true, duplicate: result === 'duplicate' };
   } catch {
     return {
       ok: false,

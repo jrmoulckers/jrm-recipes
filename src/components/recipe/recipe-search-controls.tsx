@@ -1,51 +1,40 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  Check,
-  ChevronDown,
-  Search,
-  ShieldCheck,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Check, ChevronDown, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react';
 
-import { cn, slugify } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { cn, slugify } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { Checkbox } from '~/components/ui/checkbox';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Spinner } from "~/components/ui/spinner";
-import { Switch } from "~/components/ui/switch";
-import { SavedSearches } from "~/components/recipe/saved-searches";
-import { pathnameWithQuery } from "~/lib/routes";
+} from '~/components/ui/select';
+import { Spinner } from '~/components/ui/spinner';
+import { Switch } from '~/components/ui/switch';
+import { SavedSearches } from '~/components/recipe/saved-searches';
+import { pathnameWithQuery } from '~/lib/routes';
 import {
   RECIPE_PRESETS,
   isPresetActive,
   togglePreset,
   type RecipePreset,
-} from "~/lib/recipe-presets";
+} from '~/lib/recipe-presets';
 import {
   type ClassificationOption,
   isClassificationActive,
   pickBrowseClassifications,
   toggleClassification,
-} from "~/lib/recipe-classification-filters";
+} from '~/lib/recipe-classification-filters';
 import {
   defaultSortFor,
   hasActiveRecipeFilters,
@@ -54,13 +43,13 @@ import {
   recipeSortLabels,
   recipeSortValues,
   type RecipeSearch,
-} from "~/server/recipes/search";
-import { type SearchParams } from "~/lib/route-params";
-import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
-import { type SavedSearch } from "~/server/searches/queries";
+} from '~/server/recipes/search';
+import { type SearchParams } from '~/lib/route-params';
+import { DIETARY_TAGS, DIETARY_TAG_LABELS } from '~/lib/substitutions';
+import { type SavedSearch } from '~/server/searches/queries';
 
 /** Sentinel for "no filter". Radix Select forbids empty-string item values. */
-const ANY = "any";
+const ANY = 'any';
 
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
 
@@ -86,18 +75,18 @@ type SafeForMember = { id: string; name: string };
 type GroupOption = { id: string; name: string };
 
 type ParamKey =
-  | "q"
-  | "meal"
-  | "cuisine"
-  | "difficulty"
-  | "maxTime"
-  | "tag"
-  | "diet"
-  | "safeFor"
-  | "group"
-  | "mine"
-  | "ingredient"
-  | "sort";
+  | 'q'
+  | 'meal'
+  | 'cuisine'
+  | 'difficulty'
+  | 'maxTime'
+  | 'tag'
+  | 'diet'
+  | 'safeFor'
+  | 'group'
+  | 'mine'
+  | 'ingredient'
+  | 'sort';
 
 /** Re-shape live `URLSearchParams` into the record `parseRecipeSearch` reads. */
 function toSearchParamsRecord(params: URLSearchParams): SearchParams {
@@ -144,23 +133,21 @@ export function RecipeSearchControls({
   signedIn?: boolean;
 }) {
   const router = useRouter();
-  const t = useTranslations("recipeSearch");
-  const tLibrary = useTranslations("recipe.library");
-  const tDifficulty = useTranslations("recipeDetail.difficulty");
-  const tNames = useTranslations("classificationNames");
+  const t = useTranslations('recipeSearch');
+  const tLibrary = useTranslations('recipe.library');
+  const tDifficulty = useTranslations('recipeDetail.difficulty');
+  const tNames = useTranslations('classificationNames');
   const pathname = usePathname();
   const currentParams = useSearchParams();
   const searchId = React.useId();
   const filtersId = React.useId();
-  const [query, setQuery] = React.useState(search.q ?? "");
-  const [ingredient, setIngredient] = React.useState(search.ingredient ?? "");
+  const [query, setQuery] = React.useState(search.q ?? '');
+  const [ingredient, setIngredient] = React.useState(search.ingredient ?? '');
   // Progressive disclosure (#661): the long facet grid stays folded away at
   // every breakpoint until asked for, so the card leads with search. It starts
   // open only when the incoming URL already carries one of its filters, so a
   // shared link never hides the reason the results look narrow.
-  const [filtersOpen, setFiltersOpen] = React.useState(
-    () => advancedFilterCount(search) > 0,
-  );
+  const [filtersOpen, setFiltersOpen] = React.useState(() => advancedFilterCount(search) > 0);
   const [isPending, startTransition] = React.useTransition();
 
   // Optimistic querystring (#661). Every control renders from this instead of
@@ -169,12 +156,8 @@ export function RecipeSearchControls({
   // value once the transition settles, at which point the committed params say
   // the same thing.
   const committedQuery = currentParams.toString();
-  const [optimisticQuery, setOptimisticQuery] =
-    React.useOptimistic(committedQuery);
-  const activeParams = React.useMemo(
-    () => new URLSearchParams(optimisticQuery),
-    [optimisticQuery],
-  );
+  const [optimisticQuery, setOptimisticQuery] = React.useOptimistic(committedQuery);
+  const activeParams = React.useMemo(() => new URLSearchParams(optimisticQuery), [optimisticQuery]);
   // The optimistic params are always ones we built, so parsing them cannot
   // realistically fail; falling back to the server's search keeps a malformed
   // hand-typed URL from blanking the controls.
@@ -188,20 +171,20 @@ export function RecipeSearchControls({
 
   // Reflect URL changes driven elsewhere (back/forward, Clear) into the input.
   React.useEffect(() => {
-    setQuery(search.q ?? "");
+    setQuery(search.q ?? '');
   }, [search.q]);
 
   // Keep the ingredient input in sync with URL-driven changes (chips, Clear).
   React.useEffect(() => {
-    setIngredient(search.ingredient ?? "");
+    setIngredient(search.ingredient ?? '');
   }, [search.ingredient]);
 
   const navigate = React.useCallback(
     (params: URLSearchParams) => {
       // Keep the contextual default sort out of the URL so shared links stay
       // clean: `relevance` when a query is present, `newest` otherwise.
-      const effectiveDefault = defaultSortFor(params.get("q"));
-      if (params.get("sort") === effectiveDefault) params.delete("sort");
+      const effectiveDefault = defaultSortFor(params.get('q'));
+      if (params.get('sort') === effectiveDefault) params.delete('sort');
       const qs = params.toString();
       startTransition(() => {
         setOptimisticQuery(qs);
@@ -231,7 +214,7 @@ export function RecipeSearchControls({
   // Multi-select facets carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
-    (key: "meal" | "cuisine" | "tag" | "diet", values: string[]) => {
+    (key: 'meal' | 'cuisine' | 'tag' | 'diet', values: string[]) => {
       const params = new URLSearchParams(activeParams.toString());
       params.delete(key);
       for (const value of values) params.append(key, value);
@@ -241,16 +224,9 @@ export function RecipeSearchControls({
   );
 
   const toggleListValue = React.useCallback(
-    (
-      key: "meal" | "cuisine" | "tag" | "diet",
-      current: string[],
-      value: string,
-      on: boolean,
-    ) => {
+    (key: 'meal' | 'cuisine' | 'tag' | 'diet', current: string[], value: string, on: boolean) => {
       const lower = value.toLowerCase();
-      const next = on
-        ? [...current, value]
-        : current.filter((v) => v.toLowerCase() !== lower);
+      const next = on ? [...current, value] : current.filter((v) => v.toLowerCase() !== lower);
       pushListParam(key, next);
     },
     [pushListParam],
@@ -268,11 +244,8 @@ export function RecipeSearchControls({
   // Debounce the free-text query so we navigate once the user pauses.
   React.useEffect(() => {
     const next = query.trim();
-    if (next === (search.q ?? "")) return;
-    const id = window.setTimeout(
-      () => pushParams({ q: next || undefined }),
-      TEXT_DEBOUNCE_MS,
-    );
+    if (next === (search.q ?? '')) return;
+    const id = window.setTimeout(() => pushParams({ q: next || undefined }), TEXT_DEBOUNCE_MS);
     return () => window.clearTimeout(id);
   }, [query, search.q, pushParams]);
 
@@ -280,7 +253,7 @@ export function RecipeSearchControls({
   // a canonical food and constrains results to recipes that use it.
   React.useEffect(() => {
     const next = ingredient.trim();
-    if (next === (search.ingredient ?? "")) return;
+    if (next === (search.ingredient ?? '')) return;
     const id = window.setTimeout(
       () => pushParams({ ingredient: next || undefined }),
       TEXT_DEBOUNCE_MS,
@@ -299,18 +272,18 @@ export function RecipeSearchControls({
     const personalized: RecipePreset[] = [];
     if (signedIn) {
       personalized.push({
-        id: "mine",
-        label: t("myRecipes"),
-        description: t("onlyMyRecipes"),
-        params: [{ key: "mine", value: "1" }],
+        id: 'mine',
+        label: t('myRecipes'),
+        description: t('onlyMyRecipes'),
+        params: [{ key: 'mine', value: '1' }],
       });
     }
     for (const member of members.slice(0, SAFE_FOR_QUICK_PICKS)) {
       personalized.push({
         id: `safe-for:${member.id}`,
-        label: t("quickPick.safeFor", { name: member.name }),
-        description: t("safeForNote"),
-        params: [{ key: "safeFor", value: member.id }],
+        label: t('quickPick.safeFor', { name: member.name }),
+        description: t('safeForNote'),
+        params: [{ key: 'safeFor', value: member.id }],
       });
     }
     return [...personalized, ...RECIPE_PRESETS];
@@ -322,19 +295,14 @@ export function RecipeSearchControls({
    * survives the switch to results and simply highlights what is applied.
    */
   const browseClassifications = React.useMemo(
-    () =>
-      pickBrowseClassifications(
-        classifications,
-        activeParams,
-        BROWSE_CLASSIFICATION_COUNT,
-      ),
+    () => pickBrowseClassifications(classifications, activeParams, BROWSE_CLASSIFICATION_COUNT),
     [classifications, activeParams],
   );
 
   const classificationLabel = React.useCallback(
     (item: ClassificationOption) => {
       const name = tNames.has(item.slug) ? tNames(item.slug) : item.name;
-      return item.category === "general" ? `#${name}` : name;
+      return item.category === 'general' ? `#${name}` : name;
     },
     [tNames],
   );
@@ -357,34 +325,29 @@ export function RecipeSearchControls({
     return map;
   }, [groups]);
 
-  const activeChips: { key: string; label: string; onRemove: () => void }[] =
-    [];
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
   if (activeSearch.q) {
     activeChips.push({
-      key: "q",
-      label: t("chip.query", { q: activeSearch.q }),
+      key: 'q',
+      label: t('chip.query', { q: activeSearch.q }),
       onRemove: () => {
-        setQuery("");
+        setQuery('');
         pushParams({ q: undefined });
       },
     });
   }
   for (const meal of activeSearch.meals) {
-    const name =
-      facets.meals.find((item) => item.slug === meal.toLowerCase())?.name ??
-      meal;
+    const name = facets.meals.find((item) => item.slug === meal.toLowerCase())?.name ?? meal;
     const slug = meal.toLowerCase();
     activeChips.push({
       key: `meal:${meal}`,
-      label: t("chip.meal", {
+      label: t('chip.meal', {
         value: tNames.has(slug) ? tNames(slug) : name,
       }),
       onRemove: () =>
         pushListParam(
-          "meal",
-          activeSearch.meals.filter(
-            (value) => value.toLowerCase() !== meal.toLowerCase(),
-          ),
+          'meal',
+          activeSearch.meals.filter((value) => value.toLowerCase() !== meal.toLowerCase()),
         ),
     });
   }
@@ -392,22 +355,20 @@ export function RecipeSearchControls({
     const slug = slugify(cuisine);
     activeChips.push({
       key: `cuisine:${cuisine}`,
-      label: t("chip.cuisine", {
+      label: t('chip.cuisine', {
         value: tNames.has(slug) ? tNames(slug) : cuisine,
       }),
       onRemove: () =>
         pushListParam(
-          "cuisine",
-          activeSearch.cuisines.filter(
-            (c) => c.toLowerCase() !== cuisine.toLowerCase(),
-          ),
+          'cuisine',
+          activeSearch.cuisines.filter((c) => c.toLowerCase() !== cuisine.toLowerCase()),
         ),
     });
   }
   if (activeSearch.difficulty) {
     activeChips.push({
-      key: "difficulty",
-      label: t("chip.difficulty", {
+      key: 'difficulty',
+      label: t('chip.difficulty', {
         value: tDifficulty(activeSearch.difficulty),
       }),
       onRemove: () => pushParams({ difficulty: undefined }),
@@ -415,8 +376,8 @@ export function RecipeSearchControls({
   }
   if (activeSearch.maxTime != null) {
     activeChips.push({
-      key: "maxTime",
-      label: t("chip.maxTime", { minutes: activeSearch.maxTime }),
+      key: 'maxTime',
+      label: t('chip.maxTime', { minutes: activeSearch.maxTime }),
       onRemove: () => pushParams({ maxTime: undefined }),
     });
   }
@@ -425,12 +386,12 @@ export function RecipeSearchControls({
     const name = tagNameBySlug.get(slug) ?? tag;
     activeChips.push({
       key: `tag:${tag}`,
-      label: t("chip.tag", {
+      label: t('chip.tag', {
         value: tNames.has(slug) ? tNames(slug) : name,
       }),
       onRemove: () =>
         pushListParam(
-          "tag",
+          'tag',
           activeSearch.tags.filter((v) => v.toLowerCase() !== slug),
         ),
     });
@@ -438,10 +399,10 @@ export function RecipeSearchControls({
   for (const diet of activeSearch.diets) {
     activeChips.push({
       key: `diet:${diet}`,
-      label: t("chip.diet", { value: DIETARY_TAG_LABELS[diet] }),
+      label: t('chip.diet', { value: DIETARY_TAG_LABELS[diet] }),
       onRemove: () =>
         pushListParam(
-          "diet",
+          'diet',
           activeSearch.diets.filter((d) => d !== diet),
         ),
     });
@@ -449,33 +410,33 @@ export function RecipeSearchControls({
   if (activeSearch.safeFor) {
     const name = memberNameById.get(activeSearch.safeFor);
     activeChips.push({
-      key: "safeFor",
-      label: name ? t("chip.safeForNamed", { name }) : t("field.safeFor"),
+      key: 'safeFor',
+      label: name ? t('chip.safeForNamed', { name }) : t('field.safeFor'),
       onRemove: () => pushParams({ safeFor: undefined }),
     });
   }
   if (activeSearch.group) {
     const name = groupNameById.get(activeSearch.group);
     activeChips.push({
-      key: "group",
-      label: name ? t("chip.familyNamed", { name }) : t("field.family"),
+      key: 'group',
+      label: name ? t('chip.familyNamed', { name }) : t('field.family'),
       onRemove: () => pushParams({ group: undefined }),
     });
   }
   if (activeSearch.ingredient) {
     activeChips.push({
-      key: "ingredient",
-      label: t("chip.ingredient", { value: activeSearch.ingredient }),
+      key: 'ingredient',
+      label: t('chip.ingredient', { value: activeSearch.ingredient }),
       onRemove: () => {
-        setIngredient("");
+        setIngredient('');
         pushParams({ ingredient: undefined });
       },
     });
   }
   if (activeSearch.mine) {
     activeChips.push({
-      key: "mine",
-      label: t("field.onlyMine"),
+      key: 'mine',
+      label: t('field.onlyMine'),
       onRemove: () => pushParams({ mine: undefined }),
     });
   }
@@ -483,8 +444,8 @@ export function RecipeSearchControls({
   const advancedCount = advancedFilterCount(activeSearch);
 
   const clearAll = () => {
-    setQuery("");
-    setIngredient("");
+    setQuery('');
+    setIngredient('');
     navigate(new URLSearchParams());
   };
 
@@ -496,24 +457,24 @@ export function RecipeSearchControls({
       <div className="relative">
         <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Label htmlFor={searchId} className="sr-only">
-          {t("searchLabel")}
+          {t('searchLabel')}
         </Label>
         <Input
           id={searchId}
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={t("searchPlaceholder")}
+          placeholder={t('searchPlaceholder')}
           className="pe-10 ps-10"
         />
         <span className="absolute end-3 top-1/2 -translate-y-1/2">
           {isPending ? (
-            <Spinner label={t("updating")} className="text-muted-foreground" />
+            <Spinner label={t('updating')} className="text-muted-foreground" />
           ) : query ? (
             <button
               type="button"
-              onClick={() => setQuery("")}
-              aria-label={t("clearSearch")}
+              onClick={() => setQuery('')}
+              aria-label={t('clearSearch')}
               className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="size-3.5" />
@@ -525,11 +486,9 @@ export function RecipeSearchControls({
       <div
         className="flex flex-wrap items-center gap-2"
         role="group"
-        aria-label={t("quickFiltersAria")}
+        aria-label={t('quickFiltersAria')}
       >
-        <span className="text-xs font-medium text-muted-foreground">
-          {t("quickPicks")}
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">{t('quickPicks')}</span>
         {quickPicks.map((preset) => (
           <ChipButton
             key={preset.id}
@@ -546,10 +505,10 @@ export function RecipeSearchControls({
         <div
           className="flex flex-wrap items-center gap-2"
           role="group"
-          aria-label={tLibrary("browseByTag")}
+          aria-label={tLibrary('browseByTag')}
         >
           <span className="text-xs font-medium text-muted-foreground">
-            {tLibrary("browseByTag")}
+            {tLibrary('browseByTag')}
           </span>
           {browseClassifications.map((item) => (
             <ChipButton
@@ -558,13 +517,11 @@ export function RecipeSearchControls({
               onClick={() => navigate(toggleClassification(activeParams, item))}
             >
               {classificationLabel(item)}
-              <span className="text-xs tabular-nums opacity-70">
-                {item.count}
-              </span>
+              <span className="text-xs tabular-nums opacity-70">{item.count}</span>
             </ChipButton>
           ))}
           <Button asChild variant="ghost" size="sm" className="ms-auto">
-            <Link href="/recipes/tags">{tLibrary("allTags")}</Link>
+            <Link href="/recipes/tags">{tLibrary('allTags')}</Link>
           </Button>
         </div>
       )}
@@ -580,7 +537,7 @@ export function RecipeSearchControls({
             className="font-normal"
           >
             <SlidersHorizontal className="size-4" />
-            {t("filters")}
+            {t('filters')}
             {advancedCount > 0 && (
               <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
                 {advancedCount}
@@ -588,20 +545,14 @@ export function RecipeSearchControls({
             )}
             <ChevronDown
               className={cn(
-                "size-4 shrink-0 opacity-60 transition-transform",
-                filtersOpen && "rotate-180",
+                'size-4 shrink-0 opacity-60 transition-transform',
+                filtersOpen && 'rotate-180',
               )}
             />
           </Button>
 
-          <Select
-            value={activeSearch.sort}
-            onValueChange={(value) => pushParams({ sort: value })}
-          >
-            <SelectTrigger
-              className="min-w-[8rem]"
-              aria-label={t("field.sort")}
-            >
+          <Select value={activeSearch.sort} onValueChange={(value) => pushParams({ sort: value })}>
+            <SelectTrigger className="min-w-[8rem]" aria-label={t('field.sort')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -625,73 +576,61 @@ export function RecipeSearchControls({
         <div
           id={filtersId}
           className={cn(
-            "flex-wrap items-end gap-3 border-t border-border pt-3",
-            filtersOpen ? "flex" : "hidden",
+            'flex-wrap items-end gap-3 border-t border-border pt-3',
+            filtersOpen ? 'flex' : 'hidden',
           )}
         >
           {facets.meals.length > 0 && (
             <FacetMultiSelect
-              label={t("field.meal")}
-              placeholder={t("anyMeal")}
+              label={t('field.meal')}
+              placeholder={t('anyMeal')}
               selected={activeSearch.meals}
               options={facets.meals
                 .filter(
                   (meal) =>
                     meal.count > 0 ||
-                    activeSearch.meals.some(
-                      (selected) => selected.toLowerCase() === meal.slug,
-                    ),
+                    activeSearch.meals.some((selected) => selected.toLowerCase() === meal.slug),
                 )
                 .map((meal) => ({
                   value: meal.slug,
-                  label: `${
-                    tNames.has(meal.slug) ? tNames(meal.slug) : meal.name
-                  } (${meal.count})`,
+                  label: `${tNames.has(meal.slug) ? tNames(meal.slug) : meal.name} (${meal.count})`,
                 }))}
-              onToggle={(value, on) =>
-                toggleListValue("meal", activeSearch.meals, value, on)
-              }
+              onToggle={(value, on) => toggleListValue('meal', activeSearch.meals, value, on)}
             />
           )}
 
           {facets.cuisines.length > 0 && (
             <FacetMultiSelect
-              label={t("field.cuisine")}
-              placeholder={t("anyCuisine")}
+              label={t('field.cuisine')}
+              placeholder={t('anyCuisine')}
               selected={activeSearch.cuisines}
               options={facets.cuisines
                 .filter(
                   (c) =>
                     c.count > 0 ||
-                    activeSearch.cuisines.some(
-                      (s) => s.toLowerCase() === c.value.toLowerCase(),
-                    ),
+                    activeSearch.cuisines.some((s) => s.toLowerCase() === c.value.toLowerCase()),
                 )
                 .map((c) => {
                   const slug = slugify(c.value);
                   return {
                     value: c.value,
-                    label: `${
-                      tNames.has(slug) ? tNames(slug) : c.value
-                    } (${c.count})`,
+                    label: `${tNames.has(slug) ? tNames(slug) : c.value} (${c.count})`,
                   };
                 })}
-              onToggle={(value, on) =>
-                toggleListValue("cuisine", activeSearch.cuisines, value, on)
-              }
+              onToggle={(value, on) => toggleListValue('cuisine', activeSearch.cuisines, value, on)}
             />
           )}
 
-          <FilterField label={t("field.difficulty")}>
+          <FilterField label={t('field.difficulty')}>
             <Select
               value={activeSearch.difficulty ?? ANY}
               onValueChange={(value) => pushParams({ difficulty: value })}
             >
               <SelectTrigger className="min-w-[8rem]">
-                <SelectValue placeholder={t("anyLevel")} />
+                <SelectValue placeholder={t('anyLevel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>{t("anyLevel")}</SelectItem>
+                <SelectItem value={ANY}>{t('anyLevel')}</SelectItem>
                 {recipeDifficultyValues.map((level) => (
                   <SelectItem key={level} value={level}>
                     {tDifficulty(level)}
@@ -701,23 +640,19 @@ export function RecipeSearchControls({
             </Select>
           </FilterField>
 
-          <FilterField label={t("field.maxTime")}>
+          <FilterField label={t('field.maxTime')}>
             <Select
-              value={
-                activeSearch.maxTime != null
-                  ? String(activeSearch.maxTime)
-                  : ANY
-              }
+              value={activeSearch.maxTime != null ? String(activeSearch.maxTime) : ANY}
               onValueChange={(value) => pushParams({ maxTime: value })}
             >
               <SelectTrigger className="min-w-[8rem]">
-                <SelectValue placeholder={t("anyTime")} />
+                <SelectValue placeholder={t('anyTime')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>{t("anyTime")}</SelectItem>
+                <SelectItem value={ANY}>{t('anyTime')}</SelectItem>
                 {TIME_OPTIONS.map((minutes) => (
                   <SelectItem key={minutes} value={String(minutes)}>
-                    {t("minutesOrLess", { minutes })}
+                    {t('minutesOrLess', { minutes })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -726,62 +661,54 @@ export function RecipeSearchControls({
 
           {facets.tags.length > 0 && (
             <FacetMultiSelect
-              label={t("field.tag")}
-              placeholder={t("anyTag")}
+              label={t('field.tag')}
+              placeholder={t('anyTag')}
               selected={activeSearch.tags}
               options={facets.tags
                 .filter(
-                  (t) =>
-                    t.count > 0 ||
-                    activeSearch.tags.some((s) => s.toLowerCase() === t.slug),
+                  (t) => t.count > 0 || activeSearch.tags.some((s) => s.toLowerCase() === t.slug),
                 )
                 .map((t) => ({
                   value: t.slug,
-                  label: `${
-                    tNames.has(t.slug) ? tNames(t.slug) : t.name
-                  } (${t.count})`,
+                  label: `${tNames.has(t.slug) ? tNames(t.slug) : t.name} (${t.count})`,
                 }))}
-              onToggle={(value, on) =>
-                toggleListValue("tag", activeSearch.tags, value, on)
-              }
+              onToggle={(value, on) => toggleListValue('tag', activeSearch.tags, value, on)}
             />
           )}
 
           <FacetMultiSelect
-            label={t("field.dietary")}
-            placeholder={t("anyDiet")}
+            label={t('field.dietary')}
+            placeholder={t('anyDiet')}
             selected={activeSearch.diets}
             options={DIETARY_TAGS.map((tag) => ({
               value: tag,
               label: tNames.has(tag) ? tNames(tag) : DIETARY_TAG_LABELS[tag],
             }))}
-            onToggle={(value, on) =>
-              toggleListValue("diet", activeSearch.diets, value, on)
-            }
+            onToggle={(value, on) => toggleListValue('diet', activeSearch.diets, value, on)}
           />
 
-          <FilterField label={t("field.ingredient")}>
+          <FilterField label={t('field.ingredient')}>
             <Input
               type="search"
               value={ingredient}
               onChange={(event) => setIngredient(event.target.value)}
-              placeholder={t("ingredientPlaceholder")}
-              aria-label={t("ingredientAria")}
+              placeholder={t('ingredientPlaceholder')}
+              aria-label={t('ingredientAria')}
               className="min-w-[9rem]"
             />
           </FilterField>
 
-          <FilterField label={t("field.safeFor")}>
+          <FilterField label={t('field.safeFor')}>
             {members.length > 0 ? (
               <Select
                 value={activeSearch.safeFor ?? ANY}
                 onValueChange={(value) => pushParams({ safeFor: value })}
               >
                 <SelectTrigger className="min-w-[9rem]">
-                  <SelectValue placeholder={t("anyone")} />
+                  <SelectValue placeholder={t('anyone')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ANY}>{t("anyone")}</SelectItem>
+                  <SelectItem value={ANY}>{t('anyone')}</SelectItem>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
@@ -790,30 +717,25 @@ export function RecipeSearchControls({
                 </SelectContent>
               </Select>
             ) : (
-              <Button
-                asChild
-                variant="outline"
-                className="min-w-[9rem] justify-start font-normal"
-              >
+              <Button asChild variant="outline" className="min-w-[9rem] justify-start font-normal">
                 <Link href="/settings/dietary">
-                  <ShieldCheck className="text-muted-foreground" />{" "}
-                  {t("addProfile")}
+                  <ShieldCheck className="text-muted-foreground" /> {t('addProfile')}
                 </Link>
               </Button>
             )}
           </FilterField>
 
           {groups.length > 0 && (
-            <FilterField label={t("field.family")}>
+            <FilterField label={t('field.family')}>
               <Select
                 value={activeSearch.group ?? ANY}
                 onValueChange={(value) => pushParams({ group: value })}
               >
                 <SelectTrigger className="min-w-[9rem]">
-                  <SelectValue placeholder={t("anyFamily")} />
+                  <SelectValue placeholder={t('anyFamily')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ANY}>{t("anyFamily")}</SelectItem>
+                  <SelectItem value={ANY}>{t('anyFamily')}</SelectItem>
                   {groups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
                       {group.name}
@@ -825,18 +747,14 @@ export function RecipeSearchControls({
           )}
 
           {signedIn && (
-            <FilterField label={t("field.onlyMine")}>
+            <FilterField label={t('field.onlyMine')}>
               <label className="inline-flex h-10 items-center gap-2">
                 <Switch
                   checked={activeSearch.mine}
-                  onCheckedChange={(on) =>
-                    pushParams({ mine: on ? "1" : undefined })
-                  }
-                  aria-label={t("onlyMyRecipes")}
+                  onCheckedChange={(on) => pushParams({ mine: on ? '1' : undefined })}
+                  aria-label={t('onlyMyRecipes')}
                 />
-                <span className="text-sm text-muted-foreground">
-                  {t("myRecipes")}
-                </span>
+                <span className="text-sm text-muted-foreground">{t('myRecipes')}</span>
               </label>
             </FilterField>
           )}
@@ -845,10 +763,7 @@ export function RecipeSearchControls({
 
       {activeChips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <ul
-            aria-label={t("activeFiltersAria")}
-            className="flex flex-wrap items-center gap-2"
-          >
+          <ul aria-label={t('activeFiltersAria')} className="flex flex-wrap items-center gap-2">
             {activeChips.map((chip) => (
               <li key={chip.key}>
                 <button
@@ -863,7 +778,7 @@ export function RecipeSearchControls({
                   >
                     <X className="size-3" />
                   </span>
-                  <span className="sr-only">{t("removeFilter")}</span>
+                  <span className="sr-only">{t('removeFilter')}</span>
                 </button>
               </li>
             ))}
@@ -876,7 +791,7 @@ export function RecipeSearchControls({
               onClick={clearAll}
               className="text-muted-foreground"
             >
-              <X /> {t("clear")}
+              <X /> {t('clear')}
             </Button>
           )}
         </div>
@@ -885,7 +800,7 @@ export function RecipeSearchControls({
       {activeSearch.safeFor != null && (
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-primary" />
-          {t("safeForNote")}
+          {t('safeForNote')}
         </p>
       )}
     </div>
@@ -915,10 +830,10 @@ function ChipButton({
       aria-pressed={active}
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent",
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent',
       )}
     >
       {active && <Check className="size-3.5" aria-hidden />}
@@ -927,13 +842,7 @@ function ChipButton({
   );
 }
 
-function FilterField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -961,15 +870,12 @@ function FacetMultiSelect({
   selected: string[];
   onToggle: (value: string, on: boolean) => void;
 }) {
-  const t = useTranslations("recipeSearch");
+  const t = useTranslations('recipeSearch');
   const selectedSet = React.useMemo(
     () => new Set(selected.map((v) => v.toLowerCase())),
     [selected],
   );
-  const count = options.reduce(
-    (n, o) => n + (selectedSet.has(o.value.toLowerCase()) ? 1 : 0),
-    0,
-  );
+  const count = options.reduce((n, o) => n + (selectedSet.has(o.value.toLowerCase()) ? 1 : 0), 0);
   return (
     <FilterField label={label}>
       <Popover>
@@ -978,10 +884,10 @@ function FacetMultiSelect({
             type="button"
             variant="outline"
             className="min-w-[9rem] justify-between font-normal"
-            aria-label={t("facetAria", { label, count })}
+            aria-label={t('facetAria', { label, count })}
           >
-            <span className={cn(count === 0 && "text-muted-foreground")}>
-              {count === 0 ? placeholder : t("facetSelected", { count })}
+            <span className={cn(count === 0 && 'text-muted-foreground')}>
+              {count === 0 ? placeholder : t('facetSelected', { count })}
             </span>
             <ChevronDown className="size-4 shrink-0 opacity-60" />
           </Button>
@@ -999,9 +905,7 @@ function FacetMultiSelect({
                   <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
                     <Checkbox
                       checked={checked}
-                      onCheckedChange={(value) =>
-                        onToggle(option.value, value === true)
-                      }
+                      onCheckedChange={(value) => onToggle(option.value, value === true)}
                     />
                     <span className="truncate">{option.label}</span>
                   </label>

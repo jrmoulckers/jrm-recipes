@@ -7,8 +7,7 @@
  * optimistic UI and is unit-tested independently of the server.
  */
 
-export type ReactionEmojiKey =
-  "love" | "yum" | "clap" | "wow" | "fire" | "party";
+export type ReactionEmojiKey = 'love' | 'yum' | 'clap' | 'wow' | 'fire' | 'party';
 
 /** The fixed display order + glyph + accessible label for each reaction. */
 export const REACTION_EMOJI: {
@@ -16,19 +15,19 @@ export const REACTION_EMOJI: {
   glyph: string;
   label: string;
 }[] = [
-  { key: "love", glyph: "❤️", label: "Love" },
-  { key: "yum", glyph: "😋", label: "Yum" },
-  { key: "clap", glyph: "👏", label: "Applause" },
-  { key: "wow", glyph: "😮", label: "Wow" },
-  { key: "fire", glyph: "🔥", label: "Fire" },
-  { key: "party", glyph: "🎉", label: "Celebrate" },
+  { key: 'love', glyph: '❤️', label: 'Love' },
+  { key: 'yum', glyph: '😋', label: 'Yum' },
+  { key: 'clap', glyph: '👏', label: 'Applause' },
+  { key: 'wow', glyph: '😮', label: 'Wow' },
+  { key: 'fire', glyph: '🔥', label: 'Fire' },
+  { key: 'party', glyph: '🎉', label: 'Celebrate' },
 ];
 
 const EMOJI_BY_KEY = new Map(REACTION_EMOJI.map((e) => [e.key, e]));
 
 /** Glyph for a reaction key, falling back to a neutral dot if unknown. */
 export function reactionGlyph(key: ReactionEmojiKey): string {
-  return EMOJI_BY_KEY.get(key)?.glyph ?? "•";
+  return EMOJI_BY_KEY.get(key)?.glyph ?? '•';
 }
 
 /** Accessible label for a reaction key. */
@@ -78,9 +77,6 @@ export function toggleReactionState(
 }
 
 /** True if the viewer currently reacts with `emoji` in this tally. */
-export function hasReacted(
-  counts: ReactionCount[],
-  emoji: ReactionEmojiKey,
-): boolean {
+export function hasReacted(counts: ReactionCount[], emoji: ReactionEmojiKey): boolean {
   return counts.some((c) => c.emoji === emoji && c.reacted && c.count > 0);
 }

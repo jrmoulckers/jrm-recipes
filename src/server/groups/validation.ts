@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const optionalString = (max: number) =>
   z
@@ -14,19 +14,19 @@ const optionalUrl = z
   .url()
   .max(2048)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 export const groupInput = z.object({
-  name: z.string().trim().min(1, "Give your group a name").max(120),
+  name: z.string().trim().min(1, 'Give your group a name').max(120),
   description: optionalString(500),
   avatarUrl: optionalUrl,
 });
 
-export const manageableRole = z.enum(["admin", "member", "kid"]);
+export const manageableRole = z.enum(['admin', 'member', 'kid']);
 
 export const addMemberInput = z.object({
-  identifier: z.string().trim().min(1, "Enter a handle or email"),
-  role: manageableRole.default("member"),
+  identifier: z.string().trim().min(1, 'Enter a handle or email'),
+  role: manageableRole.default('member'),
 });
 
 export const updateRoleInput = z.object({
@@ -41,7 +41,7 @@ const optionalInviteEmail = z
   .email()
   .max(320)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 /**
  * A group invitation (issue #181). At least one of `email`/`handle` must be
@@ -53,12 +53,12 @@ export const inviteInput = z
   .object({
     email: optionalInviteEmail,
     handle: optionalString(61),
-    role: manageableRole.default("member"),
+    role: manageableRole.default('member'),
     expiresInDays: z.coerce.number().int().min(1).max(90).default(14),
   })
   .refine((v) => Boolean(v.email ?? v.handle), {
-    message: "Enter an email or handle to invite",
-    path: ["email"],
+    message: 'Enter an email or handle to invite',
+    path: ['email'],
   });
 
 /**
@@ -68,10 +68,10 @@ export const inviteInput = z
  * `expiresInDays`/`maxUses` are optional caps. Omitting both makes an evergreen,
  * unlimited link.
  */
-export const inviteLinkRole = z.enum(["member", "kid"]);
+export const inviteLinkRole = z.enum(['member', 'kid']);
 
 export const createInviteLinkInput = z.object({
-  role: inviteLinkRole.default("member"),
+  role: inviteLinkRole.default('member'),
   expiresInDays: z.coerce.number().int().min(1).max(365).optional(),
   maxUses: z.coerce.number().int().min(1).max(1000).optional(),
 });

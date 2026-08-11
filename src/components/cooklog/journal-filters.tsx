@@ -1,16 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-import {
-  JOURNAL_RANGES,
-  JOURNAL_RANGE_LABELS,
-  type JournalRange,
-} from "~/lib/journal-range";
-import type { CookedRecipeOption } from "~/server/cooklog/queries";
-import { NativeSelect } from "~/components/ui/native-select";
+import { JOURNAL_RANGES, JOURNAL_RANGE_LABELS, type JournalRange } from '~/lib/journal-range';
+import type { CookedRecipeOption } from '~/server/cooklog/queries';
+import { NativeSelect } from '~/components/ui/native-select';
 
 /**
  * Journal filter controls (#364): a recipe picker and a time-range picker whose
@@ -28,7 +24,7 @@ export function JournalFilters({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const t = useTranslations("cookLog.filters");
+  const t = useTranslations('cookLog.filters');
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -38,20 +34,20 @@ export function JournalFilters({
       params.delete(key);
     }
     const qs = params.toString();
-    router.push(qs ? `/journal?${qs}` : "/journal");
+    router.push(qs ? `/journal?${qs}` : '/journal');
   }
 
   return (
     <div className="flex flex-wrap items-center gap-4">
       <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        {t("recipe")}
+        {t('recipe')}
         <NativeSelect
           wrapperClassName="w-auto"
-          value={selectedRecipeId ?? ""}
-          onChange={(event) => setParam("recipe", event.target.value || null)}
-          aria-label={t("a11y.filterByRecipe")}
+          value={selectedRecipeId ?? ''}
+          onChange={(event) => setParam('recipe', event.target.value || null)}
+          aria-label={t('a11y.filterByRecipe')}
         >
-          <option value="">{t("allRecipes")}</option>
+          <option value="">{t('allRecipes')}</option>
           {recipes.map((recipe) => (
             <option key={recipe.id} value={recipe.id}>
               {recipe.title}
@@ -61,17 +57,14 @@ export function JournalFilters({
       </label>
 
       <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        {t("when")}
+        {t('when')}
         <NativeSelect
           wrapperClassName="w-auto"
           value={selectedRange}
           onChange={(event) =>
-            setParam(
-              "range",
-              event.target.value === "all" ? null : event.target.value,
-            )
+            setParam('range', event.target.value === 'all' ? null : event.target.value)
           }
-          aria-label={t("a11y.filterByTimeRange")}
+          aria-label={t('a11y.filterByTimeRange')}
         >
           {JOURNAL_RANGES.map((range: JournalRange) => (
             <option key={range} value={range}>

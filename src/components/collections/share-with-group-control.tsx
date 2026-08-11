@@ -1,23 +1,19 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Check, Users } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Check, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { friendlyError } from "~/lib/error-copy";
+import { friendlyError } from '~/lib/error-copy';
 import {
   shareCollectionWithGroupAction,
   unshareCollectionWithGroupAction,
-} from "~/server/collections/actions";
-import { type CollectionShareTarget } from "~/server/collections/queries";
-import { Button } from "~/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/server/collections/actions';
+import { type CollectionShareTarget } from '~/server/collections/queries';
+import { Button } from '~/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 /**
  * Owner-only control to share a collection with the family groups they belong
@@ -32,7 +28,7 @@ export function ShareWithGroupControl({
   groups: CollectionShareTarget[];
 }) {
   const router = useRouter();
-  const t = useTranslations("collections.shareWithGroup");
+  const t = useTranslations('collections.shareWithGroup');
   const [shared, setShared] = React.useState(
     () => new Set(groups.filter((g) => g.shared).map((g) => g.id)),
   );
@@ -49,9 +45,7 @@ export function ShareWithGroupControl({
     setShared(next);
     setPendingId(groupId);
 
-    const action = wasShared
-      ? unshareCollectionWithGroupAction
-      : shareCollectionWithGroupAction;
+    const action = wasShared ? unshareCollectionWithGroupAction : shareCollectionWithGroupAction;
 
     startTransition(() => {
       void action({ collectionId, groupId }).then((result) => {
@@ -67,9 +61,7 @@ export function ShareWithGroupControl({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(
-          wasShared ? t("toast.stoppedSharing") : t("toast.shared"),
-        );
+        toast.success(wasShared ? t('toast.stoppedSharing') : t('toast.shared'));
         router.refresh();
       });
     });
@@ -80,18 +72,16 @@ export function ShareWithGroupControl({
       <PopoverTrigger asChild>
         <Button type="button" variant="outline">
           <Users />
-          {sharedCount > 0
-            ? t("triggerWithCount", { count: sharedCount })
-            : t("trigger")}
+          {sharedCount > 0 ? t('triggerWithCount', { count: sharedCount }) : t('trigger')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-2">
         <div className="space-y-0.5">
-          <p className="text-sm font-medium">{t("title")}</p>
-          <p className="text-xs text-muted-foreground">{t("description")}</p>
+          <p className="text-sm font-medium">{t('title')}</p>
+          <p className="text-xs text-muted-foreground">{t('description')}</p>
         </div>
         {groups.length === 0 ? (
-          <p className="py-2 text-sm text-muted-foreground">{t("empty")}</p>
+          <p className="py-2 text-sm text-muted-foreground">{t('empty')}</p>
         ) : (
           <ul className="flex flex-col">
             {groups.map((group) => {
@@ -109,8 +99,8 @@ export function ShareWithGroupControl({
                     <span
                       className={
                         isShared
-                          ? "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                          : "inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-border"
+                          ? 'inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground'
+                          : 'inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-border'
                       }
                     >
                       {isShared ? <Check className="size-3.5" /> : null}
