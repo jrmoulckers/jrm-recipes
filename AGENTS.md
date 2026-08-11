@@ -223,3 +223,30 @@ pnpm check:bundle
 `pnpm check:bundle` performs the production Next.js build and enforces `bundle-budgets.json`.
 GitHub CI additionally runs fresh-Postgres migration idempotence, Playwright E2E, and Lighthouse
 against `lighthouserc.cjs`.
+
+### Formatting on a Windows checkout
+
+With `core.autocrlf=true`, `pnpm format:check` reports roughly 979 files as unformatted no matter
+what you changed. That repo-wide failure is a line-ending artifact, not a real one.
+
+**Never run the repo-wide writer `pnpm format:write`** — it rewrites all of those files and buries
+your actual change. That prohibition covers the repo-wide command only. Formatting the files you
+changed is correct and expected:
+
+```bash
+npx prettier --check <paths>   # verify
+npx prettier --write <paths>   # fix
+```
+
+Treating the prohibition as absolute is its own failure: a session skipped formatting entirely on
+that reading, and CI caught five files it should have fixed before pushing (#812).
+
+Derive the path list from the commit, never from `git status --porcelain`. Rename entries take the
+form `R  old/path.tsx -> new/path.tsx`, so naive parsing takes the wrong field or drops the entry
+and the renamed file silently falls out of the list — a targeted check then passes locally while CI
+fails (#812):
+
+```bash
+git diff --name-only origin/main...HEAD
+git show --name-only --pretty=format: HEAD
+```
