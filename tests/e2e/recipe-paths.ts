@@ -85,7 +85,7 @@ export function unresolvedSeededRecipe(
  * Resolution goes through `/sitemap.xml` rather than a constructed URL: recipes
  * live at `/recipes/<cook>/<slug>`, so building the path here would couple every
  * spec to the seed's user slug. The sitemap is the app's own statement of which
- * path is canonical (ADR 0003 lists the owner path and omits creator mirrors),
+ * path is canonical (ADR-0003 lists the owner path and omits creator mirrors),
  * and unlike the `/recipes` index it is unpaginated — so it stays correct as
  * specs add recipes of their own.
  *

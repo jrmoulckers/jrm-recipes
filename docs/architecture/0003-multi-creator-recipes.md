@@ -1,9 +1,9 @@
-# ADR 0003: Multi-Creator Recipes
+# ADR-0003: Multi-Creator Recipes
 
 - **Status:** Accepted
 - **Date:** 2026-08-10
 - **Issue:** [#668](https://github.com/jrmoulckers/jrm-recipes/issues/668)
-- **Builds on:** [ADR 0002](./0002-user-scoped-recipe-slugs.md)
+- **Builds on:** [ADR-0002](./0002-user-scoped-recipe-slugs.md)
 
 ## Context
 
@@ -16,7 +16,7 @@ not authorship and not permissions.
 Two people who cook a dish together therefore had no way to say so. The best available approximation
 was for one of them to fork it, which produces two divergent recipes rather than one shared one.
 
-ADR 0002 had just made each user's slug namespace independent, which is the missing half: if a
+ADR-0002 had just made each user's slug namespace independent, which is the missing half: if a
 recipe can be named inside more than one namespace, one recipe can have more than one address.
 
 ## Decision
@@ -47,7 +47,7 @@ permissions. Only they can consent to that.
 
 ### Removal frees the slug and writes no alias
 
-This is a deliberate exception to ADR 0002's rule that retired slugs are retained forever, and the
+This is a deliberate exception to ADR-0002's rule that retired slugs are retained forever, and the
 difference is a trust boundary. A rename alias stays within one owner: the same person still holds
 the recipe, so the redirect is honest and retention is free. An ex-creator's alias would point
 across a relationship that was just revoked, and would either leak the recipe's continued existence
@@ -142,7 +142,7 @@ before the erasure path can destroy the associated Cloudinary bytes. `restrict` 
 dependency into a loud FK violation instead of irreversible data loss, and makes
 `~/server/users/erasure.ts` — which reassigns or deletes each owned recipe in the right order —
 the single place that decides a recipe's fate. See
-[ADR 0004 (account erasure)](./0004-account-erasure.md).
+[ADR-0004 (account erasure)](./0004-account-erasure.md).
 
 Path revalidation now fans out across N namespaces instead of one.
 `revalidateRecipePaths` discovers the current creators itself rather than trusting callers to pass

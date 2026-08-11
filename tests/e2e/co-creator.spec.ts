@@ -33,7 +33,7 @@ import postgres from 'postgres';
  *   instead by `creators-revocation.test.ts`, which is where the property has a
  *   home that can actually fail.
  * - not-found-rather-than-308 on removal is a deliberate divergence from the
- *   alias-permanence rule (ADR 0003). A regression reintroduces a cross-user
+ *   alias-permanence rule (ADR-0003). A regression reintroduces a cross-user
  *   redirect that leaks both the recipe's continued existence and its current
  *   canonical URL.
  *
@@ -93,7 +93,7 @@ const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? '3000'}`;
  * Assert the page is serving the recipe, or is not.
  *
  * `rel=canonical` is the discriminator: every resolving recipe page emits one
- * (owner and mirror alike, per ADR 0003) and the not-found page emits none.
+ * (owner and mirror alike, per ADR-0003) and the not-found page emits none.
  *
  * Presence, not an exact count: after a server action the client router can
  * briefly hold two canonical elements in the live DOM. The *response* HTML has
@@ -411,7 +411,7 @@ test.describe('co-creation across two identities (#698)', () => {
 
     // The cached page must stop being served, and it must not redirect: a 308
     // to the owner's path would leak both that the recipe still exists and
-    // where it now lives (ADR 0003).
+    // where it now lives (ADR-0003).
     await expect(async () => {
       const res = await cook.goto(mirrorPath);
       await expectRevoked(cook);

@@ -15,7 +15,7 @@ import {
 /**
  * Containment for the co-creator erasure gap (issue #694).
  *
- * ADR 0004 recorded "cross-owner editing does not exist" as the precondition
+ * ADR-0004 recorded "cross-owner editing does not exist" as the precondition
  * that made the co-creator exception safe. #685 crossed it. The consequence is
  * not merely that erasure under-erases — it is that erasure **destroys the
  * evidence needed to ever fix the under-erasure**, in the same transaction:
