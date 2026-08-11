@@ -164,7 +164,7 @@ jobs:
   quality:
     name: Quality
     needs: dispatch-guard
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@f1457271427fcde18a62b07c53a1ea75e14cd644
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@f06bc9f51d347d2681d551f944fbbdf2e9514b53
     permissions:
       contents: read
       packages: read
@@ -181,7 +181,7 @@ jobs:
   security:
     name: Security
     needs: dispatch-guard
-    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@f1457271427fcde18a62b07c53a1ea75e14cd644
+    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@f06bc9f51d347d2681d551f944fbbdf2e9514b53
     permissions:
       contents: read
       packages: read
@@ -244,7 +244,7 @@ jobs:
   web:
     name: Web
     needs: dispatch-guard
-    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@f1457271427fcde18a62b07c53a1ea75e14cd644
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@f06bc9f51d347d2681d551f944fbbdf2e9514b53
     permissions:
       contents: read
       packages: read
@@ -268,7 +268,7 @@ jobs:
   performance:
     name: Performance
     needs: web
-    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@f1457271427fcde18a62b07c53a1ea75e14cd644
+    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@f06bc9f51d347d2681d551f944fbbdf2e9514b53
     permissions:
       contents: read
       packages: read

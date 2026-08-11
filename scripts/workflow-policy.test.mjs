@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const canonicalWorkflowSha = 'f1457271427fcde18a62b07c53a1ea75e14cd644';
+const canonicalWorkflowSha = 'f06bc9f51d347d2681d551f944fbbdf2e9514b53';
 const postgresDigest = 'sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b';
 
 const [ci, release, keepWarm, deployWatch, rawDeploy, rawLighthouse, rawPackageBuild] =
