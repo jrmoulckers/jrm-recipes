@@ -21,6 +21,10 @@ on:
   # Fires for every deployment status Vercel publishes, including Preview builds
   # for pull requests -- hence the environment filter on the job below.
   deployment_status:
+  # The event above cannot report a deploy that never started. See the drift job.
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
 
 # The event payload carries the SHA, environment, and log URL, so this workflow
 # needs no repo access at all.
@@ -55,4 +59,91 @@ jobs:
           echo "Production is now serving an older commit than main."
           echo "This run is the notification, not the diagnosis -- read the logs above."
           echo "::error title=Production deployment failed::${DEPLOY_SHA} did not deploy (${DEPLOY_STATE}). Production is behind main."
+          exit 1
+
+  # The job above can only report deploys that produced a deployment_status
+  # event. A quota-blocked deploy never creates a deployment object at all, so
+  # no event is published and that job cannot run -- it is not filtered out,
+  # there is nothing to filter (#868). Measured over twelve consecutive commits
+  # on main, a Deploy watch run existed if and only if a deployment object did:
+  # five of the twelve never reached production and produced no run, no event,
+  # and a green Actions tab.
+  #
+  # Absence cannot be observed from an event that never fires, so this polls.
+  # It also asserts the property actually wanted -- production is serving main --
+  # instead of the absence of one known failure, so it needs no knowledge of
+  # either mode and will not go blind when a third appears.
+  production-drift:
+    name: Production drift
+    # Skip on deployment_status runs: the job above already owns that path.
+    if: github.event_name != 'deployment_status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+      statuses: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # rev-list needs the commits between the deployed sha and main.
+          fetch-depth: 0
+
+      - name: Compare main against the last successful production deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          head_sha="$(git rev-parse HEAD)"
+
+          deployed_sha=""
+          newest=1
+          # Newest first. Walk until a deployment whose latest status is success.
+          for id in $(gh api "repos/${REPO}/deployments?environment=Production&per_page=100" --jq '.[].id'); do
+            state="$(gh api "repos/${REPO}/deployments/${id}/statuses?per_page=1" --jq '.[0].state // "none"')"
+            if [ "${state}" = "success" ]; then
+              deployed_sha="$(gh api "repos/${REPO}/deployments/${id}" --jq '.sha')"
+              break
+            fi
+            # An in-flight deploy is not a failure; do not wake anyone mid-deploy.
+            # Only the newest attempt can be in flight -- an older one stuck in a
+            # non-terminal state must not suppress the whole check.
+            if [ "${newest}" = "1" ] && { [ "${state}" = "pending" ] || [ "${state}" = "in_progress" ] || [ "${state}" = "queued" ]; }; then
+              echo "A production deployment is in flight (${state}). Nothing to report."
+              exit 0
+            fi
+            newest=0
+          done
+
+          if [ -z "${deployed_sha}" ]; then
+            echo "::error title=No successful production deployment::None of the last 100 production deployments succeeded."
+            exit 1
+          fi
+
+          drift="$(git rev-list --count "${deployed_sha}..${head_sha}" 2>/dev/null || echo unknown)"
+
+          echo "main:     ${head_sha}"
+          echo "deployed: ${deployed_sha}"
+          echo "drift:    ${drift}"
+
+          if [ "${drift}" = "0" ]; then
+            echo "Production is serving main."
+            exit 0
+          fi
+
+          # Say which failure mode this is, per docs/ci.md "Which red is this?".
+          # Read the message, not the colour: both render as a red Vercel check.
+          description="$(gh api "repos/${REPO}/commits/${head_sha}/status" --jq '[.statuses[] | select(.context == "Vercel") | .description] | first // "no Vercel status"')"
+          case "${description}" in
+            *"rate limited"*) mode="account quota -- the deploy never started, so Deploy watch could not fire" ;;
+            *"has failed"*)   mode="the build ran and failed -- read its log" ;;
+            *)                mode="unrecognised; classify it before assuming" ;;
+          esac
+
+          echo
+          echo "Vercel says: ${description}"
+          echo "Mode:        ${mode}"
+          echo "::error title=Production is behind main::Production is serving ${deployed_sha}, ${drift} commit(s) behind main. Mode: ${mode}"
           exit 1
