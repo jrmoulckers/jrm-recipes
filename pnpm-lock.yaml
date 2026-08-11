@@ -151,7 +151,7 @@ importers:
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
       '@jrmoulckers/eslint-config':
-        specifier: ^0.9.0
+        specifier: '>=0.9.0 <1.0.0'
         version: 0.9.0(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
       '@lhci/cli':
         specifier: ^0.15.1
