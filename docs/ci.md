@@ -137,7 +137,8 @@ gh api repos/jrmoulckers/jrm-recipes/commits/<sha>/status \
 
 - `Deployment rate limited — retry in 24 hours.` → account-wide quota.
 - `Deployment has failed — run this Vercel CLI command: ...` → the build ran and
-  broke. Read the log before assuming it is #826; a third cause would look the same.
+  broke. Do not assume it is #826; a third cause would look the same. You cannot
+  read the log from here, so bound the phase instead — see below.
 
 A second discriminator needs no prose parsing, because a quota-blocked deploy is
 **never created**:
@@ -192,6 +193,49 @@ Re-derive per commit. It is two API calls, and the two discriminators are genuin
 independent: `rate limited` holds **if and only if** no Production deployment object
 exists, and `has failed` **if and only if** one exists and failed — 14 of 14 commits
 agreed, 0 disagreed. Checking either one confirms the other.
+
+### You cannot read the log, but you can bound the phase
+
+The previous entry says to read the log before assuming a `has failed` is #826.
+Nobody here can: `npx vercel inspect <id> --logs` is human-run, so no session can
+see the actual error. That is why the 401 diagnosis gets **carried** between
+sessions instead of re-derived — and a carried cause decays exactly like a carried
+status, because it was true when made and nothing revisits it.
+
+Duration is the instrument that does not need log access. The Vercel commit status
+goes `pending` → terminal, and the delta between them bounds **where in the build it
+died**:
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/commits/<sha>/statuses?per_page=100 \
+  --jq '.[] | select(.context|test("vercel";"i")) | "\(.state) \(.created_at) \(.description)"'
+```
+
+Measured over every commit in `5c23673f..main` plus the four successes before it:
+
+| state                     |   n | `pending` → terminal           |
+| ------------------------- | --: | ------------------------------ |
+| success                   |   4 | 155 / 162 / 170 / 201 s        |
+| `Deployment has failed`   |  15 | **11–17 s**                    |
+| `Deployment rate limited` |  25 | **no `pending` status at all** |
+
+The bands do not overlap and are ~9x apart. A build that dies in 11–17 s has not
+finished `pnpm install`, let alone `next build`, so every failure in that census
+died **at or before install**.
+
+The quota row is a third discriminator, and a structural one: a rate-limited attempt
+emits no `pending` status because no build ever starts. That agrees with the
+deployment-object rule above from a different direction and needs no prose parsing.
+
+**What this establishes:** the failure _phase_ is unchanged. "The 401 was partially
+fixed and it now fails later" predicts a duration change, and across ~10 hours and 15
+attempts there is none.
+
+**What it does not:** duration cannot name the error. A lockfile fault, a missing
+install-time variable, or a registry outage would all produce the same 11–17 s
+signature. So the honest claim is "still failing in the install phase, cause
+unconfirmed" — not "still the 401". That is a smaller statement, and unlike the
+inherited one, any session can re-derive it in a single command.
 
 ## Every session is the same GitHub user
 
