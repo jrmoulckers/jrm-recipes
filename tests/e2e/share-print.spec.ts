@@ -21,10 +21,14 @@ test('the Share menu exposes a Copy link action', async ({ page }) => {
   const recipePath = await gotoSeededRecipe(page);
   test.skip(recipePath == null, 'No seeded database: recipe detail route is unavailable.');
 
+  // Share moved behind the overflow ("More") menu in #81, so it is not in the
+  // DOM until that popover is opened. The spec pre-dates the refactor and had
+  // been skipping itself on the resulting empty locator ever since (#849) --
+  // the exact regression it exists to catch, reported as housekeeping.
+  await page.getByRole('button', { name: /more recipe actions/i }).click();
+
   const shareTrigger = page.getByRole('button', { name: /share/i }).first();
-  if ((await shareTrigger.count()) === 0) {
-    test.skip(true, 'Share control not rendered for this recipe.');
-  }
+  await expect(shareTrigger).toBeVisible();
   await shareTrigger.click();
 
   await expect(page.getByRole('menuitem', { name: /copy link/i })).toBeVisible();

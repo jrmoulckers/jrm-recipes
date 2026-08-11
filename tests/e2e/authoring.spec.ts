@@ -47,10 +47,12 @@ test('creates a recipe and lands on its detail page', async ({ page }) => {
 
   await page.getByRole('button', { name: /save recipe/i }).click();
 
-  // Success redirects to /recipes/<slug>. Without a seeded database the action
-  // returns a DB error and stays on /recipes/new, so skip rather than fail.
+  // Success redirects to the recipe's canonical detail page. That became
+  // `/recipes/<cook>/<slug>` in #666; the old single-segment pattern matched a
+  // shape the app had stopped producing, so this waited out its full timeout on
+  // every run and then blamed a database that was in fact seeded (#849).
   const landed = await page
-    .waitForURL(/\/recipes\/(?!new$)[\w-]+$/, { timeout: 15_000 })
+    .waitForURL(/\/recipes\/[\w-]+\/(?!new$)[\w-]+$/, { timeout: 15_000 })
     .then(() => true)
     .catch(() => false);
   test.skip(!landed, 'No seeded database: recipe could not be persisted.');

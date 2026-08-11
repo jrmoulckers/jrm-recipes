@@ -36,12 +36,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * The number of skips CI reports today, measured on two consecutive runs
- * (`main` at 20 tests and PR #841 at 23 tests both reported exactly 4). Lower
- * this as skips are fixed; raising it requires justifying why a test that used
- * to run no longer does.
+ * The number of skips CI is allowed to report.
+ *
+ * Measured at 4 on two consecutive runs (`main` at 20 tests and PR #841 at 23
+ * both reported exactly 4), and every one of those four turned out to be a
+ * false diagnosis rather than a genuine unmet precondition (#849) -- so all
+ * four were fixed and the baseline is now 0. Raising this requires justifying
+ * why a test that used to run no longer does.
+ *
+ * A zero baseline is safe against Playwright's `serial` mode, where a failure
+ * skips the rest of the group: those skips only appear on a run that is already
+ * failing, so this check never turns a green run red on its own.
  */
-export const EXPECTED_SKIPS = 4;
+export const EXPECTED_SKIPS = 0;
 
 /**
  * Flatten Playwright's JSON report into one row per test.
