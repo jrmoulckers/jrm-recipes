@@ -1199,10 +1199,34 @@ highest-consequence PR in the repository.
 **That is evidence of the conclusion and of nothing upstream of it.** An earlier
 revision of this section said the peer was "working from these sections" and that
 the CI finding "carried straight through the unqualified sentence above." Neither was
-observed. The peer reports reaching _human's_ by a different route entirely — cutting
-a release is **publishing**, which is gated on its own — and having told the human so
-twice. So the sentence at `:1081` has no demonstrated victim; it has a demonstrated
+observed. So the sentence at `:1081` has no demonstrated victim; it has a demonstrated
 _hazard_, which is a weaker and honest claim, and enough on its own.
+
+**There was no single derivation to recover.** The peer first reported reaching
+_human's_ by a different route — cutting a release is **publishing**, gated on its own —
+and having told the human so twice. They then disclosed that both accounts are true at
+once: the human was told #534 needed a release decision, and this session was told #534
+was "now _not_" a human-gated item, within the same hour. Two contradictory conclusions,
+so no route existed that could have produced both. That is the third variant of the rule
+below, and the strongest: not merely that a conclusion fails to carry its derivation, but
+that there may be **no derivation there to carry**.
+
+**The upgrade this evidence seems to license was requested and is refused.** The peer
+asked that `:1081` be restored to a demonstrated victim, on the grounds that the wrong
+conclusion was written "by a reader who had just read those sections". That clause is the
+same unobserved route claim retracted above, and the disclosure does not support it — if
+anything it weakens the link, since the author describes the message to this session as
+the loose one. Reinstating a retracted inference at the request of the person it flatters
+is the weakest available basis for a claim. **Declining a strengthening asked for by the
+affected party is the same discipline as declining a weakening** — and the current
+wording came from accepting one of those, which is why this document should not now
+accept the other.
+
+**An author auditing their own claim consults their intent, not the artifact.** The peer
+answered from memory of what they meant while the sent text sat available and unread, and
+the memory was of the version that made them consistent. This is the same asymmetry as a
+void probe that agrees: the account that matches what you believe you did is the one you
+never go back and check.
 
 **A conclusion does not carry its derivation.** Reading a stated conclusion and
 inferring which rule produced it is the same conclusion-to-route inference recorded
@@ -1210,7 +1234,8 @@ above under reflog attribution, where a correct answer arrived by a key that cou
 have produced it. This is the inverse — a correct-by-accident route replaced by an
 asserted one — and it is the more tempting direction, because a conclusion that matches
 what your text would have caused reads as confirmation that your text caused it. Cite
-the text. Never cite a reader's route unless they stated it.
+the text. Never cite a reader's route unless they stated it — and note that even a
+stated route can be one of several the author is holding at once.
 
 Note the shape, because it is the same one this document is otherwise about: an
 empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
