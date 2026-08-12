@@ -491,7 +491,7 @@ provided it is taken on the channel that can express both modes.
 ### `version` is not a drift signal
 
 `/api/health` also reports a `version`, and it is tempting to read as a coarser
-drift axis. Measured across the current 60-commit gap:
+drift axis. Measured across a 60-commit gap, at `3590f177`:
 
 ```
 package.json at the served commit : 0.2.0
@@ -754,6 +754,24 @@ Measured against the same pair, the reflog does discriminate: the peer's branch
 has **no** entry in this worktree, while `fix/closingsep` has its checkout. That
 positive-and-negative pair is what qualifies it as a check — a probe seen only
 agreeing has not been shown able to disagree.
+
+**Adding more instruments is not a substitute for exercising one.** The corollary
+matters because triangulation is the natural next move when a single probe feels
+thin, and it is worthless against a subject that is not moving. Production status
+here is checked against four things — `/api/health`, the deployments API, the
+commit statuses channel, and `package.json` — and all four agree on the served sha.
+
+Nothing has deployed in 20 hours, so the served sha is a **constant**, and every
+instrument that reads it correctly must return the same value. Four agreeing
+instruments over a frozen subject are not four confirmations; they are one
+observation restated four times, and the result would be identical if three of them
+were broken.
+
+The information was in the axis where they _disagreed_ — drift, which separates
+what is on `main` from what is serving. **Under a static system agreement is free,
+and only disagreement carries information.** The `version` axis below is the worked
+case: it was proposed as a second signal precisely because it agreed, and it agrees
+no matter how far behind production runs.
 
 Branch names are also not immutable: they can be force-pushed, deleted and
 recreated.
