@@ -50,11 +50,19 @@ describe('check-closing-keywords', () => {
   });
 
   it('catches a colon between the keyword and the target, which GitHub honours', () => {
-    // `\s+` alone read these as prose. GitHub closes on `Closes: #9`, so the
-    // shape the guard exists to catch was passing it (#923).
+    // `\s+` alone read these as prose. Measured on a live pull request: GitHub
+    // links `Closes: #N` and `Closes  :  #N`, so the shape the guard exists to
+    // catch was passing it (#923).
     expect(findViolations('it closes: #855 anyway')).toHaveLength(1);
     expect(findViolations('narrative that fixed:  #855 here')).toHaveLength(1);
-    expect(findViolations('and resolved:#855 in passing')).toHaveLength(1);
+    expect(findViolations('a line that resolved  :  #855 quietly')).toHaveLength(1);
+  });
+
+  it('leaves the colon form GitHub ignores alone', () => {
+    // `Closes:#N` with no space produced no linked issue on the same live pull
+    // request, so flagging it would be a false positive rather than caution.
+    expect(findViolations('and resolved:#855 in passing')).toHaveLength(0);
+    expect(closingTargets('and resolved:#855 in passing')).toEqual([]);
   });
 
   it('still allows a colon declaration on its own line', () => {

@@ -37,12 +37,19 @@ const KEYWORDS = [
 const KEYWORD_ALT = KEYWORDS.join('|');
 const TARGET = String.raw`(?:#\d+|https?://\S+/issues/\d+)`;
 
-// GitHub accepts a colon between the keyword and the target -- `Closes: #9` closes
-// #9 -- so a separator of `\s+` alone reads `closes: #855` as ordinary prose and
-// lets through the exact shape this guard exists to catch (#923). Over-matching is
-// the safe direction here: a form GitHub ignores costs a rewrite, one it honours
-// costs an issue.
-const SEP = String.raw`(?:\s+|\s*:\s*)`;
+// GitHub accepts an optional colon between the keyword and the target, but still
+// requires whitespace before the reference. Measured against this repository's own
+// pull request via `closingIssuesReferences` (#923/#924):
+//
+//   Closes #923      -> linked      Closes  :  #923 -> linked
+//   Closes: #923     -> linked      Closes:#923     -> NOT linked
+//   Refs #923        -> not linked  (negative control)
+//
+// A separator of `\s+` alone therefore read `closes: #855` as ordinary prose and let
+// through the exact shape this guard exists to catch. The trailing `\s+` is kept
+// required rather than optional so the guard mirrors the measured behaviour instead
+// of flagging a form GitHub ignores.
+const SEP = String.raw`(?:\s*:)?\s+`;
 
 // Anywhere on the line.
 const MENTION = new RegExp(String.raw`\b(?:${KEYWORD_ALT})${SEP}${TARGET}`, 'i');
