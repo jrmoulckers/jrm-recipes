@@ -412,6 +412,11 @@ gh api repos/jrmoulckers/jrm-recipes/compare/<served-sha>...main --jq .ahead_by
 ```
 
 That is the form to reach for, with `fetch` + `rev-list` as the offline fallback.
+Unlike `deployments?sha=` further down, this endpoint **accepts an abbreviated
+sha** — `compare/5c23673f...main` and the full 40-character form both return 79,
+matching `rev-list`. Do not carry that tolerance across: the deployments endpoint
+answers an abbreviated sha with an empty array and HTTP 200.
+
 The paragraph above was the first attempt at this problem and it was procedural —
 it works only for a reader who already has the current file. The same session
 reported a stale figure **again** one message later (37, against a ref 23 commits
@@ -419,6 +424,37 @@ old), after the mechanism had been explained in detail, because the fix had land
 23 commits ahead of the tree they were reading. **A documentation remedy for
 staleness cannot reach a stale reader.** Where that is the failure, change the
 command so it cannot express the error, rather than warning about it.
+
+#### Attach the referent to the claim, not only to the number
+
+That principle is stated above for the scalar. It needs stating for the
+conclusions drawn from it, because the scalar is the half that already survives.
+
+A session reported `main fc4963fa, drift 58`. The number was exactly right —
+`5c23673f..fc4963fa` is 58 — and merely 21 commits old. All counting forms agree
+at a given tip (`--first-parent`, `--no-merges`, plain; the history is linear with
+0 merge commits), so the referent was the entire discrepancy, and **because the
+number was quoted with its referent, repairing it took one command.**
+
+The same message relayed a conclusion — that most commits get no deploy attempt,
+so a single spot check is likely uninformative and reads as healthy — with no
+referent, onward to a third party. The conclusion is wrong; the correction had
+already been sent; the two crossed. **A correction travelling peer-to-peer loses
+every race against a claim that has already been forwarded.**
+
+So: we attach provenance to numbers and not to the claims drawn from them, and the
+claim is what gets acted on. `79 unshipped as of 1064af59` self-corrects. `reads as
+healthy` does not. The remedy is structural rather than a warning, matching the
+paragraph above: **a claim that will be acted on belongs at the site of action, not
+only in a channel that forwards.** The measured census below went on the blocking
+issue for that reason — the next reader arrives there anyway, and cannot arrive in
+a message thread.
+
+The disputed claim, measured over 14 `main` commits on both channels at once:
+**6 of 14 have no deployment object, and 0 of 14 read as healthy.** Quota posts a
+terminal `failure` on the statuses channel without ever creating a deployment
+object, so no commit reads clear and a one-commit spot check is informative,
+provided it is taken on the channel that can express both modes.
 
 ### `version` is not a drift signal
 
@@ -949,6 +985,9 @@ returns `[]` — HTTP 200, empty array, no error. Every sha in prose, in
 to run this census reports "absent" for every commit, including ones that deployed
 successfully. `5c23673f` abbreviated returns 0 deployment objects; the same commit
 at full length returns 1, and it is the build production is serving right now.
+This is **not** a general rule about the API: the `compare` endpoint used for drift
+accepts an abbreviated sha and answers correctly, so the tolerance of one endpoint
+says nothing about the other.
 
 Second, an absent deployment object at full length does not mean "never attempted,
 cause unmeasured". **It means quota**, and Vercel says so on the statuses channel —
