@@ -1074,9 +1074,49 @@ which is posted either way, so the two modes are directly distinguishable:
 | quota   | 0                 | **none**         | `failure` — "Deployment rate limited — retry in 24 hours." |
 
 ```bash
-gh api repos/jrmoulckers/jrm-recipes/commits/$(git rev-parse <sha>)/statuses \
+gh api repos/jrmoulckers/jrm-recipes/commits/<sha>/statuses \
   --jq '[.[]|select(.context|test("[Vv]ercel"))|"\(.state) \(.description)"]'
 ```
+
+#### Prefer the statuses channel outright: it dominates the deployments endpoint
+
+The remedy above — keep using `deployments?sha=`, but remember the full sha — is the
+weaker one. The statuses channel is better on every axis measured, so the instrument
+should be replaced rather than annotated. At `c1d5c55d`:
+
+```
+commits/c1d5c55d/statuses    (8 chars)  -> failure,pending
+commits/<40 chars>/statuses             -> failure,pending    (agrees)
+deployments?sha=c1d5c55d     (8 chars)  -> 0                  (wrong, silently)
+```
+
+**The statuses channel tolerates an abbreviated sha**, so the constraint that defeats
+the deployments endpoint does not apply to it, and wrapping these calls in
+`$(git rev-parse …)` propagates a fault the endpoint does not have. It also answers in
+one call instead of two, and it **names the cause in the description** — something the
+deployments endpoint cannot do at all, since it only reports existence.
+
+And it loses nothing. Over the most recent 14 `main` commits at `c1d5c55d`, the
+correlation with deployment-object existence is **14 of 14 exact**: every
+`failure`-alone commit has no deployment object, every `failure,pending` commit has
+one. The deployments endpoint carries no information the statuses channel is missing,
+while carrying a silent failure mode it does not have.
+
+This is the same move as replacing the local drift count with `gh api compare`: when an
+instrument has a silent failure mode and a sound alternative exists, **replace the
+instrument instead of documenting its quirk.** A documented quirk still has to be
+remembered by every future reader; a retired instrument does not.
+
+#### A census with any PRESENT row proves its own sha width
+
+A census run entirely with abbreviated shas returns **100% absent**. So any non-zero
+PRESENT count proves full shas were used — the output validates itself, and no
+inspection of the command is needed.
+
+This is worth stating because it is the rare control that is **free and retroactive**.
+Most checks in this document require re-running something; this one can be applied to
+an archived table whose command is long gone. Both censuses below pass it on their own
+face: 5 present of 8, and 10 of 14.
 
 So the original worry — that a session drawing an unattempted commit would read
 production as healthy — overstates the hazard on the statuses channel and
@@ -1086,7 +1126,21 @@ carry a Vercel `failure`. What the deployments API alone cannot do is tell quota
 apart from a sha typed at eight characters, because it answers both with `[]`.
 
 Quota is also the larger blocker by count. A correct registry token fixes the 5, and
-leaves the 9 without an attempt.
+leaves the 9 without an attempt. — **ORIGINAL RATIO, SUPERSEDED (#942); the conclusion
+drawn from it has since inverted.** Re-measured at `c1d5c55d` over the most recent 14
+`main` commits: **10 attempts and 4 quota.** The majority are now failing on the
+registry credential, so a correct token repairs the **majority**, not the minority.
+
+Both counts were right when taken. "The last 14 commits" is a **sliding window**, and
+six merges moved it. The defect is not the number but the standing operational
+conclusion built on the ratio — _"the token fixes the minority, expect a staggered
+partial recovery"_ — which reversed without anything marking it as stale, and was
+relayed onward in that form. All 14 still carry a `failure`, so the part of the finding
+that matters for spot-checking is unaffected.
+
+**A ratio needs its window and tip attached, exactly like a count needs its referent.**
+A ratio is worse, because a count that goes stale merely reads low, while a ratio that
+goes stale can flip the action it recommends and still look plausible.
 
 ### The duration band bounds the phase, and that is all it does
 
