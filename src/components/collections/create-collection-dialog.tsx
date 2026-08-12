@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
-
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { createCollectionAction } from '~/server/collections/actions';
 import { type CollectionInput } from '~/server/collections/validation';
 import { Button } from '~/components/ui/button';
@@ -28,6 +28,7 @@ export function CreateCollectionDialog({ children }: { children?: React.ReactNod
   const t = useTranslations('collections.create');
   const nameId = React.useId();
   const descriptionId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -70,7 +71,7 @@ export function CreateCollectionDialog({ children }: { children?: React.ReactNod
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
         <form onSubmit={onSubmit} className="grid gap-5">
           <DialogHeader>
             <DialogTitle>{t('title')}</DialogTitle>
@@ -86,7 +87,7 @@ export function CreateCollectionDialog({ children }: { children?: React.ReactNod
               placeholder={t('fields.name.placeholder')}
               aria-invalid={Boolean(fieldErrors.name)}
               aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
-              autoFocus
+              ref={nameRef}
             />
             {fieldErrors.name?.[0] ? (
               <p id={`${nameId}-error`} className="text-sm text-destructive">

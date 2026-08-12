@@ -7,6 +7,7 @@ import { Pencil, Plus, Ruler, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { friendlyError } from '~/lib/error-copy';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { useShoppingStore } from '~/lib/shopping-store';
 import {
   createCustomUnitAction,
@@ -145,6 +146,8 @@ export function UnitPreferencesManager({
   const router = useRouter();
   const [prefs, setPrefs] = React.useState<UnitPreferencesView>(preferences ?? DEFAULT_PREFS);
   const [savingPrefs, startPrefsTransition] = React.useTransition();
+  const autoConvertId = React.useId();
+  const packageRoundingId = React.useId();
   const localPreferences = useShoppingStore((state) => state.unitPreferences);
   const localPackageRounding = useShoppingStore((state) => state.packageRounding);
   const localCustomUnits = useShoppingStore((state) => state.customUnits);
@@ -245,34 +248,40 @@ export function UnitPreferencesManager({
           })}
         </div>
 
-        <label className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <span>
-            <span className="block font-medium">{t('autoConvert.label')}</span>
+            <label htmlFor={autoConvertId} className="block font-medium">
+              {t('autoConvert.label')}
+            </label>
             <span className="block text-sm text-muted-foreground">
               {t('autoConvert.description')}
             </span>
           </span>
           <Switch
+            id={autoConvertId}
             checked={prefs.autoConvert}
             onCheckedChange={(checked) => savePrefs({ ...prefs, autoConvert: checked })}
             aria-label={t('autoConvert.ariaLabel')}
             disabled={savingPrefs}
           />
-        </label>
-        <label className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <span>
-            <span className="block font-medium">{t('packageRounding.label')}</span>
+            <label htmlFor={packageRoundingId} className="block font-medium">
+              {t('packageRounding.label')}
+            </label>
             <span className="block text-sm text-muted-foreground">
               {t('packageRounding.description')}
             </span>
           </span>
           <Switch
+            id={packageRoundingId}
             checked={prefs.packageRounding}
             onCheckedChange={(checked) => savePrefs({ ...prefs, packageRounding: checked })}
             aria-label={t('packageRounding.ariaLabel')}
             disabled={savingPrefs}
           />
-        </label>
+        </div>
         {offline ? (
           <p className="mt-3 text-sm text-muted-foreground" role="status">
             {t('offlineNote')}
@@ -409,8 +418,10 @@ function CustomUnitsSection({
   const deleteLocalCustomUnit = useShoppingStore((state) => state.deleteCustomUnit);
 
   const nameId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const abbrId = React.useId();
   const amountId = React.useId();
+  const displayAsTrueId = React.useId();
 
   function openAdd() {
     setDraft(EMPTY_CUSTOM);
@@ -608,7 +619,7 @@ function CustomUnitsSection({
       )}
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={onOpenAutoFocus}>
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
@@ -627,7 +638,7 @@ function CustomUnitsSection({
                   onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                   placeholder={example.name}
                   aria-invalid={Boolean(fieldErrors.name)}
-                  autoFocus
+                  ref={nameRef}
                 />
                 {fieldErrors.name?.[0] ? (
                   <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
@@ -728,21 +739,22 @@ function CustomUnitsSection({
                   </p>
                 ) : null}
 
-                <label className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
+                <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
                   <span className="space-y-0.5">
-                    <span className="block text-sm font-medium">
+                    <label htmlFor={displayAsTrueId} className="block text-sm font-medium">
                       {t('custom.displayAsTrue.label')}
-                    </span>
+                    </label>
                     <span className="block text-xs text-muted-foreground">{displayAsTrueHint}</span>
                   </span>
                   <Switch
+                    id={displayAsTrueId}
                     checked={draft.displayAsTrue}
                     onCheckedChange={(checked) =>
                       setDraft((d) => ({ ...d, displayAsTrue: checked }))
                     }
                     aria-label={t('custom.displayAsTrue.ariaLabel')}
                   />
-                </label>
+                </div>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('custom.countNote')}</p>

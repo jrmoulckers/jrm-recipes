@@ -10,6 +10,7 @@ import { addCommentAction } from '~/server/engagement/actions';
 import type { AnchoredSuggestion } from '~/server/engagement/queries';
 import { friendlyError } from '~/lib/error-copy';
 import { cn } from '~/lib/utils';
+import { useFocusOnAttach } from '~/lib/use-initial-focus';
 import { Button } from '~/components/ui/button';
 import { Textarea } from '~/components/ui/textarea';
 
@@ -47,6 +48,9 @@ export function AnchoredSuggestions({
   const t = useTranslations('engagement.anchoredSuggestions');
   const [open, setOpen] = React.useState(false);
   const [body, setBody] = React.useState('');
+  // The composer is revealed by a button, so moving focus into it is the
+  // response to a user action rather than an unrequested context change.
+  const focusOnAttach = useFocusOnAttach<HTMLTextAreaElement>();
   const [pending, startTransition] = React.useTransition();
 
   const openSuggestions = suggestions.filter(
@@ -127,7 +131,7 @@ export function AnchoredSuggestions({
               onChange={(event) => setBody(event.target.value)}
               rows={2}
               maxLength={4000}
-              autoFocus
+              ref={focusOnAttach}
               placeholder={t('placeholder', { label: anchorLabel })}
               disabled={pending}
             />

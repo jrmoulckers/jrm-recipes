@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { PencilLine, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 
 import { createRecipeAction } from '~/server/recipes/actions';
 import { type RecipeInput } from '~/server/recipes/validation';
@@ -37,6 +38,7 @@ export function QuickCaptureDialog() {
   const t = useTranslations('recipe');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const { ref: titleRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const [title, setTitle] = React.useState('');
   const [photo, setPhoto] = React.useState('');
   const [freeform, setFreeform] = React.useState('');
@@ -101,7 +103,7 @@ export function QuickCaptureDialog() {
           <Sparkles /> {t('quickCapture.trigger')}
         </Button>
       </DialogTrigger>
-      <DialogContent size="md">
+      <DialogContent size="md" onOpenAutoFocus={onOpenAutoFocus}>
         {saved ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
@@ -133,7 +135,7 @@ export function QuickCaptureDialog() {
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder={t('quickCapture.titlePlaceholder')}
-                autoFocus
+                ref={titleRef}
                 maxLength={200}
                 aria-required
               />

@@ -369,6 +369,7 @@ function LibraryTab({
       <div
         role="radiogroup"
         aria-label={t('libraryLabel')}
+        tabIndex={-1}
         onKeyDown={onKeyDown}
         className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
       >

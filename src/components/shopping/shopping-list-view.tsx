@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { cn } from '~/lib/utils';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { useLocale, useTranslations } from 'next-intl';
 import { describeQuantity, SHOPPING_CATEGORIES, type ShoppingCategory } from '~/lib/shopping-list';
 import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
@@ -313,6 +314,7 @@ function PackagePreferenceDialog({
   const t = useTranslations('shopping');
   const [open, setOpen] = React.useState(false);
   const [amount, setAmount] = React.useState('');
+  const { ref: amountRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const [unit, setUnit] = React.useState('');
   const [label, setLabel] = React.useState('');
   const [preferredListId, setPreferredListId] = React.useState(currentListId);
@@ -403,7 +405,7 @@ function PackagePreferenceDialog({
           <Package aria-hidden="true" />
         </Button>
       </DialogTrigger>
-      <DialogContent size="md">
+      <DialogContent size="md" onOpenAutoFocus={onOpenAutoFocus}>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{t('package.title', { item: item.item })}</DialogTitle>
@@ -425,7 +427,7 @@ function PackagePreferenceDialog({
                 aria-describedby={
                   fieldErrors.packageAmount ? `package-amount-error-${item.id}` : fieldHintId
                 }
-                autoFocus
+                ref={amountRef}
               />
               {fieldErrors.packageAmount?.[0] ? (
                 <p id={`package-amount-error-${item.id}`} className="text-sm text-destructive">
@@ -549,6 +551,7 @@ function MoveRouteDialog({
     listOptions.find((list) => list.id !== currentListId)?.id ?? currentListId;
   const [targetListId, setTargetListId] = React.useState(firstDestination);
   const [rememberRoute, setRememberRoute] = React.useState(false);
+  const rememberRouteId = React.useId();
   const [alternativeListIds, setAlternativeListIds] = React.useState<string[]>(
     item.routeAlternativeListIds ?? [],
   );
@@ -604,16 +607,19 @@ function MoveRouteDialog({
             ))}
           </NativeSelect>
         </div>
-        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border p-3 text-sm">
+        <div className="flex min-h-11 items-center gap-3 rounded-lg border border-border p-3 text-sm">
           <Checkbox
+            id={rememberRouteId}
             checked={rememberRoute}
             onCheckedChange={(value) => setRememberRoute(value === true)}
           />
           <span>
-            <span className="block font-medium">{t('routing.remember')}</span>
+            <label htmlFor={rememberRouteId} className="block font-medium">
+              {t('routing.remember')}
+            </label>
             <span className="block text-xs text-muted-foreground">{t('routing.rememberHint')}</span>
           </span>
-        </label>
+        </div>
         {rememberRoute && alternatives.length > 0 && (
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium">{t('routing.alternatives')}</legend>

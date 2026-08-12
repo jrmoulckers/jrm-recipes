@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
-
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { deleteCollectionAction, renameCollectionAction } from '~/server/collections/actions';
 import { type CollectionInput } from '~/server/collections/validation';
 import { Button } from '~/components/ui/button';
@@ -44,6 +44,7 @@ export function CollectionActions({
   const router = useRouter();
   const t = useTranslations('collections.actions');
   const nameId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const descriptionId = React.useId();
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [name, setName] = React.useState(collection.name);
@@ -133,7 +134,7 @@ export function CollectionActions({
       </DropdownMenu>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent>
+        <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
           <form onSubmit={onRename} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>{t('edit.title')}</DialogTitle>
@@ -148,7 +149,7 @@ export function CollectionActions({
                 onChange={(event) => setName(event.target.value)}
                 aria-invalid={Boolean(fieldErrors.name)}
                 aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
-                autoFocus
+                ref={nameRef}
               />
               {fieldErrors.name?.[0] ? (
                 <p id={`${nameId}-error`} className="text-sm text-destructive">

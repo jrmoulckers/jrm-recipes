@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Pencil, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFriendlyError } from '~/lib/error-copy';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 
 import {
   createMemberProfileAction,
@@ -84,6 +85,7 @@ export function DietaryProfilesManager({
 }) {
   const router = useRouter();
   const nameId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const calorieId = React.useId();
   const groupSelectId = React.useId();
 
@@ -257,7 +259,7 @@ export function DietaryProfilesManager({
       )}
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={onOpenAutoFocus}>
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
@@ -273,7 +275,7 @@ export function DietaryProfilesManager({
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 placeholder={t('fields.namePlaceholder')}
                 aria-invalid={Boolean(fieldErrors.name)}
-                autoFocus
+                ref={nameRef}
               />
               {fieldErrors.name?.[0] ? (
                 <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
