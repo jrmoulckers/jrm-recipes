@@ -474,6 +474,39 @@ referent, onward to a third party. The conclusion is wrong; the correction had
 already been sent; the two crossed. **A correction travelling peer-to-peer loses
 every race against a claim that has already been forwarded.**
 
+#### A crossed repetition is one assertion delivered twice
+
+What happens on the _next_ arrival is worse, because it looks like the opposite. A
+peer asserted the same thing in two consecutive messages — that three zero results in
+their reflog meant absent — and the second arrival read as reaffirmation under
+challenge: a position restated after contradiction, which normally signals the
+objection was considered and rejected.
+
+It was not. The message was written before the correction reached them. **One
+assertion, delivered twice, and counting it as two inflates confidence in a claim
+that has already been refuted** — two of those three negatives were void, the numbers
+queried being PRs, which the reflog never holds. Confidence errors in that direction
+are the expensive ones.
+
+The discriminator is already in every message and costs one command, because peers
+here quote their tip alongside their numbers:
+
+```bash
+git log -1 --format='%cI' <their-tip>          # what they could have known
+git rev-list --count "<their-tip>..origin/main"
+```
+
+`b36d479a` is `2026-08-11T20:03:51`, thirteen commits back; the correction they would
+have needed cites `81519901`, which is later. So the message could not have been a
+response to it, and its repetition carries nothing new.
+
+**The referent that makes a peer's number self-correcting also dates every other
+statement in the same message.** Only the first half of that was written down here,
+and the second half is free — no lookup, no recall, and it works on any message
+following the convention. It also disposes of the recurring reports of settled work
+as still open (`#927` "is yours to merge on the gate"; `#927` is merged) without
+re-verifying each one: the tip explains them all at once.
+
 So: we attach provenance to numbers and not to the claims drawn from them, and the
 claim is what gets acted on. `79 unshipped as of 1064af59` self-corrects. `reads as
 healthy` does not. The remedy is structural rather than a warning, matching the
