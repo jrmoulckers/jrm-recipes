@@ -879,6 +879,66 @@ one of the two was ever eligible for a production attempt. Filter to `main` firs
 git branch -a --contains <sha>    # if it is not on main, it is not evidence
 ```
 
+#### The general defect: a probe whose outcome was entailed by its setup
+
+Filtering to `main` fixes that comparison. It does not help a reader holding a
+different probe, so state what actually went wrong: **both observations were
+entailed by how the pair was built.** Identical trees is what a clean squash _is_,
+and a feature-branch tip cannot carry a production deployment. Neither could have
+come out any other way.
+
+Both were true. Both reproduced on demand — a second session re-ran them, got the
+same two results, and reported the reproduction to the user as confirmation.
+Reproducibility was never the missing property. A measurement that cannot vary
+reproduces perfectly and carries no information, while feeling like the strongest
+confirmation available.
+
+This is not the absence-read-as-pass mode the rest of this file catalogues. The
+probe returns a positive, informative-looking result; it just could not have
+returned another one. The test:
+
+> Before reporting a result as confirmation, name the outcome that would have
+> falsified it. If none was reachable, the probe measured its own setup.
+
+Here that control was one command — is this commit even eligible for a production
+attempt? — and it voids the pair.
+
+This is the same rule as the mutation-proof requirement for a checked-in guard: a
+guard observed only agreeing has not been shown capable of disagreeing, which is
+why #930's `jq` was run against a jobless run, a non-terminal run, **and** an
+all-terminal control before it shipped. Guards and one-off observations get the
+same treatment, because a guard is only an observation someone committed.
+
+#### A census inherits the blindness of the channel it is taken on
+
+A `main`-only census over the deployments API found no-deployment-object to be the
+majority result, and concluded that a session spot-checking one recent commit is
+likely to draw an uninformative reading and take it as clear. The first half holds;
+the second does not follow. Measured over the 8 most recent `main` commits, both
+channels at once:
+
+| commit     | `deployments?sha=` | Vercel states on `/statuses` |
+| ---------- | ------------------ | ---------------------------- |
+| `c46531c6` | 1                  | `failure`, `pending`         |
+| `c112974f` | 0                  | `failure`                    |
+| `b48b79c9` | 0                  | `failure`                    |
+| `ec3b694c` | 0                  | `failure`                    |
+| `de45d007` | 1                  | `failure`, `pending`         |
+| `04cf9aef` | 1                  | `failure`, `pending`         |
+| `b36d479a` | 1                  | `failure`, `pending`         |
+| `667bee3d` | 1                  | `failure`, `pending`         |
+
+3 absent and 5 present on the deployments API — and **8 of 8 carry a Vercel
+`failure` on the statuses channel**, because quota posts a terminal failure without
+ever creating a deployment object. No commit reads as clear, so the single most
+likely spot-check is informative, provided it is taken on the channel that answers
+for both modes.
+
+The conclusion inherited a documented property of the instrument — the mode table
+below is what it was blind to — rather than a property of the subject. **Take a
+census only on a channel that can express every mode it means to count**, and when
+a count is the evidence, say which channel produced it.
+
 **Absent is not success — but read it on the right channel, with a full sha.** The
 census behind this rule used the deployments API alone, and that instrument is
 wrong twice.
