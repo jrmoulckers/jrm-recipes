@@ -134,7 +134,7 @@ jobs:
       deployments: read
       statuses: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # rev-list needs the commits between the deployed sha and main.
           fetch-depth: 0
