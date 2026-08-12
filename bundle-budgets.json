@@ -28,10 +28,10 @@
       },
       {
         "route": "/recipes/[cook]/[recipe]",
-        "kb": 308,
+        "kb": 309,
         "platform": "linux",
-        "runId": "31476537117",
-        "issue": 820
+        "runId": "31620613720",
+        "issue": 996
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
@@ -45,7 +45,8 @@
   "routes": {
     "/": 228,
     "/recipes": 255,
-    "/recipes/[cook]/[recipe]": 308,
+    "/recipes/[cook]/[recipe]": 312,
     "/recipes/[cook]/[recipe]/edit": 218
-  }
+  },
+  "//zero-headroom-variance": "Issue #996 (main went red at 96bbac61 with no code change). /recipes/[cook]/[recipe] is re-baselined 308 -> 312 and its measurement claim below moves 308 -> 309. WHAT WAS MEASURED: PR #995's run on a7b8a7a3 read the route at 308.0, and the main run on 96bbac61 (run 31620613720) read it at 309.0. 96bbac61's parent is a704dd49 with nothing landing in between, so THE TWO RUNS BUILT A BYTE-IDENTICAL TREE, on the same platform, and disagreed by a full displayed kilobyte; the failing run also logged 'No build cache found', which is the likeliest mechanism. The merge in between added no client bytes at all: cuid2 is server-only, and a search of the built client chunks -- run with a lucide/useState positive control, so a null result would have been distinguishable from a broken search -- finds no bignumber, BigNumber, error-causes or createId. The only cuid hits are Zod's own z.string().cuid() validator kind names. THIS EXTENDS //lucide-1x RATHER THAN REPEATING IT. That note establishes that two PLATFORMS can disagree about which route moved, because 'next build' prints whole kB and the integer boundary sits at a different fractional offset on each platform. This is the same instrument failing one step further in: THE SAME TREE ON THE SAME PLATFORM MEASURED 308 AND 309 IN TWO RUNS. So a budget at zero headroom is not merely tight, it is a latent failure that needs no code change to fire, and the route named by a red build is an even weaker attribution than //lucide-1x already warned. The new budget is the measured 309, plus the 2 kB //headroom-requirement minimum, plus 1 kB for the run-to-run variance measured here: sizing it at exactly 311 would satisfy the rule while leaving nothing to absorb the very effect that caused this failure. /recipes/[cook]/[recipe]/edit remains at 218/218 with 0.0 kB free and is expected to fail this way eventually, but it is deliberately NOT bumped -- nothing measured it as needing a raise, and inheriting a tight budget is not a failure."
 }
