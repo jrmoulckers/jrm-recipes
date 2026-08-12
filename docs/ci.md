@@ -56,6 +56,7 @@ these returns a confident, correct answer — to a question other than the one a
 | `When no tip is quoted, the verdict is UNDATED`                               | fresh                                   |
 | `Comparing the raw counts never terminates` (performance-budgets)             | never satisfiable, so never green       |
 | `That answers what a user sees, not what happens when they act`               | safe                                    |
+| `But a gate means ask, not refuse`                                            | correct, without consulting the world   |
 
 Those are heading texts, not line numbers, deliberately: a line-number cross-reference
 is itself an identifier-keyed pointer that goes silently wrong on the next edit. They
@@ -1148,6 +1149,31 @@ unqualified form of the claim above invites the opposite conclusion — _the gat
 unobservable, so it cannot be what stops me_ — on precisely the PRs where it is
 observable and does stop you.
 
+#### A gate means ask, not refuse
+
+`AGENTS.md` resolves a gated operation by "stop, state what and why, and **wait for
+approval**" — so explicit human instruction _satisfies_ the author gate rather than
+being overridden by it. A session told "you can merge any PR that is ready now" has
+standing on PRs it did not open, and reading bot-authorship as a permanent wall forbids
+the one workflow the human is most likely to authorise. A peer session merged five green
+Dependabot bumps under exactly such a grant; under the unqualified form of the paragraph
+above, those five were unmergeable.
+
+**And authorship is not what blocks this queue.** Measured across all nine open PRs:
+
+```text
+552, 551, 550, 37, 35, 34, 32   no Quality gate job on the head commit
+549                             Quality gate completed/failure
+534                             Quality gate completed/success
+```
+
+Eight of the nine are stopped by **the absence of an affirmative gate** — §4's rule,
+needing no authorship question at all. So "bot-authored, therefore refuse" has zero live
+applications while reading as though it carries the queue, and it fires identically on a
+green human-approved bump and on an unreviewed major that fails CI. A rule that cannot
+tell those apart reaches the right answer without consulting the thing that matters,
+which is the void probe of this document's opening section wearing a policy costume.
+
 **A green affirmative answers _may this merge_, never _may I merge it_.** Those are
 independent questions, and §4's substitute answers only the first. #534 is the worked
 example on both counts: its CI question is now fully resolved,
@@ -1157,9 +1183,13 @@ example on both counts: its CI question is now fully resolved,
 31574533237  workflow_dispatch  completed/success           all jobs terminal
 ```
 
-and it remains human-gated, because `app/github-actions` opened it and it would ship
-80+ commits. Resolving the CI question moved it from _unmergeable and misdiagnosed_ to
-_mergeable by a human_; it did not move it to _mergeable by a session_.
+and it remains human-gated — but **because it publishes**, not because a bot opened it.
+Cutting a release ships 80+ commits, and that is gated whoever opened the PR. A human
+could have opened #534 and it would be equally unmergeable by a session. Authorship
+happens to agree here, on a fact that could have gone the other way; publishing is the
+reason that survives the counterfactual. Resolving the CI question moved #534 from
+_unmergeable and misdiagnosed_ to _mergeable by a human_; it did not move it to
+_mergeable by a session_.
 
 This is not a hypothetical reading. A peer session wrote, in a message to this one,
 that "#534 is now _not_" a human-gated item, "which is the practical result of your
