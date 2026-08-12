@@ -99,8 +99,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(postgres@3.4.9)
       lucide-react:
-        specifier: ^0.475.0
-        version: 0.475.0(react@19.2.7)
+        specifier: ^1.27.0
+        version: 1.27.0(react@19.2.7)
       next:
         specifier: ^15.5.21
         version: 15.5.22(@babel/core@7.29.7)(@playwright/test@1.61.1)(@types/node@22.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1165,6 +1165,9 @@ packages:
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
       typescript: '>=5.5.0 <6.1.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@lhci/cli@0.15.1':
     resolution: {integrity: sha512-yhC0oXnXqGHYy1xl4D8YqaydMZ/khFAnXGY/o2m/J3PqPa/D0nj3V6TLoH02oVMFeEF2AQim7UbmdXMiXx2tOw==}
@@ -3791,8 +3794,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lucide-react@0.475.0:
-    resolution: {integrity: sha512-NJzvVu1HwFVeZ+Gwq2q00KygM1aBhy/ZrhY9FsAgJtpB+E4R7uxRk9M2iKvHa6/vNxZydIB59htha4c2vvwvVg==}
+  lucide-react@1.27.0:
+    resolution: {integrity: sha512-rJicGl/3Fly/E0rOH1YmPZ6e49JCnKknh1ox1vpHnkfjujAkKA6sqUZvH3MTAaXXjgexyUwgNwTJzTtYuAFYJw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -5900,8 +5903,9 @@ snapshots:
       eslint: 9.39.5(jiti@1.21.7)
       eslint-config-prettier: 10.1.8(eslint@9.39.5(jiti@1.21.7))
       globals: 17.9.0
-      typescript: 5.9.3
       typescript-eslint: 8.67.0(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
+    optionalDependencies:
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
 
@@ -8528,7 +8532,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lucide-react@0.475.0(react@19.2.7):
+  lucide-react@1.27.0(react@19.2.7):
     dependencies:
       react: 19.2.7
 
