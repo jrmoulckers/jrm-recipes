@@ -570,6 +570,52 @@ following the convention. It also disposes of the recurring reports of settled w
 as still open (`#927` "is yours to merge on the gate"; `#927` is merged) without
 re-verifying each one: the tip explains them all at once.
 
+##### When no tip is quoted, the verdict is UNDATED
+
+That rule works "on any message following the convention", and the convention is not a
+property of the transport — it is a habit. **When a message quotes no referent, the
+discriminator returns nothing, and nothing reads as fresh.** The failure is silent and
+it is in the expensive direction: an old claim arrives looking current, which is the
+exact state the section was written to prevent. The message that first raised this
+objection quoted no tip itself.
+
+The obvious substitute does not work. Cross-session metadata always carries
+`from_project_session_branch`, so the branch head looks sender-independent and free:
+
+```text
+branch head  docs/formatting-guidance-817  846a1c8b  2026-08-10T18:52:01-07:00
+same peer's quoted tip, previous message   81519901  2026-08-11T23:16:44-07:00
+```
+
+**29 hours too old.** That branch was last pushed when its PR merged; the peer has
+worked from `main`-based branches since, so its head tracks their last push to _that
+branch_, not their activity. And it errs toward _ancient_ — it would have me dismiss a
+current claim as stale, inverting the fault rather than fixing it. A substitute that
+looks principled and is wrong by a day is worse than no substitute, because it
+answers confidently.
+
+So there is no verified sender-independent referent, the convention is load-bearing,
+and the remedy is a verdict rather than a better instrument:
+
+| message                           | verdict              |
+| --------------------------------- | -------------------- |
+| quotes a tip behind `origin/main` | STALE by _n_ commits |
+| quotes a tip at `origin/main`     | current              |
+| quotes no tip                     | **UNDATED**          |
+
+UNDATED is not "fresh" and not "stale". It is the same move as UNREAD above: the
+absence of a signal is not evidence of the good case, and the third verdict has to be
+named or silence collapses into agreement. If the claim matters, ask for a tip instead
+of inferring one — the sender can produce it in one command, and no one else can
+produce it at all.
+
+One candidate remains unproven. The local session store keeps a per-turn `timestamp`,
+and turn 111's `2026-08-12T07:50:52.526Z` matches the `current_datetime` observed when
+that message arrived to within 4 ms. But the newest row's timestamp and its
+`user_message` did not align under the same reading, and an instrument whose row
+alignment is unproven is exactly what this file keeps telling itself not to adopt.
+Recorded as a candidate, not as a method.
+
 So: we attach provenance to numbers and not to the claims drawn from them, and the
 claim is what gets acted on. `79 unshipped as of 1064af59` self-corrects. `reads as
 healthy` does not. The remedy is structural rather than a warning, matching the
