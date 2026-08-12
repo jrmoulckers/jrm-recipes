@@ -51,7 +51,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.12.4",
     "@hookform/resolvers": "^3.10.0",
-    "@paralleldrive/cuid2": "^2.2.2",
+    "@paralleldrive/cuid2": "^3.3.0",
     "@radix-ui/react-accordion": "^1.2.16",
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-avatar": "^1.2.2",
