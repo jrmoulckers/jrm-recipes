@@ -87,6 +87,40 @@ reason that is not the author's diff, and the fix is a rebase the workflow must
 not perform on your branch. Treat the warning as a review-time question — if it
 says the base has moved and the change is not trivial, rebase before merging.
 
+#### Which base changes actually invalidate a check
+
+The warning tells you the base moved. It does not tell you whether that matters,
+and the natural rule for deciding is wrong. Since `prettier.config.js` imports the
+vendored `config/engineering/prettier/index.js`, it is tempting to say _a
+`chore(config)` or `chore(deps)` merge expires any formatting and lint verification
+taken against an earlier base_. Measured against every such merge to date, that rule
+fires three times out of three and is right none of them:
+
+| merge           | touched                            | vendored rules     | `src/` reformatted |
+| --------------- | ---------------------------------- | ------------------ | ------------------ |
+| #881 `89ff57d9` | introduced `config/engineering/**` | new                | 0 files            |
+| #883 `b0b98294` | re-pin `v0.15.1` → `v0.15.7`       | **byte-identical** | 0 files            |
+| #886 `2a7e1987` | `package.json`, `pnpm-lock.yaml`   | untouched          | 0 files            |
+
+The re-pin is the instructive one. The version moved two minor releases while
+`git diff 89ff57d9 b0b98294 -- config/engineering` came back **empty**, so the
+version is not a proxy for the rules. Neither is the title: nothing stops a config
+edit landing under a `feat(...)` or `fix(...)` subject, and there the title-keyed
+rule is silent — it misses the only case that would have mattered.
+
+Ask the property instead. It is one command and it does not care what anything was
+called:
+
+```bash
+git diff --stat <base-you-verified-against>..origin/main -- \
+  config/engineering .prettierignore prettier.config.js eslint.config.js
+```
+
+Empty means prior `format:check` and `lint` results survive the base change,
+whatever the commit subjects were. Non-empty means re-run them, likewise. This is
+the same move as the section below: **select on the property in question, not on a
+name you have to guess right first.**
+
 ### 4. Run concluded, gate job never did
 
 Observed on PR #878. `Quality gate` sat at `IN_PROGRESS` for 24+ minutes while the
