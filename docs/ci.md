@@ -115,17 +115,39 @@ Three corollaries, all learned the expensive way:
   eventually; one that returns the expected answer gets banked as validated, and the
   instrument is never audited again. So a probe is only as trustworthy as the last time
   it returned something you did not want.
-- **A guard's clean record is not evidence it works.** The reference audit below was
-  credited with catching two dangling pointers in two PRs. It caught neither — both were
-  manual greps run while editing — and it passed a third, real one. Its record is
-  0-for-3. Outcomes produced by some other mechanism get attributed to whatever guard was
-  nominally in place, and the attribution is never checked, because the outcomes were
-  correct. This is `a conclusion does not carry its derivation` applied to a **track
-  record** rather than to a single claim, and it is the more dangerous form: a guard
-  believed to work retires the manual check that was actually doing the work.
+- **A guard's clean record is not evidence it works.** The reference audit below passed a
+  live broken row — `But a gate means ask, not refuse`, against a heading with no "But" —
+  which sat in `main` from #967 through #969. Outcomes produced by some other mechanism
+  get attributed to whatever guard was nominally in place, and the attribution is never
+  checked, because the outcomes were correct. This is
+  `a conclusion does not carry its derivation` applied to a **track record** rather than
+  to a single claim, and it is the more dangerous form: a guard believed to work retires
+  the manual check that was actually doing the work.
   **A guard is evidence only once it has been observed to fail on purpose** — break one
   input, watch it go red, and keep that control next to the guard. Two coincidental
   agreements are not a substitute, and they are what a new instrument produces first.
+
+  _Retracted here, at the point of assertion:_ this bullet first claimed the audit was
+  "0-for-3" — credited with two catches it did not make. That record is not verifiable
+  and the framing was wrong. **No executable audit existed until #971**; before it the
+  file carried prose only. The two earlier catches therefore belong to no instrument that
+  can be measured, and the honest verdict is the third state this document keeps
+  insisting on — **UNATTRIBUTED**, not zero. One confirmed miss stands, and it is enough.
+  The claim was written from memory two PRs after recording that _an author auditing his
+  own claim consults his intent, not the artifact_.
+
+  What the retraction leaves is sharper than what it removes. The prose said _grep every
+  row against the headings_ — table-derived, and correct. What was actually executed was
+  keyed to a hand-maintained list of intended strings, so the record came from an
+  undocumented substitute while the credit went to the prose. **Prose describing a check
+  is not a check**: it has no output, so it can never be observed to fail, and nothing
+  forces the thing actually run to resemble it. An instruction to audit is not an audit,
+  which is the whole reason the snippet below is executable.
+
+  One scope note, since the overstatement ran the other way too: that check was not
+  blind to the file. It read the headings and would have fired had one been renamed. Its
+  blind spot is a single direction — substring matching means a row carrying **extra**
+  text still matches, so only row text drifting from intent is invisible to it.
 
 ## Five ways a green check list still lies
 
