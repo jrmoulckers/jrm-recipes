@@ -103,6 +103,15 @@ assertion, `claim sites == markers`, calibrating `bare` against `real` locally. 
 attempt that failed tried to detect a bad state by searching for evidence of it, which
 cannot distinguish _no evidence_ from _no state_.
 
+**One check applies at writing time rather than review time: would this reason still hold
+if the contingent fact flipped?** A reason that happens to agree, on a fact that could
+have gone the other way, is weaker than one that survives the counterfactual — even when
+both reach the same conclusion today. PR #534 is the worked case below: authorship and
+publishing both said _human's_, but authorship depended on who opened the PR, while
+cutting a release ships 80+ commits whoever opened it. The contingent reason was the one
+carried into a summary, because a correct conclusion does not advertise which of its
+supports is load-bearing.
+
 Three corollaries, all learned the expensive way:
 
 - **Direction is not safety.** Most instances fail toward false-clean, which is why they
@@ -169,6 +178,20 @@ Three corollaries, all learned the expensive way:
   blind to the file. It read the headings and would have fired had one been renamed. Its
   blind spot is a single direction — substring matching means a row carrying **extra**
   text still matches, so only row text drifting from intent is invisible to it.
+
+  The same corollary applies to a **verification method**, not just to a guard, and that
+  form is easier to miss because the method really does produce the answer and the answer
+  really is right. This section's location was once confirmed using line-number anchors —
+  the pointer type this document warns against — and they resolved, but only because the
+  intervening edit happened to land _inside_ the bullet, below both. The method's success
+  was contingent on a fact unrelated to the method. So the finding is not "the hazard did
+  not fire"; it is **the hazardous method was used and got away with it**, and a clean
+  result read as validation of the method is how it survives to be used again. Apply the
+  counterfactual above: it will not hold next time, and nothing in the outcome says so.
+
+  The prediction that those anchors _had_ drifted was itself checked, and lost, for one
+  command. An anticipated finding with a plausible mechanism behind it is the hardest
+  case to check honestly, because it is far more tempting to report than a bare guess.
 
 ## Five ways a green check list still lies
 
