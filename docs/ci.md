@@ -786,7 +786,10 @@ per-worktree, and therefore per-session.** It is contemporaneous, and it survive
 the loss of the context that produced it:
 
 ```bash
-git reflog --date=iso | grep 'commit:' | grep '#<issue>'
+# 'commit:' alone misses 'commit (amend):' and 'rebase (pick):', which are
+# authorship too -- 130 such entries here, 103 matched, 27 missed (21%),
+# including this session's own #895, #887 and #882
+git reflog --date=iso | grep -E '(commit|commit \(amend\)|rebase \(pick\)):' | grep '#<issue>'
 ```
 
 **Key it to the issue, never to the PR number.** The local commit message carries
@@ -859,6 +862,65 @@ POSITIVE  "food-classifier diagnosis by measurement"       -> aeaf69f3  (mine)
 NEGATIVE  "catalog-growth diagnosis in the bundle budgets" -> (no matches)
 NEGATIVE  "replace the multi-creator budget guess"         -> (no matches)
 ```
+
+##### Key on the subject _text_, because a bare number matches three other things
+
+The argument above is about availability. There is a second argument, and it is the
+stronger one: a bare number in reflog text is **untyped**, and two of its three failure
+modes manufacture evidence rather than lose it. Measured in this worktree:
+
+```text
+674 : bare=2  real=0      100% spurious
+821 : bare=5  real=1        4 spurious
+945 : bare=2  real=0      100% spurious
+```
+
+**Hex.** SHAs are in the same text as subjects, so a three-digit key hits them:
+
+```text
+67a67488 commit: test(recipes): realign the co-creator escalation guard ...
+5674864c commit: test(e2e): resolve recipe sub-routes from the canonical ... (#666)
+```
+
+Both are `674` inside a SHA, and note both are `commit:` lines — filtering by entry
+type does not save you. A peer's positive arm was keyed entirely on `674`; in this
+worktree that key returns nothing but noise. It reached the right answer there only
+because the subject text was silently doing the work.
+
+**Branch names, which is the one to worry about.** Four of the five `821` hits:
+
+```text
+5dae741a checkout: moving from fix/food-classifier-diagnosis-821 to origin/main
+aeaf69f3 checkout: moving from 5dae741a... to fix/food-classifier-diagnosis-821
+```
+
+That is a **branch name**, and branch names are shared across worktrees — so those
+lines appear in a session that checked the branch out and did no work on it. This is
+precisely the unconditional-positive fault that got `git branch --list` rejected
+earlier, alive **inside the reflog**, the instrument adopted to replace it. Per-session
+storage bounds which _entries_ exist; it does not make their _contents_ per-session.
+Only `commit:`, `commit (amend):` and `rebase (pick):` entries are authorship evidence:
+
+```bash
+git reflog show HEAD --format='%h %gs' | grep -E '(commit|commit \(amend\)|rebase \(pick\)):'
+```
+
+Real evidence for `#821` is one line, not five:
+`aeaf69f3 commit: fix(perf): correct the food-classifier diagnosis by measurement (#821)`.
+
+**The squash suffix, which makes PR-keying fail even here.** The subject rule above
+notes GitHub appends the PR number; the consequence is that the appended number exists
+only on `main`:
+
+```text
+local reflog:  docs(ci): key the authorship probe to the commit subject (#944)
+origin/main:   docs(ci): key the authorship probe to the commit subject (#944) (#945)
+```
+
+`#945` is this session's own work, and a `945` search of its own reflog finds zero real
+hits. So "key on the subject" is not sufficient on its own — **key on the subject
+text**, and treat any number inside it as untyped until you have checked which of issue,
+PR, SHA fragment or branch name it matched.
 
 #### A void probe can return the correct answer
 
