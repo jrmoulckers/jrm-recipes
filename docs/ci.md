@@ -202,6 +202,69 @@ authorises a merge is still the affirmative `Quality gate == SUCCESS`, not the
 absence of failures — on #534 `gh pr checks` shows no `Quality gate` row at all,
 and nothing in that output says one is missing.
 
+#### UNREAD is a property of the commit, not of the run
+
+The rule above is applied one run at a time, and that is the wrong level. Re-measured
+on the same PR later, with a fresh push:
+
+```
+31574533504  completed/action_required  event=pull_request       jobs=0
+31574533237  in_progress/null           event=workflow_dispatch  jobs=11
+```
+
+Same shape, different ids — so the `action_required` run is not a stuck gate someone
+forgot to clear. It reappears on **every** push, and `.github/workflows/ci.yml:38-55`
+says why: `workflow_dispatch` exists precisely because this PR's event-driven runs are
+approval-gated, and `Verify dispatch source` fails closed unless the dispatched ref is
+the open same-repository Release Please PR opened by `github-actions[bot]`. The gated
+run is the designed state, not the fault.
+
+Read per run, this PR is unread forever — the empty-jobs run can never gain jobs, so
+the verdict never clears. Read per commit, it is fine: eleven jobs ran on that exact
+sha and all but one were terminal-success. **One unread run among siblings does not
+make the commit unread.** Aggregate first, then judge:
+
+```bash
+# UNREAD only if NO run on the commit has jobs; otherwise read the ones that do
+sha=$(gh pr view <n> --json headRefOid -q .headRefOid)
+for r in $(gh api "repos/jrmoulckers/jrm-recipes/actions/runs?head_sha=$sha" \
+             --jq '.workflow_runs[].id'); do
+  n=$(gh api "repos/jrmoulckers/jrm-recipes/actions/runs/$r/jobs?per_page=50" --jq '.jobs|length')
+  echo "$r jobs=$n"
+done
+```
+
+This is the first entry in this file whose error runs toward **false-blocked** rather
+than false-clean, and that is why it survived being written down twice. A rule that
+refuses to merge is the safe direction, so nobody audits it — but it still produced a
+wrong action, and a confident one: it read as _no CI has ever run on this PR_, when CI
+was running and passing at that moment.
+
+Two consequences worth having in advance.
+
+**The remedy is not the approval button.** _Approve and run workflows_ starts the
+`pull_request` run once; the next push produces another gated one. The standing remedy
+is to dispatch CI and read the dispatch run — which is what the workflow was built for.
+
+**The affirmative this file demands does not exist on that PR.** What authorises a
+merge here is `Quality gate == SUCCESS`, and there is no `Quality gate` job on that
+commit at all — the run that would carry it is the gated one. So the rule is not
+failing, it is **inapplicable**, and the missing row noted earlier in this section is
+that inapplicability rather than a symptom of it. The substitute has to be an
+affirmative too, not the absence of failures:
+
+> a `workflow_dispatch` run on the merge sha whose jobs are all terminal-success and
+> which **includes `Verify dispatch source`** — that job is what proves the dispatch
+> was the sanctioned one rather than an arbitrary ref someone typed into the UI.
+
+**And `gh pr checks` will not show you any of it.** It renders the PR's own checks, so
+a run reached by a different trigger is not merely unreported — it has no row to be
+absent from. On #534 that output is a single rate-limited `Vercel` failure while
+eleven dispatch jobs are green underneath it. Same shape as the abbreviated-sha and
+newest-run-on-branch faults: the population is selected by something other than the
+commit, and what falls outside the selection is indistinguishable from what does not
+exist.
+
 Two caveats on the frequency. A census of the 40 most recent completed `ci.yml`
 runs found **0** jobs in a non-terminal state, so this is transient rather than
 standing; re-measured later at n=30 with the `.status` probe above, still **0**, so
