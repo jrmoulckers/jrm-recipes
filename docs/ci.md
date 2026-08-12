@@ -106,11 +106,25 @@ cannot distinguish _no evidence_ from _no state_.
 Three corollaries, all learned the expensive way:
 
 - **Direction is not safety.** Most instances fail toward false-clean, which is why they
-  get hunted. Three did not: a false-_blocked_ merge rule, a false-_alarm_ audit, and an
-  authorship probe that fails toward _disclaiming_ work. A rule that refuses to act reads
-  as conservative, so nobody asks whether it can ever be satisfied. Safe-direction
-  failures are unpoliced, not harmless — and the authorship one is worst, because its
-  only available auditor is the party with an incentive not to look.
+  get hunted. Four did not: a false-_blocked_ merge rule, a false-_alarm_ audit, an
+  authorship probe that fails toward _disclaiming_ work, and the amplification of someone
+  else's finding past their evidence. A rule that refuses to act reads as conservative, so
+  nobody asks whether it can ever be satisfied. Safe-direction failures are unpoliced, not
+  harmless — and the last two are worst, for opposite reasons. The authorship probe's only
+  available auditor is the party with an incentive not to look. Amplification's only
+  available auditor is the party being flattered, who holds the evidence and has every
+  incentive to accept. **Restating a peer's finding more strongly reads as generosity from
+  the inside**, so it is never checked by either party.
+
+  The live instance: the pre-#971 reference audit was characterised as having _no input
+  from the subject whatsoever_, every PASS carrying _zero bits_. That could not have been
+  supported by anyone — no executable audit existed in the repository before `bccce831`;
+  it lived only in a shell session, so there was no artifact to read. The damage is not
+  the overstatement itself but that a flat "null instrument" erases the real, asymmetric
+  failure: substring matching passes a row carrying **extra** text, so drift of row away
+  from heading is invisible while heading away from row is caught. Collapsing an
+  asymmetric instrument into a null one makes its actual blind spot unlearnable.
+
 - **A void test that _agrees_ is never revisited.** One that disagrees gets contradicted
   eventually; one that returns the expected answer gets banked as validated, and the
   instrument is never audited again. So a probe is only as trustworthy as the last time
@@ -143,6 +157,13 @@ Three corollaries, all learned the expensive way:
   is not a check**: it has no output, so it can never be observed to fail, and nothing
   forces the thing actually run to resemble it. An instruction to audit is not an audit,
   which is the whole reason the snippet below is executable.
+
+  That yields the one form of this document's remedy that needs no judgement to apply.
+  **Prose cannot be given a positive control** — there is no input to break and nothing to
+  watch go red. So _"can I break an input and watch this go red?"_ is not advice about
+  rigour; it is a **one-question test for whether the thing is a check at all**, and it
+  separates the two categories cleanly every time. Ask it of any guard before trusting a
+  green, and of any procedure before believing it is enforced.
 
   One scope note, since the overstatement ran the other way too: that check was not
   blind to the file. It read the headings and would have fired had one been renamed. Its
