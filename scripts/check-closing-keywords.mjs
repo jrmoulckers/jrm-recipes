@@ -37,12 +37,26 @@ const KEYWORDS = [
 const KEYWORD_ALT = KEYWORDS.join('|');
 const TARGET = String.raw`(?:#\d+|https?://\S+/issues/\d+)`;
 
+// GitHub accepts an optional colon between the keyword and the target, but still
+// requires whitespace before the reference. Measured against this repository's own
+// pull request via `closingIssuesReferences` (#923/#924):
+//
+//   Closes #923      -> linked      Closes  :  #923 -> linked
+//   Closes: #923     -> linked      Closes:#923     -> NOT linked
+//   Refs #923        -> not linked  (negative control)
+//
+// A separator of `\s+` alone therefore read `closes: #855` as ordinary prose and let
+// through the exact shape this guard exists to catch. The trailing `\s+` is kept
+// required rather than optional so the guard mirrors the measured behaviour instead
+// of flagging a form GitHub ignores.
+const SEP = String.raw`(?:\s*:)?\s+`;
+
 // Anywhere on the line.
-const MENTION = new RegExp(String.raw`\b(?:${KEYWORD_ALT})\s+${TARGET}`, 'i');
+const MENTION = new RegExp(String.raw`\b(?:${KEYWORD_ALT})${SEP}${TARGET}`, 'i');
 
 // The whole line is one or more closing references and nothing else.
 const DECLARATION = new RegExp(
-  String.raw`^(?:${KEYWORD_ALT})\s+${TARGET}(?:\s*,\s*${TARGET})*\.?$`,
+  String.raw`^(?:${KEYWORD_ALT})${SEP}${TARGET}(?:\s*,\s*${TARGET})*\.?$`,
   'i',
 );
 
@@ -61,7 +75,14 @@ export function findViolations(text, source = 'text') {
   // issue -- and would have passed PR #893, which quoted the incident in a
   // fence.
   text.split(/\r?\n/).forEach((raw, index) => {
-    const line = raw.trim().replace(/^>\s*/, '');
+    // A blockquote marker and a list marker both carry a reference that GitHub
+    // still acts on, and neither makes the line prose. Strip them so `- Closes
+    // #123` is read as the declaration it is, while `- Closes #123 because ...`
+    // still fails DECLARATION and is reported.
+    const line = raw
+      .trim()
+      .replace(/^>\s*/, '')
+      .replace(/^(?:[-*+]|\d+[.)])\s+/, '');
     if (!MENTION.test(line)) return;
     if (DECLARATION.test(line)) return;
     violations.push({ source, line: index + 1, text: excerpt(line) });
@@ -76,7 +97,7 @@ export function findViolations(text, source = 'text') {
 // use a full URL and act on the other repository's issue, which this check
 // cannot read, so they are deliberately out of scope rather than looked up
 // against the wrong repository.
-const BARE_CLOSING_REF = new RegExp(String.raw`\b(?:${KEYWORD_ALT})\s+#(\d+)`, 'gi');
+const BARE_CLOSING_REF = new RegExp(String.raw`\b(?:${KEYWORD_ALT})${SEP}#(\d+)`, 'gi');
 
 // Matches the heading AGENTS.md prescribes, at any heading level.
 export const HUMAN_ACTION_HEADING = /^\s{0,3}#{1,6}\s*Needs Human Action\s*$/im;
