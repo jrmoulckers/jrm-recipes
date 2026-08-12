@@ -93,7 +93,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@jrmoulckers/eslint-config": ">=0.11.0 <1.0.0",
+    "@jrmoulckers/eslint-config": ">=0.17.0 <1.0.0",
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^16.2.10",
     "@next/eslint-plugin-next": "^15.5.21 || ^16.0.0",
@@ -102,7 +102,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/eslint-plugin-jsx-a11y": "^6.10.1",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
@@ -113,6 +112,7 @@
     "eslint-plugin-drizzle": "^0.2.3",
     "eslint-plugin-i18next": "^6.1.5",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^26.0.0",
     "postcss": "^8.5.19",

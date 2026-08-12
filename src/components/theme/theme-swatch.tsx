@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 
 import type { ColorScheme, UITheme } from '~/config/themes';
 import { useTheme } from '~/components/theme/theme-provider';

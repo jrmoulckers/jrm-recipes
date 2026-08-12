@@ -1,6 +1,6 @@
 import { cleanup, render as rtlRender, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import * as React from 'react';
+import type * as React from 'react';
 
 import { CardDietaryBadge, type CardDietaryMember } from './card-dietary-badge';
 import { useActiveMemberStore } from '~/lib/active-member-store';

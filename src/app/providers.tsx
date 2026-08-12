@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 
 import { type ColorScheme, type UITheme } from '~/config/themes';
 import { type A11yPrefs } from '~/config/a11y';

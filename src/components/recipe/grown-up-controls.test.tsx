@@ -1,6 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 
 import { ThemeProvider } from '~/components/theme/theme-provider';
 import { GrownUpControls } from './grown-up-controls';

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { Home, RotateCcw, TriangleAlert } from 'lucide-react';
 
 import { cn } from '~/lib/utils';

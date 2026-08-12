@@ -1,6 +1,6 @@
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import * as React from 'react';
+import type * as React from 'react';
 
 import { CookAllergenBanner } from './cook-allergen-banner';
 import { type CookIngredient, type CookRecipe } from './types';

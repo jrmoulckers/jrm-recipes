@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { useLocale } from 'next-intl';
 import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
