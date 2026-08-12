@@ -446,6 +446,16 @@ export function CookExperience({
       </p>
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        {/*
+          One-handed pointer gestures are a redundant touch affordance, not the only
+          path to step navigation. Keyboard users are served by the window-level
+          handler above (ArrowLeft / ArrowRight / Space via `stepShortcutForKey`) and
+          by the visible Previous/Next buttons below. Attaching a key handler here
+          would duplicate that, and giving a whole step panel `role="button"` +
+          `tabIndex` would put a large fake control in the tab order that itself
+          contains real controls — worse for assistive tech, not better.
+        */}
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
         <section
           key={currentStep.id}
           aria-labelledby="current-step-title"
@@ -947,6 +957,11 @@ function StepMedia({
         </div>
       )}
       {step.videoUrl && (
+        // Step videos are user-uploaded and the data model has no caption/track
+        // storage, so there is no caption to render. Adding an empty <track> would
+        // satisfy the rule while giving deaf and hard-of-hearing users nothing —
+        // the honest fix is a captions-upload feature, tracked in #989.
+        // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           controls
           playsInline

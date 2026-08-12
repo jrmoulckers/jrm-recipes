@@ -244,6 +244,7 @@ export function PhotoLibrary({
       <div
         role="listbox"
         aria-label={t('gridLabel')}
+        tabIndex={-1}
         onKeyDown={onKeyDown}
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
       >

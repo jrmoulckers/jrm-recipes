@@ -277,6 +277,14 @@ export function CommandMenu() {
               />
             </div>
 
+            {/*
+              WAI-ARIA APG combobox pattern: the input owns focus and keyboard
+              interaction (ArrowUp/ArrowDown/Enter in `onInputKeyDown`) and points at
+              the active option with `aria-activedescendant`. The options are
+              deliberately not focusable, so a key handler on an <li role="option">
+              could never fire — it would be unreachable code, not added coverage.
+              Hence the scoped disables on each option below.
+            */}
             <ul
               id={listId}
               role="listbox"
@@ -294,6 +302,7 @@ export function CommandMenu() {
                       const Icon = item?.icon ?? Search;
                       const active = command.index === activeIndex;
                       return (
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- APG combobox: options are not focusable; see note above.
                         <li
                           key={`nav-${command.labelKey}`}
                           id={optionId(command.index)}
@@ -325,6 +334,7 @@ export function CommandMenu() {
                       const active = command.index === activeIndex;
                       if (command.kind === 'all') {
                         return (
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- APG combobox: options are not focusable; see note above.
                           <li
                             key="all-results"
                             id={optionId(command.index)}
@@ -348,6 +358,7 @@ export function CommandMenu() {
                       }
                       const { recipe } = command;
                       return (
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- APG combobox: options are not focusable; see note above.
                         <li
                           key={`recipe-${recipe.id}`}
                           id={optionId(command.index)}

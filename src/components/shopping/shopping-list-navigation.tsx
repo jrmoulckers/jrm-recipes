@@ -20,6 +20,7 @@ import {
 import { Input } from '~/components/ui/input';
 import { NativeSelect } from '~/components/ui/native-select';
 import { planStoreDisplay, type StoreSummary } from '~/lib/shopping-stores';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 
 export type ShoppingListSummary = {
   id: string;
@@ -178,6 +179,7 @@ function CreateListDialog({
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState('');
   const [selection, setSelection] = React.useState<StoreSelection>(EMPTY_SELECTION);
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -196,7 +198,7 @@ function CreateListDialog({
           {t('new')}
         </Button>
       </DialogTrigger>
-      <DialogContent size="sm">
+      <DialogContent size="sm" onOpenAutoFocus={onOpenAutoFocus}>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{t('create.title')}</DialogTitle>
@@ -209,6 +211,7 @@ function CreateListDialog({
             selection={selection}
             onNameChange={setName}
             onSelectionChange={setSelection}
+            nameRef={nameRef}
           />
           <DialogFooter>
             <DialogClose asChild>
@@ -258,6 +261,7 @@ function ManageListDialog({
     storeIds: list.storeIds,
     newStoreNames: [],
   });
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
 
   React.useEffect(() => {
     if (!open) return;
@@ -280,7 +284,7 @@ function ManageListDialog({
           {t('manage')}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
         <form onSubmit={submit} className="grid gap-5">
           <DialogHeader>
             <DialogTitle>{t('manageTitle', { name: list.name })}</DialogTitle>
@@ -293,6 +297,7 @@ function ManageListDialog({
             selection={selection}
             onNameChange={setName}
             onSelectionChange={setSelection}
+            nameRef={nameRef}
           />
           {onRenameStore && onDeleteStore && stores.length > 0 && (
             <StoreLibrary
@@ -384,6 +389,7 @@ function ListFields({
   selection,
   onNameChange,
   onSelectionChange,
+  nameRef,
 }: {
   prefix: string;
   name: string;
@@ -391,6 +397,8 @@ function ListFields({
   selection: StoreSelection;
   onNameChange: (value: string) => void;
   onSelectionChange: (value: StoreSelection) => void;
+  /** Focus target for the enclosing dialog's `onOpenAutoFocus`. */
+  nameRef?: React.Ref<HTMLInputElement>;
 }) {
   const t = useTranslations('shopping.lists');
   const [draftStore, setDraftStore] = React.useState('');
@@ -434,7 +442,7 @@ function ListFields({
           value={name}
           onChange={(event) => onNameChange(event.target.value)}
           maxLength={120}
-          autoFocus
+          ref={nameRef}
         />
       </div>
       <fieldset className="grid gap-2">

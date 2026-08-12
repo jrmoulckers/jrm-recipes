@@ -1567,7 +1567,6 @@ export function RecipeEditor({
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder={t('placeholders.title')}
-                  autoFocus
                 />
               </Field>
               <Field

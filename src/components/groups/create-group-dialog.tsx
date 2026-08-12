@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
-
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { createGroupAction } from '~/server/groups/actions';
 import { type GroupInput } from '~/server/groups/validation';
 import { Button } from '~/components/ui/button';
@@ -28,6 +28,7 @@ export function CreateGroupDialog({ children }: { children?: React.ReactNode }) 
   const t = useTranslations('groups.create');
   const nameId = React.useId();
   const descriptionId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -71,7 +72,7 @@ export function CreateGroupDialog({ children }: { children?: React.ReactNode }) 
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
         <form onSubmit={onSubmit} className="grid gap-5">
           <DialogHeader>
             <DialogTitle>{t('title')}</DialogTitle>
@@ -84,7 +85,7 @@ export function CreateGroupDialog({ children }: { children?: React.ReactNode }) 
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder={t('fields.name.placeholder')}
-              autoFocus
+              ref={nameRef}
             />
           </FormField>
 

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bookmark, BookmarkPlus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
+import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 
 import { createSavedSearchAction, deleteSavedSearchAction } from '~/server/searches/actions';
 import { type SavedSearch } from '~/server/searches/queries';
@@ -42,6 +43,7 @@ export function SavedSearches({
   const router = useRouter();
   const pathname = usePathname();
   const nameId = React.useId();
+  const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
   const [saveOpen, setSaveOpen] = React.useState(false);
   const [listOpen, setListOpen] = React.useState(false);
   const [name, setName] = React.useState('');
@@ -136,7 +138,7 @@ export function SavedSearches({
         >
           <BookmarkPlus /> {t('savedSearches.trigger')}
         </Button>
-        <DialogContent>
+        <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
           <form onSubmit={onSave} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>{t('savedSearches.title')}</DialogTitle>
@@ -152,7 +154,7 @@ export function SavedSearches({
                 placeholder={t('savedSearches.namePlaceholder')}
                 aria-invalid={Boolean(fieldError)}
                 aria-describedby={fieldError ? `${nameId}-error` : undefined}
-                autoFocus
+                ref={nameRef}
               />
               {fieldError ? (
                 <p id={`${nameId}-error`} className="text-sm text-destructive">
