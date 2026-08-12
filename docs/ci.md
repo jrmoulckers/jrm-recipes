@@ -1041,14 +1041,45 @@ no matter how far behind production runs.
 Branch names are also not immutable: they can be force-pushed, deleted and
 recreated.
 
-**`AGENTS.md`'s author-based gate is not observable.** It distinguishes actions on
-"your own" PRs from gated ones on "a PR you did not author", but with one identity
-every PR reads as your own; the platform will not tell a session which it wrote.
-That text is canonical (synced `studio:base` block) and is not reinterpreted here
-— the observability gap is tracked in #859 for routing upstream. Until then,
-treat the gate as binding on what you _know_ you authored — and when that is in
-doubt, read the reflog above rather than deciding from memory, because this is
-the gate where a misremembered answer merges someone else's work.
+**`AGENTS.md`'s author-based gate is not observable _between sessions_.** It
+distinguishes actions on "your own" PRs from gated ones on "a PR you did not author",
+and with one identity every session-authored PR reads as your own; the platform will
+not tell a session which it wrote. That text is canonical (synced `studio:base` block)
+and is not reinterpreted here — the observability gap is tracked in #859 for routing
+upstream. Until then, treat the gate as binding on what you _know_ you authored — and
+when that is in doubt, read the reflog above rather than deciding from memory, because
+this is the gate where a misremembered answer merges someone else's work.
+
+**It is fully observable for bot authors, and that is the case that matters.** The
+ambiguity above is between sessions sharing one identity. A bot is decidable:
+
+```bash
+gh pr view 534 --json author -q .author.login    # app/github-actions
+```
+
+Check it before merging anything you did not open in this session, because the
+unqualified form of the claim above invites the opposite conclusion — _the gate is
+unobservable, so it cannot be what stops me_ — on precisely the PRs where it is
+observable and does stop you.
+
+**A green affirmative answers _may this merge_, never _may I merge it_.** Those are
+independent questions, and §4's substitute answers only the first. #534 is the worked
+example on both counts: its CI question is now fully resolved,
+
+```text
+31574533504  pull_request       completed/action_required   jobs=0
+31574533237  workflow_dispatch  completed/success           all jobs terminal
+```
+
+and it remains human-gated, because `app/github-actions` opened it and it would ship
+80+ commits. Resolving the CI question moved it from _unmergeable and misdiagnosed_ to
+_mergeable by a human_; it did not move it to _mergeable by a session_.
+
+This is not a hypothetical reading. A peer session, working from these sections,
+concluded that #534 was "now _not_" a human-gated item "which is the practical result
+of your message" — the correct CI finding carried straight through the unqualified
+sentence above into the wrong authority conclusion, on the highest-consequence PR in
+the repository.
 
 Note the shape, because it is the same one this document is otherwise about: an
 empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
