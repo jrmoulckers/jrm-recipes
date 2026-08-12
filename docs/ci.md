@@ -604,6 +604,23 @@ reads as confirmation of whatever was asked. It is the identifier-keyed probe in
 §`Which base changes actually invalidate a check`, one more time: it was reached
 for first, and it "confirmed" #820 for a reason unconnected to authorship.
 
+Two further heuristics get proposed and both fail the same way, so test any
+candidate by asking whether **a session that did not do the work would read a
+different value**:
+
+| candidate                    | why it fails                                                                                                                                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR head branch name          | Names the _work_, not the author. `gh pr view 861 --json headRefName` returns `feat/verify-measurement-claims-858` to every session alike, and that branch is in this worktree's `branch --list` too. It also does not reliably encode an issue — `fix/closingsep` (#924) carries no number. |
+| Session display name ≈ title | Self-declared and mutable, and a session shipping two PRs can match at most one.                                                                                                                                                                                                             |
+
+Measured against the same pair, the reflog does discriminate: the peer's branch
+has **no** entry in this worktree, while `fix/closingsep` has its checkout. That
+positive-and-negative pair is what qualifies it as a check — a probe seen only
+agreeing has not been shown able to disagree.
+
+Branch names are also not immutable: they can be force-pushed, deleted and
+recreated.
+
 **`AGENTS.md`'s author-based gate is not observable.** It distinguishes actions on
 "your own" PRs from gated ones on "a PR you did not author", but with one identity
 every PR reads as your own; the platform will not tell a session which it wrote.
