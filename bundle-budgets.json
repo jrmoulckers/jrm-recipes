@@ -30,8 +30,8 @@
         "route": "/recipes/[cook]/[recipe]",
         "kb": 308,
         "platform": "linux",
-        "runId": "31476537117",
-        "issue": 820
+        "runId": "31622403900",
+        "issue": 996
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
@@ -45,7 +45,8 @@
   "routes": {
     "/": 228,
     "/recipes": 255,
-    "/recipes/[cook]/[recipe]": 308,
+    "/recipes/[cook]/[recipe]": 312,
     "/recipes/[cook]/[recipe]/edit": 218
-  }
+  },
+  "//zero-headroom-variance": "Issue #996 (main went red at 96bbac61 with no code change). /recipes/[cook]/[recipe] is re-baselined 308 -> 312. WHAT WAS MEASURED, on Linux CI, for the SAME route across four runs:\r\n\r\n  run 31476537117              308    (the original #820 claim)\r\n  PR #995,  a7b8a7a3           308\r\n  main,     96bbac61  <- RED   309\r\n  PR #997,  3802856d           308\r\n\r\n96bbac61's parent is a704dd49 with nothing landing in between, so the red run and PR #995's green run built a BYTE-IDENTICAL TREE on the same platform and disagreed by a full displayed kilobyte. The merge in between added no client bytes: cuid2 is server-only, and a search of the built client chunks -- run with a lucide/useState positive control, so a null result was distinguishable from a broken search -- finds no bignumber, BigNumber, error-causes or createId. The only cuid hits are Zod's own z.string().cuid() validator kind names.\r\n\r\nTHE CAUSE IS ROUNDING, NOT DRIFT, AND THE OTHER THREE ROUTES PROVE IT. Across those same runs / read 226.0, /recipes read 253.0 and /recipes/[cook]/[recipe]/edit read 218.0 EVERY TIME. A systematic push-vs-pull_request difference would have moved all four; only this one moved. Its true first-load size therefore sits near a half-kilobyte boundary, so Math.round lands on 308 or 309 depending on sub-100-byte chunk redistribution, while routes further from a boundary stay put.\r\n\r\nTHIS EXTENDS //lucide-1x RATHER THAN REPEATING IT. That note establishes that two PLATFORMS can disagree about which route moved, because 'next build' prints whole kB and the integer boundary sits at a different fractional offset on each platform. This is the same instrument failing one step further in: THE SAME TREE ON THE SAME PLATFORM MEASURED 308 AND 309 IN TWO RUNS. A budget at zero headroom is therefore not merely tight, it is a latent failure needing no code change to fire.\r\n\r\nThe new budget is the measured 309, plus the 2 kB //headroom-requirement minimum, plus 1 kB for the rounding flip measured here: sizing it at exactly 311 would satisfy the rule while leaving nothing to absorb the very effect that caused this failure.\r\n\r\nKNOWN LIMITATION, FILED SEPARATELY: the #858 claim below is strict equality against Math.round, so for a route straddling a rounding boundary no single integer is stable -- this run measures 308 and the run that produced the red measured 309. The claim is recorded at 308, the value three of the four runs above produced, which means a future run that reads 309 will fail the claim (though NOT the budget, which now has room for it). Widening #858 to express a boundary tolerance is a change to the guard's semantics and is left as its own decision rather than made in passing here.\r\n\r\n/recipes/[cook]/[recipe]/edit remains at 218/218 with 0.0 kB free and is expected to fail this way eventually, but it is deliberately NOT bumped -- nothing measured it as needing a raise, and inheriting a tight budget is not a failure."
 }
