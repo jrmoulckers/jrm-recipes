@@ -297,21 +297,51 @@ is PowerShell's range operator, so an unquoted `$sha..origin/main` is split into
 arguments before git sees it:
 
 ```powershell
-git rev-list --count $sha..origin/main     # 1   <- wrong
-git rev-list --count "$sha..origin/main"   # 48  <- correct
+$sha = "5c23673f"
+git rev-list --count $sha..origin/main     # varies  <- wrong
+git rev-list --count "$sha..origin/main"   # 69      <- correct
 ```
 
 ```
-unquoted -> 5c23673f945a05d3ca89b65736c5d396a8c852df ..origin/main
-quoted   -> 5c23673f945a05d3ca89b65736c5d396a8c852df..origin/main
+unquoted -> ["5c23673f", "..origin/main"]   two arguments
+quoted   -> ["5c23673f..origin/main"]       one argument
 ```
 
-The unquoted form does not error and does not return zero. It returns a plausible
-small number **in the reassuring direction** — "1 commit behind" reads as basically
-current, when the measured answer was 48, including every privacy-copy correction
-that is the reason anyone watches drift. Like `Select-String -SimpleMatch` and the
-stuck-gate run conclusion, the instrument returns a well-formed value describing
-something other than what you asked.
+Two corrections to how this entry was first written, both from re-measuring it after
+a second session reported a different wrong number.
+
+**Only the variable form splits.** A literal `5c23673f..origin/main`, unquoted,
+survives as a single token and returns the right answer; it is the `$var..` sequence
+PowerShell tokenizes. So the hand-typed spelling is safe and the scripted one is not,
+which is the reverse of the usual advice.
+
+**The wrong number is not stable, and not always small.** Split into two arguments,
+git counts commits reachable from `<sha>` _or_ `origin/main`, minus those reachable
+from `HEAD` — because a bare `..origin/main` means `HEAD..origin/main`. The result is
+therefore a function of where your checkout happens to sit, not a symptom:
+
+| `HEAD`                 | unquoted returns         |
+| ---------------------- | ------------------------ |
+| `origin/main` (synced) | **0**                    |
+| one commit behind      | 1                        |
+| ~20 commits behind     | 22                       |
+| at the served sha      | **69 — correct by luck** |
+
+The quoted truth in every row is 69.
+
+Three consequences, in increasing order of danger. It **can return zero**, on a
+checkout synced to `main` — which is exactly where a drift check is most naturally
+run, and where zero reads as "production is current". It can be **larger** than the
+truth as readily as smaller: two sessions reported `1` and `54` for the same
+repository on the same day, and neither figure is a sign to watch for, since both are
+just `f(HEAD)`. And it can return **exactly the right answer** when `HEAD` sits at the
+served sha — so verifying the command in the obvious way passes while the command
+stays broken.
+
+The only durable claim is therefore: **unquoted is wrong and does not error.** Do not
+learn a number to recognise. Like `Select-String -SimpleMatch` and the stuck-gate run
+conclusion, the instrument returns a well-formed value describing something other than
+what you asked.
 
 **Fetch first, for the same reason.** `origin/main` is a local ref that only moves
 when you move it, so in a fleet merging steadily the range silently measures how
@@ -324,8 +354,9 @@ git rev-list --count "<last-successful-sha>..origin/main"
 
 A session verifying a reported drift of 58 got 36, from correct arithmetic against
 an `origin/main` 22 commits old, and reported it as reproducing the number exactly.
-That is the worse half of this failure: the quoting bug returns `1` and looks
-wrong, while a stale ref returns a number that looks like agreement. Two sessions
+That is the worse half of this failure: a stale ref returns a number that looks like
+agreement — and per the table above, so can the quoting bug. Neither reliably
+announces itself. Two sessions
 running the same command on the same repository can differ by exactly their fetch
 gap and neither sees an error.
 
