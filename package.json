@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.4",
-    "@hookform/resolvers": "^3.10.0",
     "@paralleldrive/cuid2": "^3.3.0",
     "@radix-ui/react-accordion": "^1.2.16",
     "@radix-ui/react-alert-dialog": "^1.1.23",
@@ -85,7 +84,6 @@
     "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.81.0",
     "server-only": "^0.0.1",
     "sonner": "^2.0.1",
     "stripe": "^22.3.1",
