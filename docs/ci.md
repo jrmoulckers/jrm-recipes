@@ -107,20 +107,30 @@ verdict.** A stuck gate is _unread_, not green. Get a real verdict by re-running
 that job:
 
 ```bash
+# Select on .status, not on a name. Prints every non-terminal job with its id.
 gh api repos/jrmoulckers/jrm-recipes/actions/runs/<run-id>/jobs?per_page=50 \
-  --jq '.jobs[] | select(.name=="Quality gate") | .id'
+  --jq '.jobs[] | select(.status != "completed") | "\(.name) \(.status) \(.id)"'
 gh api -X POST repos/jrmoulckers/jrm-recipes/actions/jobs/<job-id>/rerun
 ```
+
+**It is not specific to `Quality gate`.** That is where it was first seen, but a
+later report put `Migration drift` in the same state — unverifiable after the fact,
+for the reason in the caveat below — and a PR run carries 15 jobs. A probe written
+as `select(.name=="Quality gate")` answers a stuck `Migration drift` run with empty
+output, which is the same answer it gives for a clean one. Select on `.status`,
+which is the property actually in question, rather than on a name you have to guess
+right before you can detect anything.
 
 That returned `completed/success` in about a minute, and the merge proceeded on a
 verdict rather than an inference.
 
 Two caveats on the frequency. A census of the 40 most recent completed `ci.yml`
 runs found **0** jobs in a non-terminal state, so this is transient rather than
-standing. But that number is weaker than it looks: **re-running the job erases the
-evidence**, so the census can only find instances nobody fixed, and fixing them is
-the natural response to hitting one. Record the run id and timestamps _before_
-re-running.
+standing; re-measured later at n=30 with the `.status` probe above, still **0**, so
+the figure survives the generalization. But that number is weaker than it looks:
+**re-running the job erases the evidence**, so the census can only find instances
+nobody fixed, and fixing them is the natural response to hitting one. Record the run
+id and timestamps _before_ re-running.
 
 ### 5. A cancelled run leaves a failure attached to a commit that passed
 
