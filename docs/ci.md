@@ -556,20 +556,62 @@ misattributed work in both directions. It also means any tally of the form
 "session X did this N times" is unsound — the platform cannot distinguish the
 sessions being counted, so the count is not evidence.
 
-The rule this forces: **provenance must be self-declared in the body, or it does
-not exist.** The `(#819)` / `RECONFIRMED (#819)` markers in `bundle-budgets.json`
-are the pattern. It is the same discipline as recording a run id and platform
-beside a measurement, for the same reason — a claim you cannot re-derive is a
-claim you cannot audit, and that applies to _who said it_ exactly as it applies to
-_what they measured_.
+The rule this forces: **provenance must be self-declared in the body**, because
+nothing on the platform will supply it. The `(#819)` / `RECONFIRMED (#819)`
+markers in `bundle-budgets.json` are the pattern. It is the same discipline as
+recording a run id and platform beside a measurement, for the same reason — a
+claim you cannot re-derive is a claim you cannot audit, and that applies to _who
+said it_ exactly as it applies to _what they measured_.
+
+#### A declaration is checkable: the reflog is per-session
+
+Self-declaration is the only record _on GitHub_. It is not the only record. A
+session runs in a worktree, and a worktree's `.git` is a file rather than a
+directory:
+
+```text
+gitdir: C:/Users/jrmou/src/jrm-recipes/.git/worktrees/<worktree-name>
+```
+
+`logs/HEAD` lives under that per-worktree path, so **the HEAD reflog is
+per-worktree, and therefore per-session.** It is contemporaneous, and it survives
+the loss of the context that produced it:
+
+```bash
+git reflog --date=iso | grep 'commit:' | grep '#<issue>'
+```
+
+Prefer it to memory, and **do not retract a declaration on memory alone** when
+this can be read instead. Memory fails silently in the way this document is
+otherwise entirely about: absence from a session's surviving context and absence
+of authorship produce the same output. #925 is the worked case — a declaration of
+#820 was retracted as unremembered, and the reflog held two commits for it
+(`91a7da93`, `535f5b05`), while four issues the same session had _not_ disputed
+were absent. Exactly inverted, and the retraction was the destructive move.
+
+Two conditions, or the negative result means nothing:
+
+| condition        | check                                   | why                                                         |
+| ---------------- | --------------------------------------- | ----------------------------------------------------------- |
+| Covers the event | `git reflog \| tail -1` for the horizon | Before the worktree existed, absence has an unrelated cause |
+| Has not decayed  | `gc.reflogExpire`, default 90 days      | An expired entry is indistinguishable from work never done  |
+
+**`git branch --list` is not this evidence, though it looks like it.** Worktrees
+_share_ refs with the clone, so a session sees every other session's branches —
+~230 here, including whichever branch a peer currently occupies. Branch presence
+is a property of the clone, so the probe answers _present_ to every query and
+reads as confirmation of whatever was asked. It is the identifier-keyed probe in
+§`Which base changes actually invalidate a check`, one more time: it was reached
+for first, and it "confirmed" #820 for a reason unconnected to authorship.
 
 **`AGENTS.md`'s author-based gate is not observable.** It distinguishes actions on
 "your own" PRs from gated ones on "a PR you did not author", but with one identity
-every PR reads as your own; a session can only know the difference from its own
-memory of creating it. That text is canonical (synced `studio:base` block) and is
-not reinterpreted here — the observability gap is tracked in #859 for routing
-upstream. Until then, treat the gate as binding on what you _know_ you authored,
-not on what the platform reports.
+every PR reads as your own; the platform will not tell a session which it wrote.
+That text is canonical (synced `studio:base` block) and is not reinterpreted here
+— the observability gap is tracked in #859 for routing upstream. Until then,
+treat the gate as binding on what you _know_ you authored — and when that is in
+doubt, read the reflog above rather than deciding from memory, because this is
+the gate where a misremembered answer merges someone else's work.
 
 Note the shape, because it is the same one this document is otherwise about: an
 empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
