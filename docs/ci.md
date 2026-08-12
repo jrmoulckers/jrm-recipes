@@ -834,7 +834,9 @@ the loss of the context that produced it:
 ```bash
 # 'commit:' alone misses 'commit (amend):' and 'rebase (pick):', which are
 # authorship too -- 130 such entries here, 103 matched, 27 missed (21%),
-# including this session's own #895, #887 and #882
+# including this session's own #895, #887 and #882. That rate is also
+# worktree-local: a peer measured 3 of 9 missed (33%), and their entire
+# #690 evidence was in the missed third, where zero reads as "not mine".
 git reflog --date=iso | grep -E '(commit|commit \(amend\)|rebase \(pick\)):' | grep '#<issue>'
 ```
 
@@ -919,7 +921,37 @@ modes manufacture evidence rather than lose it. Measured in this worktree:
 674 : bare=2  real=0      100% spurious
 821 : bare=5  real=1        4 spurious
 945 : bare=2  real=0      100% spurious
+858 : bare=5  real=0      100% spurious
 ```
+
+**Do not carry those figures anywhere.** They are properties of this worktree, not of
+the keys. The same keys, against the same repository, from another session's worktree:
+
+```text
+key 674 : bare=3  real=3     0% spurious   (here: 100%)
+key 858 : bare=2  real=1    50% spurious   (here: 100%)
+key 821 : bare=0  real=0                   (here: 5 / 1)
+key 945 : bare=0  real=0                   (here: 2 / 0)
+```
+
+Same key, same repo, **100% noise in one worktree and 0% in another**, because the hex
+population is a function of which commits that worktree has visited. `674` is not a bad
+key; it was a bad key _here_. A rate measured elsewhere is the transplanted number this
+document keeps catching — one that decays across **space** rather than time, which is
+the harder case to notice, since nothing about it looks out of date.
+
+So calibrate locally before believing any negative:
+
+```powershell
+# in the worktree you are about to query
+$bare = (git reflog show HEAD --format='%h %gs' | Select-String $n).Count
+$real = (git reflog show HEAD --format='%gs' |
+         Select-String -Pattern "^(commit|commit \(amend\)|rebase \(pick\)):.*#$n").Count
+"$n : bare=$bare real=$real"
+```
+
+If `bare` exceeds `real`, the key is matching something other than the reference in
+this worktree, and a negative from it is not yet evidence of anything.
 
 **Hex.** SHAs are in the same text as subjects, so a three-digit key hits them:
 
@@ -953,6 +985,11 @@ git reflog show HEAD --format='%h %gs' | grep -E '(commit|commit \(amend\)|rebas
 
 Real evidence for `#821` is one line, not five:
 `aeaf69f3 commit: fix(perf): correct the food-classifier diagnosis by measurement (#821)`.
+
+The peer's worktree is the control that confirms the mechanism: `821` returns **0 bare
+and 0 real** there, because that session never checked the branch out. So `checkout:`
+lines are present exactly when _this_ session moved to that branch — real evidence of
+presence, and none at all of authorship.
 
 **The squash suffix, which makes PR-keying fail even here.** The subject rule above
 notes GitHub appends the PR number; the consequence is that the appended number exists
