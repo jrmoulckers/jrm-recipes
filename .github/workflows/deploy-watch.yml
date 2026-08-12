@@ -79,9 +79,22 @@ jobs:
           # against the same endpoint when verifying it. If the terminal status is
           # missing, $t is "" and the pending comparison is false for every row,
           # so both come back empty rather than mispairing.
-          times="$(gh api "repos/${REPO}/commits/${DEPLOY_SHA}/statuses?per_page=100" \
+          #
+          # The call's own exit status is kept, because "the API failed" and "the
+          # deploy recorded no pending status" are different facts that used to
+          # arrive as the same empty string. They are separable in the data: a
+          # quota row has a terminal status and no pending one (#913), while a
+          # failed call has neither. Collapsing them made an instrument fault
+          # read as a property of the deploy -- the failure this whole job exists
+          # to stop being inherited.
+          if times="$(gh api "repos/${REPO}/commits/${DEPLOY_SHA}/statuses?per_page=100" \
             --jq '[.[] | select(.context | test("vercel"; "i"))] | (map(select(.state == "failure" or .state == "error")) | first | .created_at // "") as $t | [(map(select(.state == "pending" and .created_at < $t)) | first | .created_at // ""), $t] | @tsv' \
-            2>/dev/null || printf '\t')"
+            2>/dev/null)"; then
+            api_ok=1
+          else
+            api_ok=0
+            times="$(printf '\t')"
+          fi
           pending_at="$(printf '%s' "${times}" | cut -f1)"
           terminal_at="$(printf '%s' "${times}" | cut -f2)"
 
@@ -93,8 +106,12 @@ jobs:
             else
               phase="survived ${secs}s, so it got PAST install. This does NOT match the #826 signature -- the cause has changed. Do not inherit that diagnosis; re-derive it."
             fi
+          elif [ "${api_ok}" -eq 0 ]; then
+            phase="could not be timed because the statuses API call FAILED. That is an instrument fault, not a property of this deploy -- check the job's \`statuses: read\` scope. Read no cause into it."
+          elif [ -n "${terminal_at}" ]; then
+            phase="terminal status at ${terminal_at} with no pending status before it, which is the quota signature (#913): rate limited, so the build never started and there is no install phase to blame. The description above should read 'Deployment rate limited'."
           else
-            phase="could not be timed (pending=${pending_at:-none} terminal=${terminal_at:-none}). Classify before assuming a cause."
+            phase="no Vercel commit status found for this sha at all. Classify before assuming a cause."
           fi
 
           echo "Phase:       ${phase}"

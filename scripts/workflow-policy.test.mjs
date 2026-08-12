@@ -209,6 +209,19 @@ describe('workflow integrity policy', () => {
     expect(failureJob.body).toContain('-le 20');
     expect(failureJob.body).toContain('died at or before');
     expect(failureJob.body).toContain('got PAST install');
+
+    // And three distinct fallbacks, because the untimed cases are not one case.
+    // `|| printf` used to swallow the call's exit status, so a failed API read
+    // and a deploy that genuinely recorded no pending status arrived as the same
+    // empty string and printed the same sentence. They are separable in the
+    // data: a quota row has a terminal status and no pending one (#913), a
+    // failed call has neither. Keeping the masking form would restore an
+    // instrument fault that reads as a property of the deploy.
+    expect(failureJob.body).toMatch(/if times="\$\(gh api/);
+    expect(failureJob.body).not.toContain('|| printf');
+    expect(failureJob.body).toContain('statuses API call FAILED');
+    expect(failureJob.body).toContain('quota signature (#913)');
+    expect(failureJob.body).toContain('no Vercel commit status found');
   });
 
   it('keeps the closing-keyword guard on a job the gate waits for', () => {
