@@ -210,23 +210,29 @@ Three corollaries, all learned the expensive way:
 
   That yields the one form of this document's remedy that needs no judgement to apply.
   **Prose cannot be given a positive control** — there is no input to break and nothing to
-  watch go red. So _"can I break an input and watch this go red?"_ is not advice about
-  rigour; it is a **one-question test for whether the thing is a check at all**, and it
-  separates the two categories cleanly every time. Ask it of any guard before trusting a
-  green, and of any procedure before believing it is enforced.
+  watch go red. So the test is not advice about rigour; it is a **one-question test for
+  whether the thing is a check at all**, and it separates the two categories cleanly every
+  time:
+
+  > **Can I break an input and watch this go red — and does my break reach what the check
+  > actually reads?**
+
+  Ask it of any guard before trusting a green, and of any procedure before believing it is
+  enforced. **Both halves are load-bearing.** The first half alone is satisfiable by a
+  mutation the instrument never looks at, which makes it weaker than the manual step it
+  replaces — and the half that gets dropped is the one not in the sentence people quote.
 
   **A control is only as good as the mutation you pick, and the tempting mutation is the
-  one nearest to hand.** #983 shipped a check that counted rows by matching a table row
-  _prefix_. Its first positive control appended a character to a cell — the prefix
-  survived, the count held at `3`, and the check read green on a file broken on purpose.
-  Trusting that green would have shipped an unfalsifiable guard in the pull request about
-  unfalsifiable guards, one commit after `a guard is evidence only once it has been
-observed to fail on purpose`. So the procedure needs a second clause: **does the break
-  reach what the check actually reads?** Otherwise the control inherits the defect it
-  exists to detect, and a green produced by a mutation the instrument never looks at is
-  absence sharing a value with pass one level up — in the verification step rather than in
-  the artifact. The replacement counted rows bounded by the table's own header and was
-  proven red twice, on a deleted row and on a broken anchor.
+  one nearest to hand.** That is where the second clause comes from. #983 shipped a check
+  that counted rows by matching a table row _prefix_. Its first positive control appended a
+  character to a cell — the prefix survived, the count held at `3`, and the check read
+  green on a file broken on purpose. Trusting that green would have shipped an
+  unfalsifiable guard in the pull request about unfalsifiable guards, one commit after
+  `a guard is evidence only once it has been observed to fail on purpose`. The control
+  inherits the defect it exists to detect: a green produced by a mutation the instrument
+  never looks at is absence sharing a value with pass one level up — in the verification
+  step rather than in the artifact. The replacement counted rows bounded by the table's own
+  header and was proven red twice, on a deleted row and on a broken anchor.
 
   The same mechanism appears in an unrelated domain below: when the closing-keyword rule
   left a reader with no key, **the fallback nearest to hand was the pull request number —
