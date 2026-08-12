@@ -442,6 +442,14 @@ survives past ~20 s does **not** match the signature of every failure since #804
 and the report says so in those words. Treat that as the standing diagnosis having
 expired, not as a slower version of the same fault.
 
+Its **untimed** cases are separated too, because they are not one case. A failed
+statuses call and a deploy that recorded no `pending` status used to arrive as the
+same empty string and print the same sentence — so an instrument fault read as a
+property of the deploy, which is the precise inheritance this job exists to stop.
+They are separable in the data: a quota row has a terminal status and no `pending`
+one, a failed call has neither. The report now names which it is, and an API failure
+says outright that it is an instrument fault to read no cause into.
+
 ## Every session is the same GitHub user
 
 Concurrent sessions all authenticate as one account, so the platform cannot tell
