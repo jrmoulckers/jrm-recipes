@@ -404,6 +404,33 @@ announces itself. Two sessions
 running the same command on the same repository can differ by exactly their fetch
 gap and neither sees an error.
 
+**ORIGINAL DIAGNOSIS, REFUTED (#936) — retained as the record, not as a live
+claim.** The hazard above is real and the remedy stands; this specimen is not an
+instance of it. Measured:
+
+```text
+5c23673f..174c754c -> 36   174c754c committed 2026-08-11T05:03:51-07:00
+5c23673f..187213ca -> 37   187213ca committed 2026-08-11T05:31:44-07:00
+174c754c..187213ca -> 1
+```
+
+36 and 37 were each exactly right for the true tip when reported, 28 minutes apart,
+and the increment matches the single commit that landed between them. **A stale ref
+cannot increment** — an unfetched `origin/main` is fixed, so its count is constant.
+A ref that advances in step with the true tip is one being fetched, and "22 commits
+old, then 23" asks it to move and to fall further behind at once.
+
+The staleness was real and mislocated: the diagnosis was written when `main` stood
+at 58, the quoted 36 was compared against that, and it must read low, being from
+05:03. **`what` was re-derived correctly and `when` was inherited from context** —
+the failure this document describes, committed while describing it.
+
+Both hypotheses predict "36" exactly, which is why reconstructing it felt like
+proof. The increment is the discriminator, and it refutes rather than merely
+failing to support: _an exact reconstruction of a wrong-looking value is not
+evidence of the mechanism that would produce it, when a correct process produces it
+too._
+
 **Better: measure with no local ref at all.** `gh api` compares two refs on the
 server, so there is nothing to be stale and nothing to remember to fetch:
 
@@ -424,6 +451,11 @@ old), after the mechanism had been explained in detail, because the fix had land
 23 commits ahead of the tree they were reading. **A documentation remedy for
 staleness cannot reach a stale reader.** Where that is the failure, change the
 command so it cannot express the error, rather than warning about it.
+
+That last rule is the durable part and is unaffected. The 37 is the second half of
+the specimen refuted above (#936): it was correct for `187213ca`, the true tip when
+it was reported. Read the sentence as an argument for the server-side form, which
+holds on its own, and not as an observation of a session reading a stale tree.
 
 #### Attach the referent to the claim, not only to the number
 
@@ -660,6 +692,31 @@ the loss of the context that produced it:
 ```bash
 git reflog --date=iso | grep 'commit:' | grep '#<issue>'
 ```
+
+**Key it to the issue, never to the PR number.** The local commit message carries
+the issue reference; GitHub appends `(#PR)` when it squashes, so the two numbers
+never coexist in the reflog and a PR-keyed search returns nothing for work you did:
+
+```text
+reflog:  bd933f18 ... commit: docs(ci): attach referents to claims ... (#934)
+main:    9c600eff       docs(ci): attach referents to claims ... (#934) (#935)
+```
+
+| issue | PR   | reflog `#issue` | reflog `#PR` |
+| ----- | ---- | --------------- | ------------ |
+| #930  | #931 | PRESENT         | absent       |
+| #932  | #933 | PRESENT         | absent       |
+| #934  | #935 | PRESENT         | absent       |
+
+The PR number is the one a peer quotes and the one `git log` shows on `main`, so it
+is the natural thing to paste in — and it fails in the reassuring direction. It
+nearly cost a live error here: a peer attributed the paragraphs above to this
+session, `#907` and `#909` came back absent within a covering horizon, and the
+conclusion drawn was "not mine". Re-keyed, `#905` and `#908` are both **PRESENT**;
+the work is this session's and the attribution was right. #925 documents this
+instrument being used to retract a true declaration on memory; this is the same
+loss through the instrument itself, which is worse, because it reads as having
+been checked.
 
 Prefer it to memory, and **do not retract a declaration on memory alone** when
 this can be read instead. Memory fails silently in the way this document is
