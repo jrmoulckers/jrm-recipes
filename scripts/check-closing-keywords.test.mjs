@@ -49,6 +49,28 @@ describe('check-closing-keywords', () => {
     expect(findViolations(`> ${PEER_INCIDENT}`)).toHaveLength(1);
   });
 
+  it('catches a colon between the keyword and the target, which GitHub honours', () => {
+    // `\s+` alone read these as prose. GitHub closes on `Closes: #9`, so the
+    // shape the guard exists to catch was passing it (#923).
+    expect(findViolations('it closes: #855 anyway')).toHaveLength(1);
+    expect(findViolations('narrative that fixed:  #855 here')).toHaveLength(1);
+    expect(findViolations('and resolved:#855 in passing')).toHaveLength(1);
+  });
+
+  it('still allows a colon declaration on its own line', () => {
+    expect(findViolations('Closes: #123')).toHaveLength(0);
+  });
+
+  it('allows a closing reference in a list item, which is a declaration too', () => {
+    expect(findViolations('- Closes #123')).toHaveLength(0);
+    expect(findViolations('* Closes #123')).toHaveLength(0);
+    expect(findViolations('1. Closes #123')).toHaveLength(0);
+  });
+
+  it('still catches prose inside a list item', () => {
+    expect(findViolations('- Closes #123 because it fixes the thing')).toHaveLength(1);
+  });
+
   it('catches the full issue URL form', () => {
     expect(
       findViolations(
@@ -137,6 +159,14 @@ describe('closingTargets', () => {
 
   it('takes prose mentions too, because GitHub acts on them', () => {
     expect(closingTargets('and closed #855 anyway')).toEqual([855]);
+  });
+
+  it('takes the colon form, so the human-action check still sees the target', () => {
+    // This is the sharper half of #923: with `\s+` the colon form produced no
+    // targets at all, so `Closes: #859` closed a "Needs Human Action" issue
+    // without the second check ever evaluating it.
+    expect(closingTargets('Closes: #859')).toEqual([859]);
+    expect(closingTargets('it closes: #855 anyway')).toEqual([855]);
   });
 
   it('deduplicates', () => {
