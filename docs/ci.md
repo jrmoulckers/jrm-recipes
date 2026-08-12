@@ -103,7 +103,7 @@ assertion, `claim sites == markers`, calibrating `bare` against `real` locally. 
 attempt that failed tried to detect a bad state by searching for evidence of it, which
 cannot distinguish _no evidence_ from _no state_.
 
-Two corollaries, both learned the expensive way:
+Three corollaries, all learned the expensive way:
 
 - **Direction is not safety.** Most instances fail toward false-clean, which is why they
   get hunted. Three did not: a false-_blocked_ merge rule, a false-_alarm_ audit, and an
@@ -115,6 +115,17 @@ Two corollaries, both learned the expensive way:
   eventually; one that returns the expected answer gets banked as validated, and the
   instrument is never audited again. So a probe is only as trustworthy as the last time
   it returned something you did not want.
+- **A guard's clean record is not evidence it works.** The reference audit below was
+  credited with catching two dangling pointers in two PRs. It caught neither — both were
+  manual greps run while editing — and it passed a third, real one. Its record is
+  0-for-3. Outcomes produced by some other mechanism get attributed to whatever guard was
+  nominally in place, and the attribution is never checked, because the outcomes were
+  correct. This is `a conclusion does not carry its derivation` applied to a **track
+  record** rather than to a single claim, and it is the more dangerous form: a guard
+  believed to work retires the manual check that was actually doing the work.
+  **A guard is evidence only once it has been observed to fail on purpose** — break one
+  input, watch it go red, and keep that control next to the guard. Two coincidental
+  agreements are not a substitute, and they are what a new instrument produces first.
 
 ## Five ways a green check list still lies
 
