@@ -36,6 +36,55 @@ intended trade: a stacked PR is exactly the PR nobody has validated.
 into _its own base_, not into `main`. The `Base freshness` job says so in the run
 summary. Retarget at `main` before merging.
 
+## The one defect, and the only remedy that has ever worked
+
+Most of this document is instances of a single class, and it is worth naming once
+rather than rediscovering ten times.
+
+**A check whose _absent_ state and whose _passing_ state are the same value.** Each of
+these returns a confident, correct answer — to a question other than the one asked:
+
+| Section it is written up under                                                | Absent reads as                         |
+| ----------------------------------------------------------------------------- | --------------------------------------- |
+| `2. Conflicting PR — no run at all`                                           | no failures                             |
+| `UNREAD is a property of the commit, not of the run`                          | terminal and healthy                    |
+| the same section, on `gh pr checks`                                           | no row that could be missing            |
+| `Every session is the same GitHub user`                                       | not yet reviewed, not _cannot_ be       |
+| `A void probe can return the correct answer` (reflog expiry)                  | work never done                         |
+| `Key on the subject _text_, because a bare number matches three other things` | absent — or present, via a hex fragment |
+| the same section, on per-key spurious rates                                   | freshness audit _certifies_ it          |
+| `When no tip is quoted, the verdict is UNDATED`                               | fresh                                   |
+| `Comparing the raw counts never terminates` (performance-budgets)             | never satisfiable, so never green       |
+| `That answers what a user sees, not what happens when they act`               | safe                                    |
+
+Those are heading texts, not line numbers, deliberately: a line-number cross-reference
+is itself an identifier-keyed pointer that goes silently wrong on the next edit. They
+are in code spans for the same reason — the first draft italicised them, and the
+formatter silently ate the nested `_text_` out of one heading, leaving a reference that
+no longer matched what it pointed at. An earlier draft also cited "not the run" for a
+heading reading "not _of_ the run". Both were caught by grepping every row against the
+headings; do that before trusting this table.
+
+**The remedy is always to demand a positive assertion, never to look harder for a
+failure.** Every fix in this document that worked has that shape — a required
+`Quality gate`, the `kb: 307` fixture, `UNREAD`, `UNDATED`, `REFUTED` at the point of
+assertion, `claim sites == markers`, calibrating `bare` against `real` locally. Every
+attempt that failed tried to detect a bad state by searching for evidence of it, which
+cannot distinguish _no evidence_ from _no state_.
+
+Two corollaries, both learned the expensive way:
+
+- **Direction is not safety.** Most instances fail toward false-clean, which is why they
+  get hunted. Three did not: a false-_blocked_ merge rule, a false-_alarm_ audit, and an
+  authorship probe that fails toward _disclaiming_ work. A rule that refuses to act reads
+  as conservative, so nobody asks whether it can ever be satisfied. Safe-direction
+  failures are unpoliced, not harmless — and the authorship one is worst, because its
+  only available auditor is the party with an incentive not to look.
+- **A void test that _agrees_ is never revisited.** One that disagrees gets contradicted
+  eventually; one that returns the expected answer gets banked as validated, and the
+  instrument is never audited again. So a probe is only as trustworthy as the last time
+  it returned something you did not want.
+
 ## Five ways a green check list still lies
 
 ### 1. Stacked PR — fixed
@@ -1611,8 +1660,8 @@ grep -n "willBeHeld\|heldRecipeCount" src/server/users/erasure.ts   # corroborat
 It asks whether two identifiers appear and gets read as whether the decision is independent
 of the client. Those come apart under a rename or a differently-routed value, and when they
 do it returns **no hits** — indistinguishable from safe. That is the identifier-keyed probe
-this document catalogues everywhere else, here in the one section where a silent pass
-licenses the sentence "failures are safe-direction only".
+catalogued under _The one defect, and the only remedy that has ever worked_, here in the
+one section where a silent pass licenses the sentence "failures are safe-direction only".
 
 The signature read also yields a review trigger a grep cannot: **adding a field to
 `ErasureOptions` is the change that would invalidate the bound.** Watch for that rather than
