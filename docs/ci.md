@@ -201,6 +201,27 @@ Three corollaries, all learned the expensive way:
   separates the two categories cleanly every time. Ask it of any guard before trusting a
   green, and of any procedure before believing it is enforced.
 
+  **This document has produced that shape three ways, all in its own structure**, and the
+  pattern is easier to see together than as three separate fixes:
+
+  | Shape                                       | What had no output        | Fixed in |
+  | ------------------------------------------- | ------------------------- | -------- |
+  | A pointer to a catalogue that did not exist | the catalogue             | #965     |
+  | A catalogue entry with no pointer           | the rule's retrievability | #979     |
+  | A procedure with no executable form         | the check itself          | #971     |
+
+  The middle one is the **retrieval** form and the hardest of the three, because it has no
+  natural auditor: a check can at least be run and watched, but a rule nobody can find
+  produces no event anywhere. **Its absence from every place it should have fired looks
+  exactly like it never being needed.** The counterfactual test spent its whole life as a
+  single worked example, ~1150 lines from the method section, which is reachable only by
+  someone who already had it.
+
+  All three are this section's own defect turned on the document: absence and success
+  share a value. And that is not a coincidence of carelessness — **a document is itself an
+  instrument with no output**, so nothing forces the practice to resemble it. That is why
+  every fix here that held was executable, indexed, or both.
+
   One scope note, since the overstatement ran the other way too: that check was not
   blind to the file. It read the headings and would have fired had one been renamed. Its
   blind spot is a single direction — substring matching means a row carrying **extra**
