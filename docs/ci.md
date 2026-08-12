@@ -1181,11 +1181,40 @@ directions:
   is a security bug rather than a cosmetic one.
 
 Which case you are in is invisible from the component — it looks identical either way — so
-read the server path too:
+read the server path too. **Read the signature, not the identifiers.** The question is
+whether any caller-supplied value can reach the hold decision, and that is answered by
+types:
+
+```ts
+export type ErasureOptions = {
+  trigger: DeletionTrigger;
+  noticeVersion?: string; // which copy the user was shown
+  backupHorizonAt?: Date; // when the last backup expires
+};
+
+export async function eraseUserAccount(userId: string, options: ErasureOptions);
+```
+
+Three fields, none able to express a hold, and `findEntanglement(userId: string)` takes only
+the id. `options` reaches `recordErasureHold` — the _record_ of the hold — never the branch
+that decides it. So the property is: **the hold decision's only inputs are the user id and
+server-derived state, and the type system forbids a caller supplying anything else.**
+
+The obvious check is weaker and should not be the verdict:
 
 ```bash
-grep -n "willBeHeld\|heldRecipeCount" src/server/users/erasure.ts   # no hits = re-derived
+grep -n "willBeHeld\|heldRecipeCount" src/server/users/erasure.ts   # corroborating only
 ```
+
+It asks whether two identifiers appear and gets read as whether the decision is independent
+of the client. Those come apart under a rename or a differently-routed value, and when they
+do it returns **no hits** — indistinguishable from safe. That is the identifier-keyed probe
+this document catalogues everywhere else, here in the one section where a silent pass
+licenses the sentence "failures are safe-direction only".
+
+The signature read also yields a review trigger a grep cannot: **adding a field to
+`ErasureOptions` is the change that would invalidate the bound.** Watch for that rather than
+re-running a string search.
 
 The worked example is the panel from #873. `delete-account-panel.tsx` computes
 `willBeHeld = preview.heldRecipeCount > 0` to choose `held.cta` over `confirm.cta`, but
