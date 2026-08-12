@@ -726,6 +726,67 @@ of authorship produce the same output. #925 is the worked case — a declaration
 (`91a7da93`, `535f5b05`), while four issues the same session had _not_ disputed
 were absent. Exactly inverted, and the retraction was the destructive move.
 
+#### Better still: key it to the commit subject
+
+The issue number is an improvement on the PR number, not the best available key, and
+it has a failure case that routes straight back into the defect it was written to
+prevent. It assumes you can recover the issue for a PR, and sometimes you cannot:
+
+```
+$ gh pr view 857 --json closingIssuesReferences -q '.closingIssuesReferences[].number'
+(empty)
+```
+
+`#857` references `#821` in its subject but does not close it, `#821` being
+deliberately still open. A reader following the rule literally is left with no key,
+and the fallback nearest to hand is the PR number — the void probe.
+
+**The commit subject has none of these problems.** It survives squash unchanged;
+GitHub appends the PR number and touches nothing else:
+
+```text
+reflog:  fix(perf): correct the food-classifier diagnosis by measurement (#821)
+main:    fix(perf): correct the food-classifier diagnosis by measurement (#821) (#857)
+```
+
+So it needs no API lookup, it works when `closingIssuesReferences` is empty, and it
+does one thing the issue number structurally cannot: **tell apart two PRs that close
+the same issue.** A peer's probe returned three hits all keyed `#674`, spanning
+`#690` and `#763` — the issue number could not separate them and the subject text
+did. That probe already depended on the subject; the number contributed nothing to
+the distinction actually drawn.
+
+Both arms, before trusting it:
+
+```text
+POSITIVE  "food-classifier diagnosis by measurement"       -> aeaf69f3  (mine)
+NEGATIVE  "catalog-growth diagnosis in the bundle budgets" -> (no matches)
+NEGATIVE  "replace the multi-creator budget guess"         -> (no matches)
+```
+
+#### A void probe can return the correct answer
+
+Before trusting any absent result, **check whether the number queried was a PR**:
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/issues/<n> --jq 'if .pull_request then "PR" else "ISSUE" end'
+```
+
+A peer reported `#819`, `#820` and `#857` all returning zero within a covering
+horizon, and concluded the negative meant absent. `#819` is an issue, so that arm was
+valid. **`#820` and `#857` are PRs, so their zeros were structurally guaranteed** and
+carried no information at all.
+
+The conclusion drawn from them was nonetheless **correct** — `#857` is this session's,
+confirmed by a valid probe on `#821`. That is what makes this the worst form of the
+entailed-outcome defect. A void test that disagrees with reality eventually gets
+contradicted by something. A void test that **agrees** is never revisited, because the
+answer checks out, and an invalid instrument gets banked as a validated one.
+
+Note also that the issue-keyed rule was already written down when this happened. A
+rule that exists but is not reached at the point of use has the same effect as no
+rule, which is an argument for the key that needs no lookup and no recall.
+
 Two conditions, or the negative result means nothing:
 
 | condition        | check                                   | why                                                         |
