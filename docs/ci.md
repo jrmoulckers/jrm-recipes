@@ -56,15 +56,45 @@ these returns a confident, correct answer — to a question other than the one a
 | `When no tip is quoted, the verdict is UNDATED`                               | fresh                                   |
 | `Comparing the raw counts never terminates` (performance-budgets)             | never satisfiable, so never green       |
 | `That answers what a user sees, not what happens when they act`               | safe                                    |
-| `But a gate means ask, not refuse`                                            | correct, without consulting the world   |
+| `A gate means ask, not refuse`                                                | correct, without consulting the world   |
 
 Those are heading texts, not line numbers, deliberately: a line-number cross-reference
 is itself an identifier-keyed pointer that goes silently wrong on the next edit. They
-are in code spans for the same reason — the first draft italicised them, and the
+are in code spans for the same reason — an early draft italicised them, and the
 formatter silently ate the nested `_text_` out of one heading, leaving a reference that
-no longer matched what it pointed at. An earlier draft also cited "not the run" for a
-heading reading "not _of_ the run". Both were caught by grepping every row against the
-headings; do that before trusting this table.
+no longer matched what it pointed at. Another draft cited "not the run" for a heading
+reading "not _of_ the run".
+
+**Audit the table by parsing the table, never by re-listing what you meant to write:**
+
+```powershell
+$lines = Get-Content docs/ci.md
+$start = ($lines | Select-String -Pattern '^\| Section it is written up under').LineNumber
+for ($i = $start + 1; $i -lt $lines.Count -and $lines[$i] -match '^\|'; $i++) {
+  if ($lines[$i] -match '^\|\s*`([^`]+)`') {
+    $ref = $matches[1]
+    $hit = @('docs/ci.md', 'docs/performance-budgets.md' | ForEach-Object {
+        Select-String -Path $_ -Pattern ([regex]::Escape($ref)) |
+          Where-Object { $_.Line -match '^#{2,5} ' }
+      }).Count
+    if ($hit -lt 1) { "BROKEN -> $ref" }
+  }
+}
+```
+
+It is bounded by the table's own header row rather than by a line range, because a line
+range is the identifier-keyed pointer this table is about. An unbounded version — every
+`| \`` row in the file — reports fifteen false BROKENs from unrelated tables of SHAs and
+event names, and an audit that cannot read clean is ignored, which is the failure
+recorded under `Comparing the raw counts never terminates`.
+
+The first version of this check compared a **hand-maintained list of intended strings**
+against the headings and never read the table — so it confirmed the list rather than the
+artifact, and shipped a row reading "But a gate means ask, not refuse" against a heading
+with no "But". Nine rows, eight fine, one broken, and a clean pass. That is the
+identifier-keyed probe living inside the audit written to catch identifier-keyed probes:
+**a check keyed to the author's intent certifies the intent.** Run it after
+`prettier --write`, not before, and confirm it can go red by breaking one row.
 
 **The remedy is always to demand a positive assertion, never to look harder for a
 failure.** Every fix in this document that worked has that shape — a required
