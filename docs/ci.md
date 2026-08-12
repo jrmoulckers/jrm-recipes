@@ -103,6 +103,33 @@ assertion, `claim sites == markers`, calibrating `bare` against `real` locally. 
 attempt that failed tried to detect a bad state by searching for evidence of it, which
 cannot distinguish _no evidence_ from _no state_.
 
+That list contains **two mechanically different families**, and knowing which one a
+situation calls for is most of the work:
+
+- **Name a third state.** `UNREAD`, `UNDATED`, `REFUTED`, `UNATTRIBUTED` — split one
+  ambiguous output value into two, so absence stops sharing a value with pass. These are
+  verdicts, and they fix a check that already runs.
+- **Impose a precondition.** A required `Quality gate`, the `kb: 307` fixture,
+  `claim sites == markers`, calibrating `bare` against `real` in the worktree being
+  queried, and the positive control — block the action until an assertion is produced.
+  These are gates, and they fix a check that was never established.
+
+**Reach for a third state when the output has too few values. Reach for a precondition
+when the input was never established.**
+
+The distinction is the difference between advice and a rule that can be enforced:
+**"read the artifact first" is advice; "confirm the artifact exists" is a precondition.**
+The claim that the pre-#971 reference audit carried _zero bits_ was not a check anybody
+skipped — there was no artifact to read, because no executable audit existed before
+`bccce831`. No amount of diligence could have produced that claim honestly, which is why
+the fix is a precondition rather than more care. `UNATTRIBUTED` came out of the same
+episode as its third-state counterpart.
+
+One scope note, because the tidier version was proposed and does not survive contact with
+the list: it is not the case that _only_ preconditions work. Four of the fixes above are
+third states. Recording the flat version would have been this section's own fourth
+direction firing on the exchange that named it.
+
 **One check applies at writing time rather than review time: would this reason still hold
 if the contingent fact flipped?** A reason that happens to agree, on a fact that could
 have gone the other way, is weaker than one that survives the counterfactual — even when
