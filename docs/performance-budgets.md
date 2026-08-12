@@ -63,16 +63,52 @@ sweep keyed to the quoted sentence found three and stopped.
 failed in the reassuring direction: three found, three fixed, closed. It was the
 highest-traffic prose in the file and the largest budget movement recorded in it.
 
-Key the census to the mechanism and compare the two counts:
+Key the census to the mechanism, then classify each site — the raw counts do not
+compare:
 
 ```powershell
 $j = Get-Content bundle-budgets.json -Raw
-[regex]::Matches($j, '.{60}(shared chunk).{40}')          # every site of the mechanism
-([regex]::Matches($j, 'ORIGINAL DIAGNOSIS, REFUTED')).Count  # every marker
+foreach ($m in [regex]::Matches($j, 'shared chunk')) {
+  $pre = $j.Substring(0, $m.Index)
+  # a retained claim lives inside an escaped-quote span; odd parity == inside
+  $inClaim = (([regex]::Matches($pre, '\\"')).Count % 2) -eq 1
+  "{0,6}  {1}" -f $m.Index, $(if ($inClaim) { "CLAIM SITE" } else { "correction prose" })
+}
+([regex]::Matches($j, 'ORIGINAL DIAGNOSIS, REFUTED')).Count   # every marker
 ```
 
-A mention count exceeding the marker count is the discrepancy to resolve before
-closing a correction. Two further points fell out of it:
+**PASS is `claim sites == markers`.** On `7d34940d` that is 4 and 4, from 7 raw
+mentions.
+
+##### Comparing the raw counts never terminates
+
+The rule first written here was "a mention count exceeding the marker count is the
+discrepancy to resolve." It cannot be satisfied. **Every correction quotes the claim
+it refutes**, so the prose adds mentions that will never acquire markers — 7 against 4
+on a file with nothing wrong with it, reading as a 3-instance gap forever. A probe
+that always reports a problem is as useless as one that never does, and it is worse
+than useless here: it sends the next reader to audit a file that is already correct,
+and there is no result that would stop them.
+
+Every other defect recorded in this file fails toward false-clean. This one fails
+toward false-alarm, which is why it survived being written down — an audit that
+demands more work looks conservative.
+
+##### The obvious fix is wording-keyed too
+
+Classifying by the preamble — `retained verbatim as the record, not as a live claim:`
+— returns **3 claim sites, not 4**. It misses `//multi-creator`, whose retained block
+opens _"the precedent was already withdrawn when it was invoked:"_ instead. So the
+probe written to close a wording-keyed defect was defeated by a paraphrase, in the
+same file, on the same property, one section below the paragraph explaining that
+failure mode.
+
+The key that works is **structural rather than lexical**: a retained claim is inside
+an escaped-quote span, and quote parity is a property of the JSON, not of anyone's
+phrasing. Prefer a key the format guarantees over a key an author has to keep
+consistent.
+
+Two further points fell out of the original sweep:
 
 - **Half-true is worse than false.** The header welded a real cost
   (`NextIntlClientProvider` is client code and does reach the shared chunk) to a
