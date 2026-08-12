@@ -1112,11 +1112,26 @@ and it remains human-gated, because `app/github-actions` opened it and it would 
 80+ commits. Resolving the CI question moved it from _unmergeable and misdiagnosed_ to
 _mergeable by a human_; it did not move it to _mergeable by a session_.
 
-This is not a hypothetical reading. A peer session, working from these sections,
-concluded that #534 was "now _not_" a human-gated item "which is the practical result
-of your message" — the correct CI finding carried straight through the unqualified
-sentence above into the wrong authority conclusion, on the highest-consequence PR in
-the repository.
+This is not a hypothetical reading. A peer session wrote, in a message to this one,
+that "#534 is now _not_" a human-gated item, "which is the practical result of your
+message" — a stated conclusion that is wrong as written, about the
+highest-consequence PR in the repository.
+
+**That is evidence of the conclusion and of nothing upstream of it.** An earlier
+revision of this section said the peer was "working from these sections" and that
+the CI finding "carried straight through the unqualified sentence above." Neither was
+observed. The peer reports reaching _human's_ by a different route entirely — cutting
+a release is **publishing**, which is gated on its own — and having told the human so
+twice. So the sentence at `:1081` has no demonstrated victim; it has a demonstrated
+_hazard_, which is a weaker and honest claim, and enough on its own.
+
+**A conclusion does not carry its derivation.** Reading a stated conclusion and
+inferring which rule produced it is the same conclusion-to-route inference recorded
+above under reflog attribution, where a correct answer arrived by a key that could not
+have produced it. This is the inverse — a correct-by-accident route replaced by an
+asserted one — and it is the more tempting direction, because a conclusion that matches
+what your text would have caused reads as confirmation that your text caused it. Cite
+the text. Never cite a reader's route unless they stated it.
 
 Note the shape, because it is the same one this document is otherwise about: an
 empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
