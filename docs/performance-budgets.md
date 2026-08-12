@@ -47,6 +47,42 @@ modules_ — over-reaches in the same way. It sweeps decay into a category whose
 remedy does not apply to it. Stubbing an import cannot fix a number that was right
 when recorded.
 
+### The sweep that applied a correction was itself keyed to wording
+
+#929 marked the refuted catalog-growth claim at its point of assertion in
+`//planner-serving-allocations`, `//media-picker` and `//multi-creator`. Three notes,
+three markers, and the count came from a peer rather than from a census.
+
+There were four. The top-level `//` header note carried the same mechanism for #476's
+`+~13 kB` re-baseline, in different words — _"messages mount in the root layout and
+land in the shared chunk, so every route pays it"_ rather than _"lands in the shared
+chunk and so costs every route about 1 kB"_. Same property, different phrasing, so a
+sweep keyed to the quoted sentence found three and stopped.
+
+**The remediation for an identifier-keyed defect was itself identifier-keyed**, and it
+failed in the reassuring direction: three found, three fixed, closed. It was the
+highest-traffic prose in the file and the largest budget movement recorded in it.
+
+Key the census to the mechanism and compare the two counts:
+
+```powershell
+$j = Get-Content bundle-budgets.json -Raw
+[regex]::Matches($j, '.{60}(shared chunk).{40}')          # every site of the mechanism
+([regex]::Matches($j, 'ORIGINAL DIAGNOSIS, REFUTED')).Count  # every marker
+```
+
+A mention count exceeding the marker count is the discrepancy to resolve before
+closing a correction. Two further points fell out of it:
+
+- **Half-true is worse than false.** The header welded a real cost
+  (`NextIntlClientProvider` is client code and does reach the shared chunk) to a
+  refuted one (the messages do not). A reader who checks the first half finds it
+  confirmed and carries the second along. Mark only the refuted half.
+- **A correction can misstate its own provenance.** `//catalog-growth-correction`
+  claimed the reasoning "was first written in `//media-picker`" when the header note
+  predates it — and provenance is what makes a precedent citable, which is the thing
+  that note exists to shut down.
+
 ## Only one of the two is guarded
 
 `bundle-budgets.json` carries a machine-checked `//measured.claims` array, and
