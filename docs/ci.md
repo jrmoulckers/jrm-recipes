@@ -158,6 +158,50 @@ right before you can detect anything.
 That returned `completed/success` in about a minute, and the merge proceeded on a
 verdict rather than an inference.
 
+**Both of that probe's inputs are assumptions, and both fail on PR #534 today.** It
+assumes the run it is handed contains jobs, and that the run it is handed is the
+right one. Two CI runs exist on that PR's head commit `3aad1077`:
+
+```
+31561428763  completed/action_required  event=pull_request       jobs=0   non-terminal=0
+31561427745  in_progress/null           event=workflow_dispatch  jobs=11  non-terminal=3
+```
+
+`gh run list --branch <branch> --limit 1` returns the first of those, and the probe
+prints nothing for it — the same output a fully-completed healthy run gives. So the
+procedure certifies the commit as clean **while three jobs are in progress on it**,
+in a run it never opened.
+
+Two separate faults, both toward false-clean:
+
+- **A zero-job run is unread, not clean.** `action_required` means the workflow is
+  awaiting approval and no job ever started. `select(...)` over an empty array is
+  empty, which is what every-job-passed also looks like. That is this section's own
+  rule — a stuck gate is _unread_, not green — reaching a case the section did not
+  cover.
+- **Newest-run-for-the-branch is the wrong population.** The question is about the
+  commit being merged, not the branch. The two runs above differ only by `event`,
+  which nothing in the older procedure inspects.
+
+Key on the commit, and assert the population is non-empty before reading it:
+
+```bash
+# every run on the merge candidate, not the newest run on its branch
+gh api "repos/jrmoulckers/jrm-recipes/actions/runs?head_sha=<full-head-sha>" \
+  --jq '.workflow_runs[] | "\(.id) \(.name) \(.status)/\(.conclusion)"'
+
+# per run: jobs=0 means UNREAD -- do not read the emptiness as agreement
+gh api "repos/jrmoulckers/jrm-recipes/actions/runs/<run-id>/jobs?per_page=50" \
+  --jq 'if (.jobs|length) == 0 then "UNREAD: no jobs (check conclusion for action_required)"
+        else (.jobs[] | select(.status != "completed") | "\(.name) \(.status) \(.id)") end'
+```
+
+An empty result from the second command means what you want **only once both hold**:
+a run was found for the commit, and it contains jobs. The thing that actually
+authorises a merge is still the affirmative `Quality gate == SUCCESS`, not the
+absence of failures — on #534 `gh pr checks` shows no `Quality gate` row at all,
+and nothing in that output says one is missing.
+
 Two caveats on the frequency. A census of the 40 most recent completed `ci.yml`
 runs found **0** jobs in a non-terminal state, so this is transient rather than
 standing; re-measured later at n=30 with the `.status` probe above, still **0**, so
