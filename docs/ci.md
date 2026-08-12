@@ -117,6 +117,20 @@ situation calls for is most of the work:
 **Reach for a third state when the output has too few values. Reach for a precondition
 when the input was never established.**
 
+**The split is not taxonomy, it is failure-mode routing** — picking the wrong family fails
+in a specific, predictable direction, which follows from the two definitions above. Name a
+third state for something that was never established and you have added a value to an
+output nobody produces. Impose a precondition on a check that already runs and you gate on
+an assertion that was never the missing thing. Both leave the original defect untouched
+while producing the appearance of a fix, so the misroute is itself a check whose failure
+looks like a pass.
+
+Which means **a misattributed fault selects the wrong instrument.** Had the `zero bits`
+claim below stood as _"I did not read the implementation"_, that is a diligence fault, and
+diligence is third-state shaped — the fix would be a marker. The actual fault was that no
+implementation existed, so there was nothing to mark and only a precondition reaches it.
+Getting the diagnosis wrong costs the remedy, not just the record.
+
 The distinction is the difference between advice and a rule that can be enforced:
 **"read the artifact first" is advice; "confirm the artifact exists" is a precondition.**
 The claim that the pre-#971 reference audit carried _zero bits_ was not a check anybody
@@ -200,6 +214,23 @@ Three corollaries, all learned the expensive way:
   rigour; it is a **one-question test for whether the thing is a check at all**, and it
   separates the two categories cleanly every time. Ask it of any guard before trusting a
   green, and of any procedure before believing it is enforced.
+
+  **A control is only as good as the mutation you pick, and the tempting mutation is the
+  one nearest to hand.** #983 shipped a check that counted rows by matching a table row
+  _prefix_. Its first positive control appended a character to a cell — the prefix
+  survived, the count held at `3`, and the check read green on a file broken on purpose.
+  Trusting that green would have shipped an unfalsifiable guard in the pull request about
+  unfalsifiable guards, one commit after `a guard is evidence only once it has been
+observed to fail on purpose`. So the procedure needs a second clause: **does the break
+  reach what the check actually reads?** Otherwise the control inherits the defect it
+  exists to detect, and a green produced by a mutation the instrument never looks at is
+  absence sharing a value with pass one level up — in the verification step rather than in
+  the artifact. The replacement counted rows bounded by the table's own header and was
+  proven red twice, on a deleted row and on a broken anchor.
+
+  The same mechanism appears in an unrelated domain below: when the closing-keyword rule
+  left a reader with no key, **the fallback nearest to hand was the pull request number —
+  the void probe**. The easiest available choice is the one that fails silently.
 
   **This document has produced that shape three ways, all in its own structure**, and the
   pattern is easier to see together than as three separate fixes:
