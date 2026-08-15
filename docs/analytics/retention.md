@@ -5,6 +5,10 @@ keep cooking week over week? This doc also explains how to reproduce the cohort 
 in the analytics tool. Retention is measured **per household (family group)** as
 well as per user.
 
+Both the person-level and household-level definitions are owned and versioned under
+[`PROD-MET-001` (Give each metric one versioned decision definition)](https://github.com/jrmoulckers/product/blob/main/principles/metrics.md),
+so the retained action, the population, and the cohort anchor stay fixed across readouts.
+
 ## The retention event
 
 The core retained action is **cooking**: the `cook_started` event (with

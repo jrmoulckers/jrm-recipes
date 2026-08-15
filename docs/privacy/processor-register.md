@@ -4,6 +4,14 @@ Record of every third party that receives personal data from Heirloom: what it g
 under what safeguard. This is the Art. 30(1)(d) record of recipients, and it is the factual input
 to the user-facing privacy notice, which cannot be written honestly without it.
 
+This register is the evidence behind
+[`PROD-COMP-004` (Decide residency and transfer bounds before launch)](https://github.com/jrmoulckers/product/blob/3a752c11856515a74eb204675d5d5198cac1e48e/principles/compliance.md),
+which requires approved processors, transfer conditions, and disclosure outcomes for each data
+category before launch or material change. An unmatched subprocessor or transfer blocks readiness,
+which is why an undocumented recipient is treated as undisclosed below. The citation is pinned to a
+commit rather than `main` because this is a compliance artifact and the exact obligation wording
+matters.
+
 **This is not `docs/secrets-management.md`.** That file tracks where credentials live and who
 rotates them, which is a security-operations concern. A credential can be perfectly managed while
 the data it unlocks flows somewhere undisclosed. The two documents overlap in the services they

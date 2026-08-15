@@ -9,6 +9,12 @@ This prevents drift such as `recipe_created` vs. `create_recipe`.
 
 ## Naming and property conventions
 
+The no-PII rule, the low-cardinality preference, and the consent gating below are this
+repository's expression of
+[`PROD-MET-002` (Bound measurement by purpose and consent)](https://github.com/jrmoulckers/product/blob/main/principles/metrics.md),
+which requires the minimum necessary fields and population, an explicit consent dependency, and a
+stated bound on reuse before measurement is approved.
+
 - Event names are `snake_case`.
 - Product events use object-verb names, usually past tense:
   `recipe_created`, `invite_sent`, `cook_completed`.
