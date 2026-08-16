@@ -41,6 +41,8 @@ function fakeTx(overrides: {
   comment?: unknown;
   /** The caller's existing rating row, if any (drives aggregate deltas). */
   existingRating?: { value: number } | null;
+  /** The caller's existing review, if any: it pins the mirrored star (#1010). */
+  existingReview?: { id: string } | null;
   /** Group members returned for mention resolution (issue #340). */
   members?: unknown[];
 }): unknown {
@@ -65,6 +67,9 @@ function fakeTx(overrides: {
       },
       ratings: {
         findFirst: vi.fn(async () => overrides.existingRating ?? null),
+      },
+      reviews: {
+        findFirst: vi.fn(async () => overrides.existingReview ?? null),
       },
       comments: {
         findFirst: vi.fn(async () => overrides.comment ?? null),
@@ -632,6 +637,34 @@ describe('rating mutations keep the denormalized aggregates in step (issue #154)
 
     const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
     expect(payloadWith(chain.set.mock.calls, 'ratingSum')).toBeUndefined();
+  });
+
+  // #1010: the star row and a written review are one rating, so re-tapping the
+  // row has to carry the new value into the review the member already wrote.
+  it("setRating writes the new value back into the caller's review", async () => {
+    const tx = fakeTx({ recipe: recipeRow, existingRating: { value: 2 } });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await setRating({ recipeId: 'recipe_1', recipeSlug: 'sunday-sauce', value: 5 }, user);
+
+    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
+    const mirrored = payloadWith(chain.set.mock.calls, 'rating');
+    expect(mirrored).toBeDefined();
+    expect(mirrored!.rating).toBe(5);
+  });
+
+  it('removeRating refuses to strip a star that a live review depends on', async () => {
+    const tx = fakeTx({
+      recipe: recipeRow,
+      existingRating: { value: 4 },
+      existingReview: { id: 'rev_1' },
+    });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await expect(removeRating('recipe_1', user)).rejects.toThrow('RATING_LOCKED_BY_REVIEW');
+    expect((tx as { delete: ReturnType<typeof vi.fn> }).delete).not.toHaveBeenCalled();
   });
 });
 

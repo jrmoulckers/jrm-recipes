@@ -18,14 +18,15 @@ import { recipes } from './recipes';
  * A first-class recipe review (Phase 2): a written critique paired with a star
  * rating, at most one per user per recipe, editable.
  *
- * Relationship to `ratings` (issue #174): `ratings` stays the lightweight,
- * one-tap star that drives the discover-feed aggregates (see `~/lib/ratings`
- * and `topRatedScoreSql`). A `review.rating` is the star the author attaches to
- * their written review and is authoritative *for that review*. The two are kept
- * intentionally independent for now: aggregate/feed math reads `ratings`, never
- * `reviews`, so adding a review does not change a recipe's rating summary. A
- * later phase may reconcile them (e.g. mirror a review's rating into `ratings`),
- * but that reconciliation is deliberately out of scope here.
+ * Relationship to `ratings` (issues #174, #1010): `ratings` remains the single
+ * source of truth for aggregate/feed math (see `~/lib/ratings` and
+ * `topRatedScoreSql`), which never reads `reviews`. A `review.rating` is not a
+ * second, independent star — it is the *same* star, mirrored. `upsertReview`
+ * writes the review's rating through to `ratings`, and `setRating` writes back
+ * into an existing review, so the unified "Ratings & reviews" card can show one
+ * number that the summary above it agrees with. Recipe authors are the one
+ * exception: they may write a review but their star is never mirrored, because
+ * owner self-ratings are excluded from every aggregate.
  */
 export const reviews = pgTable(
   'reviews',

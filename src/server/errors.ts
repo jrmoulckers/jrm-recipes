@@ -33,6 +33,7 @@ export const DOMAIN_CODES = [
   'EXPIRED',
   'EXHAUSTED',
   'SELF_RATING',
+  'RATING_LOCKED_BY_REVIEW',
   'ALREADY_APPLIED',
   'BAD_SNAPSHOT',
 ] as const;
@@ -103,6 +104,7 @@ export const DEFAULT_MESSAGES: Record<DomainCode, string> = {
   EXPIRED: 'This invite link has expired. Ask for a fresh one.',
   EXHAUSTED: 'This invite link has reached its limit. Ask for a fresh one.',
   SELF_RATING: "You can't rate your own recipe.",
+  RATING_LOCKED_BY_REVIEW: 'Delete your review to clear your star rating.',
   ALREADY_APPLIED: 'That suggestion was already applied.',
   BAD_SNAPSHOT: "That saved version can't be restored.",
 };

@@ -7,6 +7,7 @@ import { DomainError } from '~/server/errors';
 import { canViewRecipe } from '~/server/recipes/queries';
 import { notify } from '~/server/notifications/notify';
 import { reviews, recipes, type Review, type User } from '~/server/db/schema';
+import { writeRating } from './mutations';
 import type { ReviewInput } from './validation';
 
 export type ReviewSort = 'recent' | 'rating';
@@ -157,6 +158,19 @@ export async function upsertReview(input: ReviewInput, user: User): Promise<Revi
       });
     }
 
+    // A review is an expansion of your star, not a second one (#1010): mirror
+    // it into `ratings` so the summary on the same card, the discover-feed
+    // aggregates, and the JSON-LD all reflect it. Authors are skipped because a
+    // self-rating is excluded from every aggregate (`excludeOwnerRatings`);
+    // they can still write a note about their own recipe.
+    if (recipe.authorId !== user.id) {
+      await writeRating(tx, {
+        recipeId: input.recipeId,
+        userId: user.id,
+        value: input.rating,
+      });
+    }
+
     return row!;
   });
 }
@@ -164,6 +178,10 @@ export async function upsertReview(input: ReviewInput, user: User): Promise<Revi
 /**
  * Delete a review. The author can delete their own. The recipe owner can delete
  * any review on their recipe (lightweight moderation before #357).
+ *
+ * The mirrored star in `ratings` is deliberately left standing (#1010): a
+ * review is an expansion of a rating, so removing the writing keeps the plain
+ * star the member already gave. They can then clear it from the star row.
  */
 export async function deleteReview(reviewId: string, user: User): Promise<void> {
   await db.transaction(async (tx) => {

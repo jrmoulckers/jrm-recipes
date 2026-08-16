@@ -2160,68 +2160,55 @@
       "cancel": "Cancelar",
       "trigger": "Sugerir una edición"
     },
-    "reviews": {
+    "ratingsReviews": {
       "toast": {
-        "updated": "Reseña actualizada",
-        "posted": "Reseña publicada",
-        "deleted": "Reseña eliminada"
+        "ratingSaved": "Calificación guardada",
+        "ratingCleared": "Calificación borrada",
+        "reviewUpdated": "Nota de cata actualizada",
+        "reviewPosted": "Nota de cata publicada",
+        "reviewDeleted": "Nota de cata eliminada"
       },
       "a11y": {
+        "summary": "Resumen de calificaciones",
         "yourStarRating": "Tu calificación con estrellas",
+        "rateStars": "Calificar con {count, plural, one {# estrella} other {# estrellas}}",
         "outOfStars": "{value} de 5 estrellas",
-        "rateStars": "Calificar con {count, plural, one {# estrella} other {# estrellas}}"
+        "averageStars": "Promedio de {average} de 5 estrellas",
+        "distributionRow": "{star} estrellas: {count, plural, one {# calificación} other {# calificaciones}} ({pct}%)"
       },
-      "heading": "Reseñas y notas de cata",
-      "description": "Comparte una calificación con estrellas y una nota con cariño: cómo salió, qué cambiaste.",
-      "editing": "Editando tu reseña",
-      "yourStarRating": "Tu calificación con estrellas",
-      "reviewTitleLabel": "Título de la reseña",
+      "heading": "Calificaciones y reseñas",
+      "description": "Deja una estrella y añade una nota de cata si quieres contar más.",
+      "noRatingsYet": "Todavía no hay calificaciones. Sé la primera persona en dejar estrellas.",
+      "ratingCount": "{count, plural, one {# calificación} other {# calificaciones}}",
+      "member": "Miembro",
+      "more": "+{count} más",
+      "tapToRate": "Toca una estrella para calificar esta receta.",
+      "yourRating": "Tu calificación: {rating}. Tócala otra vez para borrarla.",
+      "yourRatingWithReview": "Tu calificación: {rating}. Elimina tu nota para borrarla.",
+      "ownerStarsHint": "Las estrellas en tu propia receta no cuentan para el promedio.",
+      "signInToRate": "Inicia sesión para calificar esta receta.",
+      "addNote": "Añadir una nota de cata",
+      "editNote": "Editar tu nota de cata",
+      "reviewTitleLabel": "Título de la nota de cata",
       "titlePlaceholder": "Título (opcional), por ejemplo «Un triunfo entre semana»",
-      "reviewLabel": "Reseña",
+      "reviewLabel": "Nota de cata",
       "bodyPlaceholder": "¿Cómo salió? ¿Qué cambiarías la próxima vez?",
       "photoLabel": "Foto (opcional)",
-      "helper": "Una reseña por receta. Puedes editar o eliminar la tuya cuando quieras.",
+      "helper": "Una nota por receta. Puedes editar o eliminar la tuya cuando quieras.",
+      "starRequired": "Elige una calificación con estrellas arriba para publicar tu nota.",
       "delete": "Eliminar",
       "saving": "Guardando…",
-      "updateReview": "Actualizar reseña",
-      "postReview": "Publicar reseña",
-      "signIn": "Inicia sesión para dejar una calificación con estrellas y una reseña escrita.",
-      "count": "{count, plural, one {# reseña} other {# reseñas}}",
+      "updateNote": "Actualizar nota",
+      "postNote": "Publicar nota",
+      "noteCount": "{count, plural, one {# nota de cata} other {# notas de cata}}",
       "sort": {
         "mostRecent": "Más recientes",
         "highestRated": "Mejor calificadas"
       },
-      "empty": "Todavía no hay reseñas. Sé la primera persona en contar cómo salió.",
+      "empty": "Todavía no hay notas de cata. Sé la primera persona en contar cómo salió.",
       "familyCook": "Cocina familiar",
       "edited": "(editada)",
       "photoAlt": "Foto de {name}"
-    },
-    "ratingControl": {
-      "toast": {
-        "cleared": "Calificación borrada",
-        "saved": "Calificación guardada"
-      },
-      "noRatings": "Todavía no hay calificaciones",
-      "ratingCount": "{count, plural, one {# calificación} other {# calificaciones}}",
-      "firstToLeaveStars": "Sé la primera persona en dejar estrellas.",
-      "a11y": {
-        "recipeRating": "Calificación de la receta",
-        "rateStars": "Calificar con {count, plural, one {# estrella} other {# estrellas}}"
-      },
-      "yourRating": "Tu calificación: {rating}. Haz clic otra vez para borrarla.",
-      "tapToRate": "Toca una estrella para calificar esta receta.",
-      "signIn": "Inicia sesión para calificar esta receta."
-    },
-    "ratingSummary": {
-      "a11y": {
-        "breakdown": "Desglose de calificaciones",
-        "averageStars": "Promedio de {average} de 5 estrellas",
-        "distributionRow": "{star} estrellas: {count, plural, one {# calificación} other {# calificaciones}} ({pct}%)"
-      },
-      "empty": "Todavía no hay calificaciones. Sé la primera persona en calificar esta receta.",
-      "ratingCount": "{count, plural, one {# calificación} other {# calificaciones}}",
-      "member": "Miembro",
-      "more": "+{count} más"
     }
   },
   "cookLog": {
