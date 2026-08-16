@@ -5,6 +5,15 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.3.1](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.0...heirloom-v0.3.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **a11y:** enable jsx-a11y linting and fix all 23 findings ([#990](https://github.com/jrmoulckers/jrm-recipes/issues/990)) ([ca04c61](https://github.com/jrmoulckers/jrm-recipes/commit/ca04c615dcf7a90199bfb3d42e667b38034b5672)), closes [#682](https://github.com/jrmoulckers/jrm-recipes/issues/682) [#989](https://github.com/jrmoulckers/jrm-recipes/issues/989)
+* **ci:** re-baseline the recipe route budget tipped by build variance ([#997](https://github.com/jrmoulckers/jrm-recipes/issues/997)) ([03ec25f](https://github.com/jrmoulckers/jrm-recipes/commit/03ec25f0f4337cc478fad0497496c4f3591f5ada))
+* **deps:** bump nanoid override and ignore unfixable extract-zip advisory ([#1005](https://github.com/jrmoulckers/jrm-recipes/issues/1005)) ([#1006](https://github.com/jrmoulckers/jrm-recipes/issues/1006)) ([a1032af](https://github.com/jrmoulckers/jrm-recipes/commit/a1032afbab3b6bac6a229dc2e4b9cb0c934c2391))
+
 ## [0.3.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.2.0...heirloom-v0.3.0) (2026-08-12)
 
 
