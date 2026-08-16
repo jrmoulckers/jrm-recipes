@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, Monitor, Moon, Palette, Sun } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 
 import { useThemeBehavior } from '~/components/theme/theme-provider';
 

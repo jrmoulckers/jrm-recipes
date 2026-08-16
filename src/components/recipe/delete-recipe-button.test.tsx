@@ -6,7 +6,7 @@ import { DeleteRecipeButton } from './delete-recipe-button';
 import { redirect } from 'next/navigation';
 import { ConfirmProvider } from '~/components/ui/confirm-dialog';
 import { deleteRecipeAction, restoreRecipeAction } from '~/server/recipes/actions';
-import React, { Component, type ReactElement, type ReactNode } from 'react';
+import { Component, type ReactElement, type ReactNode } from 'react';
 import { IntlWrapper } from '~/test/intl';
 
 function render(ui: ReactElement) {

@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import { RecipeCardSkeleton, Skeleton } from '~/components/ui/skeleton';
 
 export default function CookWithLoading() {

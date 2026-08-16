@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 
 /**
  * Immersive layout. Full-bleed surfaces that intentionally drop the site

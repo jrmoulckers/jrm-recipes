@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 
 import { type FeatureFlagKey } from '~/config/plans';
 import { hasEntitlement } from '~/server/billing/entitlements';

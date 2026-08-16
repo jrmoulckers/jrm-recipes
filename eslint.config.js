@@ -1,7 +1,6 @@
 import { nextConfig } from '@jrmoulckers/eslint-config/next';
 import drizzle from 'eslint-plugin-drizzle';
 import i18next from 'eslint-plugin-i18next';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
 // The i18next plugin shallow-merges its options, so any key we set replaces the
 // plugin's default for that key wholesale. Spreading its own defaults keeps them
 // authoritative rather than copying lists that will drift (the default word
@@ -48,24 +47,6 @@ export default nextConfig({
     '*.config.mjs',
   ],
   extend: [
-    // INTERIM — remove when @jrmoulckers/eslint-config >=0.13.1 is adoptable.
-    //
-    // `nextConfig()` at 0.11.0 enforces zero `jsx-a11y/*` rules (verified with
-    // `eslint --print-config`: core 50, @typescript-eslint 22, @next 21,
-    // react-hooks 2, drizzle 2 — no `react/*`, no `jsx-a11y/*`). AGENTS.md
-    // commits this product to WCAG 2.2 AA, so shipping with no automated a11y
-    // rule is a real gap, not a theoretical one.
-    //
-    // Upstream fixed it in 0.13.0 by adding a shared `reactLayer`, but that
-    // release also dropped `peerDependenciesMeta`, making all five framework
-    // plugins REQUIRED peers: install goes 36.7 MB / 96 pkgs -> 75.1 MB / 322,
-    // and a Next.js repo is forced to install `eslint-plugin-svelte` with no
-    // opt-out. Tracked upstream as jrmoulckers/engineering#114.
-    //
-    // This adds the plugin locally rather than weakening or forking the shared
-    // preset. It is additive: when 0.13.1 restores the optional peers, the
-    // preset supplies these rules and this block is deleted wholesale.
-    jsxA11y.flatConfigs.recommended,
     {
       plugins: { drizzle, i18next },
       rules: {

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
+import type * as React from 'react';
 
 import { IntlWrapper } from '~/test/intl';
 import { ThemeProvider } from '~/components/theme/theme-provider';

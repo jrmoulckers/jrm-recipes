@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, Eye, ShieldCheck } from 'lucide-react';
 

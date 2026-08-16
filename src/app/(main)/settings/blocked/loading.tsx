@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import { ListRowSkeleton, Skeleton } from '~/components/ui/skeleton';
 
 export default function BlockedSettingsLoading() {

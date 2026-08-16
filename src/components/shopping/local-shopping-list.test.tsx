@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 import { renderToString } from 'react-dom/server';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
