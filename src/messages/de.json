@@ -2160,68 +2160,55 @@
       "cancel": "Abbrechen",
       "trigger": "Änderung vorschlagen"
     },
-    "reviews": {
+    "ratingsReviews": {
       "toast": {
-        "updated": "Bewertung aktualisiert",
-        "posted": "Bewertung gepostet",
-        "deleted": "Bewertung gelöscht"
+        "ratingSaved": "Bewertung gespeichert",
+        "ratingCleared": "Bewertung gelöscht",
+        "reviewUpdated": "Kostnotiz aktualisiert",
+        "reviewPosted": "Kostnotiz gepostet",
+        "reviewDeleted": "Kostnotiz gelöscht"
       },
       "a11y": {
+        "summary": "Bewertungsübersicht",
         "yourStarRating": "Deine Sternebewertung",
+        "rateStars": "Mit {count, plural, one {# Stern} other {# Sternen}} bewerten",
         "outOfStars": "{value} von 5 Sternen",
-        "rateStars": "Mit {count, plural, one {# Stern} other {# Sternen}} bewerten"
+        "averageStars": "Durchschnitt {average} von 5 Sternen",
+        "distributionRow": "{star} Sterne: {count, plural, one {# Bewertung} other {# Bewertungen}} ({pct}%)"
       },
       "heading": "Bewertungen und Kostnotizen",
-      "description": "Teile eine durchdachte Sternebewertung und eine Notiz: wie es geworden ist, was du geändert hast.",
-      "editing": "Du bearbeitest deine Bewertung",
-      "yourStarRating": "Deine Sternebewertung",
-      "reviewTitleLabel": "Titel der Bewertung",
+      "description": "Hinterlasse einen Stern und füge eine Kostnotiz hinzu, wenn du mehr erzählen möchtest.",
+      "noRatingsYet": "Noch keine Bewertungen. Sei die erste Person, die Sterne vergibt.",
+      "ratingCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+      "member": "Mitglied",
+      "more": "+{count} weitere",
+      "tapToRate": "Tippe auf einen Stern, um dieses Rezept zu bewerten.",
+      "yourRating": "Deine Bewertung: {rating}. Tippe noch einmal, um sie zu löschen.",
+      "yourRatingWithReview": "Deine Bewertung: {rating}. Lösche deine Notiz, um sie zu entfernen.",
+      "ownerStarsHint": "Sterne für dein eigenes Rezept zählen nicht zum Durchschnitt.",
+      "signInToRate": "Melde dich an, um dieses Rezept zu bewerten.",
+      "addNote": "Kostnotiz hinzufügen",
+      "editNote": "Deine Kostnotiz bearbeiten",
+      "reviewTitleLabel": "Titel der Kostnotiz",
       "titlePlaceholder": "Titel (optional), z. B. „Ein Gewinner unter der Woche“",
-      "reviewLabel": "Bewertung",
+      "reviewLabel": "Kostnotiz",
       "bodyPlaceholder": "Wie ist es geworden? Was würdest du nächstes Mal ändern?",
       "photoLabel": "Foto (optional)",
-      "helper": "Eine Bewertung pro Rezept. Du kannst deine jederzeit bearbeiten oder löschen.",
+      "helper": "Eine Notiz pro Rezept. Du kannst deine jederzeit bearbeiten oder löschen.",
+      "starRequired": "Wähle oben eine Sternebewertung, um deine Notiz zu posten.",
       "delete": "Löschen",
       "saving": "Speichere…",
-      "updateReview": "Bewertung aktualisieren",
-      "postReview": "Bewertung posten",
-      "signIn": "Melde dich an, um Sterne und eine schriftliche Bewertung zu hinterlassen.",
-      "count": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+      "updateNote": "Notiz aktualisieren",
+      "postNote": "Notiz posten",
+      "noteCount": "{count, plural, one {# Kostnotiz} other {# Kostnotizen}}",
       "sort": {
         "mostRecent": "Neueste zuerst",
         "highestRated": "Am besten bewertet"
       },
-      "empty": "Noch keine Bewertungen. Erzähl als erste Person, wie es geworden ist.",
+      "empty": "Noch keine Kostnotizen. Erzähl als erste Person, wie es geworden ist.",
       "familyCook": "Familienkochmoment",
       "edited": "(bearbeitet)",
       "photoAlt": "Foto von {name}"
-    },
-    "ratingControl": {
-      "toast": {
-        "cleared": "Bewertung gelöscht",
-        "saved": "Bewertung gespeichert"
-      },
-      "noRatings": "Noch keine Bewertungen",
-      "ratingCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
-      "firstToLeaveStars": "Sei die erste Person, die Sterne vergibt.",
-      "a11y": {
-        "recipeRating": "Rezeptbewertung",
-        "rateStars": "Mit {count, plural, one {# Stern} other {# Sternen}} bewerten"
-      },
-      "yourRating": "Deine Bewertung: {rating}. Klicke noch einmal, um sie zu löschen.",
-      "tapToRate": "Tippe auf einen Stern, um dieses Rezept zu bewerten.",
-      "signIn": "Melde dich an, um dieses Rezept zu bewerten."
-    },
-    "ratingSummary": {
-      "a11y": {
-        "breakdown": "Bewertungsübersicht",
-        "averageStars": "Durchschnitt {average} von 5 Sternen",
-        "distributionRow": "{star} Sterne: {count, plural, one {# Bewertung} other {# Bewertungen}} ({pct}%)"
-      },
-      "empty": "Noch keine Bewertungen. Sei die erste Person, die dieses Rezept bewertet.",
-      "ratingCount": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
-      "member": "Mitglied",
-      "more": "+{count} weitere"
     }
   },
   "cookLog": {

@@ -37,10 +37,13 @@ function fakeTx(overrides: {
   recipe?: unknown;
   existingReview?: { id: string } | null;
   reviewForDelete?: unknown;
+  /** The caller's existing star, which drives the mirrored aggregate delta. */
+  existingRating?: { value: number } | null;
 }) {
   const chain = {
     values: vi.fn(() => chain),
     onConflictDoUpdate: vi.fn(() => chain),
+    set: vi.fn(() => chain),
     where: vi.fn(() => chain),
     returning: vi.fn(async () => [{ id: 'rev_new' }]),
   };
@@ -57,8 +60,12 @@ function fakeTx(overrides: {
             : (overrides.existingReview ?? null),
         ),
       },
+      ratings: {
+        findFirst: vi.fn(async () => overrides.existingRating ?? null),
+      },
     },
     insert: vi.fn(() => chain),
+    update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
   };
 }
@@ -128,6 +135,41 @@ describe('upsertReview (issue #341)', () => {
     mockCanView.mockResolvedValue(true);
 
     await expect(upsertReview(baseInput, user)).rejects.toThrow('NOT_FOUND');
+  });
+
+  // #1010: a review's star is the *same* star as the one-tap rating, not a
+  // second one, so it has to land in `ratings` and move the aggregates.
+  it("mirrors the review's star into ratings and the recipe aggregates", async () => {
+    const tx = fakeTx({ existingReview: null, existingRating: null });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await upsertReview(baseInput, user);
+
+    const ratingValues = tx.chain.values.mock.calls
+      .map((call) => (call as unknown[])[0] as Record<string, unknown>)
+      .find((values) => 'value' in values);
+    expect(ratingValues).toMatchObject({
+      recipeId: 'recipe_1',
+      userId: 'user_1',
+      value: 5,
+    });
+    // A brand-new voter bumps the denormalized count as well as the sum.
+    expect(tx.update).toHaveBeenCalled();
+  });
+
+  it("never mirrors an author's star, because self-ratings are excluded", async () => {
+    const owner = { id: 'owner_9' } as unknown as User;
+    const tx = fakeTx({ existingReview: null, existingRating: null });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await upsertReview(baseInput, owner);
+
+    const ratingValues = tx.chain.values.mock.calls
+      .map((call) => (call as unknown[])[0] as Record<string, unknown>)
+      .find((values) => 'value' in values);
+    expect(ratingValues).toBeUndefined();
   });
 });
 

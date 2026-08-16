@@ -2160,68 +2160,55 @@
       "cancel": "Cancel",
       "trigger": "Suggest an edit"
     },
-    "reviews": {
+    "ratingsReviews": {
       "toast": {
-        "updated": "Review updated",
-        "posted": "Review posted",
-        "deleted": "Review deleted"
+        "ratingSaved": "Rating saved",
+        "ratingCleared": "Rating cleared",
+        "reviewUpdated": "Tasting note updated",
+        "reviewPosted": "Tasting note posted",
+        "reviewDeleted": "Tasting note deleted"
       },
       "a11y": {
+        "summary": "Rating summary",
         "yourStarRating": "Your star rating",
+        "rateStars": "Rate {count, plural, one {# star} other {# stars}}",
         "outOfStars": "{value} out of 5 stars",
-        "rateStars": "Rate {count, plural, one {# star} other {# stars}}"
+        "averageStars": "Average {average} out of 5 stars",
+        "distributionRow": "{star} stars: {count, plural, one {# rating} other {# ratings}} ({pct}%)"
       },
-      "heading": "Reviews and tasting notes",
-      "description": "Share a thoughtful star rating and a note: how it turned out, what you changed.",
-      "editing": "Editing your review",
-      "yourStarRating": "Your star rating",
-      "reviewTitleLabel": "Review title",
+      "heading": "Ratings and reviews",
+      "description": "Leave a star, and add a tasting note if you want to say more.",
+      "noRatingsYet": "No ratings yet. Be the first to leave stars.",
+      "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
+      "member": "Member",
+      "more": "+{count} more",
+      "tapToRate": "Tap a star to rate this recipe.",
+      "yourRating": "Your rating: {rating}. Tap it again to clear.",
+      "yourRatingWithReview": "Your rating: {rating}. Delete your note to clear it.",
+      "ownerStarsHint": "Stars on your own recipe aren't counted in the average.",
+      "signInToRate": "Sign in to rate this recipe.",
+      "addNote": "Add a tasting note",
+      "editNote": "Edit your tasting note",
+      "reviewTitleLabel": "Tasting note title",
       "titlePlaceholder": "Title (optional), e.g. “A weeknight winner”",
-      "reviewLabel": "Review",
+      "reviewLabel": "Tasting note",
       "bodyPlaceholder": "How did it turn out? What would you change next time?",
       "photoLabel": "Photo (optional)",
-      "helper": "One review per recipe. You can edit or delete yours anytime.",
+      "helper": "One note per recipe. You can edit or delete yours anytime.",
+      "starRequired": "Pick a star rating above to post your note.",
       "delete": "Delete",
       "saving": "Saving…",
-      "updateReview": "Update review",
-      "postReview": "Post review",
-      "signIn": "Sign in to leave a star rating and a written review.",
-      "count": "{count, plural, one {# review} other {# reviews}}",
+      "updateNote": "Update note",
+      "postNote": "Post note",
+      "noteCount": "{count, plural, one {# tasting note} other {# tasting notes}}",
       "sort": {
         "mostRecent": "Most recent",
         "highestRated": "Highest rated"
       },
-      "empty": "No reviews yet. Be the first to share how it turned out.",
+      "empty": "No tasting notes yet. Be the first to share how it turned out.",
       "familyCook": "Family cook",
       "edited": "(edited)",
       "photoAlt": "{name}'s photo"
-    },
-    "ratingControl": {
-      "toast": {
-        "cleared": "Rating cleared",
-        "saved": "Rating saved"
-      },
-      "noRatings": "No ratings yet",
-      "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
-      "firstToLeaveStars": "Be the first to leave stars.",
-      "a11y": {
-        "recipeRating": "Recipe rating",
-        "rateStars": "Rate {count, plural, one {# star} other {# stars}}"
-      },
-      "yourRating": "Your rating: {rating}. Click it again to clear.",
-      "tapToRate": "Tap a star to rate this recipe.",
-      "signIn": "Sign in to rate this recipe."
-    },
-    "ratingSummary": {
-      "a11y": {
-        "breakdown": "Rating breakdown",
-        "averageStars": "Average {average} out of 5 stars",
-        "distributionRow": "{star} stars: {count, plural, one {# rating} other {# ratings}} ({pct}%)"
-      },
-      "empty": "No ratings yet. Be the first to rate this recipe.",
-      "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
-      "member": "Member",
-      "more": "+{count} more"
     }
   },
   "cookLog": {

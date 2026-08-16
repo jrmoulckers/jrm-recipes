@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, Loader2, Star } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { setRatingAction } from '~/server/engagement/actions';
@@ -10,6 +10,7 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
+import { StarRating } from '~/components/ui/star-rating';
 import { Textarea } from '~/components/ui/textarea';
 
 /**
@@ -112,34 +113,15 @@ export function CookCompletionFeedback({
       </p>
 
       {canShowStars ? (
-        <div
-          className="mt-3 flex items-center justify-center gap-1"
-          role="group"
-          aria-label={t('starGroupLabel')}
-        >
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-label={t('starLabel', { n })}
-              aria-pressed={rating === n}
-              onClick={() => setRating(n)}
-              disabled={pending}
-              className={cn(
-                'rounded-full p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                !reducedMotion && 'transition-transform hover:scale-110',
-              )}
-            >
-              <Star
-                className={cn(
-                  'size-8',
-                  rating >= n
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'fill-transparent text-muted-foreground',
-                )}
-              />
-            </button>
-          ))}
+        <div className="mt-3 flex items-center justify-center">
+          <StarRating
+            value={rating}
+            onChange={setRating}
+            disabled={pending}
+            label={t('starGroupLabel')}
+            starLabel={(n) => t('starLabel', { n })}
+            size="size-8"
+          />
         </div>
       ) : null}
 

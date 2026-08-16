@@ -2160,68 +2160,55 @@
       "cancel": "إلغاء",
       "trigger": "اقتراح تعديل"
     },
-    "reviews": {
+    "ratingsReviews": {
       "toast": {
-        "updated": "حُدثت المراجعة",
-        "posted": "نُشرت المراجعة",
-        "deleted": "حُذفت المراجعة"
+        "ratingSaved": "حُفظ التقييم",
+        "ratingCleared": "مُسح التقييم",
+        "reviewUpdated": "حُدثت ملاحظة التذوق",
+        "reviewPosted": "نُشرت ملاحظة التذوق",
+        "reviewDeleted": "حُذفت ملاحظة التذوق"
       },
       "a11y": {
+        "summary": "ملخص التقييمات",
         "yourStarRating": "تقييمك بالنجوم",
+        "rateStars": "قيّم بـ {count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتين} few {# نجوم} many {# نجمة} other {# نجمة}}",
         "outOfStars": "{value} من 5 نجوم",
-        "rateStars": "قيّم بـ {count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتين} few {# نجوم} many {# نجمة} other {# نجمة}}"
+        "averageStars": "متوسط {average} من 5 نجوم",
+        "distributionRow": "{star} نجوم: {count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}} ({pct}%)"
       },
-      "heading": "المراجعات وملاحظات التذوق",
-      "description": "شارك تقييمًا مدروسًا بالنجوم وملاحظة: كيف نجحت، وما الذي غيّرته.",
-      "editing": "تعدّل مراجعتك",
-      "yourStarRating": "تقييمك بالنجوم",
-      "reviewTitleLabel": "عنوان المراجعة",
+      "heading": "التقييمات والمراجعات",
+      "description": "اترك نجمة، وأضف ملاحظة تذوق إن أردت أن تقول المزيد.",
+      "noRatingsYet": "لا توجد تقييمات بعد. كن أول من يترك نجومًا.",
+      "ratingCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+      "member": "عضو",
+      "more": "+{count} آخرين",
+      "tapToRate": "اضغط نجمة لتقييم هذه الوصفة.",
+      "yourRating": "تقييمك: {rating}. اضغط عليه مرة أخرى لمسحه.",
+      "yourRatingWithReview": "تقييمك: {rating}. احذف ملاحظتك لمسحه.",
+      "ownerStarsHint": "النجوم على وصفتك الخاصة لا تُحتسب في المتوسط.",
+      "signInToRate": "سجّل الدخول لتقييم هذه الوصفة.",
+      "addNote": "أضف ملاحظة تذوق",
+      "editNote": "تعديل ملاحظة التذوق",
+      "reviewTitleLabel": "عنوان ملاحظة التذوق",
       "titlePlaceholder": "عنوان (اختياري)، مثل «فائزة في ليلة مزدحمة»",
-      "reviewLabel": "مراجعة",
+      "reviewLabel": "ملاحظة تذوق",
       "bodyPlaceholder": "كيف نجحت؟ ما الذي ستغيّره في المرة القادمة؟",
       "photoLabel": "صورة (اختياري)",
-      "helper": "مراجعة واحدة لكل وصفة. يمكنك تعديل مراجعتك أو حذفها في أي وقت.",
+      "helper": "ملاحظة واحدة لكل وصفة. يمكنك تعديل ملاحظتك أو حذفها في أي وقت.",
+      "starRequired": "اختر تقييمًا بالنجوم أعلاه لنشر ملاحظتك.",
       "delete": "حذف",
       "saving": "جار الحفظ…",
-      "updateReview": "تحديث المراجعة",
-      "postReview": "نشر المراجعة",
-      "signIn": "سجّل الدخول لترك تقييم بالنجوم ومراجعة مكتوبة.",
-      "count": "{count, plural, zero {لا مراجعات} one {مراجعة واحدة} two {مراجعتان} few {# مراجعات} many {# مراجعة} other {# مراجعة}}",
+      "updateNote": "تحديث الملاحظة",
+      "postNote": "نشر الملاحظة",
+      "noteCount": "{count, plural, zero {لا ملاحظات تذوق} one {ملاحظة تذوق واحدة} two {ملاحظتا تذوق} few {# ملاحظات تذوق} many {# ملاحظة تذوق} other {# ملاحظة تذوق}}",
       "sort": {
         "mostRecent": "الأحدث",
         "highestRated": "الأعلى تقييمًا"
       },
-      "empty": "لا توجد مراجعات بعد. كن أول من يشارك كيف نجحت.",
+      "empty": "لا توجد ملاحظات تذوق بعد. كن أول من يشارك كيف نجحت.",
       "familyCook": "طبخة عائلية",
       "edited": "(معدّلة)",
       "photoAlt": "صورة {name}"
-    },
-    "ratingControl": {
-      "toast": {
-        "cleared": "مُسح التقييم",
-        "saved": "حُفظ التقييم"
-      },
-      "noRatings": "لا توجد تقييمات بعد",
-      "ratingCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
-      "firstToLeaveStars": "كن أول من يترك نجومًا.",
-      "a11y": {
-        "recipeRating": "تقييم الوصفة",
-        "rateStars": "قيّم بـ {count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتين} few {# نجوم} many {# نجمة} other {# نجمة}}"
-      },
-      "yourRating": "تقييمك: {rating}. انقر عليه مرة أخرى لمسحه.",
-      "tapToRate": "اضغط نجمة لتقييم هذه الوصفة.",
-      "signIn": "سجّل الدخول لتقييم هذه الوصفة."
-    },
-    "ratingSummary": {
-      "a11y": {
-        "breakdown": "تفصيل التقييمات",
-        "averageStars": "متوسط {average} من 5 نجوم",
-        "distributionRow": "{star} نجوم: {count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}} ({pct}%)"
-      },
-      "empty": "لا توجد تقييمات بعد. كن أول من يقيّم هذه الوصفة.",
-      "ratingCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
-      "member": "عضو",
-      "more": "+{count} آخرين"
     }
   },
   "cookLog": {

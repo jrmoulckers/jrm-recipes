@@ -14,6 +14,7 @@ import {
   recipeIngredients,
   recipeSteps,
   recipes,
+  reviews,
   type Comment,
   type Rating,
   type User,
@@ -311,6 +312,53 @@ export async function applySuggestion(
   });
 }
 
+/**
+ * Upsert one member's star on a recipe and move the denormalized aggregates by
+ * the exact delta (issue #154): a brand-new vote bumps count and sum, changing
+ * an existing vote only shifts the sum.
+ *
+ * Shared by `setRating` (the one-tap star) and `upsertReview`, which mirrors a
+ * review's star through here so the unified "Ratings & reviews" card (#1010)
+ * never shows a star that the summary above it disagrees with. Callers own the
+ * visibility and self-rating checks.
+ */
+export async function writeRating(
+  tx: Tx,
+  input: { recipeId: string; userId: string; value: number },
+): Promise<Rating | undefined> {
+  const previous = await tx.query.ratings.findFirst({
+    where: and(eq(ratings.recipeId, input.recipeId), eq(ratings.userId, input.userId)),
+    columns: { value: true },
+  });
+
+  const [rating] = await tx
+    .insert(ratings)
+    .values({
+      recipeId: input.recipeId,
+      userId: input.userId,
+      value: input.value,
+    })
+    .onConflictDoUpdate({
+      target: [ratings.recipeId, ratings.userId],
+      set: { value: input.value, updatedAt: new Date() },
+    })
+    .returning();
+
+  const countDelta = previous ? 0 : 1;
+  const sumDelta = input.value - (previous?.value ?? 0);
+  if (countDelta !== 0 || sumDelta !== 0) {
+    await tx
+      .update(recipes)
+      .set({
+        ratingCount: sql`${recipes.ratingCount} + ${countDelta}`,
+        ratingSum: sql`${recipes.ratingSum} + ${sumDelta}`,
+      })
+      .where(eq(recipes.id, input.recipeId));
+  }
+
+  return rating;
+}
+
 export async function setRating(input: RatingInput, user: User): Promise<Rating | undefined> {
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
@@ -328,38 +376,19 @@ export async function setRating(input: RatingInput, user: User): Promise<Rating 
     // inflate both the average and the JSON-LD aggregateRating.
     if (recipe.authorId === user.id) throw new DomainError('SELF_RATING');
 
-    // Read the caller's prior rating (if any) so we can move the denormalized
-    // aggregates by the exact delta (issue #154): a brand-new vote bumps count
-    // and sum. Changing an existing vote only shifts the sum.
-    const previous = await tx.query.ratings.findFirst({
-      where: and(eq(ratings.recipeId, input.recipeId), eq(ratings.userId, user.id)),
-      columns: { value: true },
+    const rating = await writeRating(tx, {
+      recipeId: input.recipeId,
+      userId: user.id,
+      value: input.value,
     });
 
-    const [rating] = await tx
-      .insert(ratings)
-      .values({
-        recipeId: input.recipeId,
-        userId: user.id,
-        value: input.value,
-      })
-      .onConflictDoUpdate({
-        target: [ratings.recipeId, ratings.userId],
-        set: { value: input.value, updatedAt: new Date() },
-      })
-      .returning();
-
-    const countDelta = previous ? 0 : 1;
-    const sumDelta = input.value - (previous?.value ?? 0);
-    if (countDelta !== 0 || sumDelta !== 0) {
-      await tx
-        .update(recipes)
-        .set({
-          ratingCount: sql`${recipes.ratingCount} + ${countDelta}`,
-          ratingSum: sql`${recipes.ratingSum} + ${sumDelta}`,
-        })
-        .where(eq(recipes.id, input.recipeId));
-    }
+    // One star per member per recipe (#1010): if they've also written a review,
+    // it carries the same star, so re-tapping the row keeps the review honest
+    // rather than leaving two disagreeing numbers on the same card.
+    await tx
+      .update(reviews)
+      .set({ rating: input.value, updatedAt: new Date() })
+      .where(and(eq(reviews.recipeId, input.recipeId), eq(reviews.userId, user.id)));
 
     return rating;
   });
@@ -379,6 +408,16 @@ export async function removeRating(recipeId: string, user: User): Promise<void> 
     if (recipe && !(await canViewRecipe(recipe, user))) {
       throw new DomainError('FORBIDDEN');
     }
+
+    // A review's star is mirrored into `ratings`, so clearing the rating out
+    // from under a live review would desync the two (#1010). Deleting the
+    // review is the way to take the star back; the UI hides the toggle-clear
+    // affordance while a review exists and this is the backstop.
+    const review = await tx.query.reviews.findFirst({
+      where: and(eq(reviews.recipeId, recipeId), eq(reviews.userId, user.id)),
+      columns: { id: true },
+    });
+    if (review) throw new DomainError('RATING_LOCKED_BY_REVIEW');
 
     // Find the caller's rating first so removing it can decrement the aggregates
     // by the right amount (issue #154). Only non-owner ratings are counted, so a
