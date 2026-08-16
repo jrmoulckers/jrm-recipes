@@ -26,7 +26,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const TRIGGER_CLASS =
-  'inline-flex items-center gap-1.5 hover:text-foreground focus-visible:text-foreground';
+  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-2.5 py-1.5 leading-none transition-colors hover:border-foreground/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 function computeStandalone(): boolean {
   return (
