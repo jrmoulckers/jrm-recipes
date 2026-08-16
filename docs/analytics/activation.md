@@ -4,6 +4,11 @@ This doc defines Heirloom's **activation metric** and the onboarding funnel that
 leads to it, and maps each funnel step to a concrete analytics event so the
 funnel is reproducible from data.
 
+The definition below is owned and versioned under
+[`PROD-MET-001` (Give each metric one versioned decision definition)](https://github.com/jrmoulckers/product/blob/main/principles/metrics.md).
+Changing the threshold, the window, or the qualifying events changes the metric's meaning, so
+treat any such edit as a new version rather than a correction.
+
 ## Definition of an "activated" family
 
 > A new user is **activated** when, **within 7 days of signing up**, they both

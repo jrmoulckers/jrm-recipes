@@ -24,6 +24,11 @@ recipes together, and `docs/analytics/retention.md` explicitly defines household
 roll-ups. `cook_completed` is a deeper-engagement quality check, not the primary
 reach metric.
 
+WACH is maintained as a single owned definition under
+[`PROD-MET-001` (Give each metric one versioned decision definition)](https://github.com/jrmoulckers/product/blob/main/principles/metrics.md),
+which is why the decision it informs, the formula, the population, the window, and the event
+lineage above are all stated in one place rather than recalculated per report.
+
 WACH beats vanity metrics such as pageviews, signups, or recipe count because it
 measures repeated family value. A recipe that never gets cooked is content
 inventory. A household that cooks weekly is an active family habit.
