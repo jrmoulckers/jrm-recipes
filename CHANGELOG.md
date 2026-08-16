@@ -5,6 +5,13 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.3.2](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.1...heirloom-v0.3.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* **footer:** align footer nav row and Install app button ([#1007](https://github.com/jrmoulckers/jrm-recipes/issues/1007)) ([#1008](https://github.com/jrmoulckers/jrm-recipes/issues/1008)) ([961e54b](https://github.com/jrmoulckers/jrm-recipes/commit/961e54b7275ba1627ac9fb8283c361875128eb24))
+
 ## [0.3.1](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.0...heirloom-v0.3.1) (2026-08-16)
 
 
