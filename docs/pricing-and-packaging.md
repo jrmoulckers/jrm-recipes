@@ -6,6 +6,11 @@ length, seat rules, and gift configuration. Real Stripe prices live in Stripe an
 are referenced by environment variable names such as `STRIPE_PRICE_FAMILY`. The
 display prices in code are product-display values.
 
+The tiers, entitlements, and packaging strategy recorded here answer to
+[`PROD-BUS-001` (Make monetization serve user value and trust)](https://github.com/jrmoulckers/product/blob/main/principles/business.md),
+which requires a documented value hypothesis behind pricing and entitlement logic and rejects
+revenue gains that materially weaken user value or trust.
+
 ## Current tiers
 
 | Tier   | Display price |   Trial | Tagline                                                | Highlights from code                                                                                                                                                                                               |

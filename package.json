@@ -136,7 +136,7 @@
     "overrides": {
       "sharp": "^0.35.0",
       "next>postcss": "^8.5.18",
-      "nanoid@3.3.16": "3.3.17",
+      "nanoid@^3": "^3.3.18",
       "brace-expansion": "^5.0.9",
       "ip-address": "^10.3.1",
       "js-yaml@^3": "^3.15.1",
@@ -145,7 +145,8 @@
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-gpj5-g38j-94v9",
-        "GHSA-ph9p-34f9-6g65"
+        "GHSA-ph9p-34f9-6g65",
+        "GHSA-jmr9-qjv8-65gv"
       ]
     }
   }
