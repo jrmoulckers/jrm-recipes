@@ -3421,6 +3421,8 @@
     "flag": "{level} {nutrient} · {percent}% DV",
     "estimatedPartial": "Estimated from the ingredient list ({sourced} of {total} ingredients).",
     "estimated": "Estimated from the ingredient list.",
+    "couldNotWeigh": "Couldn't weigh: {items}.",
+    "noNutritionData": "No nutrition data for: {items}.",
     "entered": "Estimated values as entered by the cook.",
     "servingsNoun": "servings"
   },

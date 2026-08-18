@@ -16,7 +16,13 @@
  * truth.
  */
 import { canonicalFood, foodSlug } from './food-db';
-import { resolveGramsForFood, resolveGramsForSlug } from './food-grams';
+import {
+  aggregateConfidence,
+  resolveGramsForFood,
+  resolveGramsForSlug,
+  type ConfidenceEntry,
+  type UnresolvedLine,
+} from './food-grams';
 import type { Nutrition } from './nutrition';
 
 /**
@@ -1218,14 +1224,22 @@ export type NutritionRollup = {
   total: number;
   /** `sourced / total`, or 0 when there were no ingredients. */
   coverage: number;
+  /**
+   * 0–1 confidence in the totals (#1027): a mass-weighted mean of how each
+   * contributing line's grams were derived, diluted by the lines that could not
+   * be weighed at all. See `aggregateConfidence` in `food-grams.ts`.
+   */
+  confidence: number;
+  /** The lines that contributed nothing, named so a caller can say which. */
+  unresolved: UnresolvedLine[];
 };
 
 /**
  * Roll a list of ingredient lines up into total nutrition. An ingredient
  * contributes only when it both resolves to curated facts *and* can be converted
- * to grams. Everything else is skipped but still counted toward `total`, so
- * `coverage` honestly reflects how complete the estimate is. Pure and
- * order-independent.
+ * to grams. Everything else is skipped but still counted toward `total`,
+ * `unresolved`, and the `confidence` denominator, so neither number can overstate
+ * how complete the estimate is. Pure and order-independent.
  */
 export function estimateRecipeNutrition(
   ingredients: readonly NutritionIngredient[],
@@ -1241,14 +1255,26 @@ export function estimateRecipeNutrition(
     sourced: 0,
     total: 0,
     coverage: 0,
+    confidence: 0,
+    unresolved: [],
   };
+  const entries: ConfidenceEntry[] = [];
   for (const ing of ingredients) {
     if (!ing.item?.trim()) continue;
     acc.total += 1;
     const facts = nutritionForFood(ing.item);
-    if (!facts) continue;
-    const grams = estimateIngredientGrams(ing.item, ing.quantity, ing.unit);
-    if (grams == null) continue;
+    const resolved = resolveGramsForFood(ing.item, ing.quantity, ing.unit);
+    const grams = resolved?.grams ?? null;
+    if (!facts || grams == null) {
+      // No contribution: weight 0, but still in the confidence denominator.
+      entries.push({ grams, confidence: 'none' });
+      acc.unresolved.push({
+        label: ing.item.trim(),
+        reason: grams == null ? 'weight' : 'facts',
+      });
+      continue;
+    }
+    entries.push({ grams, confidence: resolved!.confidence });
     const factor = grams / 100;
     acc.kcal += facts.kcal * factor;
     acc.proteinG += facts.proteinG * factor;
@@ -1260,6 +1286,7 @@ export function estimateRecipeNutrition(
     acc.sourced += 1;
   }
   acc.coverage = acc.total === 0 ? 0 : acc.sourced / acc.total;
+  acc.confidence = aggregateConfidence(entries);
   return acc;
 }
 
@@ -1276,6 +1303,10 @@ export type EstimatedNutrition = {
   perServing: Nutrition;
   /** Fraction (0–1) of ingredient lines that contributed. */
   coverage: number;
+  /** 0–1 confidence in the estimate (see {@link NutritionRollup.confidence}). */
+  confidence: number;
+  /** The lines that contributed nothing, named so a caller can say which. */
+  unresolved: UnresolvedLine[];
   /** Ingredient lines that contributed. */
   sourced: number;
   /** Ingredient lines considered. */
@@ -1311,6 +1342,8 @@ export function estimatePerServingNutrition(
   return {
     perServing,
     coverage: roll.coverage,
+    confidence: roll.confidence,
+    unresolved: roll.unresolved,
     sourced: roll.sourced,
     total: roll.total,
   };

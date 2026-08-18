@@ -92,7 +92,9 @@ describe('rollUpNutrition', () => {
     expect(est.sourcedLines).toBe(1);
     expect(est.totalLines).toBe(1);
     expect(est.lineCoverage).toBe(1);
-    expect(est.massCoverage).toBe(1);
+    // One line, weighed on a scale, with curated facts: nothing was estimated.
+    expect(est.confidence).toBe(1);
+    expect(est.unresolvedLines).toEqual([]);
   });
 
   it('weighs a volume ingredient via its density', () => {
@@ -121,10 +123,10 @@ describe('rollUpNutrition', () => {
     const lines: ResolvedNutritionLine[] = [
       // contributes: 100 g of the unit food
       { quantity: 100, unit: 'g', facts: UNIT_FOOD, densityGPerMl: null },
-      // weighable but no facts → drags mass coverage down
-      { quantity: 300, unit: 'g', facts: null, densityGPerMl: null },
-      // has facts but count unit with no density → not weighable
-      { quantity: 2, unit: 'clove', facts: UNIT_FOOD, densityGPerMl: null },
+      // weighable but no facts → contributes 0 confidence over its 300 g
+      { quantity: 300, unit: 'g', facts: null, densityGPerMl: null, label: 'mystery powder' },
+      // has facts but count unit with no density → not weighable at all
+      { quantity: 2, unit: 'clove', facts: UNIT_FOOD, densityGPerMl: null, label: 'garlic' },
     ];
     const est = rollUpNutrition(lines, 1);
     expect(est.sourcedLines).toBe(1);
@@ -133,7 +135,13 @@ describe('rollUpNutrition', () => {
     // weighable = 100 (unit food) + 300 (no facts) = 400. Accounted = 100.
     expect(est.weighableGrams).toBe(400);
     expect(est.accountedGrams).toBe(100);
-    expect(est.massCoverage).toBeCloseTo(0.25, 5);
+    // Mass-weighted over the two weighable lines: (100×1 + 300×0) / 400 = 0.25,
+    // then diluted by the third line, which could not be weighed: × 2/3.
+    expect(est.confidence).toBeCloseTo(0.25 * (2 / 3), 5);
+    expect(est.unresolvedLines).toEqual([
+      { label: 'mystery powder', reason: 'facts' },
+      { label: 'garlic', reason: 'weight' },
+    ]);
     expect(est.whole.calories).toBe(100);
   });
 
@@ -150,7 +158,7 @@ describe('rollUpNutrition', () => {
     expect(est.sourcedLines).toBe(0);
     expect(est.totalLines).toBe(2);
     expect(est.lineCoverage).toBe(0);
-    expect(est.massCoverage).toBe(0);
+    expect(est.confidence).toBe(0);
   });
 
   it('scales per-serving inversely with the serving count', () => {
@@ -214,14 +222,19 @@ describe('portion-aware gram resolution (issue #1025)', () => {
   it('no longer reports 100% mass coverage on a mostly-uncounted recipe', () => {
     // The motivating bug: an unweighable line never entered `weighableGrams`,
     // so `1 tbsp oil + 6 eggs` scored a confident massCoverage of 1.0 while
-    // capturing ~4% of the food. With eggs weighable the ratio is honest.
+    // capturing ~4% of the food. With eggs weighable the estimate is honest.
     const lines: ResolvedNutritionLine[] = [
       { quantity: 1, unit: 'tbsp', facts: OIL, densityGPerMl: 0.92, slug: 'oil' },
       { quantity: 6, unit: 'each', facts: EGG, slug: 'egg' },
     ];
     const got = rollUpNutrition(lines, 1);
     expect(got.sourcedLines).toBe(2);
-    expect(got.massCoverage).toBe(1);
+    expect(got.unresolvedLines).toEqual([]);
+    // Every line resolved, but neither was weighed on a scale: the oil came
+    // from a density (0.6) and the eggs from a curated portion (0.8), so the
+    // score sits between those and short of 1.
+    expect(got.confidence).toBeGreaterThan(0.6);
+    expect(got.confidence).toBeLessThan(0.8);
     // Oil is now a small fraction of a real total rather than the whole of it.
     expect(got.accountedGrams).toBeGreaterThan(300);
     expect(got.whole.calories).toBeGreaterThan(500);
@@ -235,6 +248,105 @@ describe('portion-aware gram resolution (issue #1025)', () => {
     const got = rollUpNutrition(lines, 1);
     expect(got.sourcedLines).toBe(0);
     expect(got.perServing).toEqual({});
+  });
+});
+
+describe('confidence roll-up (issue #1027)', () => {
+  const EGG: NutritionFacts = {
+    kcal: 143,
+    proteinG: 12.6,
+    carbsG: 0.7,
+    fatG: 9.5,
+    sodiumMg: 142,
+    sourceRef: 'TEST:egg',
+  };
+  const OIL: NutritionFacts = {
+    kcal: 884,
+    proteinG: 0,
+    carbsG: 0,
+    fatG: 100,
+    sodiumMg: 0,
+    sourceRef: 'TEST:oil',
+  };
+
+  it('scores `1 tbsp oil + 6 eggs` far below 1.0 when the eggs cannot be weighed', () => {
+    // The exact shape `massCoverage` was blind to. With no slug the eggs have
+    // no gram path, so the old metric dropped them from *both* sides of its
+    // ratio and reported 1.0 on an estimate capturing ~4% of the food.
+    const lines: ResolvedNutritionLine[] = [
+      { quantity: 1, unit: 'tbsp', facts: OIL, densityGPerMl: 0.92, label: 'olive oil' },
+      { quantity: 6, unit: 'each', facts: EGG, label: '6 eggs' },
+    ];
+    const got = rollUpNutrition(lines, 1);
+    expect(got.confidence).toBeLessThan(0.5);
+    // Density (0.6) over the one weighable line, halved by the line it could not
+    // weigh at all.
+    expect(got.confidence).toBeCloseTo(0.3, 5);
+    expect(got.unresolvedLines).toEqual([{ label: '6 eggs', reason: 'weight' }]);
+  });
+
+  it('reports each resolution tier at its own weight', () => {
+    const tier = (line: ResolvedNutritionLine) => rollUpNutrition([line], 1).confidence;
+    // Mass arithmetic: no estimation at all.
+    expect(tier({ quantity: 100, unit: 'g', facts: UNIT_FOOD })).toBeCloseTo(1, 5);
+    // A curated per-food portion for the unit.
+    expect(tier({ quantity: 2, unit: 'each', facts: EGG, slug: 'egg' })).toBeCloseTo(0.8, 5);
+    // A generic density scalar applied to a volume.
+    expect(tier({ quantity: 1, unit: 'cup', facts: UNIT_FOOD, densityGPerMl: 1 })).toBeCloseTo(
+      0.6,
+      5,
+    );
+    // No path at all.
+    expect(tier({ quantity: 1, unit: 'splash', facts: UNIT_FOOD })).toBe(0);
+  });
+
+  it('cannot reach 1.0 while any line is unresolved', () => {
+    const exact: ResolvedNutritionLine = { quantity: 500, unit: 'g', facts: UNIT_FOOD };
+    expect(rollUpNutrition([exact], 1).confidence).toBe(1);
+    const withUnweighable = rollUpNutrition(
+      [exact, { quantity: 6, unit: 'each', facts: EGG, label: 'eggs' }],
+      1,
+    );
+    expect(withUnweighable.confidence).toBeLessThan(1);
+    expect(withUnweighable.confidence).toBeCloseTo(0.5, 5);
+  });
+
+  it('weights each line by its mass, not by the line count', () => {
+    // A pinch of exactly-weighed salt must not outvote a kilo of guessed stock.
+    const got = rollUpNutrition(
+      [
+        { quantity: 1, unit: 'g', facts: UNIT_FOOD },
+        { quantity: 1000, unit: 'ml', facts: UNIT_FOOD, densityGPerMl: 1 },
+      ],
+      1,
+    );
+    expect(got.confidence).toBeCloseTo((1 * 1 + 1000 * 0.6) / 1001, 5);
+    expect(got.confidence).toBeLessThan(0.61);
+  });
+
+  it('never treats an unknown weight as zero grams', () => {
+    // `null` grams mean *unknown*. They contribute 0 confidence, but they must
+    // not enter any mass total as if the line weighed nothing.
+    const got = rollUpNutrition(
+      [
+        { quantity: 200, unit: 'g', facts: UNIT_FOOD },
+        { quantity: 3, unit: 'sprinkle', facts: UNIT_FOOD, label: 'paprika' },
+      ],
+      1,
+    );
+    expect(got.weighableGrams).toBe(200);
+    expect(got.accountedGrams).toBe(200);
+    expect(got.whole.calories).toBe(200);
+    expect(got.confidence).toBeCloseTo(0.5, 5);
+  });
+
+  it('keeps unresolved lines in an estimate that sources nothing at all', () => {
+    const got = rollUpNutrition(
+      [{ quantity: 2, unit: 'clove', facts: UNIT_FOOD, label: 'garlic' }],
+      1,
+    );
+    expect(got.confidence).toBe(0);
+    expect(got.unresolvedLines).toEqual([{ label: 'garlic', reason: 'weight' }]);
   });
 });
 
@@ -281,13 +393,15 @@ describe('resolveNutritionView precedence', () => {
     expect(view.provenance.source).toBe('graph');
   });
 
-  it('tags the graph rung with its coverage and line counts', () => {
+  it('tags the graph rung with its confidence and line counts', () => {
     const view = resolveNutritionView({ graph: GRAPH, ingredients: TEXT, servings: 1 });
     expect(view.provenance).toEqual({
       source: 'graph',
+      // One exactly-weighed line, halved by the line that could not be weighed.
       confidence: 0.5,
       sourcedLines: 1,
       totalLines: 2,
+      unresolvedLines: [{ label: '', reason: 'weight' }],
     });
     expect(view.perServing.calories).toBeCloseTo(100, 5);
   });
@@ -310,6 +424,7 @@ describe('resolveNutritionView precedence', () => {
       confidence: 1,
       sourcedLines: 1,
       totalLines: 1,
+      unresolvedLines: [],
     });
   });
 

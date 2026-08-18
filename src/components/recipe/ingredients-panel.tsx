@@ -1034,6 +1034,12 @@ export function IngredientsPanel({
               ? nutritionView.provenance.totalLines
               : undefined
           }
+          unresolved={
+            nutritionView.provenance.source === 'graph' ||
+            nutritionView.provenance.source === 'estimate'
+              ? nutritionView.provenance.unresolvedLines
+              : undefined
+          }
         />
       )}
     </div>

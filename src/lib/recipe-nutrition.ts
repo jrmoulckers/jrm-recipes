@@ -15,7 +15,12 @@
  * the coverage numbers.
  */
 
-import { resolveGramsForSlug } from '~/lib/food-grams';
+import {
+  aggregateConfidence,
+  resolveGramsForSlug,
+  type ConfidenceEntry,
+  type UnresolvedLine,
+} from '~/lib/food-grams';
 import {
   estimatePerServingNutrition,
   type NutritionFacts,
@@ -42,6 +47,13 @@ export type ResolvedNutritionLine = {
    * `3 cloves garlic`) has no gram path at all and is silently dropped.
    */
   slug?: string | null;
+  /**
+   * The ingredient text, used only to name this line when it contributes
+   * nothing (#1027). Without it an unresolved line can be counted but not
+   * reported, which tells a cook that something is missing without telling them
+   * what to fix.
+   */
+  label?: string | null;
 };
 
 /**
@@ -67,13 +79,12 @@ export function resolveLineGrams(
  * A recipe nutrition estimate rolled up from its ingredient lines. `perServing`
  * feeds {@link Nutrition}-shaped UI directly (empty `{}` when nothing sourced, so
  * it flows through `hasNutrition`/`NutritionPanel` and renders nothing). `whole`
- * is the same figures before dividing by servings. The coverage numbers keep a
- * partial estimate honest, on two axes:
+ * is the same figures before dividing by servings. The honesty numbers keep a
+ * partial estimate from overstating itself, on two axes:
  *  - **lines**: `sourcedLines` of `totalLines` contributed (`lineCoverage`).
- *  - **mass**: `accountedGrams` of `weighableGrams` were actually costed
- *    (`massCoverage`). I.e. Of the mass we *could* weigh, how much also had
- *    curated facts. A big unlinked ingredient drags this down even when most
- *    lines matched, which is exactly the honesty we want.
+ *  - **confidence**: how much of the food was weighed, and how trustworthy each
+ *    weight was (`confidence`, see {@link aggregateConfidence}), with the lines
+ *    that resolved to nothing named in `unresolvedLines`.
  */
 export type RecipeNutritionEstimate = {
   /** Per-serving macros (empty `{}` when nothing was sourced). */
@@ -92,8 +103,15 @@ export type RecipeNutritionEstimate = {
   accountedGrams: number;
   /** Grams of every weighable line (whether or not it had facts). */
   weighableGrams: number;
-  /** `accountedGrams / weighableGrams`, or 0 when nothing was weighable. */
-  massCoverage: number;
+  /**
+   * 0–1 confidence in the estimate: a mass-weighted mean of each contributing
+   * line's gram-resolution trust, diluted by the lines that could not be weighed
+   * at all. Reaching 1.0 requires every line to be weighed on a scale *and*
+   * carry curated facts, so an unresolved line always pulls it below 1.
+   */
+  confidence: number;
+  /** The lines that contributed nothing, named so the UI can say which. */
+  unresolvedLines: readonly UnresolvedLine[];
 };
 
 /** An estimate with no contributing lines. The honest "nothing to show" shape. */
@@ -108,7 +126,8 @@ export function emptyRecipeNutrition(servings = 1): RecipeNutritionEstimate {
     lineCoverage: 0,
     accountedGrams: 0,
     weighableGrams: 0,
-    massCoverage: 0,
+    confidence: 0,
+    unresolvedLines: [],
   };
 }
 
@@ -116,9 +135,10 @@ export function emptyRecipeNutrition(servings = 1): RecipeNutritionEstimate {
  * Roll a list of pre-resolved ingredient lines up into a per-serving nutrition
  * estimate. A line contributes only when it can be both weighed (see
  * {@link resolveLineGrams}) *and* carries per-100 g facts. Anything else is
- * skipped but still counted toward `totalLines` (and, when weighable,
- * `weighableGrams`) so the coverage numbers stay honest. The function is pure
- * and order-independent. A non-positive/non-finite `servings` is treated as 1.
+ * skipped but still counted toward `totalLines`, `unresolvedLines`, and the
+ * `confidence` denominator (and, when weighable, `weighableGrams`) so the
+ * estimate cannot claim more than it delivered. The function is pure and
+ * order-independent. A non-positive/non-finite `servings` is treated as 1.
  */
 export function rollUpNutrition(
   lines: readonly ResolvedNutritionLine[],
@@ -138,14 +158,33 @@ export function rollUpNutrition(
   let totalLines = 0;
   let accountedGrams = 0;
   let weighableGrams = 0;
+  const entries: ConfidenceEntry[] = [];
+  const unresolvedLines: UnresolvedLine[] = [];
 
   for (const line of lines) {
     totalLines += 1;
-    const grams = resolveLineGrams(line.quantity, line.unit, line.densityGPerMl, line.slug);
+    const resolved = resolveGramsForSlug(
+      line.slug ?? null,
+      line.quantity,
+      line.unit,
+      line.densityGPerMl,
+    );
+    const grams = resolved?.grams ?? null;
     if (grams != null) weighableGrams += grams;
 
     const facts = line.facts;
-    if (grams == null || !facts) continue;
+    if (grams == null || !facts) {
+      // A line that produced no nutrition weighs 0 toward confidence but stays
+      // in its denominator. `grams` is left null-or-real; never coerced to 0.
+      entries.push({ grams, confidence: 'none' });
+      unresolvedLines.push({
+        label: line.label?.trim() ?? '',
+        reason: grams == null ? 'weight' : 'facts',
+      });
+      continue;
+    }
+
+    entries.push({ grams, confidence: resolved!.confidence });
 
     const per = grams / 100;
     kcal += facts.kcal * per;
@@ -165,6 +204,7 @@ export function rollUpNutrition(
       ...emptyRecipeNutrition(s),
       totalLines,
       weighableGrams,
+      unresolvedLines,
     };
   }
 
@@ -196,7 +236,8 @@ export function rollUpNutrition(
     lineCoverage: totalLines === 0 ? 0 : sourcedLines / totalLines,
     accountedGrams,
     weighableGrams,
-    massCoverage: weighableGrams === 0 ? 0 : accountedGrams / weighableGrams,
+    confidence: aggregateConfidence(entries),
+    unresolvedLines,
   };
 }
 
@@ -216,15 +257,29 @@ export function rollUpNutrition(
  * The tag is now decided once, in {@link resolveNutritionView}, and rendered
  * (never decided) by the panel.
  *
- * `confidence` is the fraction of ingredient lines that actually contributed —
- * an interim honesty metric that #1027's confidence roll-up replaces. It is
- * deliberately absent from `manual` (a cook's own numbers are not an estimate)
- * and from `none` (there is nothing to be confident about).
+ * `confidence` is a 0–1 measure of how much of the recipe's food was actually
+ * weighed and how trustworthy each weight was (#1027), and `unresolvedLines`
+ * names the lines that contributed nothing so a surface can show *which*
+ * ingredient is missing rather than a bare percentage. Both are deliberately
+ * absent from `manual` (a cook's own numbers are not an estimate) and from
+ * `none` (there is nothing to be confident about).
  */
 export type NutritionProvenance =
   | { source: 'manual' }
-  | { source: 'graph'; confidence: number; sourcedLines: number; totalLines: number }
-  | { source: 'estimate'; confidence: number; sourcedLines: number; totalLines: number }
+  | {
+      source: 'graph';
+      confidence: number;
+      sourcedLines: number;
+      totalLines: number;
+      unresolvedLines: readonly UnresolvedLine[];
+    }
+  | {
+      source: 'estimate';
+      confidence: number;
+      sourcedLines: number;
+      totalLines: number;
+      unresolvedLines: readonly UnresolvedLine[];
+    }
   | { source: 'none' };
 
 /**
@@ -282,9 +337,10 @@ export function resolveNutritionView(input: {
       perServing: graph.perServing,
       provenance: {
         source: 'graph',
-        confidence: graph.lineCoverage,
+        confidence: graph.confidence,
         sourcedLines: graph.sourcedLines,
         totalLines: graph.totalLines,
+        unresolvedLines: graph.unresolvedLines,
       },
     };
   }
@@ -299,9 +355,10 @@ export function resolveNutritionView(input: {
         perServing: est.perServing,
         provenance: {
           source: 'estimate',
-          confidence: est.coverage,
+          confidence: est.confidence,
           sourcedLines: est.sourced,
           totalLines: est.total,
+          unresolvedLines: est.unresolved,
         },
       };
     }
