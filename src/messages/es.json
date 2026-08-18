@@ -1876,7 +1876,8 @@
       "cancel": "Cancelar",
       "saving": "Guardando…",
       "addMember": "Agregar miembro",
-      "saveChanges": "Guardar cambios"
+      "saveChanges": "Guardar cambios",
+      "setTargets": "Objetivos diarios"
     },
     "empty": {
       "title": "Aún no hay perfiles",
@@ -1885,8 +1886,42 @@
     "profile": {
       "edit": "Editar {name}",
       "remove": "Eliminar {name}",
-      "calorieGoal": "Objetivo de {calories} kcal/día",
+      "noTargets": "Sin objetivos diarios definidos",
+      "futureTargets": "Los objetivos diarios empiezan más adelante",
+      "targetSince": "Vigentes desde el {date}",
       "noRestrictions": "No hay restricciones registradas"
+    },
+    "targets": {
+      "title": "Objetivos diarios de {name}",
+      "description": "Los objetivos rigen desde su fecha de inicio en adelante. Cambiarlos después mantiene las fechas anteriores evaluadas con los objetivos que regían entonces.",
+      "toasts": {
+        "saved": "Objetivos guardados",
+        "removed": "Objetivos eliminados"
+      },
+      "actions": {
+        "save": "Guardar objetivos",
+        "saving": "Guardando…",
+        "close": "Cerrar"
+      },
+      "fields": {
+        "effectiveFrom": "Vigentes desde",
+        "effectiveFromHelp": "Elige el día en que empiezan estas cifras. Los días anteriores conservan los objetivos con los que se fijaron.",
+        "macros": "Macros diarios",
+        "more": "Más nutrientes",
+        "placeholder": "Sin objetivo"
+      },
+      "history": {
+        "heading": "Historial de objetivos",
+        "description": "Se conserva cada cambio para que las semanas pasadas sigan evaluadas con lo que regía entonces.",
+        "since": "Desde el {date}",
+        "edit": "Editar",
+        "remove": "Eliminar los objetivos que empiezan el {date}"
+      },
+      "confirm": {
+        "title": "¿Eliminar los objetivos que empiezan el {date}?",
+        "description": "Los días desde esa fecha se evalúan con lo que regía antes. Esto no se puede deshacer.",
+        "confirmLabel": "Eliminar objetivos"
+      }
     },
     "confirm": {
       "remove": {
@@ -1904,8 +1939,6 @@
       "namePlaceholder": "p. ej., Theo",
       "allergies": "Alergias",
       "diets": "Dietas",
-      "calorieGoal": "Objetivo diario de calorías",
-      "caloriePlaceholder": "Opcional, p. ej., 2000",
       "familyGroup": "Grupo familiar (opcional)",
       "justMe": "Solo yo"
     }

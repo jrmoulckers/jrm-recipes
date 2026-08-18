@@ -1876,7 +1876,8 @@
       "cancel": "Abbrechen",
       "saving": "Speichern…",
       "addMember": "Mitglied hinzufügen",
-      "saveChanges": "Änderungen speichern"
+      "saveChanges": "Änderungen speichern",
+      "setTargets": "Tagesziele"
     },
     "empty": {
       "title": "Noch keine Profile",
@@ -1885,8 +1886,42 @@
     "profile": {
       "edit": "{name} bearbeiten",
       "remove": "{name} entfernen",
-      "calorieGoal": "Ziel: {calories} kcal/Tag",
+      "noTargets": "Keine Tagesziele festgelegt",
+      "futureTargets": "Die Tagesziele beginnen später",
+      "targetSince": "Gültig seit {date}",
       "noRestrictions": "Keine Einschränkungen erfasst"
+    },
+    "targets": {
+      "title": "Tagesziele für {name}",
+      "description": "Ziele gelten ab ihrem Startdatum. Spätere Änderungen lassen frühere Tage weiterhin an den damals gültigen Zielen gemessen.",
+      "toasts": {
+        "saved": "Ziele gespeichert",
+        "removed": "Ziele entfernt"
+      },
+      "actions": {
+        "save": "Ziele speichern",
+        "saving": "Speichern…",
+        "close": "Schließen"
+      },
+      "fields": {
+        "effectiveFrom": "Gültig ab",
+        "effectiveFromHelp": "Wähle den Tag, an dem diese Werte beginnen. Frühere Tage behalten die Ziele, mit denen sie festgelegt wurden.",
+        "macros": "Tägliche Makros",
+        "more": "Weitere Nährstoffe",
+        "placeholder": "Kein Ziel"
+      },
+      "history": {
+        "heading": "Zielverlauf",
+        "description": "Jede Änderung bleibt erhalten, damit vergangene Wochen an den damals gültigen Zielen gemessen bleiben.",
+        "since": "Ab {date}",
+        "edit": "Bearbeiten",
+        "remove": "Die ab {date} gültigen Ziele entfernen"
+      },
+      "confirm": {
+        "title": "Die ab {date} gültigen Ziele entfernen?",
+        "description": "Tage ab diesem Datum werden an den davor gültigen Zielen gemessen. Das kann nicht rückgängig gemacht werden.",
+        "confirmLabel": "Ziele entfernen"
+      }
     },
     "confirm": {
       "remove": {
@@ -1904,8 +1939,6 @@
       "namePlaceholder": "z. B. Theo",
       "allergies": "Allergien",
       "diets": "Ernährungsweisen",
-      "calorieGoal": "Tägliches Kalorienziel",
-      "caloriePlaceholder": "Optional, z. B. 2000",
       "familyGroup": "Familiengruppe (optional)",
       "justMe": "Nur ich"
     }

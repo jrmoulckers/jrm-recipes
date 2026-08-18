@@ -1,5 +1,16 @@
 import { relations } from 'drizzle-orm';
-import { index, integer, pgTable, text, varchar } from 'drizzle-orm/pg-core';
+import {
+  date,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core';
+
+import type { Nutrition } from '~/lib/nutrition';
 
 import { fk, pk, timestamps } from './_shared';
 import { users } from './users';
@@ -29,6 +40,13 @@ export const memberDietaryProfiles = pgTable(
     name: varchar({ length: 80 }).notNull(),
     allergens: text().array(),
     diets: text().array(),
+    /**
+     * @deprecated Superseded by {@link nutritionTargets} (#1046). Retained for
+     * the expand/contract window and dual-written from the target in force
+     * today, so code deployed before the targets table still reads a correct
+     * number. Drop it in the contract migration; read
+     * `getNutritionTargetOn(profileId, date)` instead.
+     */
     calorieGoal: integer(),
     ...timestamps(),
   },
@@ -38,7 +56,7 @@ export const memberDietaryProfiles = pgTable(
   ],
 );
 
-export const memberDietaryProfilesRelations = relations(memberDietaryProfiles, ({ one }) => ({
+export const memberDietaryProfilesRelations = relations(memberDietaryProfiles, ({ one, many }) => ({
   owner: one(users, {
     fields: [memberDietaryProfiles.userId],
     references: [users.id],
@@ -47,7 +65,62 @@ export const memberDietaryProfilesRelations = relations(memberDietaryProfiles, (
     fields: [memberDietaryProfiles.groupId],
     references: [groups.id],
   }),
+  nutritionTargets: many(nutritionTargets),
 }));
+
+/**
+ * Versioned macro targets per family member (issue #1046).
+ *
+ * A target is a **fact with a history**, not a current setting. The row that
+ * applies to a date is the one with the greatest `effectiveFrom` on or before
+ * it, so a week cooked during a cut stays scored against the cut's numbers
+ * after the member switches to a bulk. Storing one mutable goal per profile —
+ * which is what `memberDietaryProfiles.calorieGoal` was — silently rewrites
+ * every retrospective surface the moment the goal changes.
+ *
+ * `targets` is a partial map in the app's `Nutrition` key space rather than a
+ * column per nutrient, following the same reasoning as the `food_nutrients`
+ * vector (#1028): a fiber or sodium target is a registry row, not a migration.
+ * **Partial by construction** — an absent key means the member set no target for
+ * that nutrient, which is not the claim that their target is `0`.
+ *
+ * Uniqueness on `(profileId, effectiveFrom)` makes editing "the target that
+ * started on 1 March" an upsert, so a member correcting today's numbers doesn't
+ * accumulate same-day rows that the effective-date lookup would have to break
+ * ties between.
+ */
+export const nutritionTargets = pgTable(
+  'nutrition_targets',
+  {
+    id: pk(),
+    profileId: fk()
+      .notNull()
+      .references(() => memberDietaryProfiles.id, { onDelete: 'cascade' }),
+    /**
+     * The date this target came into force, `YYYY-MM-DD` in the member's own
+     * calendar. A plain date, not a timestamp: a target is a day-scoped fact and
+     * a timezone-shifted midnight would move which week it scores.
+     */
+    effectiveFrom: date().notNull(),
+    /** Daily targets keyed by `NutritionKey`. Absent key = no target set. */
+    targets: jsonb().$type<Nutrition>().notNull(),
+    ...timestamps(),
+  },
+  (t) => [
+    uniqueIndex('nutrition_targets_profile_effective_uq').on(t.profileId, t.effectiveFrom),
+    index('nutrition_targets_profile_idx').on(t.profileId),
+  ],
+);
+
+export const nutritionTargetsRelations = relations(nutritionTargets, ({ one }) => ({
+  profile: one(memberDietaryProfiles, {
+    fields: [nutritionTargets.profileId],
+    references: [memberDietaryProfiles.id],
+  }),
+}));
+
+export type NutritionTargetRow = typeof nutritionTargets.$inferSelect;
+export type NewNutritionTarget = typeof nutritionTargets.$inferInsert;
 
 export type MemberDietaryProfile = typeof memberDietaryProfiles.$inferSelect;
 export type NewMemberDietaryProfile = typeof memberDietaryProfiles.$inferInsert;

@@ -1876,7 +1876,8 @@
       "cancel": "Cancel",
       "saving": "Saving…",
       "addMember": "Add member",
-      "saveChanges": "Save changes"
+      "saveChanges": "Save changes",
+      "setTargets": "Daily targets"
     },
     "empty": {
       "title": "No profiles yet",
@@ -1885,8 +1886,42 @@
     "profile": {
       "edit": "Edit {name}",
       "remove": "Remove {name}",
-      "calorieGoal": "{calories} kcal/day goal",
+      "noTargets": "No daily targets set",
+      "futureTargets": "Daily targets start later",
+      "targetSince": "In force since {date}",
       "noRestrictions": "No restrictions recorded"
+    },
+    "targets": {
+      "title": "Daily targets for {name}",
+      "description": "Targets apply from their start date onward. Changing them later leaves earlier dates scored against the targets that were in force then.",
+      "toasts": {
+        "saved": "Targets saved",
+        "removed": "Targets removed"
+      },
+      "actions": {
+        "save": "Save targets",
+        "saving": "Saving…",
+        "close": "Close"
+      },
+      "fields": {
+        "effectiveFrom": "In force from",
+        "effectiveFromHelp": "Pick the day these numbers start. Earlier days keep the targets they were set with.",
+        "macros": "Daily macros",
+        "more": "More nutrients",
+        "placeholder": "No target"
+      },
+      "history": {
+        "heading": "Target history",
+        "description": "Every change is kept so past weeks stay scored against what was in force then.",
+        "since": "From {date}",
+        "edit": "Edit",
+        "remove": "Remove the targets starting {date}"
+      },
+      "confirm": {
+        "title": "Remove the targets starting {date}?",
+        "description": "Days from that date are scored against whatever was in force before it. This can't be undone.",
+        "confirmLabel": "Remove targets"
+      }
     },
     "confirm": {
       "remove": {
@@ -1904,8 +1939,6 @@
       "namePlaceholder": "e.g. Theo",
       "allergies": "Allergies",
       "diets": "Diets",
-      "calorieGoal": "Daily calorie goal",
-      "caloriePlaceholder": "Optional, e.g. 2000",
       "familyGroup": "Family group (optional)",
       "justMe": "Just me"
     }

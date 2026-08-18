@@ -6,8 +6,10 @@ import { getTranslations } from 'next-intl/server';
 import { getCurrentUser, isAuthConfigured } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { listNutritionTargetsForUser } from '~/server/dietary/targets';
 import { listMyGroups } from '~/server/groups/queries';
 import { ALLERGENS, type Allergen } from '~/lib/allergens';
+import type { EffectiveNutritionTarget } from '~/lib/nutrition-targets';
 import { DIETARY_TAGS, type DietaryTag } from '~/lib/substitutions';
 import { withRouteMessages } from '~/components/i18n/route-messages';
 import {
@@ -31,9 +33,13 @@ async function DietaryProfilesPage() {
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
-  const [profileRows, groups] = user
-    ? await Promise.all([listMemberProfiles(user.id), listMyGroups(user.id)])
-    : [[], []];
+  const [profileRows, groups, targetsByProfile] = user
+    ? await Promise.all([
+        listMemberProfiles(user.id),
+        listMyGroups(user.id),
+        listNutritionTargetsForUser(user.id),
+      ])
+    : [[], [], new Map<string, EffectiveNutritionTarget[]>()];
 
   const profiles: MemberProfileView[] = profileRows.map((p) => ({
     id: p.id,
@@ -42,6 +48,7 @@ async function DietaryProfilesPage() {
     diets: (p.diets ?? []).filter((d): d is DietaryTag => DIET_SET.has(d)),
     calorieGoal: p.calorieGoal,
     groupId: p.groupId,
+    targets: targetsByProfile.get(p.id) ?? [],
   }));
 
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));
