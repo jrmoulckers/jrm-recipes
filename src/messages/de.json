@@ -3421,6 +3421,8 @@
     "flag": "{level} {nutrient} · {percent}% TB",
     "estimatedPartial": "Geschätzt aus der Zutatenliste ({sourced} von {total} Zutaten).",
     "estimated": "Geschätzt aus der Zutatenliste.",
+    "couldNotWeigh": "Konnte nicht gewogen werden: {items}.",
+    "noNutritionData": "Keine Nährwertdaten für: {items}.",
     "entered": "Geschätzte Werte, wie sie beim Kochen eingetragen wurden.",
     "servingsNoun": "Portionen"
   },

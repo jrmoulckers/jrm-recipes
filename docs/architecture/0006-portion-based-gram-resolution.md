@@ -113,6 +113,10 @@ summed as if it were nothing.
 - `massCoverage` becomes meaningful for the first time, because the lines that used to disappear from
   its denominator are now weighable. It is still the wrong shape long-term — a _confidence_ roll-up
   weighted by the table above replaces it in a follow-up — but it no longer actively misleads.
+  _(Done in [#1027](https://github.com/jrmoulckers/jrm-recipes/issues/1027): `massCoverage` is gone.
+  `rollUpNutrition` now reports a `confidence` aggregated over the weights above — mass-weighted
+  across the lines it could weigh, diluted by the lines it could not, which stay in the denominator
+  at weight 0 — plus the unresolved lines by name, so a surface can say "couldn't weigh: 6 eggs".)_
 - `resolveLineGrams` gains an optional `slug`. Callers that omit it keep the previous mass/density
   behaviour exactly, so nothing regresses while the remaining call sites are migrated.
 - The estimate becomes _more_ complete, which will move existing displayed numbers upward on recipes

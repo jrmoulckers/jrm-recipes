@@ -55,6 +55,87 @@ export const CONFIDENCE_WEIGHT: Readonly<Record<GramConfidence, number>> = {
   none: 0,
 };
 
+/**
+ * Why a line contributed nothing to a nutrition estimate (issue #1027). Kept as
+ * a labelled value rather than a bare count so a panel can say *"couldn't weigh:
+ * 6 eggs"* instead of showing a bare percentage: a cook told which line is
+ * missing can fix it by editing one unit, whereas a cook shown "62%" cannot act
+ * at all.
+ */
+export type UnresolvedLine = {
+  /** The ingredient text, for display. */
+  label: string;
+  /** `weight`: no gram path existed. `facts`: weighable, but no per-100 g data. */
+  reason: 'weight' | 'facts';
+};
+
+/** One line's input to {@link aggregateConfidence}. */
+export type ConfidenceEntry = {
+  /** The line's resolved weight, or `null` when it could not be weighed. */
+  grams: number | null;
+  /** The path that produced the line's *nutrition*, or `none` if it produced none. */
+  confidence: GramConfidence;
+};
+
+/**
+ * Aggregate per-line resolution results into one 0–1 confidence score for a
+ * whole recipe (issue #1027), replacing the `massCoverage` ratio that preceded
+ * it.
+ *
+ * `massCoverage` was `accountedGrams / weighableGrams`, and was structurally
+ * incapable of seeing its largest error: a line that could not be weighed never
+ * entered `weighableGrams`, so it left the **denominator as well as the
+ * numerator**. `1 tbsp olive oil + 6 unweighable eggs` scored a confident
+ * `1.0` while capturing about 4% of the food.
+ *
+ * The fix is to keep those lines in the denominator, at confidence weight 0, so
+ * that they *lower* the score rather than vanishing from it. Two axes are
+ * combined:
+ *
+ * 1. **Among the lines we could weigh**, a mass-weighted mean of
+ *    {@link CONFIDENCE_WEIGHT}. Weighting by grams is what makes the score track
+ *    the food rather than the line count: a density-guessed kilo of beef should
+ *    move it far more than an exactly-weighed gram of salt.
+ * 2. **The lines we could not weigh** dilute that mean by their share of the
+ *    line count. They have no mass to be weighted by — that is precisely what
+ *    failed — and inventing one would repeat the error being fixed, so each is
+ *    held at the average weight of the lines that *did* resolve. (Equivalently:
+ *    multiply by `weighed / total`.) The average is used only to apportion
+ *    confidence; no line is ever treated as having that many grams.
+ *
+ * A line that weighed fine but had no curated facts contributes 0 nutrition, so
+ * it enters with `confidence: 'none'` and drags the mass-weighted term down —
+ * the honesty `massCoverage` did provide, preserved.
+ *
+ * Returns 0 for an empty list or when nothing could be weighed. Pure; never
+ * throws.
+ */
+export function aggregateConfidence(entries: readonly ConfidenceEntry[]): number {
+  if (entries.length === 0) return 0;
+
+  let mass = 0;
+  let weightedMass = 0;
+  let weighed = 0;
+  let weightSum = 0;
+
+  for (const entry of entries) {
+    const grams = entry.grams;
+    if (grams == null || !Number.isFinite(grams) || grams < 0) continue;
+    const weight = CONFIDENCE_WEIGHT[entry.confidence];
+    weighed += 1;
+    weightSum += weight;
+    mass += grams;
+    weightedMass += grams * weight;
+  }
+
+  if (weighed === 0) return 0;
+
+  // Zero total mass (every weighable line resolved to 0 g) leaves the
+  // mass-weighted mean undefined, so fall back to the unweighted one.
+  const weighedConfidence = mass > 0 ? weightedMass / mass : weightSum / weighed;
+  return weighedConfidence * (weighed / entries.length);
+}
+
 /** A resolved line weight and the path that produced it. */
 export type GramResolution = {
   /** Weight in grams. Always finite and >= 0. */

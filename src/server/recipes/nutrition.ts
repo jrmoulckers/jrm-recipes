@@ -117,6 +117,9 @@ async function loadRecipeNutritionInputs(recipeId: string): Promise<RecipeNutrit
         facts: l.foodId ? (factsById.get(l.foodId) ?? null) : null,
         densityGPerMl: l.foodId ? (densityById.get(l.foodId) ?? null) : null,
         slug: l.foodId ? (slugById.get(l.foodId) ?? null) : null,
+        // Carried so a line that resolves to nothing can be named rather than
+        // only counted (#1027).
+        label: l.item,
       })),
     };
   } catch {
@@ -176,7 +179,8 @@ export async function getRecipeNutritionView(
  * {@link foodNutrition} facts and `densityGPerMl`, then rolls the lines up with
  * the pure {@link rollUpNutrition}. Grams come from the shared `food-grams.ts`
  * resolver, so counted measures resolve through curated portions. The result
- * carries coverage numbers so a partial estimate is shown honestly.
+ * carries a confidence score and the lines that resolved to nothing, so a
+ * partial estimate is shown honestly.
  *
  * Compute-on-read by design: no nutrition is cached or persisted here. Never
  * throws.

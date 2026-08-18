@@ -85,6 +85,43 @@ describe('NutritionPanel', () => {
     ).toBeInTheDocument();
   });
 
+  it('names the lines it could not weigh rather than only counting them (#1027)', () => {
+    // A cook told *which* ingredient is missing can fix it by editing one unit.
+    // A cook shown "2 of 5" cannot.
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        estimated
+        sourced={1}
+        total={3}
+        unresolved={[
+          { label: '6 eggs', reason: 'weight' },
+          { label: 'mystery powder', reason: 'facts' },
+          // No text to show: counted in the estimate, but not listable.
+          { label: '   ', reason: 'weight' },
+        ]}
+      />,
+    );
+    expect(screen.getByText(/couldn't weigh: 6 eggs\./i)).toBeInTheDocument();
+    expect(screen.getByText(/no nutrition data for: mystery powder\./i)).toBeInTheDocument();
+  });
+
+  it('shows no unresolved caveat when every line resolved', () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        estimated
+        sourced={3}
+        total={3}
+        unresolved={[]}
+      />,
+    );
+    expect(screen.queryByText(/couldn't weigh/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/no nutrition data for/i)).not.toBeInTheDocument();
+  });
+
   it('resolves its copy from the Spanish catalog', () => {
     rtlRender(
       <IntlWrapper locale="es" messages={esMessages}>

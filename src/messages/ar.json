@@ -3421,6 +3421,8 @@
     "flag": "{level} {nutrient} · {percent}% من الاحتياج",
     "estimatedPartial": "تقدير من قائمة المكونات ({sourced} من {total} مكونا).",
     "estimated": "تقدير من قائمة المكونات.",
+    "couldNotWeigh": "تعذر تحديد وزن: {items}.",
+    "noNutritionData": "لا تتوفر بيانات غذائية لـ: {items}.",
     "entered": "قيم تقديرية كما أدخلها الطاهي.",
     "servingsNoun": "حصص"
   },

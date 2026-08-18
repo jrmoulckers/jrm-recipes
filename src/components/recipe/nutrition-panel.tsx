@@ -18,6 +18,7 @@ import {
   type Nutrition,
   type NutrientLevel,
 } from '~/lib/nutrition';
+import type { UnresolvedLine } from '~/lib/food-grams';
 
 type Basis = 'serving' | 'whole';
 
@@ -58,6 +59,7 @@ export function NutritionPanel({
   estimated = false,
   sourced,
   total,
+  unresolved,
 }: {
   /** Per-serving nutrition as stored on the recipe. */
   nutrition: Nutrition;
@@ -81,6 +83,12 @@ export function NutritionPanel({
   sourced?: number;
   /** Ingredient lines considered (for the coverage caveat). */
   total?: number;
+  /**
+   * The lines that contributed nothing, named (issue #1027). Shown so the cook
+   * sees *which* ingredient is missing — that is fixable by editing one unit,
+   * where a bare "estimated from 2 of 5" is not.
+   */
+  unresolved?: readonly UnresolvedLine[];
 }) {
   const t = useTranslations('nutritionPanel');
   const [basis, setBasis] = React.useState<Basis>('serving');
@@ -95,6 +103,14 @@ export function NutritionPanel({
 
   const noun = servingsNoun ?? t('servingsNoun');
   const flags = nutritionFlags(nutrition);
+
+  // Name the lines that contributed nothing, split by why (#1027). An empty
+  // label means the caller had no ingredient text to show, so it is counted in
+  // the estimate but cannot be listed here.
+  const named = (reason: UnresolvedLine['reason']) =>
+    (unresolved ?? []).filter((u) => u.reason === reason && u.label.trim()).map((u) => u.label);
+  const unweighed = named('weight');
+  const unknownFoods = named('facts');
 
   // The scaled whole-recipe total for the current (possibly reader-scaled)
   // serving count, shown alongside the per-serving figures so the cook sees both
@@ -240,6 +256,18 @@ export function NutritionPanel({
             : t('estimated')
           : t('entered')}
       </p>
+
+      {estimated && unweighed.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('couldNotWeigh', { items: unweighed.join(', ') })}
+        </p>
+      )}
+
+      {estimated && unknownFoods.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('noNutritionData', { items: unknownFoods.join(', ') })}
+        </p>
+      )}
     </section>
   );
 }

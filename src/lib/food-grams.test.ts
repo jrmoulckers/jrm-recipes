@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { foodSlug } from './food-db';
-import { resolveGramsForFood, resolveGramsForSlug, CONFIDENCE_WEIGHT } from './food-grams';
+import {
+  aggregateConfidence,
+  resolveGramsForFood,
+  resolveGramsForSlug,
+  CONFIDENCE_WEIGHT,
+} from './food-grams';
 import { allPortions, normalizePortionUnit, portionForFood } from './food-portions';
 
 describe('the count → grams gap this module exists to close', () => {
@@ -150,5 +155,58 @@ describe('the portion dataset', () => {
     expect(CONFIDENCE_WEIGHT.portion).toBeGreaterThan(CONFIDENCE_WEIGHT.density);
     expect(CONFIDENCE_WEIGHT.density).toBeGreaterThan(CONFIDENCE_WEIGHT.none);
     expect(CONFIDENCE_WEIGHT.none).toBe(0);
+  });
+});
+
+describe('aggregateConfidence (issue #1027)', () => {
+  it('returns each tier weight for a single fully-resolved line', () => {
+    expect(aggregateConfidence([{ grams: 100, confidence: 'exact' }])).toBe(1);
+    expect(aggregateConfidence([{ grams: 100, confidence: 'portion' }])).toBeCloseTo(0.8, 5);
+    expect(aggregateConfidence([{ grams: 100, confidence: 'density' }])).toBeCloseTo(0.6, 5);
+  });
+
+  it('keeps an unweighable line in the denominator at weight 0', () => {
+    // The defect being fixed: a `null`-gram line used to leave the numerator
+    // *and* the denominator, so a recipe could score 1.0 while missing most of
+    // its food.
+    expect(
+      aggregateConfidence([
+        { grams: 13.5, confidence: 'density' },
+        { grams: null, confidence: 'none' },
+      ]),
+    ).toBeCloseTo(0.3, 5);
+    expect(
+      aggregateConfidence([
+        { grams: 500, confidence: 'exact' },
+        { grams: null, confidence: 'none' },
+      ]),
+    ).toBeCloseTo(0.5, 5);
+  });
+
+  it('weights the resolved lines by mass, not by count', () => {
+    const got = aggregateConfidence([
+      { grams: 1, confidence: 'exact' },
+      { grams: 999, confidence: 'density' },
+    ]);
+    expect(got).toBeCloseTo((1 + 999 * 0.6) / 1000, 5);
+  });
+
+  it('scores 0 when nothing could be weighed, and for an empty list', () => {
+    expect(aggregateConfidence([])).toBe(0);
+    expect(aggregateConfidence([{ grams: null, confidence: 'none' }])).toBe(0);
+  });
+
+  it('falls back to an unweighted mean when every resolved line weighs 0 g', () => {
+    expect(
+      aggregateConfidence([
+        { grams: 0, confidence: 'exact' },
+        { grams: 0, confidence: 'density' },
+      ]),
+    ).toBeCloseTo(0.8, 5);
+  });
+
+  it('ignores a non-finite or negative gram figure rather than trusting it', () => {
+    expect(aggregateConfidence([{ grams: Number.NaN, confidence: 'exact' }])).toBe(0);
+    expect(aggregateConfidence([{ grams: -5, confidence: 'exact' }])).toBe(0);
   });
 });

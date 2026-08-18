@@ -3421,6 +3421,8 @@
     "flag": "{level} en {nutrient} · {percent}% VD",
     "estimatedPartial": "Estimado a partir de la lista de ingredientes ({sourced} de {total} ingredientes).",
     "estimated": "Estimado a partir de la lista de ingredientes.",
+    "couldNotWeigh": "No se pudo pesar: {items}.",
+    "noNutritionData": "Sin datos nutricionales de: {items}.",
     "entered": "Valores estimados según los introdujo quien cocina.",
     "servingsNoun": "raciones"
   },
