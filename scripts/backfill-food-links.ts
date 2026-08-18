@@ -31,7 +31,7 @@ const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 type AliasRow = { alias: string; food_id: string; use_count: number };
 type FoodItemRow = { id: string };
-type IngredientRow = { id: string; item: string; food_id: string | null };
+type IngredientRow = { id: string; item: string; food_id: string | null; recipe_id: string };
 
 async function main() {
   // The live alias index + the set of existing nodes, so a resolved id that
@@ -51,10 +51,11 @@ async function main() {
   const existing = new Set(foodItems.map((r) => r.id));
 
   const rows = await sql<IngredientRow[]>`
-    SELECT id, item, food_id FROM recipe_ingredients
+    SELECT id, item, food_id, recipe_id FROM recipe_ingredients
   `;
 
   let updated = 0;
+  const touchedRecipes = new Set<string>();
   for (const row of rows) {
     const resolved = pickFoodId(row.item, index);
     const next = resolved && existing.has(resolved) ? resolved : null;
@@ -64,11 +65,30 @@ async function main() {
       SET food_id = ${next}
       WHERE id = ${row.id} AND food_id IS DISTINCT FROM ${next}
     `;
+    touchedRecipes.add(row.recipe_id);
     updated++;
   }
 
+  // A changed link changes which foods the recipe resolves to, and therefore its
+  // nutrition (#1044). This is the one ingredient-link edit that happens outside
+  // a recipe save, so it has to invalidate the derived cache itself. Deleting
+  // (rather than recomputing here) keeps this script's job narrow: the next read
+  // computes, and `pnpm db:backfill-nutrition` repopulates in bulk.
+  let invalidated = 0;
+  if (touchedRecipes.size > 0) {
+    const ids = [...touchedRecipes];
+    const [{ count } = { count: 0 }] = await sql<{ count: number }[]>`
+      WITH deleted AS (
+        DELETE FROM recipe_nutrition_cache WHERE recipe_id = ANY(${ids}) RETURNING 1
+      )
+      SELECT count(*)::int AS count FROM deleted
+    `;
+    invalidated = count;
+  }
+
   console.log(
-    `[backfill-food-links] Scanned ${rows.length} ingredient line(s); updated ${updated}.`,
+    `[backfill-food-links] Scanned ${rows.length} ingredient line(s); updated ${updated}; ` +
+      `invalidated ${invalidated} cached nutrition row(s) across ${touchedRecipes.size} recipe(s).`,
   );
 }
 

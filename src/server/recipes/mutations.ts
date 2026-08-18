@@ -29,6 +29,8 @@ import { recipeSlug, type RecipeInput } from './validation';
 import { generateShareToken } from './share-token';
 import { parseSnapshot } from './queries';
 import { buildAdaptationInput } from './timeline';
+import { invalidateNutritionCache } from './nutrition-cache';
+import { refreshRecipeNutritionCache } from './nutrition';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -684,6 +686,13 @@ async function applyRecipeInput(
   await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
   await insertChildren(tx, id, input);
+  // The derived nutrition cache is invalidated **in this transaction** (#1044),
+  // right where the ingredient lines — and therefore the foods the recipe
+  // resolves to — are rewritten. Committing the delete atomically with the edit
+  // is what makes a stale cached number impossible rather than merely unlikely:
+  // there is no instant at which the new lines and the old figures are both
+  // visible. Repopulation happens after the commit, best-effort.
+  await invalidateNutritionCache(tx, id);
   await syncTags(tx, id, input);
   // Journalled against the *actor*, so `recipe_versions.authorId` records which
   // creator made each save rather than always naming the owner (#668).
@@ -764,6 +773,7 @@ export async function createRecipe(input: RecipeInput, author: User) {
       return recipe;
     }),
   );
+  await refreshRecipeNutritionCache(recipe.id);
   return recipe;
 }
 
@@ -887,6 +897,10 @@ export async function updateRecipe(id: string, input: RecipeInput, actor: User) 
       return { ...result, cook: current.author?.slug ?? null };
     }),
   );
+  // After the commit, never inside it: the recompute reads the rows the
+  // transaction just wrote, and a cache write is not worth extending a lock for.
+  // Best-effort — a failure leaves the recipe uncached, which reads handle.
+  await refreshRecipeNutritionCache(id);
   return result;
 }
 
@@ -972,6 +986,7 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
       };
     }),
   );
+  await refreshRecipeNutritionCache(result.id);
   return result;
 }
 
@@ -1024,6 +1039,7 @@ export async function revertRecipe(id: string, versionNumber: number, author: Us
       return result;
     }),
   );
+  await refreshRecipeNutritionCache(id);
   return result;
 }
 
