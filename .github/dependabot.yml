@@ -13,6 +13,12 @@ version: 2
 # The token must be a CLASSIC PAT with `read:packages`. Fine-grained tokens
 # return an identical 401 against GitHub Packages, so the error text cannot
 # tell you which mistake you made.
+#
+# COUPLED TO `.npmrc`: this block only routes the @jrmoulckers scope because
+# `.npmrc` declares an explicit global `registry=`. Remove that line and
+# Dependabot promotes the registry below to the base for EVERY package, which
+# fails against GitHub Packages' stale npm mirror. Read the comment there
+# before touching either file.
 registries:
   npm-github:
     type: npm-registry
