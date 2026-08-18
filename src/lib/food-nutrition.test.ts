@@ -9,6 +9,7 @@ import {
   nutritionForFood,
   toGrams,
 } from './food-nutrition';
+import { macros } from './nutrients';
 
 describe('nutritionForFood', () => {
   it('resolves a known food to its per-100g facts', () => {
@@ -157,7 +158,9 @@ describe('estimateRecipeNutrition', () => {
     ]);
     expect(roll.total).toBe(0);
     expect(roll.coverage).toBe(0);
-    expect(roll.kcal).toBe(0);
+    // Nothing contributed, so no nutrient is claimed at all (#1028): an absent
+    // amount means unknown, where a `0` would assert the recipe has none.
+    expect(roll.kcal).toBeUndefined();
   });
 
   it('is order-independent', () => {
@@ -177,25 +180,33 @@ describe('estimatePerServingNutrition', () => {
   it('divides the whole-recipe roll-up by the serving count', () => {
     const whole = estimateRecipeNutrition([{ item: 'chicken', quantity: 400, unit: 'g' }]);
     const per = estimatePerServingNutrition([{ item: 'chicken', quantity: 400, unit: 'g' }], 4);
-    expect(per.perServing.calories).toBeCloseTo(whole.kcal / 4, 5);
-    expect(per.perServing.proteinGrams).toBeCloseTo(whole.proteinG / 4, 5);
+    const wholeMacros = macros(whole);
+    expect(per.perServing.calories).toBeCloseTo(wholeMacros.calories / 4, 5);
+    expect(per.perServing.proteinGrams).toBeCloseTo(wholeMacros.protein / 4, 5);
     // chicken 165 kcal/100g * 400g = 660 kcal / 4 = 165
     expect(per.perServing.calories).toBeCloseTo(165, 5);
   });
 
-  it('maps to the app Nutrition shape (no saturated fat)', () => {
+  it('maps to the app Nutrition shape, saturated fat included (#1028)', () => {
     const per = estimatePerServingNutrition([{ item: 'beef', quantity: 200, unit: 'g' }], 2);
     for (const key of [
       'calories',
       'proteinGrams',
       'carbsGrams',
       'fatGrams',
-      'fiberGrams',
-      'sugarGrams',
+      'saturatedFatGrams',
       'sodiumMg',
     ] as const) {
       expect(typeof per.perServing[key]).toBe('number');
     }
+    // Beef is 6.0 g saturated fat per 100 g: 200 g over 2 servings = 6.0.
+    expect(per.perServing.saturatedFatGrams).toBeCloseTo(6, 5);
+  });
+
+  it('omits a nutrient no contributing food carries', () => {
+    // Sugar (the food) is pure sucrose: no fat, so no saturated-fat figure.
+    const per = estimatePerServingNutrition([{ item: 'sugar', quantity: 100, unit: 'g' }], 1);
+    expect(per.perServing.calories).toBeGreaterThan(0);
     expect(per.perServing.saturatedFatGrams).toBeUndefined();
   });
 

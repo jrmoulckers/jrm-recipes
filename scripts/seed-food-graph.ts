@@ -28,10 +28,19 @@ import postgres from 'postgres';
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
+  buildFoodNutrientRows,
   buildFoodNutritionRows,
   buildFoodPortionRows,
+  buildNutrientRows,
 } from '~/server/db/seed-ingredients';
-import { foodAliases, foodItems, foodNutrition, foodPortions } from '~/server/db/schema';
+import {
+  foodAliases,
+  foodItems,
+  foodNutrients,
+  foodNutrition,
+  foodPortions,
+  nutrients,
+} from '~/server/db/schema';
 import * as schema from '~/server/db/schema';
 
 const dryRun = process.argv.includes('--dry');
@@ -45,13 +54,16 @@ async function main() {
   const itemRows = buildFoodItemRows();
   const aliasRows = buildFoodAliasRows();
   const nutritionRows = buildFoodNutritionRows();
+  const nutrientRows = buildNutrientRows();
+  const foodNutrientRows = buildFoodNutrientRows();
   const portionRows = buildFoodPortionRows();
   const withAllergens = itemRows.filter((r) => (r.allergens?.length ?? 0) > 0).length;
 
   console.log(
     `[seed-food-graph] Prepared ${itemRows.length} food item(s) ` +
       `(${withAllergens} with allergens), ${aliasRows.length} alias(es), ` +
-      `${nutritionRows.length} nutrition row(s), ${portionRows.length} portion(s).`,
+      `${nutritionRows.length} nutrition row(s), ${nutrientRows.length} nutrient(s), ` +
+      `${foodNutrientRows.length} food-nutrient value(s), ${portionRows.length} portion(s).`,
   );
 
   if (dryRun) {
@@ -124,6 +136,32 @@ async function main() {
             },
           });
       }
+      for (const row of nutrientRows) {
+        await tx
+          .insert(nutrients)
+          .values(row)
+          .onConflictDoUpdate({
+            target: nutrients.id,
+            set: {
+              label: row.label,
+              unit: row.unit,
+              dailyValue: row.dailyValue ?? null,
+              displayPrecision: row.displayPrecision,
+              displayOrder: row.displayOrder,
+              isMacro: row.isMacro,
+              updatedAt: new Date(),
+            },
+          });
+      }
+      for (const row of foodNutrientRows) {
+        await tx
+          .insert(foodNutrients)
+          .values(row)
+          .onConflictDoUpdate({
+            target: [foodNutrients.foodId, foodNutrients.nutrientId],
+            set: { per100g: row.per100g, updatedAt: new Date() },
+          });
+      }
       for (const row of portionRows) {
         await tx
           .insert(foodPortions)
@@ -143,6 +181,7 @@ async function main() {
     console.log(
       `[seed-food-graph] Upserted ${itemRows.length} food item(s), ` +
         `${aliasRows.length} alias(es), ${nutritionRows.length} nutrition row(s), ` +
+        `${nutrientRows.length} nutrient(s), ${foodNutrientRows.length} food-nutrient value(s), ` +
         `${portionRows.length} portion(s).`,
     );
   } finally {

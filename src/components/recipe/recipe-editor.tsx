@@ -59,6 +59,7 @@ import {
   type CustomUnitDef,
 } from '~/lib/units';
 import { unitLabel } from '~/lib/unit-labels';
+import { NUTRIENT_REGISTRY, type NutritionKey as RegistryNutritionKey } from '~/lib/nutrients';
 import { getSuggestedUnitsForFood } from '~/lib/food-units';
 import { createRecipeAction, updateRecipeAction } from '~/server/recipes/actions';
 import { Button } from '~/components/ui/button';
@@ -274,36 +275,20 @@ function blocksByGroup<T extends { groupId: string; section: string }>(
 
 /**
  * The per-serving nutrition keys shared by {@link RecipeEditorValue}, the editor
- * form state, and the payload builder.
+ * form state, and the payload builder. Derived from the nutrient registry
+ * (#1028) so a new nutrient reaches the editor from one declaration.
  */
-type NutritionKey =
-  | 'calories'
-  | 'proteinGrams'
-  | 'carbsGrams'
-  | 'fatGrams'
-  | 'saturatedFatGrams'
-  | 'sodiumMg'
-  | 'sugarGrams'
-  | 'fiberGrams';
+type NutritionKey = RegistryNutritionKey;
 
 /**
- * Per-serving nutrition inputs (issue #414). Declared once so the editor state,
- * payload builder, and UI stay in sync. `unit` is shown as a suffix hint so a
- * cook knows whether a field wants grams or milligrams.
+ * Per-serving nutrition inputs (issue #414). Projected from the registry so the
+ * editor state, payload builder, and UI stay in sync with the roll-up and the
+ * facts panel. `unit` is shown as a suffix hint so a cook knows whether a field
+ * wants grams or milligrams.
  */
-const NUTRITION_FIELDS = [
-  { key: 'calories', unit: 'kcal' },
-  { key: 'proteinGrams', unit: 'g' },
-  { key: 'carbsGrams', unit: 'g' },
-  { key: 'fatGrams', unit: 'g' },
-  { key: 'saturatedFatGrams', unit: 'g' },
-  { key: 'sodiumMg', unit: 'mg' },
-  { key: 'sugarGrams', unit: 'g' },
-  { key: 'fiberGrams', unit: 'g' },
-] as const satisfies readonly {
-  key: NutritionKey;
-  unit: string;
-}[];
+const NUTRITION_FIELDS: readonly { key: NutritionKey; unit: string }[] = NUTRIENT_REGISTRY.map(
+  (n) => ({ key: n.nutritionKey, unit: n.unit }),
+);
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim();
@@ -804,16 +789,18 @@ export function RecipeEditor({
       return String(Math.round(n * f) / f);
     };
     const n = view.perServing;
-    setForm((f) => ({
-      ...f,
-      calories: n.calories != null ? round(n.calories) : f.calories,
-      proteinGrams: n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
-      carbsGrams: n.carbsGrams != null ? round(n.carbsGrams, 1) : f.carbsGrams,
-      fatGrams: n.fatGrams != null ? round(n.fatGrams, 1) : f.fatGrams,
-      sodiumMg: n.sodiumMg != null ? round(n.sodiumMg) : f.sodiumMg,
-      sugarGrams: n.sugarGrams != null ? round(n.sugarGrams, 1) : f.sugarGrams,
-      fiberGrams: n.fiberGrams != null ? round(n.fiberGrams, 1) : f.fiberGrams,
-    }));
+    setForm((f) => {
+      const next = { ...f };
+      // Registry-driven (#1028) rather than a hand-written field list. The old
+      // list silently omitted saturated fat, which is half of why the column was
+      // stranded: even a satFat-carrying estimate had nowhere to land.
+      for (const nutrient of NUTRIENT_REGISTRY) {
+        const value = n[nutrient.nutritionKey];
+        if (value == null) continue;
+        next[nutrient.nutritionKey] = round(value, nutrient.displayPrecision);
+      }
+      return next;
+    });
     const pct = Math.round(confidence * 100);
     toast.success(
       sourcedLines < totalLines

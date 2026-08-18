@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   integer,
@@ -250,15 +251,99 @@ export const foodRecipeLinks = pgTable(
 );
 
 /**
- * Authoritative per-100 g nutrition per canonical food (Phase 4,
- * `docs/food-graph.md` §8, ADR-4). Unlike the affinity tables this is **not**
- * crowd-mined: it mirrors the curated, public-domain static dataset in
- * `src/lib/food-nutrition.ts` (USDA FoodData Central), seeded by
- * `seed-ingredients.ts`, and is left untouched by the graph-mining recompute.
- * `foodId` is the PK (one row per node). `sourceRef` carries the FDC id. Macros
- * are NOT NULL (a food always has energy/macros in the source). The finer
- * breakdowns are nullable because source coverage is uneven. NULL means
- * "unknown", not zero.
+ * The nutrient registry (issue #1028). One row per nutrient the app knows about,
+ * mirroring the static `src/lib/nutrients.ts` declaration the way
+ * `food_nutrition` mirrors `food-nutrition.ts`: the module is the source of
+ * truth, the table is the seeded, joinable copy.
+ *
+ * Its reason to exist is {@link foodNutrients}: a vector needs somewhere to
+ * declare what its keys *mean*. The %DV bands and rounding rules the Nutrition
+ * Facts panel used to hardcode are rows here, so adding cholesterol, potassium,
+ * added sugars or vitamin D is a seed entry rather than a migration plus six
+ * coordinated edits.
+ *
+ * `id` is the stable per-100 g identifier (`kcal`, `proteinG`, `satFatG`, …) and
+ * is referenced by `food_nutrients.nutrient_id`. `dailyValue` is NULL for a
+ * nutrient the app does not band.
+ */
+export const nutrients = pgTable(
+  'nutrients',
+  {
+    /** Stable nutrient identifier, e.g. `kcal`, `proteinG`, `satFatG`. */
+    id: varchar({ length: 40 }).primaryKey(),
+    /** English display label; localized labels live in `messages/*.json`. */
+    label: varchar({ length: 60 }).notNull(),
+    /** Display unit (`kcal`, `g`, `mg`), identical on both bases. */
+    unit: varchar({ length: 12 }).notNull(),
+    /** FDA Daily Value for %DV banding, or NULL when the app doesn't band it. */
+    dailyValue: real(),
+    /** Fractional digits shown (energy and sodium are whole numbers). */
+    displayPrecision: integer().notNull().default(0),
+    /** Nutrition Facts panel order. Sparse so a nutrient can be slotted between. */
+    displayOrder: integer().notNull(),
+    /** One of the four headline macros (calories, protein, fat, carbohydrate). */
+    isMacro: boolean().notNull().default(false),
+    ...timestamps(),
+  },
+  (t) => [
+    index('nutrients_display_order_idx').on(t.displayOrder),
+    check('nutrients_daily_value_check', sql`${t.dailyValue} IS NULL OR ${t.dailyValue} > 0`),
+    check('nutrients_precision_check', sql`${t.displayPrecision} >= 0`),
+  ],
+);
+
+/**
+ * Per-food nutrient **vector** (issue #1028): one row per (food, nutrient),
+ * replacing the fixed nutrient columns on {@link foodNutrition}.
+ *
+ * The old shape modelled nutrients as *schema* when they are *data*. That cost
+ * a migration per nutrient, and it had already produced a defect —
+ * `recipes.saturated_fat_grams` existed while `food_nutrition` had no
+ * saturated-fat column, so no estimate could ever populate it. A vector makes
+ * saturated fat a seed entry, and cholesterol, potassium, added sugars and
+ * vitamin D likewise.
+ *
+ * A row's absence means *unknown*, never zero: source coverage is uneven and a
+ * confident `0` is a claim the data doesn't support. Provenance stays on
+ * {@link foodNutrition} (`sourceRef`), which remains the per-food record.
+ * Composite PK (`foodId`, `nutrientId`) — one amount per food per nutrient.
+ */
+export const foodNutrients = pgTable(
+  'food_nutrients',
+  {
+    foodId: fk()
+      .notNull()
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
+    nutrientId: varchar({ length: 40 })
+      .notNull()
+      .references(() => nutrients.id, { onDelete: 'cascade' }),
+    /** Amount of this nutrient per 100 g of the food's edible portion. */
+    per100g: real().notNull(),
+    ...timestamps(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.foodId, t.nutrientId] }),
+    index('food_nutrients_nutrient_idx').on(t.nutrientId),
+    check('food_nutrients_value_check', sql`${t.per100g} >= 0`),
+  ],
+);
+
+/**
+ * Per-food nutrition provenance (Phase 4, `docs/food-graph.md` §8, ADR-4).
+ * Unlike the affinity tables this is **not** crowd-mined: it mirrors the
+ * curated, public-domain static dataset in `src/lib/food-nutrition.ts` (USDA
+ * FoodData Central), seeded by `seed-ingredients.ts`, and is left untouched by
+ * the graph-mining recompute. `foodId` is the PK (one row per node) and
+ * `sourceRef` carries the FDC id.
+ *
+ * The nutrient **amounts** moved to {@link foodNutrients} in #1028. The columns
+ * below are the legacy fixed shape, retained and still written for one deploy so
+ * the expand/contract convention in `docs/migrations.md` holds: code serving
+ * during the deploy that introduces the vector still reads them. They are dead
+ * to every reader in this tree and are dropped in the follow-up contract
+ * migration. Do not add a nutrient here — add a registry row instead.
+ *
+ * @deprecated The nutrient columns only. Read {@link foodNutrients}.
  */
 export const foodNutrition = pgTable(
   'food_nutrition',
@@ -266,19 +351,19 @@ export const foodNutrition = pgTable(
     foodId: fk()
       .primaryKey()
       .references(() => foodItems.id, { onDelete: 'cascade' }),
-    /** Energy in kilocalories per 100 g. */
+    /** Legacy. Energy in kilocalories per 100 g. Superseded by `food_nutrients`. */
     kcal: real().notNull(),
-    /** Protein in grams per 100 g. */
+    /** Legacy. Protein in grams per 100 g. Superseded by `food_nutrients`. */
     proteinG: real().notNull(),
-    /** Total carbohydrate in grams per 100 g. */
+    /** Legacy. Total carbohydrate in grams per 100 g. Superseded by `food_nutrients`. */
     carbsG: real().notNull(),
-    /** Total fat in grams per 100 g. */
+    /** Legacy. Total fat in grams per 100 g. Superseded by `food_nutrients`. */
     fatG: real().notNull(),
-    /** Dietary fibre (g/100 g), or NULL when unknown. */
+    /** Legacy. Dietary fibre (g/100 g), or NULL when unknown. */
     fiberG: real(),
-    /** Total sugars (g/100 g), or NULL when unknown. */
+    /** Legacy. Total sugars (g/100 g), or NULL when unknown. */
     sugarG: real(),
-    /** Sodium (mg/100 g), or NULL when unknown. */
+    /** Legacy. Sodium (mg/100 g), or NULL when unknown. */
     sodiumMg: real(),
     /** Provenance. The USDA FDC id (or other authoritative reference). */
     sourceRef: varchar({ length: 64 }).notNull(),
@@ -351,5 +436,9 @@ export type FoodRecipeLinkRow = typeof foodRecipeLinks.$inferSelect;
 export type NewFoodRecipeLink = typeof foodRecipeLinks.$inferInsert;
 export type FoodNutritionRow = typeof foodNutrition.$inferSelect;
 export type NewFoodNutrition = typeof foodNutrition.$inferInsert;
+export type NutrientRow = typeof nutrients.$inferSelect;
+export type NewNutrient = typeof nutrients.$inferInsert;
+export type FoodNutrientRow = typeof foodNutrients.$inferSelect;
+export type NewFoodNutrient = typeof foodNutrients.$inferInsert;
 export type FoodPortionRow = typeof foodPortions.$inferSelect;
 export type NewFoodPortion = typeof foodPortions.$inferInsert;
