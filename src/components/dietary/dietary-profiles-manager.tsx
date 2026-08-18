@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Pencil, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Pencil, Plus, Target, Trash2, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFriendlyError } from '~/lib/error-copy';
 import { useDialogInitialFocus } from '~/lib/use-initial-focus';
@@ -16,7 +16,15 @@ import {
 import { type MemberProfileInputRaw } from '~/server/dietary/validation';
 import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import { formatNutrient } from '~/lib/nutrition';
+import {
+  selectEffectiveTarget,
+  targetRows,
+  todayIso,
+  type EffectiveNutritionTarget,
+} from '~/lib/nutrition-targets';
 import { cn } from '~/lib/utils';
+import { NutritionTargetsDialog } from '~/components/dietary/nutrition-targets-dialog';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import {
@@ -39,6 +47,8 @@ export type MemberProfileView = {
   diets: DietaryTag[];
   calorieGoal: number | null;
   groupId: string | null;
+  /** Target history, newest first (#1046). Empty when none were ever set. */
+  targets: EffectiveNutritionTarget[];
 };
 
 type GroupOption = { id: string; name: string };
@@ -50,7 +60,6 @@ type Draft = {
   name: string;
   allergens: Allergen[];
   diets: DietaryTag[];
-  calorieGoal: string;
   groupId: string;
 };
 
@@ -58,7 +67,6 @@ const EMPTY_DRAFT: Draft = {
   name: '',
   allergens: [],
   diets: [],
-  calorieGoal: '',
   groupId: '',
 };
 
@@ -67,7 +75,6 @@ function toDraft(profile: MemberProfileView): Draft {
     name: profile.name,
     allergens: profile.allergens,
     diets: profile.diets,
-    calorieGoal: profile.calorieGoal != null ? String(profile.calorieGoal) : '',
     groupId: profile.groupId ?? '',
   };
 }
@@ -86,11 +93,11 @@ export function DietaryProfilesManager({
   const router = useRouter();
   const nameId = React.useId();
   const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
-  const calorieId = React.useId();
   const groupSelectId = React.useId();
 
   // `null` = dialog closed.
   const [editing, setEditing] = React.useState<EditingState | null>(null);
+  const [targetsFor, setTargetsFor] = React.useState<MemberProfileView | null>(null);
   const [draft, setDraft] = React.useState<Draft>(EMPTY_DRAFT);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isPending, startTransition] = React.useTransition();
@@ -119,7 +126,6 @@ export function DietaryProfilesManager({
       name: draft.name,
       allergens: draft.allergens,
       diets: draft.diets,
-      calorieGoal: draft.calorieGoal.trim() || undefined,
       groupId: draft.groupId || undefined,
     };
     setFieldErrors({});
@@ -240,17 +246,24 @@ export function DietaryProfilesManager({
                 </div>
               ) : null}
 
-              {profile.calorieGoal != null ? (
-                <p className="text-sm text-muted-foreground">
-                  {t('profile.calorieGoal', {
-                    calories: profile.calorieGoal.toLocaleString(),
-                  })}
-                </p>
-              ) : null}
+              {profile.targets.length > 0 ? (
+                <TargetSummary profile={profile} />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('profile.noTargets')}</p>
+              )}
 
-              {profile.allergens.length === 0 &&
-              profile.diets.length === 0 &&
-              profile.calorieGoal == null ? (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTargetsFor(profile)}
+                >
+                  <Target className="size-4" /> {t('actions.setTargets')}
+                </Button>
+              </div>
+
+              {profile.allergens.length === 0 && profile.diets.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('profile.noRestrictions')}</p>
               ) : null}
             </li>
@@ -346,21 +359,6 @@ export function DietaryProfilesManager({
               </div>
             </fieldset>
 
-            <div className="grid gap-2">
-              <Label htmlFor={calorieId}>{t('fields.calorieGoal')}</Label>
-              <Input
-                id={calorieId}
-                value={draft.calorieGoal}
-                onChange={(e) => setDraft((d) => ({ ...d, calorieGoal: e.target.value }))}
-                inputMode="numeric"
-                placeholder={t('fields.caloriePlaceholder')}
-                aria-invalid={Boolean(fieldErrors.calorieGoal)}
-              />
-              {fieldErrors.calorieGoal?.[0] ? (
-                <p className="text-sm text-destructive">{fieldErrors.calorieGoal[0]}</p>
-              ) : null}
-            </div>
-
             {groups.length > 0 ? (
               <div className="grid gap-2">
                 <Label htmlFor={groupSelectId}>{t('fields.familyGroup')}</Label>
@@ -402,6 +400,47 @@ export function DietaryProfilesManager({
           </form>
         </DialogContent>
       </Dialog>
+
+      {targetsFor ? (
+        <NutritionTargetsDialog
+          profile={{ id: targetsFor.id, name: targetsFor.name }}
+          entries={targetsFor.targets}
+          open
+          onOpenChange={(open) => !open && setTargetsFor(null)}
+          onChanged={() => {
+            setTargetsFor(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The targets in force today, with the date they started. The date is not
+ * decoration: it is what tells a cook whether the numbers below are the ones a
+ * past week was scored against or a change they made this morning.
+ */
+function TargetSummary({ profile }: { profile: MemberProfileView }) {
+  const t = useTranslations('dietary');
+  const current = selectEffectiveTarget(profile.targets, todayIso());
+  if (!current)
+    return <p className="text-sm text-muted-foreground">{t('profile.futureTargets')}</p>;
+
+  const rows = targetRows(current.targets);
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="text-sm">
+      <p className="text-muted-foreground">
+        {rows
+          .map((row) => `${row.label} ${formatNutrient(row.value, row.decimals)} ${row.unit}`)
+          .join(' · ')}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {t('profile.targetSince', { date: current.effectiveFrom })}
+      </p>
     </div>
   );
 }

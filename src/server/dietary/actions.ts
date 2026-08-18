@@ -1,11 +1,23 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { type z } from 'zod';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
-import { createMemberProfile, deleteMemberProfile, updateMemberProfile } from './mutations';
-import { memberProfileInput, type MemberProfileInputRaw } from './validation';
+import {
+  createMemberProfile,
+  deleteMemberProfile,
+  deleteNutritionTarget,
+  setNutritionTarget,
+  updateMemberProfile,
+} from './mutations';
+import {
+  memberProfileInput,
+  nutritionTargetInput,
+  type MemberProfileInputRaw,
+  type NutritionTargetInputRaw,
+} from './validation';
 
 export type ActionResult =
   { ok: true; id: string } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
@@ -33,6 +45,21 @@ function forbiddenFields(error: unknown): Record<string, string[]> | undefined {
   return error instanceof Error && error.message === 'FORBIDDEN'
     ? { groupId: ['You can only scope a profile to a group you belong to.'] }
     : undefined;
+}
+
+/**
+ * Flatten a target error to dotted keys (`targets.proteinGrams`), because the
+ * offending field is a nutrient inside a nested object and `flatten()` would
+ * report every one of them as a single `targets` error the form can't attach to
+ * an input.
+ */
+function flattenTargetErrors(error: z.ZodError): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const issue of error.issues) {
+    const key = issue.path.join('.') || 'form';
+    (out[key] ??= []).push(issue.message);
+  }
+  return out;
 }
 
 export async function createMemberProfileAction(
@@ -98,6 +125,49 @@ export async function deleteMemberProfileAction(id: string): Promise<ActionResul
   try {
     const user = await requireUser();
     await deleteMemberProfile(id, user);
+    revalidatePath(SETTINGS_PATH);
+    return { ok: true, id };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+/**
+ * Record a member's macro targets from a date onward (#1046). Clearing every
+ * field removes that dated entry; earlier entries are never rewritten, so a
+ * past week keeps the target it was cooked under.
+ */
+export async function setNutritionTargetAction(
+  input: NutritionTargetInputRaw,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = nutritionTargetInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
+
+  try {
+    const user = await requireUser();
+    const row = await setNutritionTarget(parsed.data, user);
+    revalidatePath(SETTINGS_PATH);
+    return { ok: true, id: row.id };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+/** Remove one dated target, restoring whatever was in force before it. */
+export async function deleteNutritionTargetAction(id: string): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  try {
+    const user = await requireUser();
+    await deleteNutritionTarget(id, user);
     revalidatePath(SETTINGS_PATH);
     return { ok: true, id };
   } catch (error) {
