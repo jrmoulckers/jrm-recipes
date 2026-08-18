@@ -3,10 +3,9 @@ import { and, gte, isNotNull, lte, not, or, sql, type SQL } from 'drizzle-orm';
 import { CONFIDENCE_WEIGHT } from '~/lib/food-grams';
 import { NUTRIENTS, type Nutrition } from '~/lib/nutrition';
 import { nutritionResolverVersion } from '~/lib/nutrition-version';
-import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
+import { type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { recipes } from '~/server/db/schema/recipes';
 
-import { fromCacheValues } from './nutrition-cache';
 import type { NutritionDb } from './nutrition-compute';
 import {
   MACRO_SORT_NUTRIENTS,
@@ -339,6 +338,13 @@ export async function countUnrankableByMacro(
 /**
  * The per-serving figures a result card shows, with the provenance that makes
  * them readable as an estimate rather than a fact.
+ *
+ * The views themselves come from `getRecipeNutritionViews` (#1048) — the batched
+ * sibling of `getRecipeNutritionView`, applying the identical ladder over one
+ * manual-columns query plus one cached-row read. A page of cards therefore costs
+ * two queries rather than sixty, and there is still exactly one place that
+ * decides what a recipe's nutrition is. This module only projects that answer;
+ * it never reads or resolves nutrition itself.
  */
 export type MacroCardSummary = {
   perServing: Nutrition;
@@ -347,86 +353,6 @@ export type MacroCardSummary = {
   confidence: number | null;
   /** True when the figure is below {@link MACRO_CONFIDENCE_FLOOR}. */
   uncertain: boolean;
-};
-
-type ViewReaderDb = Pick<NutritionDb, 'execute'>;
-
-/**
- * Batch-read the nutrition views for a page of results.
- *
- * This is not a second engine and not a second ladder. The two steps that
- * decide anything are delegated to the modules that own them:
- * {@link fromCacheValues} rebuilds a stored row into a view, and
- * {@link resolveNutritionView} applies the precedence. Only the *fetch* is
- * different — one query for a page instead of `getRecipeNutritionView` sixty
- * times, which is the whole reason the cache exists (its own docstring names
- * search filters first).
- *
- * The one deliberate difference from the single-recipe entry point: a cache miss
- * yields `none` instead of computing. A list must not display a recipe the
- * filter could not have selected, and the filter reads only the cache. Computing
- * here would make the card disagree with the query that produced it — the exact
- * class of defect #1029 removed.
- */
-export async function readNutritionViewsForCards(
-  db: ViewReaderDb,
-  rows: readonly (Nutrition & { id: string })[],
-): Promise<Map<string, RecipeNutritionView>> {
-  const out = new Map<string, RecipeNutritionView>();
-  if (rows.length === 0) return out;
-
-  const manualById = new Map<string, Nutrition>();
-  const needCache: string[] = [];
-  for (const row of rows) {
-    const view = resolveNutritionView({ manual: row });
-    if (view.provenance.source === 'manual') {
-      out.set(row.id, view);
-      continue;
-    }
-    manualById.set(row.id, row);
-    needCache.push(row.id);
-  }
-  if (needCache.length === 0) return out;
-
-  try {
-    const ids = sql.join(
-      needCache.map((id) => sql`${id}`),
-      sql`, `,
-    );
-    const result = (await db.execute(sql`
-      SELECT recipe_id, source, per_serving, confidence, sourced_lines, total_lines, unresolved_lines
-      FROM recipe_nutrition_cache
-      WHERE recipe_id IN (${ids}) AND resolver_version = ${nutritionResolverVersion()}
-    `)) as unknown as CachedRow[];
-
-    for (const row of result ?? []) {
-      out.set(
-        row.recipe_id,
-        fromCacheValues({
-          source: row.source,
-          perServing: row.per_serving,
-          confidence: row.confidence,
-          sourcedLines: row.sourced_lines,
-          totalLines: row.total_lines,
-          unresolvedLines: row.unresolved_lines,
-        }),
-      );
-    }
-  } catch {
-    // A cache that cannot be read is a cache miss: the cards simply show no
-    // figures, which is the honest degradation.
-  }
-  return out;
-}
-
-type CachedRow = {
-  recipe_id: string;
-  source: string;
-  per_serving: unknown;
-  confidence: number | null;
-  sourced_lines: number | null;
-  total_lines: number | null;
-  unresolved_lines: unknown;
 };
 
 /**

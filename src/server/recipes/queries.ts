@@ -76,12 +76,12 @@ import {
   macroCardNutrients,
   macroFilterConditions,
   macroOrderBy,
-  readNutritionViewsForCards,
   toMacroCardSummary,
   NO_UNRANKABLE,
   type MacroCardSummary,
   type UnrankableCounts,
 } from './macro-search';
+import { getRecipeNutritionViews } from './nutrition';
 import { assembleTimeline, type TimelineEntry } from './timeline';
 import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
 import { todayParam } from '~/server/planner/week';
@@ -1320,12 +1320,15 @@ export async function searchRecipes(
   }
 
   // The figures each card prints, when the search ranked on nutrition. Read
-  // from the same versioned cache the filter read (never recomputed), so a card
-  // can never show a number the query could not have selected on.
+  // through `getRecipeNutritionViews` (#1048) — the batched sibling of the
+  // single-recipe entry point, so the cards and the recipe page cannot disagree
+  // about what a recipe's nutrition is. Every row here already passed the macro
+  // gate, so each one resolves from the cook's own columns or from the same
+  // cached row the filter selected on.
   const macroNutrients = macroCardNutrients(search);
-  const viewsById: Awaited<ReturnType<typeof readNutritionViewsForCards>> =
+  const viewsById: Awaited<ReturnType<typeof getRecipeNutritionViews>> =
     macroNutrients.length > 0 && safeRows.length > 0
-      ? await readNutritionViewsForCards(db, safeRows)
+      ? await getRecipeNutritionViews(safeRows.map((row) => row.id))
       : new Map();
 
   // Weighted "best match"/"top-rated" ordering is applied in SQL over the full
