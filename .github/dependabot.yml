@@ -1,10 +1,33 @@
 # Keeps dependencies and GitHub Actions up to date with automatic PRs.
 # Dependabot understands pnpm lockfiles under the "npm" ecosystem.
 version: 2
+
+# `.npmrc` routes the @jrmoulckers scope to GitHub Packages but carries no
+# credential, and GitHub Packages authenticates EVERY read -- including reads of
+# a public package, since visibility decides authorization, not authentication.
+# Dependabot runs on GitHub but is not an Actions job, so it never receives the
+# per-job GITHUB_TOKEN that keeps CI green, and it reads only from its own
+# secret store. Without this block every npm job 401s on
+# @jrmoulckers/eslint-config and dies before it can resolve anything (#1021).
+#
+# The token must be a CLASSIC PAT with `read:packages`. Fine-grained tokens
+# return an identical 401 against GitHub Packages, so the error text cannot
+# tell you which mistake you made.
+registries:
+  npm-github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.DEPENDABOT_PACKAGES_TOKEN}}
+
 updates:
   # Application dependencies (package.json / pnpm-lock.yaml).
   - package-ecosystem: 'npm'
     directory: '/'
+    # Only the npm ecosystem needs this. `github-actions` below resolves against
+    # GitHub's own API and never touches a package registry, which is why it has
+    # kept working throughout (#766, #639) while every npm job failed.
+    registries:
+      - npm-github
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
