@@ -123,6 +123,9 @@ summed as if it were nothing.
   enormously better than an onion counted as zero.
 - `food-nutrition.ts` keeps its own private `toGrams` for now. Collapsing the two engines onto this
   resolver is deliberately a separate change, so this one stays reviewable.
+  _(Done in [#1029](https://github.com/jrmoulckers/jrm-recipes/issues/1029): `food-nutrition.ts` now
+  delegates to this resolver, and the manual → graph → estimate precedence moved out of
+  `ingredients-panel.tsx` into `resolveNutritionView`, which tags its answer with provenance.)_
 
 ## Alternatives considered
 

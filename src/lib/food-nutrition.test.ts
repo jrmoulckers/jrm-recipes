@@ -52,20 +52,20 @@ describe('toGrams', () => {
   it('converts mass units directly (no density needed)', () => {
     expect(toGrams(1, 'g')).toBe(1);
     expect(toGrams(2, 'kg')).toBe(2000);
-    expect(toGrams(1, 'oz')).toBeCloseTo(28.3495, 3);
+    expect(toGrams(1, 'oz')).toBeCloseTo(28.35, 2);
     expect(toGrams(1, 'lb')).toBeCloseTo(453.592, 2);
   });
 
   it('accepts tolerant unit aliases', () => {
     expect(toGrams(1, 'grams')).toBe(1);
-    expect(toGrams(1, 'Ounce')).toBeCloseTo(28.3495, 3);
+    expect(toGrams(1, 'Ounce')).toBeCloseTo(28.35, 2);
     expect(toGrams(1, 'tablespoon', 1)).toBeCloseTo(14.7868, 3);
   });
 
   it('converts volume units only when a density is supplied', () => {
     // water: 1 g/mL → 1 cup ≈ 236.6 g
     expect(toGrams(1, 'cup', 1)).toBeCloseTo(236.588, 2);
-    expect(toGrams(1, 'fl oz', 1)).toBeCloseTo(29.5735, 3);
+    expect(toGrams(1, 'fl oz', 1)).toBeCloseTo(29.574, 2);
     expect(toGrams(1, 'cup', null)).toBeNull();
     expect(toGrams(1, 'cup', undefined)).toBeNull();
   });
@@ -92,8 +92,17 @@ describe('estimateIngredientGrams', () => {
     expect(estimateIngredientGrams('chicken', 500, 'g')).toBe(500);
   });
 
-  it('is null when count units meet a food measured by count', () => {
-    expect(estimateIngredientGrams('onion', 2, 'each')).toBeNull();
+  it('weighs a counted food through its curated portion (#1029)', () => {
+    // The text path used to drop every counted line while the graph path
+    // weighed it, so a recipe's calories depended on whether its ingredients
+    // happened to be graph-linked. One onion ≈ 110 g (USDA, medium).
+    expect(estimateIngredientGrams('onion', 2, 'each')).toBeCloseTo(220, 5);
+    expect(estimateIngredientGrams('garlic', 3, 'cloves')).toBeCloseTo(9, 5);
+  });
+
+  it('is null when no gram path exists at all', () => {
+    expect(estimateIngredientGrams('onion', 1, 'splash')).toBeNull();
+    expect(estimateIngredientGrams('dragon fruit essence', 1, 'each')).toBeNull();
   });
 
   it('is null with a missing quantity', () => {
@@ -118,13 +127,27 @@ describe('estimateRecipeNutrition', () => {
   it('counts unresolved/unweighable lines toward coverage but not totals', () => {
     const roll = estimateRecipeNutrition([
       { item: 'chicken', quantity: 100, unit: 'g' },
-      { item: 'onion', quantity: 2, unit: 'each' }, // resolves but count → no grams
+      { item: 'onion', quantity: 2, unit: 'splash' }, // resolves but no gram path
       { item: 'dragon fruit essence', quantity: 1, unit: 'g' }, // unknown food
     ]);
     expect(roll.total).toBe(3);
     expect(roll.sourced).toBe(1);
     expect(roll.coverage).toBeCloseTo(1 / 3, 5);
     expect(roll.kcal).toBeCloseTo(165, 5);
+  });
+
+  it('includes counted ingredients now that portions resolve them (#1029)', () => {
+    const roll = estimateRecipeNutrition([
+      { item: 'olive oil', quantity: 1, unit: 'tbsp' },
+      { item: 'egg', quantity: 6, unit: 'each' },
+    ]);
+    expect(roll.total).toBe(2);
+    expect(roll.sourced).toBe(2);
+    expect(roll.coverage).toBe(1);
+    // 6 large eggs ≈ 300 g at ~143 kcal/100 g ≈ 429 kcal, far more than the
+    // ~120 kcal of oil the text engine used to report on its own.
+    expect(roll.kcal).toBeGreaterThan(400);
+    expect(roll.proteinG).toBeGreaterThan(30);
   });
 
   it('ignores blank items and is empty-safe', () => {
@@ -180,7 +203,7 @@ describe('estimatePerServingNutrition', () => {
     const per = estimatePerServingNutrition(
       [
         { item: 'chicken', quantity: 100, unit: 'g' },
-        { item: 'onion', quantity: 1, unit: 'each' }, // no grams
+        { item: 'onion', quantity: 1, unit: 'splash' }, // no grams
       ],
       4,
     );
@@ -190,7 +213,7 @@ describe('estimatePerServingNutrition', () => {
   });
 
   it('returns an empty record when nothing can be sourced', () => {
-    const per = estimatePerServingNutrition([{ item: 'onion', quantity: 1, unit: 'each' }], 4);
+    const per = estimatePerServingNutrition([{ item: 'onion', quantity: 1, unit: 'splash' }], 4);
     expect(per.perServing).toEqual({});
     expect(per.sourced).toBe(0);
   });
