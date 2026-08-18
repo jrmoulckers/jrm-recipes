@@ -18,6 +18,9 @@ import {
   type ViewerGroup,
 } from '~/server/planner/queries';
 import { recipeAllergenMap } from '~/server/recipes/queries';
+import { rollUpMealNutrition, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
+import { emptyNutritionRollUp, type NutritionRollUp } from '~/lib/nutrition-rollup';
+import { NutritionRollUpCard } from '~/components/nutrition/nutrition-rollup-card';
 import { listMemberProfiles } from '~/server/dietary/queries';
 import { isAllergen, type Allergen } from '~/lib/allergens';
 import { type ActiveMemberOption } from '~/lib/dietary-match';
@@ -66,6 +69,8 @@ async function PlanPage({
   const { week, scope } = await searchParams;
   const locale = await getLocale();
   const t = await getTranslations('planner.page');
+  const tSlots = await getTranslations('planner.board.mealSlot');
+  const tBoard = await getTranslations('planner.board');
   const focusDate = parseDateParam(week);
   const { start, end, days } = getPlannerWeek(focusDate, locale);
   const startParam = toDateParam(start);
@@ -175,6 +180,28 @@ async function PlanPage({
     defaultServings: recipe.servings,
     lastServings: recipe.lastServings,
   }));
+
+  // Week nutrition roll-up (#1048). Every slot on the board is a meal, including
+  // the note-only ones: a slot whose food we know nothing about is exactly what
+  // the aggregate confidence has to account for, so it is passed through as a
+  // meal with no recipe rather than filtered out.
+  //
+  // `plannedServings` is the right multiplier and does not double-count a batch
+  // cook: the source meal stores what is *eaten then* in `plannedServings` (the
+  // full batch lives in `servingsMade`), and each linked leftover slot carries
+  // its own allocation, so summing the column visits every serving once.
+  let weekNutrition: NutritionRollUp = emptyNutritionRollUp();
+  if (dbConfigured && user && entries.length > 0) {
+    const dayLabelByDate = new Map(boardDays.map((day) => [day.dateParam, day.weekdayLabel]));
+    const meals: RollUpMeal[] = entries.map((entry) => ({
+      id: entry.id,
+      recipeId: entry.recipe?.id ?? null,
+      title: entry.recipe?.title ?? entry.note?.trim() ?? tBoard('untitled'),
+      context: `${dayLabelByDate.get(entry.date) ?? entry.date} ${tSlots(entry.slot).toLowerCase()}`,
+      servings: entry.plannedServings ?? 1,
+    }));
+    weekNutrition = await rollUpMealNutrition(meals);
+  }
 
   const showSignIn = authConfigured && dbConfigured && !user;
 
@@ -286,6 +313,12 @@ async function PlanPage({
       ) : (
         <>
           <PrepAheadNote reminders={prepReminders} />
+          <NutritionRollUpCard
+            rollUp={weekNutrition}
+            title={t('nutritionTitle')}
+            perLabel={t('perDay')}
+            perParts={days.length}
+          />
           <PlannerBoard
             days={boardDays}
             entries={boardEntries}

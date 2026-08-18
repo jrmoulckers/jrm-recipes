@@ -21,6 +21,9 @@ import {
 } from '~/server/cooklog/queries';
 import { formatDate, formatRelativeTime } from '~/lib/dates';
 import { journalRangeSince, parseJournalRange } from '~/lib/journal-range';
+import { rollUpMealNutrition, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
+import { emptyNutritionRollUp, type NutritionRollUp } from '~/lib/nutrition-rollup';
+import { NutritionRollUpCard } from '~/components/nutrition/nutrition-rollup-card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { EmptyState } from '~/components/ui/empty-state';
@@ -78,6 +81,26 @@ async function JournalPage({
   const t = await getTranslations('cookLog.journal');
   const tSection = await getTranslations('cookLog.section');
 
+  // Nutrition across the cooks shown (#1048). Scoped to the listed set, not to
+  // every cook ever logged, so the total always reconciles with the entries
+  // below it — the same rule the insight tiles follow. `servingsMade` is the
+  // multiplier; a cook logged without one counts as a single serving rather than
+  // being dropped, because the meal did happen.
+  let cookNutrition: NutritionRollUp = emptyNutritionRollUp();
+  if (cooks.length > 0) {
+    const meals: RollUpMeal[] = cooks.map((cook) => {
+      const cookedAt = new Date(cook.cookedAt);
+      return {
+        id: cook.id,
+        recipeId: cook.recipe?.id ?? null,
+        title: cook.recipe?.title ?? t('entry.untitled'),
+        context: Number.isNaN(cookedAt.getTime()) ? '' : formatDate(cookedAt, 'PP', locale),
+        servings: normalizeServings(cook.servingsMade) ?? 1,
+      };
+    });
+    cookNutrition = await rollUpMealNutrition(meals);
+  }
+
   return (
     <div className="container flex flex-col gap-8 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -106,6 +129,8 @@ async function JournalPage({
           />
 
           {insights.totalCooks > 0 && <InsightsStrip insights={insights} locale={locale} />}
+
+          <NutritionRollUpCard rollUp={cookNutrition} title={t('nutritionTitle')} />
 
           {cooks.length > 0 ? (
             <ol className="flex flex-col gap-4">

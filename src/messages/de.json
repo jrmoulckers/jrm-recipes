@@ -2085,7 +2085,9 @@
       "signIn": {
         "title": "Dein Wochenplan ist privat",
         "body": "Melde dich oben an, um die Woche zu planen und deine Rezepte einzubinden."
-      }
+      },
+      "nutritionTitle": "Nährwerte dieser Woche",
+      "perDay": "pro Tag"
     }
   },
   "engagement": {
@@ -2320,7 +2322,8 @@
         "title": "Noch keine Kochberichte",
         "body": "Öffne ein Rezept und tippe auf „Habe ich gekocht“, um dein Tagebuch zu eröffnen. Notizen und Fotos ergeben einen Verlauf, in dem du gern blätterst.",
         "cta": "Rezepte ansehen"
-      }
+      },
+      "nutritionTitle": "Nährwerte der Auswahl"
     }
   },
   "recipe": {
@@ -3425,6 +3428,17 @@
     "noNutritionData": "Keine Nährwertdaten für: {items}.",
     "entered": "Geschätzte Werte, wie sie beim Kochen eingetragen wurden.",
     "servingsNoun": "Portionen"
+  },
+  "nutritionRollup": {
+    "confidence": "{percent}% sicher",
+    "acrossMeals": "Aus {counted} von {total} Mahlzeiten",
+    "sourceMix": "{entered} selbst eingetragen, {estimated} aus Zutaten geschätzt.",
+    "whyUncertain": "Warum dieser Wert unsicher ist",
+    "missingMeals": "Gar keine Nährwerte für: {items}.",
+    "couldNotWeigh": "Gewicht ließ sich nicht bestimmen: {items}.",
+    "noNutritionData": "Keine Nährwertdaten für: {items}.",
+    "placedLine": "{item} aus {meal}",
+    "andMore": "+{count} weitere"
   },
   "recipePreview": {
     "notice": "Eine Vorschau darauf, wie dieses Rezept beim Kochen aussieht. Noch ist nichts gespeichert.",
