@@ -8,19 +8,16 @@
  * JSON-LD builder alike.
  */
 
-/** A per-serving nutrition record. Every field is optional and may be null. */
-export type Nutrition = {
-  calories?: number | null;
-  proteinGrams?: number | null;
-  carbsGrams?: number | null;
-  fatGrams?: number | null;
-  saturatedFatGrams?: number | null;
-  sodiumMg?: number | null;
-  sugarGrams?: number | null;
-  fiberGrams?: number | null;
-};
+import { NUTRIENT_REGISTRY, type NutritionKey } from './nutrients';
 
-export type NutrientKey = keyof Nutrition;
+/**
+ * A per-serving nutrition record, derived from the nutrient registry (#1028) so
+ * it cannot drift from the stored vector. Every field is optional and may be
+ * null. Adding a nutrient to `nutrients.ts` widens this type automatically.
+ */
+export type Nutrition = { [K in NutritionKey]?: number | null };
+
+export type NutrientKey = NutritionKey;
 
 export type NutrientMeta = {
   key: NutrientKey;
@@ -33,17 +30,17 @@ export type NutrientMeta = {
 /**
  * Display order and formatting, following a standard Nutrition Facts label:
  * calories, fats, sodium, carbohydrates (with fiber/sugar), then protein.
+ *
+ * Projected from {@link NUTRIENT_REGISTRY} rather than restated: the panel's
+ * order and rounding are registry rows now, so a new nutrient appears here (and
+ * in the roll-up, and in the seed) from one declaration.
  */
-export const NUTRIENTS: readonly NutrientMeta[] = [
-  { key: 'calories', label: 'Calories', unit: 'kcal', decimals: 0 },
-  { key: 'fatGrams', label: 'Total fat', unit: 'g', decimals: 1 },
-  { key: 'saturatedFatGrams', label: 'Saturated fat', unit: 'g', decimals: 1 },
-  { key: 'sodiumMg', label: 'Sodium', unit: 'mg', decimals: 0 },
-  { key: 'carbsGrams', label: 'Total carbohydrate', unit: 'g', decimals: 1 },
-  { key: 'fiberGrams', label: 'Dietary fiber', unit: 'g', decimals: 1 },
-  { key: 'sugarGrams', label: 'Sugars', unit: 'g', decimals: 1 },
-  { key: 'proteinGrams', label: 'Protein', unit: 'g', decimals: 1 },
-];
+export const NUTRIENTS: readonly NutrientMeta[] = NUTRIENT_REGISTRY.map((n) => ({
+  key: n.nutritionKey,
+  label: n.label,
+  unit: n.unit,
+  decimals: n.displayPrecision,
+}));
 
 /** Pull just the nutrition fields out of a wider record (e.g. a recipe row). */
 export function pickNutrition(row: Nutrition): Nutrition {
@@ -121,18 +118,27 @@ export function formatNutrient(value: number, decimals: number): string {
 export type NutrientLevel = 'low' | 'moderate' | 'high';
 
 /**
- * FDA Daily Values used for %DV, kept in one place so thresholds are easy to
- * audit and adjust. Sodium 2300 mg. Added sugars 50 g (2000 kcal reference).
+ * FDA Daily Values used for %DV, projected from the nutrient registry so the
+ * thresholds live with the nutrient they belong to. A registry row with a
+ * `dailyValue` is flagged; one with `null` is not. Sodium 2300 mg. Added sugars
+ * 50 g (2000 kcal reference).
  */
-export const DAILY_VALUES = [
-  { key: 'sodiumMg', label: 'Sodium', unit: 'mg', dailyValue: 2300 },
-  { key: 'sugarGrams', label: 'Sugars', unit: 'g', dailyValue: 50 },
-] as const satisfies readonly {
+export const DAILY_VALUES: readonly {
   key: NutrientKey;
   label: string;
   unit: string;
   dailyValue: number;
-}[];
+}[] = NUTRIENT_REGISTRY.flatMap((n) =>
+  n.dailyValue == null
+    ? []
+    : [{ key: n.nutritionKey, label: n.label, unit: n.unit, dailyValue: n.dailyValue }],
+);
+
+/** The nutrients that carry a Daily Value, and so can be banded. */
+export type DailyValueKey = Extract<
+  (typeof NUTRIENT_REGISTRY)[number],
+  { dailyValue: number }
+>['nutritionKey'];
 
 /**
  * FDA "5/20 rule" bands: ≤5% DV is low, ≥20% DV is high, anything between is
@@ -164,10 +170,7 @@ export type DailyValueFlag = {
  * band is derived from the exact ratio so a value never lands in the wrong band
  * due to rounding.
  */
-export function assessDailyValue(
-  perServing: Nutrition,
-  key: (typeof DAILY_VALUES)[number]['key'],
-): DailyValueFlag | null {
+export function assessDailyValue(perServing: Nutrition, key: DailyValueKey): DailyValueFlag | null {
   const meta = DAILY_VALUES.find((d) => d.key === key);
   if (!meta) return null;
   const value = perServing[key];
@@ -186,7 +189,7 @@ export function assessDailyValue(
 /** All available per-serving dietary flags (sodium, sugar), in order. */
 export function nutritionFlags(perServing: Nutrition): DailyValueFlag[] {
   return DAILY_VALUES.flatMap((d) => {
-    const flag = assessDailyValue(perServing, d.key);
+    const flag = assessDailyValue(perServing, d.key as DailyValueKey);
     return flag ? [flag] : [];
   });
 }

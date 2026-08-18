@@ -42,11 +42,13 @@ import {
   favorites,
   foodAliases,
   foodItems,
+  foodNutrients,
   foodNutrition,
   foodPortions,
   groupMembers,
   groups,
   mealPlanEntries,
+  nutrients,
   ratings,
   recipeEvents,
   recipeIngredients,
@@ -77,8 +79,10 @@ import {
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
+  buildFoodNutrientRows,
   buildFoodNutritionRows,
   buildFoodPortionRows,
+  buildNutrientRows,
 } from '~/server/db/seed-ingredients';
 
 // ---------------------------------------------------------------------------
@@ -1078,6 +1082,32 @@ async function seedFoodItems(tx: Tx): Promise<void> {
           sourceRef: row.sourceRef,
           updatedAt: new Date(),
         },
+      });
+  }
+  for (const row of buildNutrientRows()) {
+    await tx
+      .insert(nutrients)
+      .values(row)
+      .onConflictDoUpdate({
+        target: nutrients.id,
+        set: {
+          label: row.label,
+          unit: row.unit,
+          dailyValue: row.dailyValue ?? null,
+          displayPrecision: row.displayPrecision,
+          displayOrder: row.displayOrder,
+          isMacro: row.isMacro,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  for (const row of buildFoodNutrientRows()) {
+    await tx
+      .insert(foodNutrients)
+      .values(row)
+      .onConflictDoUpdate({
+        target: [foodNutrients.foodId, foodNutrients.nutrientId],
+        set: { per100g: row.per100g, updatedAt: new Date() },
       });
   }
   for (const row of buildFoodPortionRows()) {

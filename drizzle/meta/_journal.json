@@ -351,6 +351,13 @@
       "when": 1787011417538,
       "tag": "0049_giant_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1787020426407,
+      "tag": "0050_high_tattoo",
+      "breakpoints": true
     }
   ]
 }

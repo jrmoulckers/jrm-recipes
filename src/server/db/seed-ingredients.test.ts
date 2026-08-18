@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { FOOD_ITEMS } from '~/lib/food-db';
+import { NUTRIENT_REGISTRY, nutrientById } from '~/lib/nutrients';
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
+  buildFoodNutrientRows,
   buildFoodNutritionRows,
+  buildNutrientRows,
   foodSlug,
 } from './seed-ingredients';
 
@@ -92,5 +95,46 @@ describe('buildFoodNutritionRows', () => {
       expect(row.kcal).toBeGreaterThanOrEqual(0);
       expect(row.proteinG).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe('buildNutrientRows', () => {
+  const rows = buildNutrientRows();
+
+  it('mirrors the registry so the table and the module cannot drift', () => {
+    expect(rows.map((r) => r.id)).toEqual(NUTRIENT_REGISTRY.map((n) => n.id));
+    for (const row of rows) {
+      const def = nutrientById(row.id);
+      expect(def).toBeDefined();
+      expect(row.label).toBe(def?.label);
+      expect(row.unit).toBe(def?.unit);
+      expect(row.displayOrder).toBe(def?.displayOrder);
+      expect(row.isMacro).toBe(def?.isMacro);
+    }
+  });
+});
+
+describe('buildFoodNutrientRows', () => {
+  const rows = buildFoodNutrientRows();
+  const itemIds = new Set(buildFoodItemRows().map((r) => r.id));
+
+  it('emits one row per (food, nutrient) pair the dataset actually carries', () => {
+    expect(rows.length).toBeGreaterThan(buildFoodNutritionRows().length);
+    const pairs = new Set(rows.map((r) => `${r.foodId}:${r.nutrientId}`));
+    expect(pairs.size).toBe(rows.length);
+  });
+
+  it('keys every row onto an existing food node and a known nutrient', () => {
+    for (const row of rows) {
+      expect(itemIds.has(row.foodId)).toBe(true);
+      expect(nutrientById(row.nutrientId)).toBeDefined();
+      expect(Number.isFinite(row.per100g)).toBe(true);
+      expect(row.per100g).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('carries saturated fat, which no legacy column could ever hold (#1028)', () => {
+    const satFat = rows.filter((r) => r.nutrientId === 'satFatG');
+    expect(satFat.length).toBeGreaterThan(0);
   });
 });

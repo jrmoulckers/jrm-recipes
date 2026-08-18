@@ -4,8 +4,9 @@ import { eq, inArray } from 'drizzle-orm';
 
 import { db, isDbConfigured } from '~/server/db';
 import { recipes, recipeIngredients } from '~/server/db/schema/recipes';
-import { foodItems, foodNutrition } from '~/server/db/schema/ingredients';
+import { foodItems, foodNutrients, foodNutrition } from '~/server/db/schema/ingredients';
 import type { NutritionFacts, NutritionIngredient } from '~/lib/food-nutrition';
+import { hasNutrients, vectorFromRows } from '~/lib/nutrients';
 import type { Nutrition } from '~/lib/nutrition';
 import { hasNutrition } from '~/lib/nutrition';
 import {
@@ -60,9 +61,9 @@ async function loadRecipeNutritionInputs(recipeId: string): Promise<RecipeNutrit
       ...new Set(lines.map((l) => l.foodId).filter((id): id is string => id != null)),
     ];
 
-    const [densityRows, nutritionRows] =
+    const [densityRows, vectorRows, provenanceRows] =
       foodIds.length === 0
-        ? [[], []]
+        ? [[], [], []]
         : await Promise.all([
             db
               .select({
@@ -72,18 +73,19 @@ async function loadRecipeNutritionInputs(recipeId: string): Promise<RecipeNutrit
               })
               .from(foodItems)
               .where(inArray(foodItems.id, foodIds)),
+            // The nutrient vector (#1028): rows, not columns, so a nutrient
+            // added to the registry reaches the roll-up without touching this
+            // query.
             db
               .select({
-                foodId: foodNutrition.foodId,
-                kcal: foodNutrition.kcal,
-                proteinG: foodNutrition.proteinG,
-                carbsG: foodNutrition.carbsG,
-                fatG: foodNutrition.fatG,
-                fiberG: foodNutrition.fiberG,
-                sugarG: foodNutrition.sugarG,
-                sodiumMg: foodNutrition.sodiumMg,
-                sourceRef: foodNutrition.sourceRef,
+                foodId: foodNutrients.foodId,
+                nutrientId: foodNutrients.nutrientId,
+                per100g: foodNutrients.per100g,
               })
+              .from(foodNutrients)
+              .where(inArray(foodNutrients.foodId, foodIds)),
+            db
+              .select({ foodId: foodNutrition.foodId, sourceRef: foodNutrition.sourceRef })
               .from(foodNutrition)
               .where(inArray(foodNutrition.foodId, foodIds)),
           ]);
@@ -92,21 +94,21 @@ async function loadRecipeNutritionInputs(recipeId: string): Promise<RecipeNutrit
       densityRows.map((r) => [r.id, r.densityGPerMl]),
     );
     const slugById = new Map<string, string>(densityRows.map((r) => [r.id, r.slug]));
-    const factsById = new Map<string, NutritionFacts>(
-      nutritionRows.map((r) => [
-        r.foodId,
-        {
-          kcal: r.kcal,
-          proteinG: r.proteinG,
-          carbsG: r.carbsG,
-          fatG: r.fatG,
-          fiberG: r.fiberG ?? undefined,
-          sugarG: r.sugarG ?? undefined,
-          sodiumMg: r.sodiumMg ?? undefined,
-          sourceRef: r.sourceRef,
-        },
-      ]),
+    const sourceRefById = new Map<string, string>(
+      provenanceRows.map((r) => [r.foodId, r.sourceRef]),
     );
+    const rowsByFood = new Map<string, { nutrientId: string; per100g: number }[]>();
+    for (const row of vectorRows) {
+      const bucket = rowsByFood.get(row.foodId);
+      if (bucket) bucket.push(row);
+      else rowsByFood.set(row.foodId, [row]);
+    }
+    const factsById = new Map<string, NutritionFacts>();
+    for (const [foodId, rows] of rowsByFood) {
+      const vector = vectorFromRows(rows);
+      if (!hasNutrients(vector)) continue;
+      factsById.set(foodId, { ...vector, sourceRef: sourceRefById.get(foodId) ?? '' });
+    }
 
     return {
       servings,

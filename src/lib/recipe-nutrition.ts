@@ -26,6 +26,12 @@ import {
   type NutritionFacts,
   type NutritionIngredient,
 } from '~/lib/food-nutrition';
+import {
+  accumulateVector,
+  scaleVector,
+  toNutritionKeys,
+  type NutrientVector,
+} from '~/lib/nutrients';
 import { hasNutrition, type Nutrition } from '~/lib/nutrition';
 
 /**
@@ -146,13 +152,7 @@ export function rollUpNutrition(
 ): RecipeNutritionEstimate {
   const s = Number.isFinite(servings) && servings > 0 ? servings : 1;
 
-  let kcal = 0;
-  let proteinG = 0;
-  let carbsG = 0;
-  let fatG = 0;
-  let fiberG = 0;
-  let sugarG = 0;
-  let sodiumMg = 0;
+  const totals: NutrientVector = {};
 
   let sourcedLines = 0;
   let totalLines = 0;
@@ -186,14 +186,10 @@ export function rollUpNutrition(
 
     entries.push({ grams, confidence: resolved!.confidence });
 
-    const per = grams / 100;
-    kcal += facts.kcal * per;
-    proteinG += facts.proteinG * per;
-    carbsG += facts.carbsG * per;
-    fatG += facts.fatG * per;
-    fiberG += (facts.fiberG ?? 0) * per;
-    sugarG += (facts.sugarG ?? 0) * per;
-    sodiumMg += (facts.sodiumMg ?? 0) * per;
+    // Registry-driven (#1028): every nutrient the food carries is accumulated,
+    // so a new nutrient never needs an edit here. A nutrient no contributing
+    // line carried stays absent rather than being reported as a confident zero.
+    accumulateVector(totals, facts, grams / 100);
 
     accountedGrams += grams;
     sourcedLines += 1;
@@ -208,24 +204,8 @@ export function rollUpNutrition(
     };
   }
 
-  const whole: Nutrition = {
-    calories: kcal,
-    proteinGrams: proteinG,
-    carbsGrams: carbsG,
-    fatGrams: fatG,
-    fiberGrams: fiberG,
-    sugarGrams: sugarG,
-    sodiumMg: sodiumMg,
-  };
-  const perServing: Nutrition = {
-    calories: kcal / s,
-    proteinGrams: proteinG / s,
-    carbsGrams: carbsG / s,
-    fatGrams: fatG / s,
-    fiberGrams: fiberG / s,
-    sugarGrams: sugarG / s,
-    sodiumMg: sodiumMg / s,
-  };
+  const whole: Nutrition = toNutritionKeys(totals);
+  const perServing: Nutrition = toNutritionKeys(scaleVector(totals, 1 / s));
 
   return {
     perServing,

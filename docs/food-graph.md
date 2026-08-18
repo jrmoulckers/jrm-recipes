@@ -223,10 +223,28 @@ neighbours by `lift` with a `coCount` floor (see §7).
 `preferredPrep`? · `useCount` int · `timestamps`. PK (`userId`,`foodId`).
 Derived from that user's own recipes. It is used to re‑rank the shared suggestions.
 
-**`food_nutrition`**: external enrichment (Phase 4).
-`foodId` fk (unique) · per‑100g macros (`kcal`, `proteinG`, `carbsG`, `fatG`,
-…) · `sourceRef` (e.g. USDA FDC id) · `timestamps`. Deliberately per canonical
-node, from an authoritative source, not crowd‑sourced (ADR‑4).
+**`nutrients`**: the nutrient registry (#1028).
+`id` (pk, e.g. `satFatG`) · `label` · `unit` · `dailyValue`? · `displayPrecision`
+· `displayOrder` · `isMacro` · `timestamps`. Mirrors `src/lib/nutrients.ts`,
+which stays the source of truth and re‑upserts these rows on every seed. The %DV
+bands and rounding rules the Nutrition Facts panel used to hardcode are rows
+here, so adding cholesterol, potassium, added sugars or vitamin D is a registry
+row plus seed values — no migration.
+
+**`food_nutrients`**: the per‑food nutrient vector (#1028).
+`foodId` fk · `nutrientId` fk · `per100g` real. PK (`foodId`,`nutrientId`). An
+absent row means _unknown_, never zero. This replaces the fixed per‑100g columns
+on `food_nutrition`, whose hand‑spelled column set had already stranded
+`recipes.saturatedFatGrams`: the column existed with no source of values.
+
+**`food_nutrition`**: external enrichment (Phase 4), now provenance‑only.
+`foodId` fk (unique) · `sourceRef` (e.g. USDA FDC id) · `timestamps`, plus the
+**legacy** per‑100g macro columns (`kcal`, `proteinG`, `carbsG`, `fatG`, …).
+Deliberately per canonical node, from an authoritative source, not crowd‑sourced
+(ADR‑4). The legacy columns are still written but no longer read: per
+`docs/migrations.md` a column cannot be dropped in the same deploy as the code
+that stops using it, so #1028 is the **expand** phase and the drop is a
+follow‑up **contract** PR.
 
 ## 7. Ranking
 
@@ -247,6 +265,18 @@ FoodData Central** (public domain, generic "Foundation"/"SR Legacy" foods).
 Store per canonical node, per 100 g, with the FDC id in `sourceRef`. Branded /
 packaged nutrition is explicitly out of scope for v1 (licensing + accuracy).
 This is Phase 4 and independent of the crowd‑sourced graph.
+
+**Nutrients are data, not schema (#1028).** Which nutrients exist is a
+`nutrients` registry row; what a food contains is a `food_nutrients` row. The
+registry is declared once in `src/lib/nutrients.ts` and every consumer projects
+from it — the `Nutrition` type, the Nutrition Facts panel list, `NutritionFacts`,
+the roll‑up, the editor form, and the seed. `macros(vector)` stays the typed read
+model for the four headline numbers so a call site that just wants calories and
+protein does not churn into map lookups.
+
+The denormalized `recipes` nutrient columns **stay fixed columns** on purpose:
+they cache the handful of numbers search sorts and filters on, and a vector there
+would turn a macro filter into a join instead of a column scan.
 
 ## 9. Privacy, quality & moderation
 
@@ -324,7 +354,10 @@ default), matching the convention the units session relies on.
   mirrored to the table by the seed. Untouched by the mining recompute).
   `getNutritionForFood` (DB with static fallback) + pure `estimateRecipeNutrition`
   roll‑up (unit→grams via local density, honest `coverage`), complementing the
-  existing nullable nutrition fields in `recipes`.
+  existing nullable nutrition fields in `recipes`. Since #1028 the per‑food values
+  live in the `food_nutrients` vector keyed by the `nutrients` registry; the
+  legacy `food_nutrition` macro columns are still written but no longer read,
+  pending a follow‑up contract migration that drops them.
 
 - **Phase 5. Portions. DONE.** `food_portions` per (node, household measure),
   from the public‑domain USDA FDC `food_portion` dataset (curated static module

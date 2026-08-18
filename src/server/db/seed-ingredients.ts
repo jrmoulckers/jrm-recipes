@@ -11,8 +11,16 @@
 import { FOOD_ITEMS, foodNodeId, foodSlug, normalizeFoodText, stableHash } from '~/lib/food-db';
 import { foodAllergensForSlug } from '~/lib/food-allergens';
 import { NUTRITION_BY_SLUG } from '~/lib/food-nutrition';
+import { NUTRIENT_IDS, NUTRIENT_REGISTRY } from '~/lib/nutrients';
 import { allPortions, normalizePortionUnit } from '~/lib/food-portions';
-import type { NewFoodAlias, NewFoodItem, NewFoodNutrition, NewFoodPortion } from './schema';
+import type {
+  NewFoodAlias,
+  NewFoodItem,
+  NewFoodNutrient,
+  NewFoodNutrition,
+  NewFoodPortion,
+  NewNutrient,
+} from './schema';
 
 /** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
 export { foodSlug };
@@ -83,6 +91,13 @@ export function buildFoodAliasRows(): NewFoodAlias[] {
  * each row's `foodId` points at the node the food seed created. Only foods with
  * curated facts get a row (partial coverage is expected). Idempotent: the PK is
  * the node id, so re-seeding upserts in place.
+ *
+ * Since #1028 the nutrient **amounts** live in `food_nutrients`
+ * ({@link buildFoodNutrientRows}); this row carries the per-food provenance
+ * (`sourceRef`). Its legacy nutrient columns are still written for one deploy so
+ * the expand/contract convention in `docs/migrations.md` holds — code serving
+ * during the deploy that introduces the vector still reads them — and are
+ * dropped in the follow-up contract migration.
  */
 export function buildFoodNutritionRows(): NewFoodNutrition[] {
   const rows: NewFoodNutrition[] = [];
@@ -91,15 +106,61 @@ export function buildFoodNutritionRows(): NewFoodNutrition[] {
     if (!facts) continue;
     rows.push({
       foodId: foodNodeId(food.name),
-      kcal: facts.kcal,
-      proteinG: facts.proteinG,
-      carbsG: facts.carbsG,
-      fatG: facts.fatG,
+      kcal: facts.kcal ?? 0,
+      proteinG: facts.proteinG ?? 0,
+      carbsG: facts.carbsG ?? 0,
+      fatG: facts.fatG ?? 0,
       fiberG: facts.fiberG ?? null,
       sugarG: facts.sugarG ?? null,
       sodiumMg: facts.sodiumMg ?? null,
       sourceRef: facts.sourceRef,
     } satisfies NewFoodNutrition);
+  }
+  return rows;
+}
+
+/**
+ * Build the `nutrients` registry rows from `src/lib/nutrients.ts` (#1028). The
+ * module stays the source of truth; the table is the seeded, joinable mirror
+ * that gives `food_nutrients.nutrientId` something to reference. Idempotent: the
+ * PK is the nutrient id.
+ */
+export function buildNutrientRows(): NewNutrient[] {
+  return NUTRIENT_REGISTRY.map(
+    (n) =>
+      ({
+        id: n.id,
+        label: n.label,
+        unit: n.unit,
+        dailyValue: n.dailyValue,
+        displayPrecision: n.displayPrecision,
+        displayOrder: n.displayOrder,
+        isMacro: n.isMacro,
+      }) satisfies NewNutrient,
+  );
+}
+
+/**
+ * Build the per-food nutrient **vector** rows from the static dataset (#1028).
+ * One row per (food, nutrient) the curated data actually carries — a nutrient a
+ * food has no figure for gets no row, because absent means *unknown* and a
+ * written `0` would be a claim the source doesn't make. Idempotent: the
+ * composite PK is (`foodId`, `nutrientId`), so re-seeding upserts.
+ *
+ * This is the path that unstrands saturated fat: it needed no migration, only a
+ * registry row and seed values.
+ */
+export function buildFoodNutrientRows(): NewFoodNutrient[] {
+  const rows: NewFoodNutrient[] = [];
+  for (const food of FOOD_ITEMS) {
+    const facts = NUTRITION_BY_SLUG.get(foodSlug(food.name));
+    if (!facts) continue;
+    const foodId = foodNodeId(food.name);
+    for (const id of NUTRIENT_IDS) {
+      const value = facts[id];
+      if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+      rows.push({ foodId, nutrientId: id, per100g: value } satisfies NewFoodNutrient);
+    }
   }
   return rows;
 }

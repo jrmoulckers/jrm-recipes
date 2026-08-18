@@ -5,6 +5,7 @@ import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
 import { canonicalFood, normalizeFoodText } from '~/lib/food-db';
 import { nutritionForFood, type NutritionFacts } from '~/lib/food-nutrition';
 import { rankNeighbours, rankUnitStats, type PairEdge, type UnitStatRow } from '~/lib/food-mining';
+import { hasNutrients, vectorFromRows } from '~/lib/nutrients';
 import {
   applyUnitPreference,
   dimensionForUnit,
@@ -18,6 +19,7 @@ import { db, isDbConfigured } from '~/server/db';
 import {
   foodAliases,
   foodItems,
+  foodNutrients,
   foodNutrition,
   foodPairs,
   foodPrepStats,
@@ -402,11 +404,14 @@ export async function getRecipesUsingFood(
 
 /**
  * Authoritative per-100 g nutrition for a free-text ingredient (Phase 4). Reads
- * the seeded `food_nutrition` table (which a future USDA sync could refresh
- * independently of the curated static module), and falls back to the pure
- * static dataset in `food-nutrition.ts` when the DB isn't configured or has no
- * row, so nutrition is available offline just like the unit suggestions.
- * Returns `null` when the food doesn't resolve or has no curated facts.
+ * the seeded nutrient vector (`food_nutrients`, #1028) plus the per-food
+ * provenance on `food_nutrition`, and falls back to the pure static dataset in
+ * `food-nutrition.ts` when the DB isn't configured or has no rows, so nutrition
+ * is available offline just like the unit suggestions. Returns `null` when the
+ * food doesn't resolve or has no curated facts.
+ *
+ * Reading the vector is what makes a new nutrient reach this path for free: the
+ * query selects rows, not columns, so nothing here names a nutrient.
  */
 export async function getNutritionForFood(
   item: string | null | undefined,
@@ -415,29 +420,18 @@ export async function getNutritionForFood(
   if (!isDbConfigured()) return staticFacts;
   const id = await resolveNodeId(item);
   if (!id) return staticFacts;
-  const [row] = await db
-    .select({
-      kcal: foodNutrition.kcal,
-      proteinG: foodNutrition.proteinG,
-      carbsG: foodNutrition.carbsG,
-      fatG: foodNutrition.fatG,
-      fiberG: foodNutrition.fiberG,
-      sugarG: foodNutrition.sugarG,
-      sodiumMg: foodNutrition.sodiumMg,
-      sourceRef: foodNutrition.sourceRef,
-    })
-    .from(foodNutrition)
-    .where(eq(foodNutrition.foodId, id))
-    .limit(1);
-  if (!row) return staticFacts;
-  return {
-    kcal: row.kcal,
-    proteinG: row.proteinG,
-    carbsG: row.carbsG,
-    fatG: row.fatG,
-    fiberG: row.fiberG ?? undefined,
-    sugarG: row.sugarG ?? undefined,
-    sodiumMg: row.sodiumMg ?? undefined,
-    sourceRef: row.sourceRef,
-  };
+  const [vectorRows, [provenance]] = await Promise.all([
+    db
+      .select({ nutrientId: foodNutrients.nutrientId, per100g: foodNutrients.per100g })
+      .from(foodNutrients)
+      .where(eq(foodNutrients.foodId, id)),
+    db
+      .select({ sourceRef: foodNutrition.sourceRef })
+      .from(foodNutrition)
+      .where(eq(foodNutrition.foodId, id))
+      .limit(1),
+  ]);
+  const vector = vectorFromRows(vectorRows);
+  if (!hasNutrients(vector) || !provenance) return staticFacts;
+  return { ...vector, sourceRef: provenance.sourceRef };
 }

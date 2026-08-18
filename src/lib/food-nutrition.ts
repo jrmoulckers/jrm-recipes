@@ -23,29 +23,20 @@ import {
   type ConfidenceEntry,
   type UnresolvedLine,
 } from './food-grams';
+import { accumulateVector, scaleVector, toNutritionKeys, type NutrientVector } from './nutrients';
 import type { Nutrition } from './nutrition';
 
 /**
- * Nutrition per 100 g of the edible portion of a food. Macros are always
- * present. The finer breakdowns (`fiberG`, `sugarG`, `sodiumMg`) are optional
- * because coverage is uneven in the source data. Treat a missing value as
- * "unknown", not zero.
+ * Nutrition per 100 g of the edible portion of a food, as a **nutrient vector**
+ * (#1028): amounts keyed by {@link NutrientId}, plus provenance. Every amount is
+ * optional because source coverage is uneven — treat a missing value as
+ * "unknown", not zero. Curated entries always carry the four macros, so
+ * {@link macros} is the ergonomic way to read them.
+ *
+ * Adding a nutrient here is a registry row in `nutrients.ts` plus values on the
+ * seeds below. No type edit, no roll-up edit, no migration.
  */
-export type NutritionFacts = {
-  /** Energy in kilocalories per 100 g. */
-  kcal: number;
-  /** Protein in grams per 100 g. */
-  proteinG: number;
-  /** Total carbohydrate in grams per 100 g. */
-  carbsG: number;
-  /** Total fat in grams per 100 g. */
-  fatG: number;
-  /** Dietary fibre in grams per 100 g, when known. */
-  fiberG?: number;
-  /** Total sugars in grams per 100 g, when known. */
-  sugarG?: number;
-  /** Sodium in milligrams per 100 g, when known. */
-  sodiumMg?: number;
+export type NutritionFacts = NutrientVector & {
   /** Provenance. The USDA FDC id (or other authoritative reference). */
   sourceRef: string;
 };
@@ -87,6 +78,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 2.3,
     carbsG: 5.5,
     fatG: 24,
+    satFatG: 21.1,
     sugarG: 3.3,
     sodiumMg: 15,
     sourceRef: 'FDC:170173',
@@ -98,6 +90,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 3.2,
     carbsG: 4.8,
     fatG: 3.3,
+    satFatG: 1.9,
     sugarG: 5.1,
     sodiumMg: 43,
     sourceRef: 'FDC:746782',
@@ -108,6 +101,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 1.1,
     carbsG: 3.3,
     fatG: 2.5,
+    satFatG: 0.2,
     sugarG: 2.7,
     sodiumMg: 48,
     sourceRef: 'FDC:174832',
@@ -118,6 +112,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 2.8,
     carbsG: 2.8,
     fatG: 36,
+    satFatG: 21.8,
     sugarG: 2.9,
     sodiumMg: 27,
     sourceRef: 'FDC:170859',
@@ -128,6 +123,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 3.5,
     carbsG: 4.7,
     fatG: 3.3,
+    satFatG: 2.1,
     sugarG: 4.7,
     sodiumMg: 46,
     sourceRef: 'FDC:171284',
@@ -138,6 +134,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 25,
     carbsG: 1.3,
     fatG: 33,
+    satFatG: 18.9,
     sugarG: 0.5,
     sodiumMg: 621,
     sourceRef: 'FDC:328637',
@@ -148,6 +145,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 0.9,
     carbsG: 0.1,
     fatG: 81,
+    satFatG: 51.4,
     sugarG: 0.1,
     sodiumMg: 11,
     sourceRef: 'FDC:173410',
@@ -170,6 +168,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 13,
     carbsG: 72,
     fatG: 2.5,
+    satFatG: 0.4,
     fiberG: 11,
     sugarG: 0.4,
     sodiumMg: 2,
@@ -181,6 +180,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 21,
     carbsG: 21,
     fatG: 50,
+    satFatG: 3.8,
     fiberG: 11,
     sugarG: 4,
     sodiumMg: 1,
@@ -222,6 +222,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 20,
     carbsG: 58,
     fatG: 14,
+    satFatG: 8.1,
     fiberG: 33,
     sugarG: 1.8,
     sodiumMg: 21,
@@ -243,6 +244,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 4.2,
     carbsG: 63,
     fatG: 30,
+    satFatG: 18.4,
     fiberG: 5.9,
     sugarG: 54,
     sodiumMg: 11,
@@ -254,6 +256,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 14,
     carbsG: 72,
     fatG: 5.3,
+    satFatG: 1.2,
     fiberG: 4.5,
     sugarG: 6.2,
     sodiumMg: 732,
@@ -287,6 +290,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 17,
     carbsG: 66,
     fatG: 6.9,
+    satFatG: 1.2,
     fiberG: 11,
     sugarG: 0,
     sodiumMg: 2,
@@ -474,6 +478,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 2,
     carbsG: 9,
     fatG: 15,
+    satFatG: 2.1,
     fiberG: 6.7,
     sugarG: 0.7,
     sodiumMg: 7,
@@ -793,6 +798,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 18,
     carbsG: 44,
     fatG: 22,
+    satFatG: 1.5,
     fiberG: 11,
     sugarG: 2.3,
     sodiumMg: 168,
@@ -804,6 +810,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 14,
     carbsG: 54,
     fatG: 13,
+    satFatG: 2.1,
     fiberG: 35,
     sugarG: 10,
     sodiumMg: 68,
@@ -827,6 +834,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 31,
     carbsG: 0,
     fatG: 3.6,
+    satFatG: 1,
     sodiumMg: 74,
     sourceRef: 'FDC:171077',
   },
@@ -836,6 +844,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 26,
     carbsG: 0,
     fatG: 15,
+    satFatG: 6,
     sodiumMg: 72,
     sourceRef: 'FDC:174032',
   },
@@ -845,6 +854,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 27,
     carbsG: 0,
     fatG: 14,
+    satFatG: 5,
     sodiumMg: 62,
     sourceRef: 'FDC:167903',
   },
@@ -854,6 +864,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 37,
     carbsG: 1.4,
     fatG: 42,
+    satFatG: 13.7,
     sodiumMg: 1717,
     sourceRef: 'FDC:168277',
   },
@@ -863,6 +874,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 12,
     carbsG: 3.3,
     fatG: 27,
+    satFatG: 9.4,
     sodiumMg: 740,
     sourceRef: 'FDC:174589',
   },
@@ -872,6 +884,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 29,
     carbsG: 0,
     fatG: 7.4,
+    satFatG: 2.1,
     sodiumMg: 103,
     sourceRef: 'FDC:171506',
   },
@@ -881,6 +894,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 25,
     carbsG: 0,
     fatG: 21,
+    satFatG: 8.8,
     sodiumMg: 72,
     sourceRef: 'FDC:172602',
   },
@@ -890,6 +904,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 21,
     carbsG: 1.5,
     fatG: 5.5,
+    satFatG: 1.8,
     sodiumMg: 1203,
     sourceRef: 'FDC:167812',
   },
@@ -899,6 +914,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 22,
     carbsG: 0,
     fatG: 12,
+    satFatG: 2.5,
     sodiumMg: 61,
     sourceRef: 'FDC:175168',
   },
@@ -917,6 +933,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 19,
     carbsG: 0,
     fatG: 1.5,
+    satFatG: 0.2,
     sodiumMg: 711,
     sourceRef: 'FDC:171977',
   },
@@ -926,6 +943,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 13,
     carbsG: 0.7,
     fatG: 9.5,
+    satFatG: 3.1,
     sugarG: 0.4,
     sodiumMg: 142,
     sourceRef: 'FDC:748967',
@@ -946,6 +964,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 16,
     carbsG: 3.6,
     fatG: 27,
+    satFatG: 9.6,
     sugarG: 0.6,
     sodiumMg: 48,
     sourceRef: 'FDC:748095',
@@ -957,6 +976,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 0,
     carbsG: 0,
     fatG: 100,
+    satFatG: 13.8,
     sodiumMg: 0,
     sourceRef: 'FDC:171413',
   },
@@ -966,6 +986,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 0,
     carbsG: 0,
     fatG: 100,
+    satFatG: 25,
     sodiumMg: 0,
     sourceRef: 'FDC:171025',
   },
@@ -1016,6 +1037,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 20,
     carbsG: 21,
     fatG: 54,
+    satFatG: 5,
     fiberG: 12,
     sugarG: 4.4,
     sodiumMg: 1,
@@ -1027,6 +1049,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 25,
     carbsG: 20,
     fatG: 50,
+    satFatG: 10.3,
     fiberG: 6,
     sugarG: 9.2,
     sodiumMg: 459,
@@ -1038,6 +1061,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 21,
     carbsG: 20,
     fatG: 49,
+    satFatG: 4.5,
     fiberG: 8.6,
     sugarG: 2.6,
     sodiumMg: 9,
@@ -1049,6 +1073,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 6.9,
     carbsG: 24,
     fatG: 65,
+    satFatG: 57.2,
     fiberG: 16,
     sugarG: 7.4,
     sodiumMg: 37,
@@ -1104,6 +1129,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
     proteinG: 1,
     carbsG: 0.6,
     fatG: 75,
+    satFatG: 11.7,
     sugarG: 0.6,
     sodiumMg: 635,
     sourceRef: 'FDC:167736',
@@ -1205,19 +1231,16 @@ export type NutritionIngredient = {
 };
 
 /**
- * A recipe/meal-plan nutrition roll-up. Absolute totals across every ingredient
- * that could be resolved *and* weighed, plus a `coverage` fraction (0–1) so
- * callers can flag "estimated from 6 of 9 ingredients". `sourced`/`total` give
- * the raw counts behind that fraction.
+ * A recipe/meal-plan nutrition roll-up: a {@link NutrientVector} of absolute
+ * totals across every ingredient that could be resolved *and* weighed, plus a
+ * `coverage` fraction (0–1) so callers can flag "estimated from 6 of 9
+ * ingredients". `sourced`/`total` give the raw counts behind that fraction.
+ *
+ * A nutrient no contributing line carried is **absent**, not zero: reporting
+ * "0 g saturated fat" for a recipe whose foods simply have no saturated-fat
+ * figure is a claim the data does not support.
  */
-export type NutritionRollup = {
-  kcal: number;
-  proteinG: number;
-  carbsG: number;
-  fatG: number;
-  fiberG: number;
-  sugarG: number;
-  sodiumMg: number;
+export type NutritionRollup = NutrientVector & {
   /** Ingredients that contributed to the totals. */
   sourced: number;
   /** Ingredients considered (non-empty `item`). */
@@ -1240,54 +1263,47 @@ export type NutritionRollup = {
  * to grams. Everything else is skipped but still counted toward `total`,
  * `unresolved`, and the `confidence` denominator, so neither number can overstate
  * how complete the estimate is. Pure and order-independent.
+ *
+ * The summation is registry-driven (#1028): every nutrient a food carries is
+ * accumulated, so a new nutrient needs no edit here.
  */
 export function estimateRecipeNutrition(
   ingredients: readonly NutritionIngredient[],
 ): NutritionRollup {
-  const acc: NutritionRollup = {
-    kcal: 0,
-    proteinG: 0,
-    carbsG: 0,
-    fatG: 0,
-    fiberG: 0,
-    sugarG: 0,
-    sodiumMg: 0,
-    sourced: 0,
-    total: 0,
-    coverage: 0,
-    confidence: 0,
-    unresolved: [],
-  };
+  const totals: NutrientVector = {};
+  let sourced = 0;
+  let total = 0;
+  const unresolved: UnresolvedLine[] = [];
   const entries: ConfidenceEntry[] = [];
+
   for (const ing of ingredients) {
     if (!ing.item?.trim()) continue;
-    acc.total += 1;
+    total += 1;
     const facts = nutritionForFood(ing.item);
     const resolved = resolveGramsForFood(ing.item, ing.quantity, ing.unit);
     const grams = resolved?.grams ?? null;
     if (!facts || grams == null) {
       // No contribution: weight 0, but still in the confidence denominator.
       entries.push({ grams, confidence: 'none' });
-      acc.unresolved.push({
+      unresolved.push({
         label: ing.item.trim(),
         reason: grams == null ? 'weight' : 'facts',
       });
       continue;
     }
     entries.push({ grams, confidence: resolved!.confidence });
-    const factor = grams / 100;
-    acc.kcal += facts.kcal * factor;
-    acc.proteinG += facts.proteinG * factor;
-    acc.carbsG += facts.carbsG * factor;
-    acc.fatG += facts.fatG * factor;
-    acc.fiberG += (facts.fiberG ?? 0) * factor;
-    acc.sugarG += (facts.sugarG ?? 0) * factor;
-    acc.sodiumMg += (facts.sodiumMg ?? 0) * factor;
-    acc.sourced += 1;
+    accumulateVector(totals, facts, grams / 100);
+    sourced += 1;
   }
-  acc.coverage = acc.total === 0 ? 0 : acc.sourced / acc.total;
-  acc.confidence = aggregateConfidence(entries);
-  return acc;
+
+  return {
+    ...totals,
+    sourced,
+    total,
+    coverage: total === 0 ? 0 : sourced / total,
+    confidence: aggregateConfidence(entries),
+    unresolved,
+  };
 }
 
 /**
@@ -1295,8 +1311,12 @@ export function estimateRecipeNutrition(
  * list, in the app's `Nutrition` shape (per serving) plus the provenance of the
  * estimate. `perServing` is empty (`{}`) when nothing could be sourced, so it
  * flows straight into `hasNutrition` / `NutritionPanel` and simply renders
- * nothing. `saturatedFatGrams` is always absent. The USDA generic items this is
- * built from don't break fat out that far.
+ * nothing.
+ *
+ * Saturated fat used to be structurally absent here — the curated dataset had
+ * nowhere to put it, so `recipes.saturatedFatGrams` could never be estimated
+ * (#1028). It is now just another registry nutrient and appears whenever a
+ * contributing food carries a figure for it.
  */
 export type EstimatedNutrition = {
   /** Estimated per-serving nutrition (empty when nothing was sourced). */
@@ -1327,18 +1347,7 @@ export function estimatePerServingNutrition(
 ): EstimatedNutrition {
   const roll = estimateRecipeNutrition(ingredients);
   const s = Number.isFinite(servings) && servings > 0 ? servings : 1;
-  const perServing: Nutrition =
-    roll.sourced === 0
-      ? {}
-      : {
-          calories: roll.kcal / s,
-          proteinGrams: roll.proteinG / s,
-          carbsGrams: roll.carbsG / s,
-          fatGrams: roll.fatG / s,
-          fiberGrams: roll.fiberG / s,
-          sugarGrams: roll.sugarG / s,
-          sodiumMg: roll.sodiumMg / s,
-        };
+  const perServing: Nutrition = roll.sourced === 0 ? {} : toNutritionKeys(scaleVector(roll, 1 / s));
   return {
     perServing,
     coverage: roll.coverage,

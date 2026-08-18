@@ -108,15 +108,19 @@ describe('rollUpNutrition', () => {
     expect(est.accountedGrams).toBeCloseTo(236.588, 2);
   });
 
-  it('treats absent fiber/sugar/sodium as 0, not NaN', () => {
+  it('leaves an unsourced nutrient absent rather than NaN or a confident 0', () => {
     const est = rollUpNutrition(
       [{ quantity: 100, unit: 'g', facts: MACROS_ONLY, densityGPerMl: null }],
       1,
     );
     expect(est.whole.calories).toBe(200);
-    expect(est.whole.fiberGrams).toBe(0);
-    expect(est.whole.sugarGrams).toBe(0);
-    expect(est.whole.sodiumMg).toBe(0);
+    // #1028: nothing in the recipe carries fiber, sugar or sodium, so the
+    // roll-up reports them as unknown. A `0` here would assert the recipe has
+    // none of them, which the sources never said.
+    expect(est.whole.fiberGrams).toBeUndefined();
+    expect(est.whole.sugarGrams).toBeUndefined();
+    expect(est.whole.sodiumMg).toBeUndefined();
+    expect(Number.isNaN(est.whole.calories)).toBe(false);
   });
 
   it('skips unresolved (no facts) and unweighable lines but still counts them', () => {
