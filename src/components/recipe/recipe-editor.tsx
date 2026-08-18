@@ -59,7 +59,6 @@ import {
   type CustomUnitDef,
 } from '~/lib/units';
 import { unitLabel } from '~/lib/unit-labels';
-import { NUTRIENT_REGISTRY, type NutritionKey as RegistryNutritionKey } from '~/lib/nutrients';
 import { getSuggestedUnitsForFood } from '~/lib/food-units';
 import { createRecipeAction, updateRecipeAction } from '~/server/recipes/actions';
 import { Button } from '~/components/ui/button';
@@ -275,20 +274,42 @@ function blocksByGroup<T extends { groupId: string; section: string }>(
 
 /**
  * The per-serving nutrition keys shared by {@link RecipeEditorValue}, the editor
- * form state, and the payload builder. Derived from the nutrient registry
- * (#1028) so a new nutrient reaches the editor from one declaration.
+ * form state, and the payload builder. Mirrors the nutrient registry's
+ * per-serving key space (#1028).
  */
-type NutritionKey = RegistryNutritionKey;
+type NutritionKey =
+  | 'calories'
+  | 'proteinGrams'
+  | 'carbsGrams'
+  | 'fatGrams'
+  | 'saturatedFatGrams'
+  | 'sodiumMg'
+  | 'sugarGrams'
+  | 'fiberGrams';
 
 /**
- * Per-serving nutrition inputs (issue #414). Projected from the registry so the
- * editor state, payload builder, and UI stay in sync with the roll-up and the
- * facts panel. `unit` is shown as a suffix hint so a cook knows whether a field
- * wants grams or milligrams.
+ * Per-serving nutrition inputs (issue #414). A literal mirror of
+ * `NUTRIENT_REGISTRY`, in registry order, rather than a projection of it: this
+ * list renders eagerly, and the edit route's first-load budget has zero headroom
+ * (see `//zero-headroom-variance` in `bundle-budgets.json`), so importing the
+ * registry here would ship it into first-load JS. `recipe-editor-nutrition.test`
+ * asserts the two stay identical, so the drift #1028 set out to eliminate is
+ * caught by a failing test rather than by a stranded column. `unit` is shown as
+ * a suffix hint so a cook knows whether a field wants grams or milligrams.
  */
-const NUTRITION_FIELDS: readonly { key: NutritionKey; unit: string }[] = NUTRIENT_REGISTRY.map(
-  (n) => ({ key: n.nutritionKey, unit: n.unit }),
-);
+const NUTRITION_FIELDS = [
+  { key: 'calories', unit: 'kcal' },
+  { key: 'fatGrams', unit: 'g' },
+  { key: 'saturatedFatGrams', unit: 'g' },
+  { key: 'sodiumMg', unit: 'mg' },
+  { key: 'carbsGrams', unit: 'g' },
+  { key: 'fiberGrams', unit: 'g' },
+  { key: 'sugarGrams', unit: 'g' },
+  { key: 'proteinGrams', unit: 'g' },
+] as const satisfies readonly {
+  key: NutritionKey;
+  unit: string;
+}[];
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim();
@@ -771,6 +792,10 @@ export function RecipeEditor({
     // Dynamically import the curated food dataset so it stays out of the
     // editor's first-load JS bundle. It's only needed on this click.
     const { resolveNutritionView } = await import('~/lib/recipe-nutrition');
+    // The registry rides the same lazy chunk (#1028). It is small, but the edit
+    // route's first-load budget has no headroom, so it is loaded on click rather
+    // than shipped eagerly. `NUTRITION_FIELDS` below is a test-enforced mirror.
+    const { NUTRIENT_REGISTRY } = await import('~/lib/nutrients');
     const view = resolveNutritionView({
       ingredients: ingredients.map((r) => ({
         item: r.item,
