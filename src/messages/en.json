@@ -2085,7 +2085,9 @@
       "signIn": {
         "title": "Your meal plan is private",
         "body": "Sign in from the header to plan the week and pull in your recipes."
-      }
+      },
+      "nutritionTitle": "This week's nutrition",
+      "perDay": "per day"
     }
   },
   "engagement": {
@@ -2320,7 +2322,8 @@
         "title": "No cooks logged yet",
         "body": "Open a recipe and tap “I cooked this” to begin your journal. Notes and photos build a history you'll love looking back on.",
         "cta": "Browse recipes"
-      }
+      },
+      "nutritionTitle": "Nutrition in view"
     }
   },
   "recipe": {
@@ -3425,6 +3428,17 @@
     "noNutritionData": "No nutrition data for: {items}.",
     "entered": "Estimated values as entered by the cook.",
     "servingsNoun": "servings"
+  },
+  "nutritionRollup": {
+    "confidence": "{percent}% confident",
+    "acrossMeals": "From {counted} of {total} meals",
+    "sourceMix": "{entered} entered by the cook, {estimated} estimated from ingredients.",
+    "whyUncertain": "Why this number is uncertain",
+    "missingMeals": "No nutrition at all for: {items}.",
+    "couldNotWeigh": "Couldn't weigh: {items}.",
+    "noNutritionData": "No nutrition data for: {items}.",
+    "placedLine": "{item} in {meal}",
+    "andMore": "+{count} more"
   },
   "recipePreview": {
     "notice": "A preview of how this recipe will appear to cooks. Nothing is saved yet.",

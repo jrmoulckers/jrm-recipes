@@ -2085,7 +2085,9 @@
       "signIn": {
         "title": "Tu menú semanal es privado",
         "body": "Inicia sesión desde la cabecera para planificar la semana con tus recetas."
-      }
+      },
+      "nutritionTitle": "Nutrición de esta semana",
+      "perDay": "por día"
     }
   },
   "engagement": {
@@ -2320,7 +2322,8 @@
         "title": "Todavía no hay cocinados registrados",
         "body": "Abre una receta y toca «Lo he cocinado» para inaugurar tu diario. Las notas y las fotos crean un historial al que te encantará volver.",
         "cta": "Ver recetas"
-      }
+      },
+      "nutritionTitle": "Nutrición de lo mostrado"
     }
   },
   "recipe": {
@@ -3425,6 +3428,17 @@
     "noNutritionData": "Sin datos nutricionales de: {items}.",
     "entered": "Valores estimados según los introdujo quien cocina.",
     "servingsNoun": "raciones"
+  },
+  "nutritionRollup": {
+    "confidence": "{percent}% de confianza",
+    "acrossMeals": "De {counted} de {total} comidas",
+    "sourceMix": "{entered} introducidas a mano, {estimated} estimadas a partir de los ingredientes.",
+    "whyUncertain": "Por qué esta cifra es incierta",
+    "missingMeals": "Sin ningún dato nutricional para: {items}.",
+    "couldNotWeigh": "No se pudo calcular el peso de: {items}.",
+    "noNutritionData": "Sin información nutricional de: {items}.",
+    "placedLine": "{item} en {meal}",
+    "andMore": "+{count} más"
   },
   "recipePreview": {
     "notice": "Una vista previa de cómo verán esta receta quienes cocinan. Todavía no se ha guardado nada.",

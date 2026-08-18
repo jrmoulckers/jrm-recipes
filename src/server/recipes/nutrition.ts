@@ -1,8 +1,12 @@
 import 'server-only';
 
+import { inArray } from 'drizzle-orm';
+
 import { db, isDbConfigured } from '~/server/db';
+import { recipes } from '~/server/db/schema/recipes';
+import type { NutritionKey } from '~/lib/nutrients';
 import type { Nutrition } from '~/lib/nutrition';
-import { hasNutrition } from '~/lib/nutrition';
+import { hasNutrition, NUTRIENTS, pickNutrition } from '~/lib/nutrition';
 import {
   emptyNutritionView,
   emptyRecipeNutrition,
@@ -16,7 +20,21 @@ import {
   loadRecipeNutritionInputs,
   rollUpInputs,
 } from './nutrition-compute';
-import { readCachedNutritionView, refreshNutritionCache } from './nutrition-cache';
+import {
+  readCachedNutritionView,
+  readCachedNutritionViews,
+  refreshNutritionCache,
+} from './nutrition-cache';
+
+/**
+ * The recipe columns holding the cook's own per-serving numbers, projected from
+ * the nutrient registry rather than re-spelled (#1028). A nutrient added to the
+ * registry without a matching `recipes` column fails the type-check here, which
+ * is the signal we want; a hand-written list would just quietly omit it.
+ */
+const MANUAL_NUTRITION_COLUMNS = Object.fromEntries(
+  NUTRIENTS.map((nutrient) => [nutrient.key, true]),
+) as { [K in NutritionKey]: true };
 
 /**
  * **The** entry point for "what is this recipe's nutrition?" (#1029).
@@ -55,6 +73,72 @@ export async function getRecipeNutritionView(
 
   const computed = await computeRecipeNutritionView(db, recipeId);
   return computed?.view ?? emptyNutritionView();
+}
+
+/**
+ * The **batch** sibling of {@link getRecipeNutritionView} (#1048): the same
+ * answer for many recipes at once, keyed by recipe id.
+ *
+ * Deliberately a sibling rather than a fork. It applies the identical precedence
+ * ladder by delegating to the identical pieces — the cook's stored numbers via
+ * `resolveNutritionView`, then `readCachedNutritionViews`, then
+ * `computeRecipeNutritionView` — so a week's roll-up cannot disagree with the
+ * recipe pages it is summing. What changes is only the shape of the reads:
+ *
+ * 1. **One** query for the manual per-serving numbers across every id.
+ * 2. **One** query for the cached rows.
+ * 3. Misses computed individually, since a miss is genuinely per-recipe work.
+ *
+ * A miss loop is bounded in practice (the cache is populated after every save
+ * and by the backfill), and it never *writes*, for the same reason the single
+ * read never does: a request path that populates the cache is a request path
+ * that races itself.
+ *
+ * Never throws. Ids that cannot be resolved at all are simply absent from the
+ * map, which callers render as "no nutrition for this meal" rather than as zero.
+ */
+export async function getRecipeNutritionViews(
+  recipeIds: readonly string[],
+): Promise<Map<string, RecipeNutritionView>> {
+  const out = new Map<string, RecipeNutritionView>();
+  const ids = [...new Set(recipeIds.filter((id) => typeof id === 'string' && id.length > 0))];
+  if (ids.length === 0 || !isDbConfigured()) return out;
+
+  let pending = ids;
+
+  try {
+    const manualRows = await db.query.recipes.findMany({
+      where: inArray(recipes.id, pending),
+      columns: { id: true, ...MANUAL_NUTRITION_COLUMNS },
+    });
+
+    const stillPending: string[] = [];
+    const manualById = new Map(manualRows.map((row) => [row.id, pickNutrition(row)]));
+    for (const id of pending) {
+      const manual = manualById.get(id);
+      if (manual && hasNutrition(manual)) out.set(id, resolveNutritionView({ manual }));
+      else stillPending.push(id);
+    }
+    pending = stillPending;
+  } catch {
+    // A failed manual read is not fatal: every id simply falls through to the
+    // derived path, which is where a recipe without stored numbers goes anyway.
+  }
+
+  const cached = await readCachedNutritionViews(db, pending);
+  const misses: string[] = [];
+  for (const id of pending) {
+    const hit = cached.get(id);
+    if (hit) out.set(id, hit);
+    else misses.push(id);
+  }
+
+  for (const id of misses) {
+    const computed = await computeRecipeNutritionView(db, id);
+    if (computed) out.set(id, computed.view);
+  }
+
+  return out;
 }
 
 /**

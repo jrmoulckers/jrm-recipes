@@ -2085,7 +2085,9 @@
       "signIn": {
         "title": "خطة وجباتك خاصة",
         "body": "سجّل الدخول من الأعلى لتخطيط الأسبوع وإدراج وصفاتك."
-      }
+      },
+      "nutritionTitle": "القيم الغذائية لهذا الأسبوع",
+      "perDay": "يوميًا"
     }
   },
   "engagement": {
@@ -2320,7 +2322,8 @@
         "title": "لا طبخات مسجّلة بعد",
         "body": "افتح وصفة والمس «طبختُ هذه» لتفتتح مفكرتك. الملاحظات والصور تصنع سجلًا ستحب العودة إليه.",
         "cta": "تصفّح الوصفات"
-      }
+      },
+      "nutritionTitle": "القيم الغذائية للمعروض"
     }
   },
   "recipe": {
@@ -3425,6 +3428,17 @@
     "noNutritionData": "لا تتوفر بيانات غذائية لـ: {items}.",
     "entered": "قيم تقديرية كما أدخلها الطاهي.",
     "servingsNoun": "حصص"
+  },
+  "nutritionRollup": {
+    "confidence": "ثقة {percent}٪",
+    "acrossMeals": "من {counted} من أصل {total} وجبة",
+    "sourceMix": "{entered} مُدخلة يدويًا، و{estimated} مُقدَّرة من المكوّنات.",
+    "whyUncertain": "لماذا هذا الرقم غير مؤكد",
+    "missingMeals": "لا تتوفر أي قيم غذائية لـ: {items}.",
+    "couldNotWeigh": "تعذّر تحديد الوزن: {items}.",
+    "noNutritionData": "لا تتوفر بيانات غذائية لـ: {items}.",
+    "placedLine": "{item} في {meal}",
+    "andMore": "+{count} أخرى"
   },
   "recipePreview": {
     "notice": "معاينة لكيفية ظهور هذه الوصفة للطهاة. لم يحفظ شيء بعد.",

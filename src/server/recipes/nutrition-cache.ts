@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import type { UnresolvedLine } from '~/lib/food-grams';
 import { NUTRIENTS, type Nutrition } from '~/lib/nutrition';
@@ -181,6 +181,50 @@ export async function readCachedNutritionView(
     return row ? fromCacheValues(row) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Read many recipes' cached views in **one** query, keyed by recipe id. A recipe
+ * absent from the returned map is a miss, exactly as `null` is for
+ * {@link readCachedNutritionView}.
+ *
+ * This is the whole point of the batch path (#1048): a planned week is 20-odd
+ * recipes, and asking the cache 20 times in a loop is the N+1 the cache was
+ * supposed to make unnecessary. Same table, same resolver-version filter, same
+ * deserializer — only the cardinality differs, so a batched answer can never
+ * disagree with a single one.
+ *
+ * Never throws — a cache that cannot be read is a set of misses.
+ */
+export async function readCachedNutritionViews(
+  db: NutritionDb,
+  recipeIds: readonly string[],
+): Promise<Map<string, RecipeNutritionView>> {
+  const out = new Map<string, RecipeNutritionView>();
+  if (recipeIds.length === 0) return out;
+  try {
+    const rows = await db
+      .select({
+        recipeId: recipeNutritionCache.recipeId,
+        source: recipeNutritionCache.source,
+        perServing: recipeNutritionCache.perServing,
+        confidence: recipeNutritionCache.confidence,
+        sourcedLines: recipeNutritionCache.sourcedLines,
+        totalLines: recipeNutritionCache.totalLines,
+        unresolvedLines: recipeNutritionCache.unresolvedLines,
+      })
+      .from(recipeNutritionCache)
+      .where(
+        and(
+          inArray(recipeNutritionCache.recipeId, [...recipeIds]),
+          eq(recipeNutritionCache.resolverVersion, nutritionResolverVersion()),
+        ),
+      );
+    for (const row of rows) out.set(row.recipeId, fromCacheValues(row));
+    return out;
+  } catch {
+    return out;
   }
 }
 
