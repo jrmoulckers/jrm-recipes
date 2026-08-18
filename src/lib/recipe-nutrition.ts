@@ -8,14 +8,14 @@
  * `densityGPerMl`, looked up server-side via the `recipe_ingredients.foodId` FK.
  * That makes the recipe-detail estimate authoritative rather than best-guess.
  *
- * Everything here is pure and framework-free (it only borrows the unit maths in
- * `units.ts`), so the gram-conversion, summation, coverage, and servings-scaling
- * are exhaustively unit-testable and never touch the database. Nothing throws:
+ * Everything here is pure and framework-free (gram resolution is delegated to
+ * `food-grams.ts`), so the summation, coverage, and servings-scaling are
+ * exhaustively unit-testable and never touch the database. Nothing throws:
  * an unweighable or unresolved line is simply skipped and reflected honestly in
  * the coverage numbers.
  */
 
-import { convertUnit, unitDimension } from '~/lib/units';
+import { resolveGramsForSlug } from '~/lib/food-grams';
 import type { NutritionFacts } from '~/lib/food-nutrition';
 import type { Nutrition } from '~/lib/nutrition';
 
@@ -32,35 +32,31 @@ export type ResolvedNutritionLine = {
   facts?: NutritionFacts | null;
   /** g/mL for the line's food, or null when count-measured / unknown. */
   densityGPerMl?: number | null;
+  /**
+   * The canonical food's slug, used to look up a curated household-measure
+   * weight in `food-portions.ts`. Without it a count-measured line (`2 eggs`,
+   * `3 cloves garlic`) has no gram path at all and is silently dropped.
+   */
+  slug?: string | null;
 };
 
 /**
- * Resolve the grams of a single ingredient line. Mass units convert straight to
- * grams. Volume units need a positive `densityGPerMl` (g/mL) and return `null`
- * without one. Count/temperature/unknown units return `null` because their
- * weight isn't knowable from the token alone. A missing or non-finite/negative
- * quantity is `null`. Never throws.
+ * Resolve the grams of a single ingredient line. Delegates to the shared
+ * {@link resolveGramsForSlug}, which tries mass arithmetic, then a curated
+ * per-food portion for the unit, then volume via density. Returns `null` when no
+ * path exists — meaning "unknown weight", never zero. Never throws.
+ *
+ * Passing `slug` is what unlocks the `count` dimension and every density-less
+ * volume measure; omitting it preserves the original mass/density-only
+ * behaviour.
  */
 export function resolveLineGrams(
   quantity: number | null | undefined,
   unit: string | null | undefined,
   densityGPerMl: number | null | undefined,
+  slug?: string | null,
 ): number | null {
-  if (quantity == null || !Number.isFinite(quantity) || quantity < 0) {
-    return null;
-  }
-  const dimension = unitDimension(unit);
-  if (dimension === 'mass') {
-    return convertUnit(quantity, unit!, 'g');
-  }
-  if (dimension === 'volume') {
-    if (densityGPerMl == null || !Number.isFinite(densityGPerMl) || densityGPerMl <= 0) {
-      return null;
-    }
-    const ml = convertUnit(quantity, unit!, 'ml');
-    return ml == null ? null : ml * densityGPerMl;
-  }
-  return null;
+  return resolveGramsForSlug(slug ?? null, quantity, unit, densityGPerMl)?.grams ?? null;
 }
 
 /**
@@ -141,7 +137,7 @@ export function rollUpNutrition(
 
   for (const line of lines) {
     totalLines += 1;
-    const grams = resolveLineGrams(line.quantity, line.unit, line.densityGPerMl);
+    const grams = resolveLineGrams(line.quantity, line.unit, line.densityGPerMl, line.slug);
     if (grams != null) weighableGrams += grams;
 
     const facts = line.facts;

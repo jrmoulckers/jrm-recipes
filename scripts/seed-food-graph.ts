@@ -29,8 +29,9 @@ import {
   buildFoodAliasRows,
   buildFoodItemRows,
   buildFoodNutritionRows,
+  buildFoodPortionRows,
 } from '~/server/db/seed-ingredients';
-import { foodAliases, foodItems, foodNutrition } from '~/server/db/schema';
+import { foodAliases, foodItems, foodNutrition, foodPortions } from '~/server/db/schema';
 import * as schema from '~/server/db/schema';
 
 const dryRun = process.argv.includes('--dry');
@@ -44,12 +45,13 @@ async function main() {
   const itemRows = buildFoodItemRows();
   const aliasRows = buildFoodAliasRows();
   const nutritionRows = buildFoodNutritionRows();
+  const portionRows = buildFoodPortionRows();
   const withAllergens = itemRows.filter((r) => (r.allergens?.length ?? 0) > 0).length;
 
   console.log(
     `[seed-food-graph] Prepared ${itemRows.length} food item(s) ` +
       `(${withAllergens} with allergens), ${aliasRows.length} alias(es), ` +
-      `${nutritionRows.length} nutrition row(s).`,
+      `${nutritionRows.length} nutrition row(s), ${portionRows.length} portion(s).`,
   );
 
   if (dryRun) {
@@ -122,11 +124,26 @@ async function main() {
             },
           });
       }
+      for (const row of portionRows) {
+        await tx
+          .insert(foodPortions)
+          .values(row)
+          .onConflictDoUpdate({
+            target: [foodPortions.foodId, foodPortions.unit],
+            set: {
+              gramsPerUnit: row.gramsPerUnit,
+              modifier: row.modifier ?? null,
+              source: row.source,
+              updatedAt: new Date(),
+            },
+          });
+      }
     });
 
     console.log(
       `[seed-food-graph] Upserted ${itemRows.length} food item(s), ` +
-        `${aliasRows.length} alias(es), ${nutritionRows.length} nutrition row(s).`,
+        `${aliasRows.length} alias(es), ${nutritionRows.length} nutrition row(s), ` +
+        `${portionRows.length} portion(s).`,
     );
   } finally {
     await client.end({ timeout: 5 }).catch(() => undefined);

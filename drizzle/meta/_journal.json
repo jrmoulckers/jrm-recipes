@@ -344,6 +344,13 @@
       "when": 1786391040147,
       "tag": "0048_yellow_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1787011417538,
+      "tag": "0049_giant_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

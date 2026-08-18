@@ -63,6 +63,7 @@ export async function computeRecipeNutrition(recipeId: string): Promise<RecipeNu
             db
               .select({
                 id: foodItems.id,
+                slug: foodItems.slug,
                 densityGPerMl: foodItems.densityGPerMl,
               })
               .from(foodItems)
@@ -86,6 +87,7 @@ export async function computeRecipeNutrition(recipeId: string): Promise<RecipeNu
     const densityById = new Map<string, number | null>(
       densityRows.map((r) => [r.id, r.densityGPerMl]),
     );
+    const slugById = new Map<string, string>(densityRows.map((r) => [r.id, r.slug]));
     const factsById = new Map<string, NutritionFacts>(
       nutritionRows.map((r) => [
         r.foodId,
@@ -107,6 +109,7 @@ export async function computeRecipeNutrition(recipeId: string): Promise<RecipeNu
       unit: l.unit,
       facts: l.foodId ? (factsById.get(l.foodId) ?? null) : null,
       densityGPerMl: l.foodId ? (densityById.get(l.foodId) ?? null) : null,
+      slug: l.foodId ? (slugById.get(l.foodId) ?? null) : null,
     }));
 
     return rollUpNutrition(resolved, servings);

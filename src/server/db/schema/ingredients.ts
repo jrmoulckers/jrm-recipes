@@ -293,6 +293,48 @@ export const foodNutrition = pgTable(
   ],
 );
 
+/**
+ * Household-measure → grams per canonical food (issue #1025, ADR-0006). The
+ * missing edge in the unit graph: mass converts to grams arithmetically and
+ * volume converts via `densityGPerMl`, but the `count` dimension has no
+ * universal conversion, because the grams in "1 onion" are a property of the
+ * *food*, not of the unit. Without this table every `2 eggs` / `3 cloves garlic`
+ * / `1 bunch parsley` line contributed nothing to a nutrition roll-up, and the
+ * 79 of 137 curated foods that carry no density had no gram path at all.
+ *
+ * Like {@link foodNutrition} this is curated, not crowd-mined: it mirrors the
+ * static dataset in `src/lib/food-portions.ts` (generic USDA FoodData Central
+ * `food_portion` gram weights, public domain) and is left untouched by the
+ * graph-mining recompute. `unit` is stored normalized and singular (see
+ * `normalizePortionUnit`) so `cloves` and `clove` resolve the same row.
+ * Composite PK (`foodId`, `unit`) — one weight per food per measure.
+ */
+export const foodPortions = pgTable(
+  'food_portions',
+  {
+    foodId: fk()
+      .notNull()
+      .references(() => foodItems.id, { onDelete: 'cascade' }),
+    /** Normalized, singular unit token (`each`, `clove`, `bunch`, `cup`). */
+    unit: varchar({ length: 40 }).notNull(),
+    /** Grams in exactly one `unit` of this food. Always > 0. */
+    gramsPerUnit: real().notNull(),
+    /**
+     * What "one" means when the bare unit is ambiguous — `medium`, `head`,
+     * `drained`, `shredded`. Provenance and display only; never matched on.
+     */
+    modifier: varchar({ length: 60 }),
+    /** `usda` (FDC `food_portion`) or `kitchen` (conventional reference). */
+    source: varchar({ length: 16 }).notNull().default('usda'),
+    ...timestamps(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.foodId, t.unit] }),
+    index('food_portions_food_idx').on(t.foodId),
+    check('food_portions_grams_check', sql`${t.gramsPerUnit} > 0`),
+  ],
+);
+
 export type FoodItemRow = typeof foodItems.$inferSelect;
 export type NewFoodItem = typeof foodItems.$inferInsert;
 export type FoodAliasRow = typeof foodAliases.$inferSelect;
@@ -309,3 +351,5 @@ export type FoodRecipeLinkRow = typeof foodRecipeLinks.$inferSelect;
 export type NewFoodRecipeLink = typeof foodRecipeLinks.$inferInsert;
 export type FoodNutritionRow = typeof foodNutrition.$inferSelect;
 export type NewFoodNutrition = typeof foodNutrition.$inferInsert;
+export type FoodPortionRow = typeof foodPortions.$inferSelect;
+export type NewFoodPortion = typeof foodPortions.$inferInsert;
