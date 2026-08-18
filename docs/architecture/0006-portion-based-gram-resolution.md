@@ -135,6 +135,10 @@ summed as if it were nothing.
 
 **Persist a nutrition cache first.** The original plan. Rejected because it would have frozen and
 propagated a systematically understated estimate into search ranking and dietary features.
+_(Now done, in [#1044](https://github.com/jrmoulckers/jrm-recipes/issues/1044) /
+[ADR-0007](./0007-versioned-nutrition-cache.md), once the objection above was spent: the cache is
+versioned over the curated inputs and the algorithm, so a future correction to portions, densities
+or the confidence formula invalidates it rather than being frozen into it.)_
 
 **Infer count weights from mined corpus data.** The graph already mines `food_unit_stats` quantity
 percentiles. Rejected as the _source of truth_: the corpus records how much people use, not what it

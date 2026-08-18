@@ -46,7 +46,8 @@
     "db:seed-food-graph": "tsx scripts/seed-food-graph.ts",
     "db:backfill-tags": "tsx scripts/backfill-tag-taxonomy.ts",
     "db:backfill-dietary": "tsx scripts/backfill-dietary-tags.ts",
-    "db:backfill-food-links": "tsx scripts/backfill-food-links.ts"
+    "db:backfill-food-links": "tsx scripts/backfill-food-links.ts",
+    "db:backfill-nutrition": "tsx scripts/backfill-nutrition-cache.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.4",
