@@ -16,8 +16,12 @@
  */
 
 import { resolveGramsForSlug } from '~/lib/food-grams';
-import type { NutritionFacts } from '~/lib/food-nutrition';
-import type { Nutrition } from '~/lib/nutrition';
+import {
+  estimatePerServingNutrition,
+  type NutritionFacts,
+  type NutritionIngredient,
+} from '~/lib/food-nutrition';
+import { hasNutrition, type Nutrition } from '~/lib/nutrition';
 
 /**
  * One ingredient line ready for the roll-up. `facts` and `densityGPerMl` come
@@ -194,4 +198,114 @@ export function rollUpNutrition(
     weighableGrams,
     massCoverage: weighableGrams === 0 ? 0 : accountedGrams / weighableGrams,
   };
+}
+
+/**
+ * How a recipe's displayed nutrition was arrived at, carried as a **value**
+ * rather than re-derived by each consumer (#1029).
+ *
+ * Before this union, precedence — manual override, then the food-graph
+ * estimate, then the free-text estimate — lived inside a `useMemo` in
+ * `ingredients-panel.tsx`. That meant the server could not answer "what is this
+ * recipe's nutrition?" the way the UI did, so every new consumer (search
+ * filters, meal-plan roll-ups, cook-log totals, export) either reimplemented the
+ * ladder or silently used a different one. Search disagreeing with the recipe
+ * page is the failure users report as "the app is wrong" rather than as a bug
+ * with a location.
+ *
+ * The tag is now decided once, in {@link resolveNutritionView}, and rendered
+ * (never decided) by the panel.
+ *
+ * `confidence` is the fraction of ingredient lines that actually contributed —
+ * an interim honesty metric that #1027's confidence roll-up replaces. It is
+ * deliberately absent from `manual` (a cook's own numbers are not an estimate)
+ * and from `none` (there is nothing to be confident about).
+ */
+export type NutritionProvenance =
+  | { source: 'manual' }
+  | { source: 'graph'; confidence: number; sourcedLines: number; totalLines: number }
+  | { source: 'estimate'; confidence: number; sourcedLines: number; totalLines: number }
+  | { source: 'none' };
+
+/**
+ * The single answer to "what is this recipe's per-serving nutrition, and where
+ * did it come from?". `perServing` is empty (`{}`) exactly when `provenance.source`
+ * is `none`, so it flows through `hasNutrition`/`NutritionPanel` and renders
+ * nothing.
+ */
+export type RecipeNutritionView = {
+  /** Per-serving macros, or `{}` when nothing could be sourced. */
+  perServing: Nutrition;
+  /** Where the figures came from, and how complete they are. */
+  provenance: NutritionProvenance;
+};
+
+/** The honest "nothing to show" view. */
+export function emptyNutritionView(): RecipeNutritionView {
+  return { perServing: {}, provenance: { source: 'none' } };
+}
+
+/**
+ * Apply the one precedence ladder: the cook's own numbers win, then the
+ * food-graph estimate (resolved via each line's `foodId` → curated per-100 g
+ * facts), then the free-text estimate matched against the static curated
+ * dataset, then nothing.
+ *
+ * The graph outranks the text estimate because it resolves the *linked*
+ * canonical food rather than guessing from phrasing. The text estimate is still
+ * needed, and is not a legacy path: plenty of foods match the curated dataset
+ * without having a graph node, and offline/unsaved surfaces (the recipe editor's
+ * "estimate from ingredients") have no `foodId` to resolve at all.
+ *
+ * Pure, framework-free, and safe on both the server and the client. Every field
+ * is optional so a caller can supply only the inputs it has: omitting `graph`
+ * yields the text path, omitting `ingredients` yields no text fallback.
+ */
+export function resolveNutritionView(input: {
+  /** The cook's stored per-serving nutrition, when they entered any. */
+  manual?: Nutrition | null;
+  /** A server-computed food-graph roll-up, when one is available. */
+  graph?: RecipeNutritionEstimate | null;
+  /** Raw ingredient lines for the free-text fallback. */
+  ingredients?: readonly NutritionIngredient[] | null;
+  /** Servings the free-text estimate is divided by. Non-positive is treated as 1. */
+  servings?: number | null;
+}): RecipeNutritionView {
+  const { manual, graph, ingredients, servings } = input;
+
+  if (manual && hasNutrition(manual)) {
+    return { perServing: manual, provenance: { source: 'manual' } };
+  }
+
+  if (graph && hasNutrition(graph.perServing)) {
+    return {
+      perServing: graph.perServing,
+      provenance: {
+        source: 'graph',
+        confidence: graph.lineCoverage,
+        sourcedLines: graph.sourcedLines,
+        totalLines: graph.totalLines,
+      },
+    };
+  }
+
+  if (ingredients && ingredients.length > 0) {
+    const est = estimatePerServingNutrition(
+      ingredients,
+      Number.isFinite(servings ?? NaN) && (servings ?? 0) > 0 ? servings! : 1,
+    );
+    if (hasNutrition(est.perServing)) {
+      return {
+        perServing: est.perServing,
+        provenance: {
+          source: 'estimate',
+          confidence: est.coverage,
+          sourcedLines: est.sourced,
+          totalLines: est.total,
+        },
+      };
+    }
+  }
+
+  return emptyNutritionView();
 }

@@ -776,32 +776,34 @@ export function RecipeEditor({
   }
 
   // "Estimate from ingredients": fill the manual per-serving nutrition fields
-  // from the current ingredient list via the curated food dataset, so the cook
-  // gets a starting point they can adjust rather than typing every macro. Uses
-  // the same pure roll-up the recipe view falls back to. Count/unknown units and
-  // unrecognized foods are skipped, so the estimate is best-effort.
+  // from the current ingredient list, so the cook gets a starting point they can
+  // adjust rather than typing every macro. Goes through the same single entry
+  // point the recipe page uses (#1029); an unsaved draft has no food-graph link,
+  // so only the text rung is available here. Unrecognized foods and unweighable
+  // amounts are skipped, so the estimate is best-effort.
   async function estimateNutritionFromIngredients() {
     const servings = parseAmount(form.servings) ?? 1;
     // Dynamically import the curated food dataset so it stays out of the
     // editor's first-load JS bundle. It's only needed on this click.
-    const { estimatePerServingNutrition } = await import('~/lib/food-nutrition');
-    const est = estimatePerServingNutrition(
-      ingredients.map((r) => ({
+    const { resolveNutritionView } = await import('~/lib/recipe-nutrition');
+    const view = resolveNutritionView({
+      ingredients: ingredients.map((r) => ({
         item: r.item,
         quantity: parseAmount(r.quantity),
         unit: r.unit,
       })),
       servings,
-    );
-    if (est.sourced === 0) {
+    });
+    if (view.provenance.source !== 'estimate') {
       toast.error(t('toast.estimateError'));
       return;
     }
+    const { sourcedLines, totalLines, confidence } = view.provenance;
     const round = (n: number, decimals = 0) => {
       const f = 10 ** decimals;
       return String(Math.round(n * f) / f);
     };
-    const n = est.perServing;
+    const n = view.perServing;
     setForm((f) => ({
       ...f,
       calories: n.calories != null ? round(n.calories) : f.calories,
@@ -812,12 +814,12 @@ export function RecipeEditor({
       sugarGrams: n.sugarGrams != null ? round(n.sugarGrams, 1) : f.sugarGrams,
       fiberGrams: n.fiberGrams != null ? round(n.fiberGrams, 1) : f.fiberGrams,
     }));
-    const pct = Math.round(est.coverage * 100);
+    const pct = Math.round(confidence * 100);
     toast.success(
-      est.sourced < est.total
+      sourcedLines < totalLines
         ? t('toast.estimatedPartial', {
-            sourced: est.sourced,
-            total: est.total,
+            sourced: sourcedLines,
+            total: totalLines,
             percent: pct,
           })
         : t('toast.estimated'),

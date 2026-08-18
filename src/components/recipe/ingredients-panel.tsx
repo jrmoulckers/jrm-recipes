@@ -43,8 +43,8 @@ import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitu
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
-import { hasNutrition, type Nutrition } from '~/lib/nutrition';
-import { estimatePerServingNutrition } from '~/lib/food-nutrition';
+import { type Nutrition } from '~/lib/nutrition';
+import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
 
 /**
@@ -261,7 +261,7 @@ export function IngredientsPanel({
   servingsNoun,
   controls,
   nutrition,
-  estimatedNutrition,
+  nutritionView: nutritionViewProp,
   members,
   ingredientSuggestions,
   unitPrefs,
@@ -274,17 +274,17 @@ export function IngredientsPanel({
   /** Optional per-serving nutrition. Renders a facts panel that scales with servings. */
   nutrition?: Nutrition;
   /**
-   * Optional server-computed per-serving estimate from the food graph (resolved
-   * via each ingredient's `foodId` → curated per-100 g facts + density). When the
-   * cook hasn't entered manual nutrition, this authoritative estimate is preferred
-   * over the client-side text-match fallback. `sourced`/`total` drive the coverage
-   * caveat.
+   * The server's answer to "what is this recipe's nutrition?", already resolved
+   * through the one precedence ladder in `recipe-nutrition.ts` and tagged with
+   * its provenance (#1029). The panel **renders** that tag; it must never decide
+   * it, because a second copy of the ladder here is exactly how the recipe page
+   * and search come to disagree.
+   *
+   * Omitted on surfaces that have no server-resolved view (Cook Mode drawers,
+   * offline, an unsaved draft). Those fall back to the same shared ladder with
+   * only the text rung available.
    */
-  estimatedNutrition?: {
-    perServing: Nutrition;
-    sourced: number;
-    total: number;
-  } | null;
+  nutritionView?: RecipeNutritionView | null;
   /** Optional saved family members (calorie goals #430 + conflict flags #429). */
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
@@ -348,42 +348,25 @@ export function IngredientsPanel({
 
   const factor = canScale ? servings / baseServings : 1;
 
-  // Nutrition Facts: prefer the cook's stored per-serving numbers. When a recipe
-  // carries none, auto-estimate them from the ingredient list via the food graph
-  // (Phase 4 hub-wiring) so the panel still appears, clearly labelled as an
-  // estimate. Computed from the base (unscaled) quantities per base serving. The
-  // same per-serving basis the panel scales with.
+  // Nutrition Facts. The precedence between the cook's own numbers, the food
+  // graph, and the free-text estimate is *not* decided here — it is decided once
+  // in `resolveNutritionView` and arrives tagged with its provenance. When the
+  // server already resolved it, render that; otherwise run the same shared
+  // ladder locally, which on a client surface can only reach the text rung.
+  // Computed from the base (unscaled) quantities per base serving, the same
+  // per-serving basis the panel scales with.
   const nutritionView = React.useMemo(() => {
-    if (nutrition && hasNutrition(nutrition)) {
-      return { nutrition, estimated: false as const };
-    }
-    // Prefer the server's food-graph estimate (resolved via foodId → curated
-    // facts) when present. Fall back to the pure client-side text-match estimate
-    // so recipes with no linked foods (or offline surfaces) still show something.
-    if (estimatedNutrition && hasNutrition(estimatedNutrition.perServing)) {
-      return {
-        nutrition: estimatedNutrition.perServing,
-        estimated: true as const,
-        sourced: estimatedNutrition.sourced,
-        total: estimatedNutrition.total,
-      };
-    }
-    const est = estimatePerServingNutrition(
-      ingredients.map((i) => ({
+    if (nutritionViewProp) return nutritionViewProp;
+    return resolveNutritionView({
+      manual: nutrition,
+      ingredients: ingredients.map((i) => ({
         item: i.item,
         quantity: i.quantity,
         unit: i.unit,
       })),
-      baseServings ?? 1,
-    );
-    if (!hasNutrition(est.perServing)) return null;
-    return {
-      nutrition: est.perServing,
-      estimated: true as const,
-      sourced: est.sourced,
-      total: est.total,
-    };
-  }, [nutrition, estimatedNutrition, ingredients, baseServings]);
+      servings: baseServings ?? 1,
+    });
+  }, [nutritionViewProp, nutrition, ingredients, baseServings]);
 
   const householdSize = controls?.householdSize ?? null;
   const scaledToHousehold =
@@ -1032,15 +1015,25 @@ export function IngredientsPanel({
         ))}
       </ul>
 
-      {nutritionView && (
+      {nutritionView.provenance.source !== 'none' && (
         <NutritionPanel
-          nutrition={nutritionView.nutrition}
+          nutrition={nutritionView.perServing}
           servings={servings}
           servingsNoun={servingsNoun}
           members={memberList}
-          estimated={nutritionView.estimated}
-          sourced={nutritionView.estimated ? nutritionView.sourced : undefined}
-          total={nutritionView.estimated ? nutritionView.total : undefined}
+          estimated={nutritionView.provenance.source !== 'manual'}
+          sourced={
+            nutritionView.provenance.source === 'graph' ||
+            nutritionView.provenance.source === 'estimate'
+              ? nutritionView.provenance.sourcedLines
+              : undefined
+          }
+          total={
+            nutritionView.provenance.source === 'graph' ||
+            nutritionView.provenance.source === 'estimate'
+              ? nutritionView.provenance.totalLines
+              : undefined
+          }
         />
       )}
     </div>

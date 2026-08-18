@@ -40,7 +40,7 @@ import {
 } from '~/server/collections/queries';
 import { absoluteUrl, formatMinutes } from '~/lib/utils';
 import { brand } from '~/config/brand';
-import { pickNutrition, hasNutrition } from '~/lib/nutrition';
+import { pickNutrition } from '~/lib/nutrition';
 import { isAllergen, type Allergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
@@ -83,7 +83,7 @@ import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
 import { listRecipeCreators } from '~/server/recipes/creators';
 import { RecipeCreatorManager } from '~/components/recipe/creator-manager';
 import { LeaveRecipeButton } from '~/components/recipe/leave-recipe-button';
-import { computeRecipeNutrition } from '~/server/recipes/nutrition';
+import { getRecipeNutritionView } from '~/server/recipes/nutrition';
 import { getMembership } from '~/server/groups/queries';
 import { isKid } from '~/server/groups/kid-safe';
 import { buildTwoWeekPlanContext } from '~/server/planner/quick-plan';
@@ -286,11 +286,12 @@ async function RecipePage({
   // "you might also like" rail, and member profiles feed the ingredient panel.
   // The heavier below-the-fold tab sections (timeline, cook log, discussion)
   // now stream in via <Suspense> instead of blocking here (#176).
-  // Prefer the cook's stored per-serving nutrition. When they entered none, roll
-  // an estimate up from the ingredient list via the food graph (resolved by each
-  // line's foodId → curated per-100 g facts + density). Compute-on-read only.
+  // Nutrition: one server-owned answer, tagged with where it came from (#1029).
+  // The cook's own numbers win; otherwise an estimate is rolled up from the
+  // ingredient list via the food graph (each line's foodId → curated per-100 g
+  // facts + portions), falling back to a free-text match. The panel renders the
+  // provenance tag rather than re-deriving the precedence. Compute-on-read only.
   const manualNutrition = pickNutrition(recipe);
-  const needsNutritionEstimate = dbEnabled && !hasNutrition(manualNutrition);
   const [
     lineage,
     familyTree,
@@ -301,7 +302,7 @@ async function RecipePage({
     memberProfiles,
     anchoredSuggestions,
     unitSettings,
-    nutritionEstimate,
+    nutritionView,
     ingredientAllergenMap,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
@@ -313,7 +314,7 @@ async function RecipePage({
     user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
     dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
     user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
-    needsNutritionEstimate ? computeRecipeNutrition(recipe.id) : Promise.resolve(null),
+    dbEnabled ? getRecipeNutritionView(recipe.id, manualNutrition) : Promise.resolve(null),
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
@@ -667,15 +668,7 @@ async function RecipePage({
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
                     nutrition={manualNutrition}
-                    estimatedNutrition={
-                      nutritionEstimate && hasNutrition(nutritionEstimate.perServing)
-                        ? {
-                            perServing: nutritionEstimate.perServing,
-                            sourced: nutritionEstimate.sourcedLines,
-                            total: nutritionEstimate.totalLines,
-                          }
-                        : null
-                    }
+                    nutritionView={nutritionView}
                     members={calorieMembers}
                     unitPrefs={viewerUnitPrefs}
                     customUnits={viewerCustomUnits}

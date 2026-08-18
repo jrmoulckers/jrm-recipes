@@ -7,14 +7,16 @@
  * three-decimal precision. These values let the app estimate a recipe's
  * per-serving nutrition and roll a meal plan up into a weekly total.
  *
- * Like `food-db.ts` and `food-units.ts`, this module is pure and
- * dependency-free (no `units.ts`, no `db`, no `server-only`), so it stays
- * client-safe, offline, and trivially unit-testable, and can never become a
- * merge hotspot with the units-conversion library. The `food_nutrition` Drizzle
- * table mirrors this dataset and is seeded from it. Server features may read the
- * table, but this module is the single source of truth.
+ * Like `food-db.ts` and `food-units.ts`, this module is pure and framework-free
+ * (no `db`, no `server-only`), so it stays client-safe, offline, and trivially
+ * unit-testable. Gram resolution is delegated to `food-grams.ts` — the single
+ * shared ingredient-line → grams path (ADR-0006) — rather than duplicated here.
+ * The `food_nutrition` Drizzle table mirrors this dataset and is seeded from it.
+ * Server features may read the table, but this module is the single source of
+ * truth.
  */
-import { canonicalFood, densityForFood, foodSlug } from './food-db';
+import { canonicalFood, foodSlug } from './food-db';
+import { resolveGramsForFood, resolveGramsForSlug } from './food-grams';
 import type { Nutrition } from './nutrition';
 
 /**
@@ -1148,102 +1150,45 @@ export function nutritionForFood(item: string | null | undefined): NutritionFact
   return NUTRITION_BY_SLUG.get(food.slug) ?? null;
 }
 
-// --- Unit → grams conversion (local, deliberately not imported from units.ts) --
-
-/** Absolute grams per one of each supported mass unit. */
-const MASS_GRAMS: Readonly<Record<string, number>> = {
-  g: 1,
-  kg: 1000,
-  oz: 28.349523125,
-  lb: 453.59237,
-};
-
-/** Millilitres per one of each supported volume unit. */
-const VOLUME_ML: Readonly<Record<string, number>> = {
-  ml: 1,
-  l: 1000,
-  tsp: 4.92892159375,
-  tbsp: 14.78676478125,
-  'fl oz': 29.5735295625,
-  cup: 236.5882365,
-  pint: 473.176473,
-  quart: 946.352946,
-  gallon: 3785.411784,
-};
-
-/** Tolerant aliases → canonical unit token (mirrors common `units.ts` spellings). */
-const UNIT_ALIASES: Readonly<Record<string, string>> = {
-  gram: 'g',
-  grams: 'g',
-  gs: 'g',
-  kilogram: 'kg',
-  kilograms: 'kg',
-  ounce: 'oz',
-  ounces: 'oz',
-  pound: 'lb',
-  pounds: 'lb',
-  lbs: 'lb',
-  milliliter: 'ml',
-  milliliters: 'ml',
-  millilitre: 'ml',
-  litre: 'l',
-  liter: 'l',
-  liters: 'l',
-  litres: 'l',
-  teaspoon: 'tsp',
-  teaspoons: 'tsp',
-  tablespoon: 'tbsp',
-  tablespoons: 'tbsp',
-  'fluid ounce': 'fl oz',
-  'fluid ounces': 'fl oz',
-  floz: 'fl oz',
-  cups: 'cup',
-  pints: 'pint',
-  quarts: 'quart',
-  gallons: 'gallon',
-};
-
-function canonicalUnit(unit: string): string {
-  const u = unit.trim().toLowerCase();
-  return UNIT_ALIASES[u] ?? u;
-}
+// --- Unit → grams conversion (delegated to the one shared resolver) ---------
+//
+// This module used to carry its own private `MASS_GRAMS` / `VOLUME_ML` /
+// `UNIT_ALIASES` tables. That made it a second, quietly divergent gram engine:
+// it could not reach the `count` dimension at all, so `2 eggs` and `3 cloves
+// garlic` contributed nothing here even after the graph path learned to weigh
+// them via curated portions (#1025). Both paths now share `food-grams.ts`, so a
+// recipe's numbers no longer depend on whether its lines happen to be linked to
+// the food graph (#1029).
 
 /**
- * Convert a `quantity` of `unit` into grams. Mass units convert directly. Volume
- * units need a `densityGPerMl` (grams per mL) and return `null` without one.
- * count/unknown units (each, pinch, clove, …) return `null` because their weight
- * isn't knowable from the token alone. A non-finite/negative quantity is `null`.
+ * Convert a `quantity` of `unit` into grams **without** knowing which food it
+ * is. Mass units convert directly; volume units need a `densityGPerMl` and
+ * return `null` without one. Count/unknown units (each, pinch, clove, …) return
+ * `null`, because the weight of "1 each" is a property of the food, not of the
+ * token — use {@link estimateIngredientGrams}, which knows the food and can
+ * therefore reach a curated portion. A non-finite/negative quantity is `null`.
  */
 export function toGrams(
   quantity: number,
   unit: string | null | undefined,
   densityGPerMl?: number | null,
 ): number | null {
-  if (!Number.isFinite(quantity) || quantity < 0) return null;
-  const u = canonicalUnit(unit ?? '');
-  const mass = MASS_GRAMS[u];
-  if (mass !== undefined) return quantity * mass;
-  const ml = VOLUME_ML[u];
-  if (ml !== undefined) {
-    if (densityGPerMl == null || !Number.isFinite(densityGPerMl)) return null;
-    return quantity * ml * densityGPerMl;
-  }
-  return null;
+  return resolveGramsForSlug(null, quantity, unit, densityGPerMl)?.grams ?? null;
 }
 
 /**
  * Estimate the grams of a single ingredient line from its free-text `item`,
- * `quantity`, and `unit`, resolving density from `food-db`. Returns `null` when
- * the amount can't be weighed (unknown/count unit with no density). This is the
- * bridge between a recipe's human units and per-100 g nutrition.
+ * `quantity`, and `unit`. Resolves the food first, so a curated per-food portion
+ * can weigh counted and density-less measures (`2 eggs`, `1 clove garlic`,
+ * `1 cup shredded cheese`); falls back to mass arithmetic and then density.
+ * Returns `null` — meaning *unknown weight*, never zero — when no path exists.
  */
 export function estimateIngredientGrams(
   item: string | null | undefined,
   quantity: number | null | undefined,
   unit: string | null | undefined,
 ): number | null {
-  if (quantity == null) return null;
-  return toGrams(quantity, unit, densityForFood(item));
+  return resolveGramsForFood(item, quantity, unit)?.grams ?? null;
 }
 
 /** One ingredient line for a nutrition roll-up. */

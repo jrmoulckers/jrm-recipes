@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  emptyNutritionView,
   emptyRecipeNutrition,
   resolveLineGrams,
+  resolveNutritionView,
   rollUpNutrition,
   type ResolvedNutritionLine,
 } from './recipe-nutrition';
@@ -246,5 +248,102 @@ describe('resolveLineGrams portion path', () => {
     expect(resolveLineGrams(2, 'each', null)).toBeNull();
     expect(resolveLineGrams(1, 'kg', null)).toBe(1000);
     expect(resolveLineGrams(1000, 'ml', 1.03)).toBeCloseTo(1030, 5);
+  });
+});
+
+// The precedence ladder used to live in a `useMemo` inside
+// `ingredients-panel.tsx`, so it could only be exercised by rendering a
+// component. Testing the tagged union directly is the point of #1029: the
+// provenance is now a value, so it is assertable without React.
+describe('resolveNutritionView precedence', () => {
+  const GRAPH = rollUpNutrition(
+    [
+      { quantity: 100, unit: 'g', facts: UNIT_FOOD },
+      { quantity: 1, unit: 'each' },
+    ],
+    1,
+  );
+  const TEXT = [{ item: 'chicken', quantity: 200, unit: 'g' }];
+
+  it('prefers the cook’s own numbers over every estimate', () => {
+    const view = resolveNutritionView({
+      manual: { calories: 500 },
+      graph: GRAPH,
+      ingredients: TEXT,
+      servings: 1,
+    });
+    expect(view.provenance).toEqual({ source: 'manual' });
+    expect(view.perServing.calories).toBe(500);
+  });
+
+  it('ignores an empty manual record and falls through to the graph', () => {
+    const view = resolveNutritionView({ manual: {}, graph: GRAPH, ingredients: TEXT, servings: 1 });
+    expect(view.provenance.source).toBe('graph');
+  });
+
+  it('tags the graph rung with its coverage and line counts', () => {
+    const view = resolveNutritionView({ graph: GRAPH, ingredients: TEXT, servings: 1 });
+    expect(view.provenance).toEqual({
+      source: 'graph',
+      confidence: 0.5,
+      sourcedLines: 1,
+      totalLines: 2,
+    });
+    expect(view.perServing.calories).toBeCloseTo(100, 5);
+  });
+
+  it('falls back to the text estimate when the graph sourced nothing', () => {
+    const view = resolveNutritionView({
+      graph: rollUpNutrition([{ quantity: 1, unit: 'each' }], 1),
+      ingredients: TEXT,
+      servings: 2,
+    });
+    expect(view.provenance.source).toBe('estimate');
+    // chicken 165 kcal/100 g × 200 g = 330, halved across 2 servings.
+    expect(view.perServing.calories).toBeCloseTo(165, 5);
+  });
+
+  it('reaches the text rung with no graph input at all (unsaved draft)', () => {
+    const view = resolveNutritionView({ ingredients: TEXT, servings: 1 });
+    expect(view.provenance).toEqual({
+      source: 'estimate',
+      confidence: 1,
+      sourcedLines: 1,
+      totalLines: 1,
+    });
+  });
+
+  it('counts a text-matched counted ingredient on the estimate rung (#1029)', () => {
+    // The regression this closes: before, the text path dropped every counted
+    // line, so this recipe reported only the oil's calories while the graph path
+    // reported the eggs too. Same recipe, two different answers.
+    const view = resolveNutritionView({
+      ingredients: [
+        { item: 'olive oil', quantity: 1, unit: 'tbsp' },
+        { item: 'egg', quantity: 6, unit: 'each' },
+      ],
+      servings: 1,
+    });
+    expect(view.provenance).toMatchObject({ source: 'estimate', sourcedLines: 2, totalLines: 2 });
+    expect(view.perServing.calories!).toBeGreaterThan(400);
+  });
+
+  it('reports `none` rather than a zeroed estimate when nothing resolves', () => {
+    const view = resolveNutritionView({
+      ingredients: [{ item: 'dragon fruit essence', quantity: 1, unit: 'splash' }],
+      servings: 4,
+    });
+    expect(view).toEqual(emptyNutritionView());
+    expect(view.perServing).toEqual({});
+  });
+
+  it('reports `none` for an empty input', () => {
+    expect(resolveNutritionView({})).toEqual({ perServing: {}, provenance: { source: 'none' } });
+  });
+
+  it('treats a non-positive serving count as 1 on the text rung', () => {
+    const zero = resolveNutritionView({ ingredients: TEXT, servings: 0 });
+    const one = resolveNutritionView({ ingredients: TEXT, servings: 1 });
+    expect(zero.perServing.calories).toBeCloseTo(one.perServing.calories!, 5);
   });
 });
