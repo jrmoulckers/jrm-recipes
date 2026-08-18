@@ -13,6 +13,9 @@ import { FavoriteButton } from '~/components/collections/favorite-button';
 import { RecipeImage } from '~/components/recipe/recipe-image';
 import { QuickPlanButton, type QuickPlanDay } from '~/components/recipe/quick-plan-button';
 import { CardDietaryBadge, type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
+import { CardMacroLine } from '~/components/recipe/card-macro-line';
+import { type MacroNutrientKey } from '~/server/recipes/search';
+import { type MacroCardSummary } from '~/server/recipes/macro-search';
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
@@ -64,6 +67,8 @@ export function RecipeCard({
   priority = false,
   matchReason,
   members,
+  macro,
+  macroNutrients,
 }: {
   recipe: CardRecipe;
   /** Initial favorited state for the heart overlay. */
@@ -93,6 +98,14 @@ export function RecipeCard({
    * default) and no badge renders.
    */
   members?: CardDietaryMember[];
+  /**
+   * Per-serving figures behind a macro-filtered result, with the provenance and
+   * confidence that make them honest (#1047). Only supplied by search when the
+   * viewer actually ranked on nutrition; omitted everywhere else.
+   */
+  macro?: MacroCardSummary | null;
+  /** Which nutrients the macro line prints — the ones the search ranked on. */
+  macroNutrients?: MacroNutrientKey[];
 }) {
   const t = useTranslations('recipe');
   const tNames = useTranslations('classificationNames');
@@ -200,6 +213,9 @@ export function RecipeCard({
               })}{' '}
               <span className="font-medium text-foreground/80">{matchReason.term}</span>
             </p>
+          )}
+          {macro && macroNutrients && macroNutrients.length > 0 && (
+            <CardMacroLine macro={macro} nutrients={macroNutrients} />
           )}
           {recipe.description && (
             <p className="line-clamp-2 break-words text-sm text-muted-foreground">

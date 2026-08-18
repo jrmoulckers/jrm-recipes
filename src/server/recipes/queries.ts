@@ -70,7 +70,18 @@ import { expandQueryTerms } from '~/lib/search-synonyms';
 import { deriveMatchReason } from '~/lib/search-match';
 import { rankBySimilarity, tokenizeIngredients } from '~/lib/related-recipes';
 import { rankByCoverage } from '~/lib/ingredient-coverage';
-import { tagFilterSlug, type RecipeSearch, type RecipeSort } from './search';
+import { tagFilterSlug, usesMacroNutrition, type RecipeSearch, type RecipeSort } from './search';
+import {
+  countUnrankableByMacro,
+  macroCardNutrients,
+  macroFilterConditions,
+  macroOrderBy,
+  readNutritionViewsForCards,
+  toMacroCardSummary,
+  NO_UNRANKABLE,
+  type MacroCardSummary,
+  type UnrankableCounts,
+} from './macro-search';
 import { assembleTimeline, type TimelineEntry } from './timeline';
 import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
 import { todayParam } from '~/server/planner/week';
@@ -1045,6 +1056,12 @@ export function searchFilterConditions(
   opts: {
     skip?: 'cuisine' | 'meal' | 'tag';
     ingredientFoodId?: string | null;
+    /**
+     * Omit the macro confidence gate (#1047). The withheld counts need the
+     * result set *before* the gate was applied, so they can describe what it
+     * held back rather than counting only what survived it.
+     */
+    skipMacros?: boolean;
   } = {},
 ): SQL[] {
   const conditions: (SQL | undefined)[] = [];
@@ -1144,6 +1161,13 @@ export function searchFilterConditions(
     );
   }
 
+  // Per-serving macro bounds and macro sort (#1047). Reads the same precedence
+  // ladder `getRecipeNutritionView` applies — the cook's own figures, else the
+  // versioned derived cache — and admits a derived figure only above the
+  // confidence floor, so a filtered list never asserts a number the system
+  // cannot support. See `macro-search.ts` for the rule and its justification.
+  if (!opts.skipMacros) conditions.push(...macroFilterConditions(search));
+
   return conditions.filter((c): c is SQL => c != null);
 }
 
@@ -1177,13 +1201,15 @@ export async function searchRecipes(
   search: RecipeSearch,
   { limit = RECIPE_SEARCH_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
 ) {
-  if (!isDbConfigured()) return { items: [], nextOffset: null } as Paginated<never>;
+  if (!isDbConfigured()) {
+    return { items: [], nextOffset: null, unrankable: NO_UNRANKABLE };
+  }
   const groupIds = await viewerGroupIds(viewer);
   const ingredientFoodId = await resolveIngredientFilter(search);
 
   const conditions: (SQL | undefined)[] = [
     visibleRecipesScope(viewer, groupIds),
-    ...searchFilterConditions(search, { ingredientFoodId }),
+    ...searchFilterConditions(search, { ingredientFoodId, skipMacros: true }),
   ];
 
   // "Only mine" (#91): narrow to the signed-in viewer's own recipes. Guarded on a
@@ -1226,16 +1252,35 @@ export async function searchRecipes(
 
   const like = search.q ? `%${escapeLike(search.q)}%` : null;
 
+  // Everything except the macro confidence gate. The withheld counts are taken
+  // over *this* set, so they answer "of the recipes that otherwise matched, how
+  // many did the gate hold back?" rather than counting the whole corpus.
+  const baseConditions = conditions.filter((c): c is SQL => c != null);
+  conditions.push(...macroFilterConditions(search));
+
+  // A macro sort ranks on nutrition and so takes precedence over the generic
+  // orderings; its WHERE has already required the value to exist, so nothing
+  // reaches this ordering without a figure behind it (#1047).
+  const macroOrdering = macroOrderBy(search);
+
   // "Best match" ranks by the weighted field-match score, but only makes sense
   // with a text query. Without one it falls through to the newest ordering.
   const orderBy =
-    search.sort === 'relevance' && like != null
+    macroOrdering ??
+    (search.sort === 'relevance' && like != null
       ? relevanceOrderBy(like)
       : search.sort === 'top-rated'
         ? topRatedOrderBy()
         : search.sort === 'popular'
           ? popularOrderBy()
-          : recipeOrderBy(search.sort);
+          : recipeOrderBy(search.sort));
+
+  // What the confidence gate withheld, over the same base conditions, so the
+  // results can disclose it rather than just being shorter. Runs alongside the
+  // page and only when the search actually ranks on nutrition.
+  const unrankablePromise: Promise<UnrankableCounts> = usesMacroNutrition(search)
+    ? countUnrankableByMacro(db, baseConditions, search)
+    : Promise.resolve(NO_UNRANKABLE);
 
   const rows = await db.query.recipes.findMany({
     where: and(...conditions),
@@ -1274,6 +1319,15 @@ export async function searchRecipes(
     });
   }
 
+  // The figures each card prints, when the search ranked on nutrition. Read
+  // from the same versioned cache the filter read (never recomputed), so a card
+  // can never show a number the query could not have selected on.
+  const macroNutrients = macroCardNutrients(search);
+  const viewsById: Awaited<ReturnType<typeof readNutritionViewsForCards>> =
+    macroNutrients.length > 0 && safeRows.length > 0
+      ? await readNutritionViewsForCards(db, safeRows)
+      : new Map();
+
   // Weighted "best match"/"top-rated" ordering is applied in SQL over the full
   // candidate set above, so the returned rows are already globally ranked. Attach
   // a lightweight match reason per row (and drop the ingredient text from the
@@ -1294,9 +1348,11 @@ export async function searchRecipes(
           search.q,
         )
       : null;
-    return { ...rest, matchReason };
+    const macro: MacroCardSummary | null =
+      macroNutrients.length > 0 ? toMacroCardSummary(viewsById.get(rest.id)) : null;
+    return { ...rest, matchReason, macro };
   });
-  return { items, nextOffset };
+  return { items, nextOffset, unrankable: await unrankablePromise };
 }
 
 /**
@@ -1350,7 +1406,7 @@ export async function getRecipesUsingFood(
   const nextOffset = nextPageOffset(offset, rows.length, limit);
   // Shape parity with searchRecipes results so the same cards/feeds render these
   // (there's no free-text query here, so there's no match reason to derive).
-  const items = rows.map((row) => ({ ...row, matchReason: null }));
+  const items = rows.map((row) => ({ ...row, matchReason: null, macro: null }));
   return { items, nextOffset };
 }
 

@@ -26,6 +26,10 @@ describe('parseRecipeSearch', () => {
       group: undefined,
       mine: false,
       sort: 'newest',
+      minProtein: undefined,
+      maxCalories: undefined,
+      maxCarbs: undefined,
+      showUncertain: false,
     });
   });
 

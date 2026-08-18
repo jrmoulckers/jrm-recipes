@@ -2533,7 +2533,16 @@
         "tag": "una etiqueta",
         "cuisine": "la cocina",
         "description": "la descripción"
-      }
+      },
+      "macroValue": {
+        "calories": "{value} kcal",
+        "proteinGrams": "{value} g de proteína",
+        "carbsGrams": "{value} g de carbohidratos",
+        "fatGrams": "{value} g de grasa"
+      },
+      "macroManual": "Indicado por quien cocina",
+      "macroEstimated": "Estimado · {percent} % de confianza",
+      "macroUncertain": "Poca confianza"
     },
     "reel": {
       "trigger": "Vídeo corto",
@@ -2580,7 +2589,14 @@
     "searchResults": {
       "title": "Resultados",
       "correction": "No hay coincidencias exactas para <strong>«{from}»</strong>. Mostramos resultados de <strong>«{to}»</strong>.",
-      "count": "{count}{plus} {count, plural, one {receta} other {recetas}}"
+      "count": "{count}{plus} {count, plural, one {receta} other {recetas}}",
+      "withheld": {
+        "lowConfidence": "{count, plural, one {Se ha ocultado # receta} other {Se han ocultado # recetas}} porque nuestra estimación no es lo bastante fiable para clasificarla con honestidad.",
+        "unknown": "{count, plural, one {# receta más no tiene} other {# recetas más no tienen}} ningún dato nutricional, así que no podemos afirmar nada.",
+        "show": "Mostrar de todos modos {count, plural, one {la receta poco fiable} other {las # recetas poco fiables}}",
+        "hide": "Ocultar coincidencias poco fiables",
+        "showing": "Incluye recetas sobre las que no tenemos confianza. Sus valores aparecen marcados en la tarjeta."
+      }
     },
     "share": {
       "trigger": "Compartir",
@@ -3552,7 +3568,10 @@
       "safeFor": "Seguro para",
       "family": "Familia",
       "onlyMine": "Solo las mías",
-      "sort": "Ordenar"
+      "sort": "Ordenar",
+      "minProtein": "Proteína mín.",
+      "maxCalories": "Calorías máx.",
+      "maxCarbs": "Carbohidratos máx."
     },
     "chip": {
       "query": "“{q}”",
@@ -3564,10 +3583,19 @@
       "diet": "Dieta: {value}",
       "safeForNamed": "Seguro para: {name}",
       "ingredient": "Ingrediente: {value}",
-      "familyNamed": "Familia: {name}"
+      "familyNamed": "Familia: {name}",
+      "minProtein": "≥ {amount} g de proteína",
+      "maxCalories": "≤ {amount} kcal",
+      "maxCarbs": "≤ {amount} g de carbohidratos"
     },
     "facetSelected": "{count} seleccionados",
-    "facetAria": "Filtro de {label}, {count} seleccionados"
+    "facetAria": "Filtro de {label}, {count} seleccionados",
+    "anyAmount": "Cualquier cantidad",
+    "macroOption": {
+      "minProtein": "{amount} g o más",
+      "maxCalories": "{amount} kcal o menos",
+      "maxCarbs": "{amount} g o menos"
+    }
   },
   "classificationNames": {
     "breakfast": "Desayuno",

@@ -2533,7 +2533,16 @@
         "tag": "وسم",
         "cuisine": "المطبخ",
         "description": "الوصف"
-      }
+      },
+      "macroValue": {
+        "calories": "{value} سعرة",
+        "proteinGrams": "{value} غ بروتين",
+        "carbsGrams": "{value} غ كربوهيدرات",
+        "fatGrams": "{value} غ دهون"
+      },
+      "macroManual": "أدخلها الطاهي",
+      "macroEstimated": "تقديري · ثقة {percent}%",
+      "macroUncertain": "ثقة منخفضة"
     },
     "reel": {
       "trigger": "مقطع قصير",
@@ -2580,7 +2589,14 @@
     "searchResults": {
       "title": "النتائج",
       "correction": "لا توجد نتائج مطابقة تمامًا لـ <strong>«{from}»</strong>. نعرض نتائج لـ <strong>«{to}»</strong>.",
-      "count": "{count}{plus} {count, plural, zero {وصفة} one {وصفة} two {وصفتان} few {وصفات} many {وصفة} other {وصفة}}"
+      "count": "{count}{plus} {count, plural, zero {وصفة} one {وصفة} two {وصفتان} few {وصفات} many {وصفة} other {وصفة}}",
+      "withheld": {
+        "lowConfidence": "{count, plural, zero {لا وصفات مخفية} one {وصفة واحدة مخفية} two {وصفتان مخفيتان} few {# وصفات مخفية} many {# وصفة مخفية} other {# وصفة مخفية}} لأن تقديرنا ليس واثقًا بما يكفي لترتيبها بأمانة.",
+        "unknown": "{count, plural, zero {لا وصفات أخرى} one {وصفة أخرى} two {وصفتان أخريان} few {# وصفات أخرى} many {# وصفة أخرى} other {# وصفة أخرى}} بلا أي أرقام غذائية، لذا لا يمكننا الحكم عليها.",
+        "show": "أظهر رغم ذلك {count, plural, zero {لا شيء} one {الوصفة غير المؤكدة} two {الوصفتين غير المؤكدتين} few {# وصفات غير مؤكدة} many {# وصفة غير مؤكدة} other {# وصفة غير مؤكدة}}",
+        "hide": "إخفاء النتائج غير المؤكدة",
+        "showing": "تتضمن وصفات لسنا واثقين منها. أرقامها موسومة على البطاقة."
+      }
     },
     "share": {
       "trigger": "مشاركة",
@@ -3552,7 +3568,10 @@
       "safeFor": "آمن لـ",
       "family": "العائلة",
       "onlyMine": "لي فقط",
-      "sort": "الترتيب"
+      "sort": "الترتيب",
+      "minProtein": "أدنى بروتين",
+      "maxCalories": "أقصى سعرات",
+      "maxCarbs": "أقصى كربوهيدرات"
     },
     "chip": {
       "query": "«{q}»",
@@ -3564,10 +3583,19 @@
       "diet": "النظام الغذائي: {value}",
       "safeForNamed": "آمن لـ: {name}",
       "ingredient": "المكون: {value}",
-      "familyNamed": "العائلة: {name}"
+      "familyNamed": "العائلة: {name}",
+      "minProtein": "≥ {amount} غ بروتين",
+      "maxCalories": "≤ {amount} سعرة",
+      "maxCarbs": "≤ {amount} غ كربوهيدرات"
     },
     "facetSelected": "{count} محددة",
-    "facetAria": "مرشح {label}، {count} محددة"
+    "facetAria": "مرشح {label}، {count} محددة",
+    "anyAmount": "أي كمية",
+    "macroOption": {
+      "minProtein": "{amount} غ أو أكثر",
+      "maxCalories": "{amount} سعرة أو أقل",
+      "maxCarbs": "{amount} غ أو أقل"
+    }
   },
   "classificationNames": {
     "breakfast": "فطور",
