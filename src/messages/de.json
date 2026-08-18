@@ -2533,7 +2533,16 @@
         "tag": "Schlagwort",
         "cuisine": "Küche",
         "description": "Beschreibung"
-      }
+      },
+      "macroValue": {
+        "calories": "{value} kcal",
+        "proteinGrams": "{value} g Protein",
+        "carbsGrams": "{value} g Kohlenhydrate",
+        "fatGrams": "{value} g Fett"
+      },
+      "macroManual": "Vom Koch angegeben",
+      "macroEstimated": "Geschätzt · {percent} % Sicherheit",
+      "macroUncertain": "Geringe Sicherheit"
     },
     "reel": {
       "trigger": "Kurzvideo",
@@ -2580,7 +2589,14 @@
     "searchResults": {
       "title": "Ergebnisse",
       "correction": "Keine genauen Treffer für <strong>„{from}“</strong>. Wir zeigen Ergebnisse für <strong>„{to}“</strong>.",
-      "count": "{count}{plus} {count, plural, one {Rezept} other {Rezepte}}"
+      "count": "{count}{plus} {count, plural, one {Rezept} other {Rezepte}}",
+      "withheld": {
+        "lowConfidence": "{count, plural, one {# Rezept ist ausgeblendet} other {# Rezepte sind ausgeblendet}}, weil unsere Schätzung für eine ehrliche Einordnung nicht sicher genug ist.",
+        "unknown": "{count, plural, one {# weiteres Rezept hat} other {# weitere Rezepte haben}} überhaupt keine Nährwertangaben, daher können wir dazu nichts sagen.",
+        "show": "{count, plural, one {Das unsichere Rezept} other {Die # unsicheren Rezepte}} trotzdem anzeigen",
+        "hide": "Unsichere Treffer ausblenden",
+        "showing": "Enthält Rezepte, bei denen wir uns nicht sicher sind. Ihre Werte sind auf der Karte gekennzeichnet."
+      }
     },
     "share": {
       "trigger": "Teilen",
@@ -3552,7 +3568,10 @@
       "safeFor": "Sicher für",
       "family": "Familie",
       "onlyMine": "Nur meine",
-      "sort": "Sortieren"
+      "sort": "Sortieren",
+      "minProtein": "Min. Protein",
+      "maxCalories": "Max. Kalorien",
+      "maxCarbs": "Max. Kohlenhydrate"
     },
     "chip": {
       "query": "„{q}“",
@@ -3564,10 +3583,19 @@
       "diet": "Ernährung: {value}",
       "safeForNamed": "Sicher für: {name}",
       "ingredient": "Zutat: {value}",
-      "familyNamed": "Familie: {name}"
+      "familyNamed": "Familie: {name}",
+      "minProtein": "≥ {amount} g Protein",
+      "maxCalories": "≤ {amount} kcal",
+      "maxCarbs": "≤ {amount} g Kohlenhydrate"
     },
     "facetSelected": "{count} ausgewählt",
-    "facetAria": "Filter {label}, {count} ausgewählt"
+    "facetAria": "Filter {label}, {count} ausgewählt",
+    "anyAmount": "Beliebige Menge",
+    "macroOption": {
+      "minProtein": "{amount} g oder mehr",
+      "maxCalories": "{amount} kcal oder weniger",
+      "maxCarbs": "{amount} g oder weniger"
+    }
   },
   "classificationNames": {
     "breakfast": "Frühstück",

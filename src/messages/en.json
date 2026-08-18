@@ -2533,7 +2533,16 @@
         "tag": "tag",
         "cuisine": "cuisine",
         "description": "description"
-      }
+      },
+      "macroValue": {
+        "calories": "{value} kcal",
+        "proteinGrams": "{value} g protein",
+        "carbsGrams": "{value} g carbs",
+        "fatGrams": "{value} g fat"
+      },
+      "macroManual": "Entered by the cook",
+      "macroEstimated": "Estimated · {percent}% confidence",
+      "macroUncertain": "Low confidence"
     },
     "reel": {
       "trigger": "Reel",
@@ -2580,7 +2589,14 @@
     "searchResults": {
       "title": "Results",
       "correction": "No exact matches for <strong>“{from}”</strong>. Showing results for <strong>“{to}”</strong>.",
-      "count": "{count}{plus} {count, plural, one {recipe} other {recipes}}"
+      "count": "{count}{plus} {count, plural, one {recipe} other {recipes}}",
+      "withheld": {
+        "lowConfidence": "{count, plural, one {# recipe is hidden} other {# recipes are hidden}} because our estimate isn't confident enough to rank honestly.",
+        "unknown": "{count, plural, one {# more recipe has} other {# more recipes have}} no nutrition figures at all, so we can't say either way.",
+        "show": "Show {count, plural, one {the uncertain one} other {the # uncertain ones}} anyway",
+        "hide": "Hide uncertain matches",
+        "showing": "Including recipes we're not confident about. Their figures are marked on the card."
+      }
     },
     "share": {
       "trigger": "Share",
@@ -3552,7 +3568,10 @@
       "safeFor": "Safe for",
       "family": "Family",
       "onlyMine": "Only mine",
-      "sort": "Sort"
+      "sort": "Sort",
+      "minProtein": "Min protein",
+      "maxCalories": "Max calories",
+      "maxCarbs": "Max carbs"
     },
     "chip": {
       "query": "“{q}”",
@@ -3564,10 +3583,19 @@
       "diet": "Diet: {value}",
       "safeForNamed": "Safe for: {name}",
       "ingredient": "Ingredient: {value}",
-      "familyNamed": "Family: {name}"
+      "familyNamed": "Family: {name}",
+      "minProtein": "≥ {amount} g protein",
+      "maxCalories": "≤ {amount} kcal",
+      "maxCarbs": "≤ {amount} g carbs"
     },
     "facetSelected": "{count} selected",
-    "facetAria": "{label} filter, {count} selected"
+    "facetAria": "{label} filter, {count} selected",
+    "anyAmount": "Any amount",
+    "macroOption": {
+      "minProtein": "{amount} g or more",
+      "maxCalories": "{amount} kcal or less",
+      "maxCarbs": "{amount} g or less"
+    }
   },
   "classificationNames": {
     "breakfast": "Breakfast",

@@ -21,6 +21,7 @@ import {
   type RecipeSearchResult,
 } from '~/server/recipes/queries';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { macroCardNutrients } from '~/server/recipes/macro-search';
 import { isAllergen } from '~/lib/allergens';
 import {
   isDefaultRecipeView,
@@ -290,7 +291,11 @@ async function ResultsView({
   quickPlan,
   correction,
 }: {
-  page: { items: RecipeSearchResult[]; nextOffset: number | null };
+  page: {
+    items: RecipeSearchResult[];
+    nextOffset: number | null;
+    unrankable?: { lowConfidence: number; unknown: number };
+  };
   search: RecipeSearch;
   favoriteIds: Set<string>;
   canFavorite: boolean;
@@ -312,6 +317,9 @@ async function ResultsView({
       members={members}
       quickPlan={quickPlan ?? undefined}
       correction={correction}
+      unrankable={page.unrankable}
+      macroNutrients={macroCardNutrients(search)}
+      showingUncertain={search.showUncertain}
     />
   );
 }

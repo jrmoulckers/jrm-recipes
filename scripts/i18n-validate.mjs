@@ -106,8 +106,22 @@ const ALLOWED_IDENTICAL = {
     'Vegan',
     'Moderation',
     'Admin',
+    // "kcal" is the unit symbol in German too, so a string that is only a
+    // number and that symbol is what a native speaker writes (#1047).
+    '{value} kcal',
+    '≤ {amount} kcal',
   ]),
-  es: new Set(['Plan', 'Timer', 'Ideal', 'Total', 'total', 'min']),
+  es: new Set([
+    'Plan',
+    'Timer',
+    'Ideal',
+    'Total',
+    'total',
+    'min',
+    // Same as above: "kcal" is the Spanish unit symbol.
+    '{value} kcal',
+    '≤ {amount} kcal',
+  ]),
   ar: new Set([]),
 };
 

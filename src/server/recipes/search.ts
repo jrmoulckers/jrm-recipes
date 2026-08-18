@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { slugify } from '~/lib/utils';
+import { type NutritionKey } from '~/lib/nutrients';
 import { DIETARY_TAGS, isDietaryTag, type DietaryTag } from '~/lib/substitutions';
 import type { SearchParams } from '~/lib/route-params';
 
@@ -15,6 +16,12 @@ import type { SearchParams } from '~/lib/route-params';
  * or be comma-joined to select several values at once.
  */
 
+/** The per-serving nutrient a macro filter or sort ranks on. */
+export type MacroNutrientKey = Extract<
+  NutritionKey,
+  'calories' | 'proteinGrams' | 'carbsGrams' | 'fatGrams'
+>;
+
 export const recipeSortValues = [
   'relevance',
   'newest',
@@ -22,8 +29,32 @@ export const recipeSortValues = [
   'az',
   'top-rated',
   'popular',
+  'protein-high',
+  'calories-low',
 ] as const;
 export type RecipeSort = (typeof recipeSortValues)[number];
+
+/**
+ * The sorts that rank on a per-serving macro (#1047), and the nutrient each one
+ * ranks by.
+ *
+ * A macro sort is not a presentation choice the way `az` is: ordering recipes by
+ * protein asserts that we *know* each one's protein. So a macro sort carries the
+ * same eligibility gate as a macro filter — a recipe we cannot rank honestly is
+ * withheld and counted rather than parked at the end of the list, where its
+ * position would still read as a claim.
+ */
+export const MACRO_SORT_NUTRIENTS = {
+  'protein-high': 'proteinGrams',
+  'calories-low': 'calories',
+} as const satisfies Partial<Record<RecipeSort, MacroNutrientKey>>;
+
+export type MacroSort = keyof typeof MACRO_SORT_NUTRIENTS;
+
+/** True when `sort` ranks on a macro and therefore needs nutrition to be known. */
+export function isMacroSort(sort: RecipeSort): sort is MacroSort {
+  return sort in MACRO_SORT_NUTRIENTS;
+}
 
 /**
  * The default sort for a *pure* browse/filter view (no text query). Text
@@ -38,7 +69,37 @@ export const recipeSortLabels: Record<RecipeSort, string> = {
   az: 'A–Z',
   'top-rated': 'Top rated',
   popular: 'Popular',
+  'protein-high': 'Most protein',
+  'calories-low': 'Fewest calories',
 };
+
+/**
+ * The per-serving macro filters (#1047).
+ *
+ * Three, not eight, and each maps to a question a cook actually asks: "enough
+ * protein", "not too many calories", "not too many carbs". Every one is a
+ * *bound* rather than a range, because a range invites a precision the
+ * underlying estimate does not have.
+ *
+ * `bound` is a sanity ceiling on the input, not a nutritional claim — it exists
+ * so a hand-edited URL cannot ask the database to compare against 1e9.
+ */
+export const MACRO_FILTERS = [
+  { param: 'minProtein', nutrient: 'proteinGrams', direction: 'min', bound: 500 },
+  { param: 'maxCalories', nutrient: 'calories', direction: 'max', bound: 10000 },
+  { param: 'maxCarbs', nutrient: 'carbsGrams', direction: 'max', bound: 1000 },
+] as const satisfies readonly {
+  param: string;
+  nutrient: MacroNutrientKey;
+  direction: 'min' | 'max';
+  bound: number;
+}[];
+
+export type MacroFilterDef = (typeof MACRO_FILTERS)[number];
+export type MacroFilterParam = MacroFilterDef['param'];
+
+/** An applied macro bound: its definition plus the value the URL carried. */
+export type ActiveMacroFilter = MacroFilterDef & { value: number };
 
 /**
  * The sort applied when the URL carries no explicit `sort`: `relevance` when a
@@ -145,6 +206,32 @@ const positiveIntFromParam = z
     return int > 0 && int <= 100000 ? int : undefined;
   });
 
+/**
+ * A positive integer coerced from a possibly-empty/garbage querystring value,
+ * clamped to `bound`. Invalid input (empty, non-numeric, <= 0) collapses to
+ * `undefined` rather than throwing so a hand-edited URL never 500s the page. A
+ * value above `bound` is clamped rather than dropped: the user asked for
+ * "at most a lot", and answering that is closer to their intent than silently
+ * removing their filter.
+ */
+const boundedIntFromParam = (bound: number) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => {
+      if (v == null || v.length === 0) return undefined;
+      const n = Number(v);
+      if (!Number.isFinite(n)) return undefined;
+      const int = Math.floor(n);
+      if (int <= 0) return undefined;
+      return Math.min(int, bound);
+    });
+
+const macroSchemaShape = Object.fromEntries(
+  MACRO_FILTERS.map((f) => [f.param, boundedIntFromParam(f.bound)]),
+) as { [K in MacroFilterParam]: ReturnType<typeof boundedIntFromParam> };
+
 export const recipeSearchSchema = z.object({
   q: trimmedOptional(120),
   difficulty: z.enum(recipeDifficultyValues).optional().catch(undefined),
@@ -164,6 +251,14 @@ export const recipeSearchSchema = z.object({
   // `recipe_ingredients.foodId` / the reverse `food_recipe_links` index) rather
   // than a fuzzy text match. Composes with the FTS query and every other filter.
   ingredient: trimmedOptional(60),
+  // Per-serving macro bounds (#1047). Composed with every other filter.
+  ...macroSchemaShape,
+  // Include recipes whose nutrition is too uncertain to rank (or missing
+  // entirely) in a macro-filtered/sorted view, each marked as such. Off by
+  // default: a filtered list reads as an answer, so an unrankable recipe is
+  // withheld and *disclosed* rather than silently mixed in. This is the user's
+  // explicit "show them anyway".
+  showUncertain: booleanFromParam,
   // Left optional here so the *contextual* default (relevance for a text query,
   // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
   sort: z.enum(recipeSortValues).optional().catch(undefined),
@@ -194,6 +289,8 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     group: first(params.group),
     mine: first(params.mine),
     ingredient: first(params.ingredient),
+    showUncertain: first(params.showUncertain),
+    ...Object.fromEntries(MACRO_FILTERS.map((f) => [f.param, first(params[f.param])])),
     sort: first(params.sort),
   });
   return {
@@ -204,6 +301,23 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     diets: parseDietList(params.diet),
     sort: parsed.sort ?? defaultSortFor(parsed.q),
   };
+}
+
+/** The macro bounds the URL actually carried, in declaration order. */
+export function activeMacroFilters(search: RecipeSearch): ActiveMacroFilter[] {
+  return MACRO_FILTERS.flatMap((f) => {
+    const value = search[f.param];
+    return value == null ? [] : [{ ...f, value }];
+  });
+}
+
+/**
+ * True when the view ranks or narrows on nutrition, and therefore has to answer
+ * for the confidence of the numbers it is ranking on. Either a macro bound or a
+ * macro sort is enough — both make a claim about a recipe's macros.
+ */
+export function usesMacroNutrition(search: RecipeSearch): boolean {
+  return activeMacroFilters(search).length > 0 || isMacroSort(search.sort);
 }
 
 /** True when any narrowing filter (not sort) is applied. */
@@ -219,6 +333,7 @@ export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
     search.safeFor != null ||
     search.group != null ||
     search.ingredient != null ||
+    activeMacroFilters(search).length > 0 ||
     search.mine
   );
 }
@@ -248,6 +363,11 @@ export function recipeSearchToParams(search: Partial<RecipeSearch>): URLSearchPa
   if (search.safeFor) params.set('safeFor', search.safeFor);
   if (search.group) params.set('group', search.group);
   if (search.ingredient) params.set('ingredient', search.ingredient);
+  for (const filter of MACRO_FILTERS) {
+    const value = search[filter.param];
+    if (value != null) params.set(filter.param, String(value));
+  }
+  if (search.showUncertain) params.set('showUncertain', '1');
   if (search.mine) params.set('mine', '1');
   if (search.sort && search.sort !== defaultSortFor(search.q)) params.set('sort', search.sort);
   return params;

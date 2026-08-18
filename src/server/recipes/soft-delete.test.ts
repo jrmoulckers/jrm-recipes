@@ -101,6 +101,7 @@ describe('recipe read paths exclude soft-deleted rows (issue #165)', () => {
       tags: [],
       diets: [],
       mine: false,
+      showUncertain: false,
       sort: 'newest',
     });
     expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);

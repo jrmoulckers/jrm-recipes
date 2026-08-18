@@ -2,9 +2,13 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 import { loadMoreSearchAction } from '~/server/recipes/search-actions';
+import { pathnameWithQuery } from '~/lib/routes';
 import { type RecipeSearchResult } from '~/server/recipes/queries';
+import { type UnrankableCounts } from '~/server/recipes/macro-search';
+import { type MacroNutrientKey } from '~/server/recipes/search';
 import { Button } from '~/components/ui/button';
 import { RecipeCard, type QuickPlanContext } from '~/components/recipe/recipe-card';
 import { type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
@@ -28,6 +32,9 @@ export function SearchResultsFeed({
   members,
   quickPlan,
   correction,
+  unrankable,
+  macroNutrients = [],
+  showingUncertain = false,
 }: {
   initialItems: RecipeSearchResult[];
   initialNextOffset: number | null;
@@ -39,6 +46,16 @@ export function SearchResultsFeed({
   members?: CardDietaryMember[];
   quickPlan?: QuickPlanContext;
   correction?: { from: string; to: string };
+  /**
+   * What the macro confidence gate held back (#1047). Disclosed rather than
+   * silently subtracted: a shorter list with no explanation is its own kind of
+   * dishonesty, because the viewer reads it as "these are all the recipes".
+   */
+  unrankable?: UnrankableCounts;
+  /** Nutrients the cards print — the ones the search ranked on. */
+  macroNutrients?: MacroNutrientKey[];
+  /** True when the viewer opted into seeing the low-confidence matches. */
+  showingUncertain?: boolean;
 }) {
   const t = useTranslations('recipe');
   const [items, setItems] = React.useState<RecipeSearchResult[]>(initialItems);
@@ -60,6 +77,20 @@ export function SearchResultsFeed({
   }
 
   const hasMore = nextOffset != null;
+
+  // The escape hatch. Withholding is the default because a filtered list is
+  // read as an answer, but the viewer is entitled to overrule us and see what
+  // we were unsure about — clearly marked, never silently mixed in.
+  const toggleHref = React.useMemo(() => {
+    const params = new URLSearchParams(queryString);
+    if (showingUncertain) params.delete('showUncertain');
+    else params.set('showUncertain', '1');
+    return pathnameWithQuery('/recipes', params.toString());
+  }, [queryString, showingUncertain]);
+
+  const withheldLow = unrankable?.lowConfidence ?? 0;
+  const withheldUnknown = unrankable?.unknown ?? 0;
+  const showDisclosure = showingUncertain || withheldLow > 0 || withheldUnknown > 0;
 
   return (
     <section className="flex flex-col gap-5">
@@ -85,6 +116,37 @@ export function SearchResultsFeed({
           })}
         </span>
       </div>
+      {showDisclosure && (
+        <div
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+          role="status"
+        >
+          <p>
+            {showingUncertain
+              ? t('searchResults.withheld.showing')
+              : [
+                  withheldLow > 0
+                    ? t('searchResults.withheld.lowConfidence', { count: withheldLow })
+                    : null,
+                  withheldUnknown > 0
+                    ? t('searchResults.withheld.unknown', { count: withheldUnknown })
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+          </p>
+          {(showingUncertain || withheldLow > 0) && (
+            <Link
+              href={toggleHref}
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              {showingUncertain
+                ? t('searchResults.withheld.hide')
+                : t('searchResults.withheld.show', { count: withheldLow })}
+            </Link>
+          )}
+        </div>
+      )}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((recipe, i) => (
           <RecipeCard
@@ -95,6 +157,8 @@ export function SearchResultsFeed({
             quickPlan={quickPlan}
             priority={i < priorityCount}
             matchReason={recipe.matchReason}
+            macro={recipe.macro}
+            macroNutrients={macroNutrients}
             members={members}
           />
         ))}

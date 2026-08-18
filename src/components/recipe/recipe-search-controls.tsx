@@ -36,12 +36,15 @@ import {
   toggleClassification,
 } from '~/lib/recipe-classification-filters';
 import {
+  activeMacroFilters,
   defaultSortFor,
   hasActiveRecipeFilters,
+  MACRO_FILTERS,
   parseRecipeSearch,
   recipeDifficultyValues,
   recipeSortLabels,
   recipeSortValues,
+  type MacroFilterParam,
   type RecipeSearch,
 } from '~/server/recipes/search';
 import { type SearchParams } from '~/lib/route-params';
@@ -86,7 +89,22 @@ type ParamKey =
   | 'group'
   | 'mine'
   | 'ingredient'
-  | 'sort';
+  | 'sort'
+  | 'minProtein'
+  | 'maxCalories'
+  | 'maxCarbs'
+  | 'showUncertain';
+
+/**
+ * Preset bounds per macro filter (#1047). Presets rather than free numbers: a
+ * dropdown keeps the URL canonical, keeps every value inside the parser's
+ * bound, and matches the existing "max time" affordance.
+ */
+const MACRO_OPTIONS: Record<MacroFilterParam, number[]> = {
+  minProtein: [10, 20, 30, 40],
+  maxCalories: [300, 400, 500, 700],
+  maxCarbs: [20, 30, 50, 75],
+};
 
 /** Re-shape live `URLSearchParams` into the record `parseRecipeSearch` reads. */
 function toSearchParamsRecord(params: URLSearchParams): SearchParams {
@@ -111,6 +129,7 @@ function advancedFilterCount(search: RecipeSearch): number {
     (search.safeFor != null ? 1 : 0) +
     (search.group != null ? 1 : 0) +
     (search.ingredient != null ? 1 : 0) +
+    activeMacroFilters(search).length +
     (search.mine ? 1 : 0)
   );
 }
@@ -433,6 +452,13 @@ export function RecipeSearchControls({
       },
     });
   }
+  for (const active of activeMacroFilters(activeSearch)) {
+    activeChips.push({
+      key: `macro:${active.param}`,
+      label: t(`chip.${active.param}`, { amount: active.value }),
+      onRemove: () => pushParams({ [active.param]: undefined }),
+    });
+  }
   if (activeSearch.mine) {
     activeChips.push({
       key: 'mine',
@@ -745,6 +771,27 @@ export function RecipeSearchControls({
               </Select>
             </FilterField>
           )}
+
+          {MACRO_FILTERS.map((def) => (
+            <FilterField key={def.param} label={t(`field.${def.param}`)}>
+              <Select
+                value={activeSearch[def.param] != null ? String(activeSearch[def.param]) : ANY}
+                onValueChange={(value) => pushParams({ [def.param]: value })}
+              >
+                <SelectTrigger className="min-w-[9rem]">
+                  <SelectValue placeholder={t('anyAmount')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>{t('anyAmount')}</SelectItem>
+                  {MACRO_OPTIONS[def.param].map((amount) => (
+                    <SelectItem key={amount} value={String(amount)}>
+                      {t(`macroOption.${def.param}`, { amount })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+          ))}
 
           {signedIn && (
             <FilterField label={t('field.onlyMine')}>
