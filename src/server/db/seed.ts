@@ -43,6 +43,7 @@ import {
   foodAliases,
   foodItems,
   foodNutrition,
+  foodPortions,
   groupMembers,
   groups,
   mealPlanEntries,
@@ -77,6 +78,7 @@ import {
   buildFoodAliasRows,
   buildFoodItemRows,
   buildFoodNutritionRows,
+  buildFoodPortionRows,
 } from '~/server/db/seed-ingredients';
 
 // ---------------------------------------------------------------------------
@@ -1074,6 +1076,20 @@ async function seedFoodItems(tx: Tx): Promise<void> {
           sugarG: row.sugarG ?? null,
           sodiumMg: row.sodiumMg ?? null,
           sourceRef: row.sourceRef,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  for (const row of buildFoodPortionRows()) {
+    await tx
+      .insert(foodPortions)
+      .values(row)
+      .onConflictDoUpdate({
+        target: [foodPortions.foodId, foodPortions.unit],
+        set: {
+          gramsPerUnit: row.gramsPerUnit,
+          modifier: row.modifier ?? null,
+          source: row.source,
           updatedAt: new Date(),
         },
       });

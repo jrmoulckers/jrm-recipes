@@ -177,3 +177,74 @@ describe('rollUpNutrition', () => {
     expect(est.perServing).toEqual({});
   });
 });
+
+describe('portion-aware gram resolution (issue #1025)', () => {
+  const EGG: NutritionFacts = {
+    kcal: 143,
+    proteinG: 12.6,
+    carbsG: 0.7,
+    fatG: 9.5,
+    sodiumMg: 142,
+    sourceRef: 'TEST:egg',
+  };
+  const OIL: NutritionFacts = {
+    kcal: 884,
+    proteinG: 0,
+    carbsG: 0,
+    fatG: 100,
+    sodiumMg: 0,
+    sourceRef: 'TEST:oil',
+  };
+
+  it('counts a count-measured line instead of dropping it', () => {
+    // `6 eggs` resolved to null before food_portions existed, so an omelette
+    // reported the calories of its cooking oil alone.
+    const lines: ResolvedNutritionLine[] = [{ quantity: 6, unit: 'each', facts: EGG, slug: 'egg' }];
+    const got = rollUpNutrition(lines, 2);
+    // 6 eggs x 50 g = 300 g -> 143 kcal/100 g = 429 kcal, over 2 servings.
+    expect(got.accountedGrams).toBeCloseTo(300, 5);
+    expect(got.whole.calories).toBeCloseTo(429, 5);
+    expect(got.perServing.calories).toBeCloseTo(214.5, 5);
+    expect(got.sourcedLines).toBe(1);
+    expect(got.lineCoverage).toBe(1);
+  });
+
+  it('no longer reports 100% mass coverage on a mostly-uncounted recipe', () => {
+    // The motivating bug: an unweighable line never entered `weighableGrams`,
+    // so `1 tbsp oil + 6 eggs` scored a confident massCoverage of 1.0 while
+    // capturing ~4% of the food. With eggs weighable the ratio is honest.
+    const lines: ResolvedNutritionLine[] = [
+      { quantity: 1, unit: 'tbsp', facts: OIL, densityGPerMl: 0.92, slug: 'oil' },
+      { quantity: 6, unit: 'each', facts: EGG, slug: 'egg' },
+    ];
+    const got = rollUpNutrition(lines, 1);
+    expect(got.sourcedLines).toBe(2);
+    expect(got.massCoverage).toBe(1);
+    // Oil is now a small fraction of a real total rather than the whole of it.
+    expect(got.accountedGrams).toBeGreaterThan(300);
+    expect(got.whole.calories).toBeGreaterThan(500);
+  });
+
+  it('still drops a line whose food has no portion for the unit', () => {
+    // Honest omission, not an invented weight.
+    const lines: ResolvedNutritionLine[] = [
+      { quantity: 1, unit: 'each', facts: MACROS_ONLY, slug: 'beef' },
+    ];
+    const got = rollUpNutrition(lines, 1);
+    expect(got.sourcedLines).toBe(0);
+    expect(got.perServing).toEqual({});
+  });
+});
+
+describe('resolveLineGrams portion path', () => {
+  it('resolves count units when given a slug', () => {
+    expect(resolveLineGrams(2, 'each', null, 'egg')).toBeCloseTo(100, 5);
+    expect(resolveLineGrams(3, 'cloves', null, 'garlic')).toBeCloseTo(9, 5);
+  });
+
+  it('keeps the original mass/density behaviour when no slug is given', () => {
+    expect(resolveLineGrams(2, 'each', null)).toBeNull();
+    expect(resolveLineGrams(1, 'kg', null)).toBe(1000);
+    expect(resolveLineGrams(1000, 'ml', 1.03)).toBeCloseTo(1030, 5);
+  });
+});

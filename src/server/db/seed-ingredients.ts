@@ -11,7 +11,8 @@
 import { FOOD_ITEMS, foodNodeId, foodSlug, normalizeFoodText, stableHash } from '~/lib/food-db';
 import { foodAllergensForSlug } from '~/lib/food-allergens';
 import { NUTRITION_BY_SLUG } from '~/lib/food-nutrition';
-import type { NewFoodAlias, NewFoodItem, NewFoodNutrition } from './schema';
+import { allPortions, normalizePortionUnit } from '~/lib/food-portions';
+import type { NewFoodAlias, NewFoodItem, NewFoodNutrition, NewFoodPortion } from './schema';
 
 /** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
 export { foodSlug };
@@ -101,4 +102,26 @@ export function buildFoodNutritionRows(): NewFoodNutrition[] {
     } satisfies NewFoodNutrition);
   }
   return rows;
+}
+
+/**
+ * Build the `food_portions` rows from the curated portion dataset
+ * (`src/lib/food-portions.ts`, issue #1025). One row per (food, measure), keyed
+ * onto the node the food seed created. `unit` is stored normalized/singular so
+ * lookups match regardless of pluralization. Only foods that need a portion get
+ * rows — a food measured purely by mass already has an exact gram path.
+ * Idempotent: the composite PK is (`foodId`, `unit`), so re-seeding upserts.
+ */
+export function buildFoodPortionRows(): NewFoodPortion[] {
+  return allPortions().map(
+    ({ slug, portion }) =>
+      ({
+        // Same derivation as `foodNodeId`, applied to a slug we already hold.
+        foodId: `food_${stableHash(slug)}`,
+        unit: normalizePortionUnit(portion.unit),
+        gramsPerUnit: portion.gramsPerUnit,
+        modifier: portion.modifier ?? null,
+        source: portion.source,
+      }) satisfies NewFoodPortion,
+  );
 }
