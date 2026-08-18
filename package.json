@@ -50,7 +50,7 @@
     "db:backfill-nutrition": "tsx scripts/backfill-nutrition-cache.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.4",
+    "@clerk/nextjs": "^7.7.6",
     "@paralleldrive/cuid2": "^3.3.0",
     "@radix-ui/react-accordion": "^1.2.16",
     "@radix-ui/react-alert-dialog": "^1.1.23",
