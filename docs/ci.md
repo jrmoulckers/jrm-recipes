@@ -587,9 +587,13 @@ gh pr checks <n>
   required check** — `Quality gate` is the name that matters. But it is not
   uninformative either, and it currently has two distinct causes that need
   telling apart, because only one of them ever clears on its own:
-  - **A 401 installing `@jrmoulckers/*`** — deterministic, and the state since
-    #804 added the private presets. Actions authenticates to GitHub Packages;
-    Vercel has no credential. Every build fails identically. Tracked by #826.
+  - **A 401 installing `@jrmoulckers/*`** — deterministic, and the state from
+    #804 until the `NPM_RC` env var was added to the Vercel project. Actions
+    authenticates to GitHub Packages with its per-job token; Vercel had no
+    credential, so every build failed identically. Tracked by #826. If this
+    returns, check that `NPM_RC` still exists for **both** Production and
+    Preview and that its PAT has not expired — see
+    [`docs/secrets-management.md`](./secrets-management.md).
   - **`Deployment rate limited`** — account-wide saturation. The cap is shared
     across every PR and every session, not per branch.
 
