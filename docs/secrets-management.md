@@ -27,22 +27,23 @@ What is specific to Heirloom:
 
 Owners below are a template to fill in for the team. Cadence is a recommended default. Always rotate immediately on suspected exposure, vendor compromise, contractor offboarding, or role change.
 
-| Category                           | Variables                                                                                                                             | Secret?                                                                                      | Store                                                           | Template owner              | Recommended rotation                                                 |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------- |
-| Postgres database                  | `DATABASE_URL`                                                                                                                        | Yes                                                                                          | Vercel env vars per environment                                 | Eng lead / repo admins      | Quarterly, immediately on exposure/offboarding                       |
-| Migration/seed direct database URL | `DATABASE_URL_UNPOOLED`, `POSTGRES_URL_NON_POOLING` (used by scripts, deployment-dependent and not listed in `.env.example`)          | Yes                                                                                          | Vercel/build env vars only when the host provides them          | Eng lead / repo admins      | Quarterly with database credentials                                  |
-| Clerk auth                         | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`             | Secret key is secret. Publishable key and URLs are public config                             | Vercel env vars per environment                                 | Eng lead / identity owner   | Quarterly for `CLERK_SECRET_KEY`, and on Clerk instance changes      |
-| Clerk webhooks                     | `CLERK_WEBHOOK_SECRET` (validated in `src/env.js` and used by `/api/webhooks/clerk`)                                                  | Yes                                                                                          | Vercel env vars per environment                                 | Eng lead / identity owner   | Quarterly, immediately on endpoint exposure                          |
-| Cloudinary uploads                 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`                                        | API secret is secret. Cloud name/API key are public config                                   | Vercel env vars per environment                                 | Eng lead / media owner      | Quarterly for `CLOUDINARY_API_SECRET`, and on media-provider changes |
-| Stripe billing                     | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_PRICE_FAMILY`, `STRIPE_PRICE_GIFT_FAMILY` | Secret/webhook keys are secret. Publishable key and Price IDs are not treated as credentials | Vercel env vars per environment                                 | Billing owner + Eng lead    | Quarterly for secret/webhook keys, and when products/prices change   |
-| PostHog analytics                  | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT`                                        | Public client config, but still sensitive operational config                                 | Vercel env vars per environment                                 | Product/analytics owner     | On project changes or suspected misuse                               |
-| App URL and auth bypass            | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_DEV_AUTH_BYPASS`                                                                                  | Not secrets                                                                                  | Vercel env vars / local `.env`                                  | Eng lead                    | Review before every deploy. Never set auth bypass to `1` on deploys  |
-| Digest cron trigger                | `CRON_SECRET` (validated in `src/env.js` and used by `/api/cron/digest` and `/api/cron/cook-along-reminders`)                         | Yes                                                                                          | Vercel env vars per environment when scheduled jobs are enabled | Eng lead / operations owner | Quarterly, immediately on endpoint exposure                          |
-| Transactional email (Resend)       | `RESEND_API_KEY`, `EMAIL_FROM` (validated in `src/env.js` and used by `~/server/digest/email`)                                        | API key is secret. From-address is public config                                             | Vercel env vars per environment when email delivery is enabled  | Eng lead / operations owner | Quarterly for `RESEND_API_KEY` and on provider changes               |
-| Error monitoring placeholder       | `NEXT_PUBLIC_SENTRY_DSN` appears in `.env.example` as optional future wiring, but is not currently validated in `src/env.js`          | Usually public client config                                                                 | Deployment-dependent if/when Sentry is wired                    | Eng lead / operations owner | On project changes                                                   |
-| Logging                            | `LOG_LEVEL`                                                                                                                           | Not secret                                                                                   | Vercel env vars if overriding defaults                          | Eng lead / operations owner | As needed                                                            |
-| CI/build escape hatch              | `SKIP_ENV_VALIDATION`                                                                                                                 | Not secret, but security-sensitive                                                           | CI/build env only                                               | Eng lead / repo admins      | Avoid outside CI/e2e                                                 |
-| Preview migration opt-in           | `ALLOW_PREVIEW_MIGRATIONS`                                                                                                            | Not secret, but security-sensitive                                                           | Preview env only with isolated DB                               | Eng lead / repo admins      | Remove when no longer needed                                         |
+| Category                           | Variables                                                                                                                             | Secret?                                                                                      | Store                                                                         | Template owner              | Recommended rotation                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------- |
+| Postgres database                  | `DATABASE_URL`                                                                                                                        | Yes                                                                                          | Vercel env vars per environment                                               | Eng lead / repo admins      | Quarterly, immediately on exposure/offboarding                       |
+| Migration/seed direct database URL | `DATABASE_URL_UNPOOLED`, `POSTGRES_URL_NON_POOLING` (used by scripts, deployment-dependent and not listed in `.env.example`)          | Yes                                                                                          | Vercel/build env vars only when the host provides them                        | Eng lead / repo admins      | Quarterly with database credentials                                  |
+| Clerk auth                         | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`             | Secret key is secret. Publishable key and URLs are public config                             | Vercel env vars per environment                                               | Eng lead / identity owner   | Quarterly for `CLERK_SECRET_KEY`, and on Clerk instance changes      |
+| Clerk webhooks                     | `CLERK_WEBHOOK_SECRET` (validated in `src/env.js` and used by `/api/webhooks/clerk`)                                                  | Yes                                                                                          | Vercel env vars per environment                                               | Eng lead / identity owner   | Quarterly, immediately on endpoint exposure                          |
+| Cloudinary uploads                 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`                                        | API secret is secret. Cloud name/API key are public config                                   | Vercel env vars per environment                                               | Eng lead / media owner      | Quarterly for `CLOUDINARY_API_SECRET`, and on media-provider changes |
+| Stripe billing                     | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_PRICE_FAMILY`, `STRIPE_PRICE_GIFT_FAMILY` | Secret/webhook keys are secret. Publishable key and Price IDs are not treated as credentials | Vercel env vars per environment                                               | Billing owner + Eng lead    | Quarterly for secret/webhook keys, and when products/prices change   |
+| PostHog analytics                  | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT`                                        | Public client config, but still sensitive operational config                                 | Vercel env vars per environment                                               | Product/analytics owner     | On project changes or suspected misuse                               |
+| App URL and auth bypass            | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_DEV_AUTH_BYPASS`                                                                                  | Not secrets                                                                                  | Vercel env vars / local `.env`                                                | Eng lead                    | Review before every deploy. Never set auth bypass to `1` on deploys  |
+| Digest cron trigger                | `CRON_SECRET` (validated in `src/env.js` and used by `/api/cron/digest` and `/api/cron/cook-along-reminders`)                         | Yes                                                                                          | Vercel env vars per environment when scheduled jobs are enabled               | Eng lead / operations owner | Quarterly, immediately on endpoint exposure                          |
+| Transactional email (Resend)       | `RESEND_API_KEY`, `EMAIL_FROM` (validated in `src/env.js` and used by `~/server/digest/email`)                                        | API key is secret. From-address is public config                                             | Vercel env vars per environment when email delivery is enabled                | Eng lead / operations owner | Quarterly for `RESEND_API_KEY` and on provider changes               |
+| Error monitoring placeholder       | `NEXT_PUBLIC_SENTRY_DSN` appears in `.env.example` as optional future wiring, but is not currently validated in `src/env.js`          | Usually public client config                                                                 | Deployment-dependent if/when Sentry is wired                                  | Eng lead / operations owner | On project changes                                                   |
+| Logging                            | `LOG_LEVEL`                                                                                                                           | Not secret                                                                                   | Vercel env vars if overriding defaults                                        | Eng lead / operations owner | As needed                                                            |
+| CI/build escape hatch              | `SKIP_ENV_VALIDATION`                                                                                                                 | Not secret, but security-sensitive                                                           | CI/build env only                                                             | Eng lead / repo admins      | Avoid outside CI/e2e                                                 |
+| Preview migration opt-in           | `ALLOW_PREVIEW_MIGRATIONS`                                                                                                            | Not secret, but security-sensitive                                                           | Preview env only with isolated DB                                             | Eng lead / repo admins      | Remove when no longer needed                                         |
+| GitHub Packages registry auth      | `NPM_RC` (Vercel build-time `.npmrc`), `DEPENDABOT_PACKAGES_TOKEN` (Dependabot secret store)                                          | Yes. Both embed a GitHub PAT                                                                 | Vercel env vars per environment, **and** the separate Dependabot secret store | Eng lead / repo admins      | On PAT expiry, and immediately on exposure/offboarding               |
 
 ## Stripe Price ID convention
 
@@ -137,6 +138,76 @@ The exact flow is managed-Postgres-host dependent, for example Neon, Supabase, o
 4. Redeploy if required by the platform.
 5. Verify `/api/cron/digest` returns 401 without the bearer and succeeds with the new bearer.
 6. Delete the old secret from any scheduler, runbook, or password manager entry.
+
+### Rotate the GitHub Packages registry token
+
+`@jrmoulckers/eslint-config` is installed from GitHub Packages, which authenticates
+**every** read — package visibility decides authorization, not authentication. GitHub
+Actions jobs get a per-job `GITHUB_TOKEN` and need nothing here. Every other consumer
+needs an explicit credential.
+
+There are **two independent copies of this token in two different stores**, and they do
+not rotate together:
+
+| Consumer          | Where the credential lives                          | Readable afterwards?                  |
+| ----------------- | --------------------------------------------------- | ------------------------------------- |
+| Vercel builds     | `NPM_RC` env var, **Production and Preview**        | Yes, via `vercel env pull`            |
+| Dependabot        | `DEPENDABOT_PACKAGES_TOKEN` in the Dependabot store | **No.** GitHub secrets are write-only |
+| GitHub Actions CI | per-job `GITHUB_TOKEN`                              | n/a, nothing to rotate                |
+
+Because the Dependabot copy can never be read back, record the token in a password
+manager when you create it. Recovering it later is only possible from Vercel.
+
+1. Create a **classic** PAT with the `read:packages` scope only. Fine-grained tokens
+   return an identical 401 against GitHub Packages, so the error text cannot tell you
+   which mistake you made.
+2. Write the `.npmrc` contents to a scratch file **outside the repository** — `.npmrc`
+   is tracked, so a file created in the repo root risks committing a live credential.
+   All three lines are required:
+
+   ```
+   registry=https://registry.npmjs.org/
+   @jrmoulckers:registry=https://npm.pkg.github.com
+   //npm.pkg.github.com/:_authToken=<CLASSIC_PAT>
+   ```
+
+   The first line is not optional: Vercel installs its runtimes from
+   `registry.npmjs.org`, and Vercel **generates its own `.npmrc` at build time**, so the
+   repository's `.npmrc` is not consulted and the value must be self-contained. The
+   second line confines GitHub Packages to our scope; without it every package resolves
+   against a stale mirror.
+
+3. Update Vercel for **both** environments. Use the CLI rather than the dashboard: a
+   multi-line value pasted into the dashboard can be stored with literal `\n` sequences,
+   which fails confusingly at install time.
+
+   ```bash
+   vercel env rm NPM_RC production --yes
+   cat /path/to/scratch/npmrc | vercel env add NPM_RC production
+   cat /path/to/scratch/npmrc | vercel env add NPM_RC preview
+   ```
+
+   Preview is easy to miss and its absence only shows up as a failing PR preview build.
+
+4. Update the Dependabot secret (`Settings → Secrets and variables → Dependabot`). This
+   is a **different store** from Actions secrets; a token added under Actions has no
+   effect on Dependabot.
+5. Delete the scratch file, but only after confirming both Vercel rows exist
+   (`vercel env ls | grep NPM_RC`).
+6. Verify before revoking anything:
+   - Open a PR and confirm the **Preview** deployment builds.
+   - Comment `@dependabot rebase` on any open Dependabot PR and confirm the job succeeds.
+     A healthy log shows `token auth` against `npm.pkg.github.com`, no 401s, and only
+     `@jrmoulckers/*` requests going to that host.
+7. Revoke the previous PAT **only** once both consumers are confirmed green. Revoking
+   early silently breaks whichever consumer still holds the old token.
+
+Do not use `NPM_TOKEN` for this: it authenticates the default registry only, not
+`npm.pkg.github.com`.
+
+**Expiry is the likely future failure mode.** Classic PATs expire, and the two copies can
+carry different dates, so Vercel and Dependabot will break separately and silently. Record
+both expiry dates wherever renewals are tracked.
 
 ## Incident and leak response
 

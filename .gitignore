@@ -67,3 +67,6 @@ yarn-error.log*
 
 # i18n pseudolocale (QA-only, regenerated on demand via `pnpm i18n:pseudo`)
 /src/messages/en-XA.json
+
+.vercel
+.env*
