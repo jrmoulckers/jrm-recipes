@@ -3,39 +3,15 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import {
+  manifestRouteForKey,
+  normalizeRoute,
+  resolveRouteChunks,
+} from './bundle-budget-manifest.mjs';
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-function normalizeRoute(route) {
-  const withLeadingSlash = route.startsWith('/') ? route : `/${route}`;
-  return withLeadingSlash === '/' ? withLeadingSlash : withLeadingSlash.replace(/\/+$/, '');
-}
-
-export function manifestRouteForKey(key) {
-  const segments = key.split('/').filter(Boolean);
-  if (segments.at(-1) !== 'page') return null;
-
-  const routeSegments = segments
-    .slice(0, -1)
-    .filter((segment) => !(segment.startsWith('(') && segment.endsWith(')')))
-    .filter((segment) => !segment.startsWith('@'));
-  return routeSegments.length === 0 ? '/' : `/${routeSegments.join('/')}`;
-}
-
-export function resolveRouteChunks(manifest, route) {
-  const expectedRoute = normalizeRoute(route);
-  const entries = Object.entries(manifest?.pages ?? {}).filter(
-    ([key]) => manifestRouteForKey(key) === expectedRoute,
-  );
-  if (entries.length === 0) {
-    throw new Error(`Route ${expectedRoute} was not found in app-build-manifest.json.`);
-  }
-
-  return [
-    ...new Set(
-      entries.flatMap(([, chunks]) => (Array.isArray(chunks) ? chunks : [])).filter(Boolean),
-    ),
-  ];
-}
+export { manifestRouteForKey, resolveRouteChunks };
 
 export function countLiteral(content, query) {
   if (!query) throw new Error('Chunk query cannot be empty.');
@@ -96,7 +72,7 @@ function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     const buildDir = resolve(repoRoot, options.buildDir);
-    const manifestPath = resolve(buildDir, 'app-build-manifest.json');
+    const manifestPath = resolve(buildDir, 'bundle-budget-manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     const chunks = resolveRouteChunks(manifest, options.route);
     const result = evaluateChunkExpectations(chunks, options.expectations, (chunk) =>

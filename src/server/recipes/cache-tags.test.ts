@@ -9,7 +9,7 @@ describe('recipe cache tags (#160)', () => {
 
   it('produces the entity + public list tag set for a mutation', () => {
     // This is the exact set recipe create/update/delete/fork/revert/restore
-    // invalidate via revalidateTag. The entity itself and the public feed.
+    // invalidate via updateTag. The entity itself and the public feed.
     expect(recipeMutationTags('rec_1')).toEqual(['recipe:rec_1', PUBLIC_RECIPES_TAG]);
   });
 

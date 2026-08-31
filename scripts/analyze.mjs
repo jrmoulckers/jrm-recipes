@@ -7,7 +7,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
-const res = spawnSync('next build', {
+const res = spawnSync('next build --webpack', {
   stdio: 'inherit',
   shell: true,
   env: {

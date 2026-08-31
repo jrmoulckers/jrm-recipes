@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { gzipSync } from 'node:zlib';
 
+import { measureRouteBundles } from './bundle-budget-manifest.mjs';
 import {
   evaluateBudgetChanges,
   evaluateBudgets,
@@ -49,6 +51,43 @@ describe('parseFirstLoadJs (#206)', () => {
     for (const key of parsed.keys()) {
       expect(key.startsWith('/')).toBe(true);
     }
+  });
+});
+
+describe('measureRouteBundles (issue #1011)', () => {
+  function noise(length, seed) {
+    let state = seed;
+    return Buffer.from(
+      Array.from({ length }, () => {
+        state = (state * 1_664_525 + 1_013_904_223) >>> 0;
+        return state >>> 24;
+      }),
+    );
+  }
+
+  it('measures unique initial chunks as whole decimal gzip kB', () => {
+    const manifest = {
+      pages: {
+        '/(main)/page': ['static/runtime.js', 'static/home.js', 'static/runtime.js'],
+        '/(main)/recipes/page': ['static/runtime.js', 'static/recipes.js'],
+      },
+    };
+    const chunks = new Map([
+      ['static/runtime.js', noise(4_000, 1)],
+      ['static/home.js', noise(8_000, 2)],
+      ['static/recipes.js', noise(12_000, 3)],
+    ]);
+
+    const measured = measureRouteBundles(manifest, (chunk) => chunks.get(chunk));
+
+    const runtimeKb = gzipSync(chunks.get('static/runtime.js')).length;
+    expect(measured.get('/')).toBe(
+      Math.round((runtimeKb + gzipSync(chunks.get('static/home.js')).length) / 1000),
+    );
+    expect(measured.get('/recipes')).toBe(
+      Math.round((runtimeKb + gzipSync(chunks.get('static/recipes.js')).length) / 1000),
+    );
+    expect([...measured.keys()]).toEqual(['/', '/recipes']);
   });
 });
 
@@ -551,7 +590,7 @@ describe('evaluateMeasurementClaims (#858)', () => {
     expect(rows[0].status).toBe('MISSING');
   });
 
-  it('compares on whole kB, because that is what next build prints', () => {
+  it('compares on whole kB, matching the manifest measurement contract', () => {
     const fractional = new Map([['/', 224.6]]);
     const { failed } = evaluateMeasurementClaims(
       fractional,

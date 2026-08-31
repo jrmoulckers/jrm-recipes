@@ -1,27 +1,27 @@
 /**
  * First-load JS budget gate for CI (issue #206).
  *
- * Parses the route table that `next build` prints and fails when the reported
- * "First Load JS" for a tracked route exceeds the budget in bundle-budgets.json.
+ * Builds a Webpack entrypoint manifest and fails when the gzipped first-load JS
+ * for a tracked route exceeds the budget in bundle-budgets.json.
  * This guards against silent regressions, e.g. a new static import of a heavy
  * client component landing in a route's initial payload.
  *
  * Usage:
  *   node scripts/check-bundle-budget.mjs [buildLogFile]
- *     - with a log file: parse an existing `next build` output (CI reuses the
- *       build step's captured log, so the app is only built once).
- *     - without arguments: run `next build` here and parse its output (handy
+ *     - with a log file: reuse an existing build and its generated manifest,
+ *       falling back to the legacy route-table parser when needed.
+ *     - without arguments: run `next build` here and measure its manifest (handy
  *       locally via `pnpm check:bundle`).
  *
- * The pure helpers (parseFirstLoadJs, evaluateBudgets, evaluateBudgetChanges,
- * evaluateMeasurementClaims, readBaseBudgetRoutes, toKb) are exported and unit-tested in
- * scripts/bundle-budget.test.mjs. The CLI only runs when this file is executed
- * directly.
+ * The pure helpers are exported and unit-tested in scripts/bundle-budget.test.mjs.
+ * The CLI only runs when this file is executed directly.
  */
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { measureRouteBundles } from './bundle-budget-manifest.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -60,7 +60,7 @@ export function parseFirstLoadJs(output) {
 /**
  * Headroom below which a passing route is reported as NEAR (issue #778).
  *
- * `next build` prints First Load JS as whole kB at this magnitude, so a route
+ * The gate records First Load JS as whole kB, so a route
  * with less than a kilobyte of margin can be tipped over by a sub-kB change —
  * including one that adds no code, when webpack redistributes shared modules.
  * Linux CI also reads ~1 kB above a local Windows build. Two kilobytes covers
@@ -115,7 +115,7 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
  * check is precisely one the WARN band will stay quiet about.
  *
  * Absolute rather than proportional, because both effects it covers are
- * absolute: `next build` prints whole kB at this magnitude, and Linux CI reads
+ * absolute: the gate records whole kB, and Linux CI reads
  * ~1 kB above a local Windows build.
  */
 export const REQUIRED_MARGIN_KB = NEAR_KB;
@@ -297,8 +297,8 @@ export function normalizePlatform(value) {
  * - A matching claim whose route is absent from the build FAILS: the route was
  *   renamed or removed and the claim now describes nothing.
  *
- * Comparison is on whole kB because that is what `next build` prints and what
- * every number in the file is quoted in.
+ * Comparison is on whole kB because that is the manifest measurement contract
+ * and what every number in the file is quoted in.
  */
 export function evaluateMeasurementClaims(measured, claims, { platform = process.platform } = {}) {
   const here = normalizePlatform(platform);
@@ -372,7 +372,7 @@ function getBuildOutput() {
     return readFileSync(resolve(process.cwd(), logArg), 'utf8');
   }
   console.log('Running `next build` to measure first-load JS...');
-  const res = spawnSync('next build', {
+  const res = spawnSync('next build --webpack', {
     cwd: repoRoot,
     encoding: 'utf8',
     shell: true,
@@ -390,6 +390,13 @@ function getBuildOutput() {
     process.exit(res.status ?? 1);
   }
   return output;
+}
+
+export function readBundleMeasurements(buildDir = resolve(repoRoot, '.next')) {
+  const manifest = JSON.parse(
+    readFileSync(resolve(buildDir, 'bundle-budget-manifest.json'), 'utf8'),
+  );
+  return measureRouteBundles(manifest, (chunk) => readFileSync(resolve(buildDir, chunk)));
 }
 
 /**
@@ -424,7 +431,17 @@ function main() {
   const budgetFile = JSON.parse(readFileSync(resolve(repoRoot, 'bundle-budgets.json'), 'utf8'));
   const budgets = budgetFile.routes;
 
-  const measured = parseFirstLoadJs(getBuildOutput());
+  const buildOutput = getBuildOutput();
+  let measured;
+  try {
+    measured = readBundleMeasurements();
+  } catch (error) {
+    console.warn(
+      `Could not read bundle-budget-manifest.json (${error.message}); ` +
+        'falling back to the legacy build-output parser.',
+    );
+    measured = parseFirstLoadJs(buildOutput);
+  }
   const { rows, failed } = evaluateBudgets(measured, budgets);
 
   console.log('\nFirst-load JS budget check (#206)');
@@ -450,7 +467,7 @@ function main() {
       `\n⚠ ${near.length} route(s) within ${NEAR_KB} kB of budget: ` +
         `${near.map((r) => r.route).join(', ')}.\n` +
         '  This is a warning, not a failure. A route this close can be tipped ' +
-        'red by an\n  unrelated PR, because `next build` reports whole kB and ' +
+        'red by an\n  unrelated PR, because the gate records whole kB and ' +
         'Linux CI reads ~1 kB\n  above a local Windows build. When that happens ' +
         'the red route is usually not\n  the cause — measure which modules ' +
         'entered the route before bumping (#778).',
@@ -483,7 +500,7 @@ function main() {
       '  A budget set to exactly what it measures goes red on the next ' +
         'unrelated PR, which\n  is how every zero-headroom route here was ' +
         'created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB ' +
-        'above a local Windows build, and `next build` prints\n  whole kB, so a ' +
+        'above a local Windows build, and the gate records\n  whole kB, so a ' +
         'sub-kB webpack redistribution can move a route a full kB.',
     );
   } else if (subjects.length > 0) {

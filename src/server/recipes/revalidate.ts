@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { recipeRevalidationPaths, type RecipeCreatorRef } from '~/lib/recipe-path';
@@ -17,7 +17,7 @@ import { recipeMutationTags } from './cache-tags';
  * be shared with the other action modules that need the same invalidation.
  */
 export function revalidateRecipeTags(id: string): void {
-  for (const tag of recipeMutationTags(id)) revalidateTag(tag);
+  for (const tag of recipeMutationTags(id)) updateTag(tag);
 }
 
 /**

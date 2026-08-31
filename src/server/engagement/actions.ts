@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidateTag } from 'next/cache';
+import { updateTag } from 'next/cache';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
@@ -170,7 +170,7 @@ export async function setRatingAction(input: RatingInput): Promise<ActionResult>
     await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     // The cached public "top-rated" feed ranks by live rating score, so a
     // rating change must invalidate the feed tag, not just the detail path.
-    revalidateTag(PUBLIC_RECIPES_TAG);
+    updateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -199,7 +199,7 @@ export async function removeRatingAction(input: RemoveRatingInput): Promise<Acti
     await removeRating(parsed.data.recipeId, user);
     await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     // Removing a rating likewise re-ranks the cached public feed.
-    revalidateTag(PUBLIC_RECIPES_TAG);
+    updateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
     return fail(

@@ -51,7 +51,7 @@ function securedNext(request: NextRequest): NextResponse {
  * A present cookie is never overwritten, so an explicit choice from the
  * switcher always wins. The locale value is one of a fixed set of tokens
  * (`en`/`es`/`de`/`ar`), so appending it to `Set-Cookie` needs no escaping and
- * works whether the wrapped middleware returns a `NextResponse` or a plain
+ * works whether the wrapped proxy returns a `NextResponse` or a plain
  * `Response` (e.g. A Clerk auth redirect).
  */
 function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {

@@ -2,16 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { revalidatePathMock, findManyMock, creatorsFindManyMock, isDbConfiguredMock } = vi.hoisted(
-  () => ({
-    revalidatePathMock: vi.fn(),
-    findManyMock: vi.fn(),
-    creatorsFindManyMock: vi.fn(),
-    isDbConfiguredMock: vi.fn(() => true),
-  }),
-);
+const {
+  revalidatePathMock,
+  updateTagMock,
+  findManyMock,
+  creatorsFindManyMock,
+  isDbConfiguredMock,
+} = vi.hoisted(() => ({
+  revalidatePathMock: vi.fn(),
+  updateTagMock: vi.fn(),
+  findManyMock: vi.fn(),
+  creatorsFindManyMock: vi.fn(),
+  isDbConfiguredMock: vi.fn(() => true),
+}));
 
-vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
+vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock, updateTag: updateTagMock }));
 vi.mock('~/server/db', () => ({
   db: {
     query: {

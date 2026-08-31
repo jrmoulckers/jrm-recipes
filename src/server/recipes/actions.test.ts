@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   revalidatePathMock,
-  revalidateTagMock,
+  updateTagMock,
   requireUserMock,
   createRecipeMock,
   updateRecipeMock,
@@ -20,7 +20,7 @@ const {
   getLimitStatusMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
-  revalidateTagMock: vi.fn(),
+  updateTagMock: vi.fn(),
   requireUserMock: vi.fn(),
   createRecipeMock: vi.fn(),
   updateRecipeMock: vi.fn(),
@@ -34,7 +34,7 @@ const {
 
 vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
-  revalidateTag: revalidateTagMock,
+  updateTag: updateTagMock,
 }));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 vi.mock('~/server/auth', () => ({ requireUser: requireUserMock }));
@@ -229,13 +229,13 @@ describe('public recipe cache invalidation (#215)', () => {
   it('createRecipeAction revalidates the public recipes tag', async () => {
     createRecipeMock.mockResolvedValue({ id: 'rec_1', slug: 'apple-pie' });
     await createRecipeAction(input);
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('updateRecipeAction revalidates the public recipes tag', async () => {
     updateRecipeMock.mockResolvedValue({ id: 'rec_1', slug: 'apple-pie' });
     await updateRecipeAction('rec_1', input);
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('forkRecipeAction revalidates the public recipes tag', async () => {
@@ -245,18 +245,18 @@ describe('public recipe cache invalidation (#215)', () => {
       source: { id: 'rec_1', slug: 'apple-pie' },
     });
     await forkRecipeAction('rec_1');
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('revertRecipeAction revalidates the public recipes tag', async () => {
     revertRecipeMock.mockResolvedValue({ id: 'rec_1', slug: 'apple-pie' });
     await revertRecipeAction('rec_1', 2);
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('deleteRecipeAction revalidates the public recipes tag', async () => {
     await deleteRecipeAction('rec_1');
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 });
 
