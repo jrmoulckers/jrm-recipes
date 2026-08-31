@@ -14,7 +14,7 @@
  *       locally via `pnpm check:bundle`).
  *
  * The pure helpers (parseFirstLoadJs, evaluateBudgets, evaluateBudgetChanges,
- * readBaseBudgetRoutes, toKb) are exported and unit-tested in
+ * evaluateMeasurementClaims, readBaseBudgetRoutes, toKb) are exported and unit-tested in
  * scripts/bundle-budget.test.mjs. The CLI only runs when this file is executed
  * directly.
  */
@@ -119,6 +119,13 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
  * ~1 kB above a local Windows build.
  */
 export const REQUIRED_MARGIN_KB = NEAR_KB;
+
+/**
+ * Largest accepted difference between a displayed whole-kB measurement and a
+ * recorded claim. Issue #1055 measured the same route and application code
+ * alternating by exactly 1 kB. Anything wider would hide a real regression.
+ */
+export const MAX_MEASUREMENT_TOLERANCE_KB = 1;
 
 /**
  * Enforce headroom on budgets this change actually sets — proposal (2) of #778.
@@ -300,10 +307,31 @@ export function evaluateMeasurementClaims(measured, claims, { platform = process
 
   for (const claim of claims ?? []) {
     const route = claim?.route;
-    const base = { route, claimed: claim?.kb, runId: claim?.runId, issue: claim?.issue };
+    const toleranceKb = claim?.toleranceKb ?? 0;
+    const base = {
+      route,
+      claimed: claim?.kb,
+      toleranceKb,
+      runId: claim?.runId,
+      issue: claim?.issue,
+    };
 
     if (!claim?.platform) {
       rows.push({ ...base, status: 'INVALID' });
+      failed = true;
+      continue;
+    }
+    if (!Number.isInteger(claim?.kb) || claim.kb < 0) {
+      rows.push({ ...base, status: 'INVALID_CLAIM' });
+      failed = true;
+      continue;
+    }
+    if (
+      !Number.isInteger(toleranceKb) ||
+      toleranceKb < 0 ||
+      toleranceKb > MAX_MEASUREMENT_TOLERANCE_KB
+    ) {
+      rows.push({ ...base, status: 'INVALID_TOLERANCE' });
       failed = true;
       continue;
     }
@@ -320,12 +348,18 @@ export function evaluateMeasurementClaims(measured, claims, { platform = process
     }
 
     const rounded = Math.round(actual);
-    if (rounded !== claim.kb) {
+    const difference = Math.abs(rounded - claim.kb);
+    if (difference > toleranceKb) {
       rows.push({ ...base, status: 'STALE', actual: rounded });
       failed = true;
       continue;
     }
-    rows.push({ ...base, status: 'ok', actual: rounded });
+    rows.push({
+      ...base,
+      status: difference === 0 ? 'ok' : 'TOLERATED',
+      actual: rounded,
+      difference,
+    });
   }
 
   return { rows, failed };
@@ -462,8 +496,11 @@ function main() {
   }
 
   const claims = evaluateMeasurementClaims(measured, budgetFile['//measured']?.claims);
-  const stale = claims.rows.filter((r) => r.status !== 'ok' && r.status !== 'SKIP');
+  const stale = claims.rows.filter(
+    (r) => r.status !== 'ok' && r.status !== 'TOLERATED' && r.status !== 'SKIP',
+  );
   const skipped = claims.rows.filter((r) => r.status === 'SKIP');
+  const tolerated = claims.rows.filter((r) => r.status === 'TOLERATED');
   if (claims.rows.length > 0) {
     if (stale.length === 0) {
       const verified = claims.rows.length - skipped.length;
@@ -477,6 +514,9 @@ function main() {
       } else {
         console.log(
           `\n✓ ${verified} recorded measurement claim(s) still match this build (#858)` +
+            (tolerated.length > 0
+              ? `; ${tolerated.length} within the measured ±${MAX_MEASUREMENT_TOLERANCE_KB} kB display noise`
+              : '') +
             (skipped.length > 0
               ? `; ${skipped.length} skipped as measured on another platform.`
               : '.'),
@@ -490,6 +530,15 @@ function main() {
             `    ${r.route ?? '(no route)'}: claim has no "platform". A number ` +
               'without the platform that produced it is not checkable — Linux ' +
               'CI reads ~1 kB above a local Windows build.',
+          );
+        } else if (r.status === 'INVALID_CLAIM') {
+          console.error(
+            `    ${r.route ?? '(no route)'}: claim "kb" must be a non-negative whole number.`,
+          );
+        } else if (r.status === 'INVALID_TOLERANCE') {
+          console.error(
+            `    ${r.route ?? '(no route)'}: claim tolerance must be a whole number from 0 to ` +
+              `${MAX_MEASUREMENT_TOLERANCE_KB} kB. Wider tolerances hide real regressions.`,
           );
         } else if (r.status === 'MISSING') {
           console.error(

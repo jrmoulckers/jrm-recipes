@@ -29,6 +29,7 @@
       {
         "route": "/recipes/[cook]/[recipe]",
         "kb": 309,
+        "toleranceKb": 1,
         "platform": "linux",
         "runId": "32086887202",
         "issue": 1029
@@ -42,6 +43,7 @@
       }
     ]
   },
+  "//measurement-tolerance": "Issue #1055 resolves the strict-equality limitation recorded in //zero-headroom-variance and reconfirmed in //macro-search-filters. Only /recipes/[cook]/[recipe] receives a 1 kB claim tolerance: the same application code measured 309 and 310 on consecutive Linux CI runs, with only this JSON file changed between them. scripts/check-bundle-budget.mjs rejects any tolerance above 1 kB and still fails this claim at 311 or 307, so measured display noise passes without masking a real movement. Route budgets are unchanged. Use pnpm bundle:route-chunks with both --expect-absent and --expect-present to prove whether a suspected module reaches this route; the required present assertion is the positive control that makes zero hits readable.",
   "routes": {
     "/": 228,
     "/recipes": 255,

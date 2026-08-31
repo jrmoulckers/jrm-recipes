@@ -10,6 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "analyze": "node scripts/analyze.mjs",
+    "bundle:route-chunks": "node scripts/route-chunk-attribution.mjs",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "check:e2e-skips": "node scripts/check-e2e-skips.mjs",
     "vendor:check": "node scripts/vendor-configs.mjs --check",

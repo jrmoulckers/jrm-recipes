@@ -4,6 +4,7 @@ import {
   evaluateBudgetChanges,
   evaluateBudgets,
   evaluateMeasurementClaims,
+  MAX_MEASUREMENT_TOLERANCE_KB,
   normalizePlatform,
   parseFirstLoadJs,
   readBaseBudgetRoutes,
@@ -452,6 +453,53 @@ describe('evaluateMeasurementClaims (#858)', () => {
     });
     expect(failed).toBe(true);
     expect(rows[0]).toMatchObject({ status: 'STALE', claimed: 307, actual: 308 });
+  });
+
+  it('accepts only the measured one-kB display noise for the unstable route (#1055)', () => {
+    for (const actual of [308, 310]) {
+      const { rows, failed } = evaluateMeasurementClaims(
+        new Map([['/recipes/[cook]/[recipe]', actual]]),
+        [claim({ kb: 309, toleranceKb: 1 })],
+        { platform: 'linux' },
+      );
+      expect(failed).toBe(false);
+      expect(rows[0]).toMatchObject({
+        status: 'TOLERATED',
+        actual,
+        difference: 1,
+        toleranceKb: 1,
+      });
+    }
+  });
+
+  it('still fails a real regression beyond the one-kB display noise (#1055)', () => {
+    const { rows, failed } = evaluateMeasurementClaims(
+      new Map([['/recipes/[cook]/[recipe]', 311]]),
+      [claim({ kb: 309, toleranceKb: 1 })],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(true);
+    expect(rows[0]).toMatchObject({ status: 'STALE', actual: 311 });
+  });
+
+  it('rejects a configured tolerance wider than the measured noise (#1055)', () => {
+    const { rows, failed } = evaluateMeasurementClaims(
+      measured,
+      [claim({ toleranceKb: MAX_MEASUREMENT_TOLERANCE_KB + 1 })],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(true);
+    expect(rows[0].status).toBe('INVALID_TOLERANCE');
+  });
+
+  it('rejects a malformed claim instead of coercing it into tolerance (#1055)', () => {
+    const { rows, failed } = evaluateMeasurementClaims(
+      measured,
+      [claim({ kb: 'not-a-number', toleranceKb: 1 })],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(true);
+    expect(rows[0].status).toBe('INVALID_CLAIM');
   });
 
   it('carries provenance into the failure so the number can be re-derived', () => {
