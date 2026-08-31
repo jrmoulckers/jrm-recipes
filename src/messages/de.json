@@ -577,6 +577,10 @@
     "removeNamed": "{object} entfernen",
     "toast": {
       "draftRestored": "Dein unfertiges Rezept wurde wiederhergestellt",
+      "draftStorageUnavailable": "Lokale Entwürfe können nicht gespeichert werden. Lass diesen Tab bis zum Speichern geöffnet.",
+      "draftChangedInAnotherTab": "Dieser Entwurf wurde in einem anderen Tab geändert. Deine aktuellen Änderungen sind weiterhin hier.",
+      "draftExpired": "Ein alter lokaler Entwurf ist abgelaufen und wurde entfernt.",
+      "draftInvalid": "Ein lokaler Entwurf konnte nicht wiederhergestellt werden und wurde entfernt.",
       "estimateError": "Schätzung nicht möglich. Füge zuerst wiegbare Zutaten mit Mengen hinzu.",
       "estimatedPartial": "Aus {sourced} von {total} Zutaten geschätzt ({percent}% abgedeckt). Passe es bei Bedarf an.",
       "estimated": "Aus deinen Zutaten geschätzt. Passe es bei Bedarf an.",
@@ -616,6 +620,12 @@
     "cancel": "Abbrechen",
     "saveChanges": "Änderungen speichern",
     "saveRecipe": "Rezept speichern",
+    "leave": {
+      "title": "Ohne Speichern verlassen?",
+      "description": "Deine Rezeptänderungen wurden noch nicht gespeichert. Bleib hier, um weiterzuarbeiten.",
+      "confirm": "Editor verlassen",
+      "cancel": "Weiter bearbeiten"
+    },
     "draft": {
       "aria": "Unfertiges Rezept",
       "title": "Du hast ein unfertiges Rezept",

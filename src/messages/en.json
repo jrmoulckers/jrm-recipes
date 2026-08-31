@@ -577,6 +577,10 @@
     "removeNamed": "Remove {object}",
     "toast": {
       "draftRestored": "Restored your unfinished recipe",
+      "draftStorageUnavailable": "Local draft saving isn't available. Keep this tab open until you save.",
+      "draftChangedInAnotherTab": "This draft changed in another tab. Your current edits are still here.",
+      "draftExpired": "An old local draft expired and was removed.",
+      "draftInvalid": "A local draft couldn't be restored and was removed.",
       "estimateError": "Couldn't estimate. Add weighable ingredients (with amounts) first.",
       "estimatedPartial": "Estimated from {sourced} of {total} ingredients ({percent}% covered). Adjust as needed.",
       "estimated": "Estimated from your ingredients. Adjust as needed.",
@@ -616,6 +620,12 @@
     "cancel": "Cancel",
     "saveChanges": "Save changes",
     "saveRecipe": "Save recipe",
+    "leave": {
+      "title": "Leave without saving?",
+      "description": "Your recipe changes haven't been saved. Stay here to keep editing.",
+      "confirm": "Leave editor",
+      "cancel": "Keep editing"
+    },
     "draft": {
       "aria": "Unfinished recipe",
       "title": "You have an unfinished recipe",

@@ -577,6 +577,10 @@
     "removeNamed": "Eliminar {object}",
     "toast": {
       "draftRestored": "Restauramos tu receta sin terminar",
+      "draftStorageUnavailable": "No se pueden guardar borradores locales. Mantén esta pestaña abierta hasta que guardes.",
+      "draftChangedInAnotherTab": "Este borrador cambió en otra pestaña. Tus cambios actuales siguen aquí.",
+      "draftExpired": "Un borrador local antiguo caducó y se eliminó.",
+      "draftInvalid": "No se pudo restaurar un borrador local y se eliminó.",
       "estimateError": "No pudimos estimar. Añade primero ingredientes que se puedan pesar (con cantidades).",
       "estimatedPartial": "Estimado con {sourced} de {total} ingredientes ({percent}% cubierto). Ajusta lo que haga falta.",
       "estimated": "Estimado a partir de tus ingredientes. Ajusta lo que haga falta.",
@@ -616,6 +620,12 @@
     "cancel": "Cancelar",
     "saveChanges": "Guardar los cambios",
     "saveRecipe": "Guardar la receta",
+    "leave": {
+      "title": "¿Salir sin guardar?",
+      "description": "Los cambios de tu receta aún no se han guardado. Quédate aquí para seguir editando.",
+      "confirm": "Salir del editor",
+      "cancel": "Seguir editando"
+    },
     "draft": {
       "aria": "Receta sin terminar",
       "title": "Tienes una receta sin terminar",

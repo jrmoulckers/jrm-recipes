@@ -40,7 +40,7 @@ import { useThemeBehavior } from '~/components/theme/theme-provider';
 
 import { cn, formatMinutes } from '~/lib/utils';
 import { recipeDetailPath } from '~/lib/recipe-path';
-import { useAutosaveDraft } from '~/lib/use-autosave-draft';
+import { type DraftContext, type DraftIssue, useAutosaveDraft } from '~/lib/use-autosave-draft';
 import { track } from '~/lib/analytics';
 import {
   parseClassificationList,
@@ -71,6 +71,7 @@ import { Label } from '~/components/ui/label';
 import { ImageUploadField } from '~/components/ui/image-upload';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import { useConfirm } from '~/components/ui/confirm-dialog-context';
 
 /**
  * The upgrade prompt is only needed when a create hits the plan's recipe cap
@@ -603,6 +604,7 @@ export function RecipeEditor({
   initialCoverImageUrl,
   initialTitle,
   initialImportUrl,
+  draftOwnerId,
   groups = [],
   customUnits = [],
 }: {
@@ -615,12 +617,15 @@ export function RecipeEditor({
   initialTitle?: string;
   /** Recipe URL shared into the PWA to import from on mount (#50/#55). */
   initialImportUrl?: string;
+  /** Stable internal user id. Draft persistence is disabled when unavailable. */
+  draftOwnerId?: string;
   groups?: { id: string; name: string }[];
   /** The author's saved custom units, offered in the unit picker (e.g. "pinch"). */
   customUnits?: CustomUnitDef[];
 }) {
   const router = useRouter();
   const t = useTranslations('recipeEditor');
+  const confirm = useConfirm();
   const { kidSafe } = useThemeBehavior();
   const [upgrade, setUpgrade] = React.useState<string | null>(null);
   const [previewMode, setPreviewMode] = React.useState(false);
@@ -731,10 +736,13 @@ export function RecipeEditor({
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }, []);
 
-  // Auto-save & draft recovery (#421): mirror the in-progress editor value to
-  // localStorage (debounced) so a locked phone or a stray "back" tap never
-  // loses a half-typed recipe. Drafts are namespaced so new vs. edit can't mix.
-  const draftKey = mode === 'edit' && recipeId ? recipeId : 'new';
+  const draftContext: DraftContext | null = draftOwnerId
+    ? mode === 'edit' && recipeId
+      ? { userId: draftOwnerId, mode, recipeId }
+      : mode === 'create'
+        ? { userId: draftOwnerId, mode }
+        : null
+    : null;
   const draftSnapshot: RecipeEditorValue = React.useMemo(
     () => ({
       ...form,
@@ -746,10 +754,25 @@ export function RecipeEditor({
   const draftJson = React.useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot]);
   const [initialDraftJson] = React.useState(() => draftJson);
   const draftDirty = draftJson !== initialDraftJson;
+  const onDraftIssue = React.useCallback(
+    (issue: DraftIssue) => {
+      if (issue === 'storage-unavailable') {
+        toast.error(t('toast.draftStorageUnavailable'));
+        return;
+      }
+      if (issue === 'cross-tab-conflict') {
+        toast.info(t('toast.draftChangedInAnotherTab'));
+        return;
+      }
+      toast.info(issue === 'expired' ? t('toast.draftExpired') : t('toast.draftInvalid'));
+    },
+    [t],
+  );
   const draft = useAutosaveDraft<RecipeEditorValue>({
-    key: draftKey,
+    context: draftContext,
     snapshot: draftSnapshot,
     dirty: draftDirty,
+    onIssue: onDraftIssue,
   });
 
   function restoreDraft(value: RecipeEditorValue) {
@@ -779,6 +802,21 @@ export function RecipeEditor({
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function cancelEditing() {
+    if (draftDirty) {
+      const leave = await confirm({
+        title: t('leave.title'),
+        description: t('leave.description'),
+        confirmLabel: t('leave.confirm'),
+        cancelLabel: t('leave.cancel'),
+        destructive: false,
+      });
+      if (!leave) return;
+    }
+    draft.allowNavigation();
+    router.back();
   }
 
   // "Estimate from ingredients": fill the manual per-serving nutrition fields
@@ -1271,6 +1309,7 @@ export function RecipeEditor({
           ? await updateRecipeAction(recipeId, payload)
           : await createRecipeAction(payload);
       if (res.ok) {
+        draft.allowNavigation();
         draft.clear();
         toast.success(mode === 'edit' ? t('toast.updated') : t('toast.created'));
         router.push(recipeDetailPath(res));
@@ -2638,7 +2677,7 @@ export function RecipeEditor({
               type="button"
               variant="ghost"
               className="flex-1 sm:flex-none"
-              onClick={() => router.back()}
+              onClick={cancelEditing}
             >
               {t('cancel')}
             </Button>
