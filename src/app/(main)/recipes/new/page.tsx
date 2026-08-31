@@ -58,6 +58,7 @@ async function NewRecipePage({
         initialCoverImageUrl={initialCoverImageUrl}
         initialTitle={initialTitle}
         initialImportUrl={initialImportUrl}
+        draftOwnerId={user?.id}
       />
     </>
   );

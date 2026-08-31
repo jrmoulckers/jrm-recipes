@@ -103,6 +103,7 @@ async function EditRecipePage({ params }: { params: Promise<RecipeRouteParams> }
     <RecipeEditor
       mode="edit"
       recipeId={recipe.id}
+      draftOwnerId={user.id}
       initial={initial}
       groups={groups}
       customUnits={customUnits}

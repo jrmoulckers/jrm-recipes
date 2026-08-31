@@ -13,15 +13,20 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('sonner', () => ({
-  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
+  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
 import { RecipeEditor } from './recipe-editor';
 import type { ReactElement } from 'react';
 import { IntlWrapper } from '~/test/intl';
+import { ConfirmProvider } from '~/components/ui/confirm-dialog';
 
 function render(ui: ReactElement) {
-  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+  return rtlRender(
+    <IntlWrapper>
+      <ConfirmProvider>{ui}</ConfirmProvider>
+    </IntlWrapper>,
+  );
 }
 
 // The editor renders the Save action twice: the top action bar plus a sticky

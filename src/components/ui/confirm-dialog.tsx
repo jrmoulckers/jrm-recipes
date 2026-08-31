@@ -13,24 +13,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './alert-dialog';
-
-export interface ConfirmOptions {
-  /** Verb + what's affected. "Delete this recipe?" */
-  title: string;
-  /** Consequence, then reversibility. Two short sentences at most. */
-  description?: string;
-  /** Defaults to "Delete". Always a verb, never "OK". */
-  confirmLabel?: string;
-  cancelLabel?: string;
-  /** Styles the action as destructive. Defaults to true. */
-  destructive?: boolean;
-}
+import { ConfirmContext, type ConfirmOptions, useConfirm } from './confirm-dialog-context';
 
 type Resolver = (confirmed: boolean) => void;
-
-const ConfirmContext = React.createContext<((options: ConfirmOptions) => Promise<boolean>) | null>(
-  null,
-);
 
 /**
  * Promise-based replacement for `window.confirm()` (#copy-standard).
@@ -45,6 +30,14 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('common');
   const [options, setOptions] = React.useState<ConfirmOptions | null>(null);
   const resolverRef = React.useRef<Resolver | null>(null);
+  const openerRef = React.useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (options !== null || openerRef.current === null) return;
+    const opener = openerRef.current;
+    openerRef.current = null;
+    opener.focus();
+  }, [options]);
 
   const settle = React.useCallback((confirmed: boolean) => {
     resolverRef.current?.(confirmed);
@@ -56,6 +49,8 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     // A second request while one is open would orphan the first promise and
     // leave its caller awaiting forever, so decline the pending one first.
     resolverRef.current?.(false);
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setOptions(next);
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
@@ -97,10 +92,5 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useConfirm() {
-  const confirm = React.useContext(ConfirmContext);
-  if (!confirm) {
-    throw new Error('useConfirm must be used within a ConfirmProvider');
-  }
-  return confirm;
-}
+export { useConfirm };
+export type { ConfirmOptions };

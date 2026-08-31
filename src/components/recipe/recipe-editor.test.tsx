@@ -5,9 +5,14 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RecipeEditor, type RecipeEditorValue } from './recipe-editor';
 import type { ReactElement } from 'react';
 import { IntlWrapper } from '~/test/intl';
+import { ConfirmProvider } from '~/components/ui/confirm-dialog';
 
 function render(ui: ReactElement) {
-  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+  return rtlRender(
+    <IntlWrapper>
+      <ConfirmProvider>{ui}</ConfirmProvider>
+    </IntlWrapper>,
+  );
 }
 
 vi.mock('~/server/recipes/actions', () => ({
@@ -21,7 +26,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
 // Radix Popover (the visibility settings popdown) relies on pointer-capture +
