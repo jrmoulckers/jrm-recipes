@@ -125,6 +125,10 @@ Two further points fell out of the original sweep:
 `check-bundle-budget.mjs` verifies each entry against the same build that enforces
 the budgets, failing on a mismatch (#858). **That closes decay and nothing else.**
 A claim's `kb` is compared to a measurement; its surrounding prose is not read.
+The one route proven to alternate across a whole-kB display boundary carries
+`toleranceKb: 1` (#1055). The checker rejects wider tolerances and still fails a
+movement of 2 kB, so this is measured display noise rather than budget headroom.
+No route budget receives that tolerance.
 
 So the guard would have caught #820 — the `307` — on the first CI run after the
 route reached 308. It would not have caught #674, #763 or #821, because in each of
@@ -142,7 +146,9 @@ Two properties of that guard worth knowing before you rely on it:
   hole.
 
 Attribution has no equivalent and cannot get one. No gate can verify "this import
-is why". Only removing the module and rebuilding can.
+is why". Only removing the module and rebuilding can. The route-chunk checker below
+can prove the narrower fact that a module marker is present or absent from a route's
+first-load chunks.
 
 ## The experiment that settles a cause
 
@@ -151,10 +157,24 @@ basis:
 
 1. **Stub it.** Replace the suspected import with an inline constant.
 2. **Rebuild** and compare First Load JS for the route.
-3. **Assert the referent is actually gone** — grep the route's first-load chunks
+3. **Assert the referent is actually gone** — check the route's first-load chunks
    for a distinctive identifier from the removed module and confirm zero hits.
 4. **Keep a positive control** — a second identifier that should _still_ be
    present, confirming the build changed the thing you meant and not more.
+
+After `next build`, make both assertions in one scriptable check:
+
+```bash
+pnpm bundle:route-chunks -- \
+  --route '/recipes/[cook]/[recipe]' \
+  --expect-absent 'recipeCard.macroEstimated' \
+  --expect-present 'useState'
+```
+
+The command reads `.next/app-build-manifest.json`, limits the search to that
+route's first-load chunks, reports matching chunk paths and exits non-zero when an
+expectation fails. An absence assertion without `--expect-present` is rejected:
+zero hits are evidence only when the same search proves it can find something.
 
 Step 3 is what makes a null result readable. Without it, "removing it changed
 nothing" and "the removal did not happen" are the same observation. The #821 work

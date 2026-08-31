@@ -158,6 +158,28 @@ describe('workflow integrity policy', () => {
     expect(release).not.toContain('pull_request_target');
   });
 
+  it('publishes a stable pending-to-terminal status on the release PR head (#1017)', () => {
+    const releaseJob = jobBlocks(release).find(({ name }) => name === 'release-please');
+    const gate = jobBlocks(ci).find(({ name }) => name === 'gate');
+
+    expect(releaseJob, 'release.yml declares no release-please job').toBeDefined();
+    expect(gate, 'ci.yml declares no aggregate gate').toBeDefined();
+
+    expect(releaseJob.body).toMatch(/^\s{6}statuses: write$/m);
+    expect(releaseJob.body).toContain('--raw-field state=pending');
+    expect(releaseJob.body).toContain('--raw-field context="Release PR CI"');
+    expect(releaseJob.body).toContain('statuses/${release_head_sha}');
+
+    expect(gate.body).toMatch(/^\s{6}statuses: write$/m);
+    expect(gate.body).toContain("github.event_name == 'workflow_dispatch'");
+    expect(gate.body).toContain("needs.dispatch-guard.result == 'success'");
+    expect(gate.body).toContain('&& always()');
+    expect(gate.body).toContain('state=success');
+    expect(gate.body).toContain('state=failure');
+    expect(gate.body).toContain('--raw-field context="Release PR CI"');
+    expect(gate.body).toContain('statuses/${GITHUB_SHA}');
+  });
+
   it('bounds every local runner job', () => {
     const localJobs = [ci, release, keepWarm].flatMap((workflow) =>
       jobBlocks(workflow).filter(({ body }) => body.includes('runs-on:')),

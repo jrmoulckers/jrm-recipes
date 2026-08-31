@@ -16,7 +16,9 @@ Jobs: `Verify dispatch source`, `Quality` (lint, format, semantic PR title),
 `Security` (package audit, secret scan), `Copy and i18n guards`, `Web`
 (typecheck, unit tests, production build), `Performance`, `Migration drift`,
 `Migrations`, `E2E`, `Lighthouse`, plus two jobs that exist to make the signal
-readable: `Base freshness` and `Quality gate`.
+readable: `Base freshness` and `Quality gate`. A dispatched release run also
+publishes the aggregate verdict as the `Release PR CI` commit status on the
+release PR head.
 
 ## Why the pull request trigger has no branch filter
 
@@ -488,24 +490,37 @@ Two consequences worth having in advance.
 `pull_request` run once; the next push produces another gated one. The standing remedy
 is to dispatch CI and read the dispatch run — which is what the workflow was built for.
 
-**The affirmative this file demands does not exist on that PR.** What authorises a
-merge here is `Quality gate == SUCCESS`, and there is no `Quality gate` job on that
-commit at all — the run that would carry it is the gated one. So the rule is not
-failing, it is **inapplicable**, and the missing row noted earlier in this section is
-that inapplicability rather than a symptom of it. The substitute has to be an
-affirmative too, not the absence of failures:
+The workflow now supplies that affirmative as a commit status (#1017). After Release
+Please's output is verified against the open same-repository bot PR, `release.yml`
+posts `Release PR CI` as `pending` on the exact head SHA and dispatches `ci.yml`. The
+dispatched run's aggregate `Quality gate` then updates the same context to `success`
+only when every required job result is `success`; any failed, cancelled or skipped
+dependency updates it to `failure`. The pending status links to the release run that
+established the dispatch, and the terminal status links to the dispatched CI run. Both
+appear in the PR UI and `gh pr checks`.
 
-> a `workflow_dispatch` run on the merge sha whose jobs are all terminal-success and
-> which **includes `Verify dispatch source`** — that job is what proves the dispatch
-> was the sanctioned one rather than an arbitrary ref someone typed into the UI.
+Retrieve the visible signal first, then open the run behind it:
 
-**And `gh pr checks` will not show you any of it.** It renders the PR's own checks, so
-a run reached by a different trigger is not merely unreported — it has no row to be
-absent from. On #534 that output is a single rate-limited `Vercel` failure while
-eleven dispatch jobs are green underneath it. Same shape as the abbreviated-sha and
-newest-run-on-branch faults: the population is selected by something other than the
-commit, and what falls outside the selection is indistinguishable from what does not
-exist.
+```bash
+gh pr checks <n>
+sha=$(gh pr view <n> --json headRefOid -q .headRefOid)
+gh api "repos/jrmoulckers/jrm-recipes/commits/$sha/status" \
+  --jq '.statuses[] | select(.context == "Release PR CI") |
+        "\(.state) \(.target_url) \(.description)"'
+gh run list --workflow ci.yml --commit "$sha" --event workflow_dispatch
+gh run view <run-id> --json status,conclusion,jobs
+```
+
+Read the three states literally:
+
+- `success` is the positive assertion that the verified dispatch completed and every
+  aggregate dependency succeeded.
+- `failure` means the dispatched suite reached its aggregate verdict and at least one
+  dependency did not succeed; inspect `jobs` in the linked run.
+- `pending` means release automation verified the PR but no terminal aggregate status
+  was published. Follow its target URL, then inspect the release workflow if no
+  dispatched run exists. No `Release PR CI` row means release automation failed before
+  it established the verified head; it is not a pass.
 
 Two caveats on the frequency. A census of the 40 most recent completed `ci.yml`
 runs found **0** jobs in a non-terminal state, so this is transient rather than

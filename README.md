@@ -295,7 +295,9 @@ On **every** pull request — whatever branch it is based on — and on pushes t
   unless every other job succeeded.
 - **Release PR CI**: Release Please PRs created with `GITHUB_TOKEN` do not emit
   the usual PR event. The release workflow explicitly dispatches the same CI at
-  its verified in-repository bot branch; arbitrary manual refs fail closed.
+  its verified in-repository bot branch, and a stable `Release PR CI` commit
+  status exposes the pending and terminal aggregate verdict on the PR;
+  arbitrary manual refs fail closed.
 
 Stacking a PR on another branch no longer skips the gate. See
 [docs/ci.md](docs/ci.md) for what runs, and for the three cases where a green
