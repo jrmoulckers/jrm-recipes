@@ -9,14 +9,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   revalidatePathMock,
-  revalidateTagMock,
+  updateTagMock,
   requireUserMock,
   setRatingMock,
   removeRatingMock,
   findManyMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
-  revalidateTagMock: vi.fn(),
+  updateTagMock: vi.fn(),
   requireUserMock: vi.fn(),
   setRatingMock: vi.fn(),
   removeRatingMock: vi.fn(),
@@ -25,7 +25,7 @@ const {
 
 vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
-  revalidateTag: revalidateTagMock,
+  updateTag: updateTagMock,
   unstable_cache:
     (fn: (...args: unknown[]) => unknown) =>
     (...args: unknown[]) =>
@@ -75,7 +75,7 @@ describe('setRatingAction revalidation', () => {
     // A recipe also answers on its canonical namespaced URL, cached
     // independently by the App Router, so both have to be busted (#666).
     expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/ada/apple-pie');
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('does not revalidate when the rating fails to persist', async () => {
@@ -88,7 +88,7 @@ describe('setRatingAction revalidation', () => {
     });
 
     expect(res.ok).toBe(false);
-    expect(revalidateTagMock).not.toHaveBeenCalled();
+    expect(updateTagMock).not.toHaveBeenCalled();
   });
 });
 
@@ -102,7 +102,7 @@ describe('removeRatingAction revalidation', () => {
     expect(res).toEqual({ ok: true });
     expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/apple-pie');
     expect(revalidatePathMock).toHaveBeenCalledWith('/recipes/ada/apple-pie');
-    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+    expect(updateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
   it('does not revalidate when the removal fails', async () => {
@@ -114,6 +114,6 @@ describe('removeRatingAction revalidation', () => {
     });
 
     expect(res.ok).toBe(false);
-    expect(revalidateTagMock).not.toHaveBeenCalled();
+    expect(updateTagMock).not.toHaveBeenCalled();
   });
 });

@@ -50,13 +50,25 @@ updates:
     # Batch low-risk bumps into a couple of PRs to cut noise; majors stay solo
     # so breaking changes get their own review.
     groups:
+      next-framework:
+        patterns:
+          - 'next'
+          - '@next/*'
+        update-types:
+          - 'major'
+          - 'minor'
+          - 'patch'
       production-minor-patch:
         dependency-type: 'production'
+        exclude-patterns:
+          - 'next'
         update-types:
           - 'minor'
           - 'patch'
       development-minor-patch:
         dependency-type: 'development'
+        exclude-patterns:
+          - '@next/*'
         update-types:
           - 'minor'
           - 'patch'

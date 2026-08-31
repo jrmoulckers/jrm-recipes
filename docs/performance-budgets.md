@@ -1,9 +1,10 @@
 # Performance budgets: how to attribute a regression
 
 Route budgets live in `bundle-budgets.json` and are enforced by
-`scripts/check-bundle-budget.mjs` against what `next build` reports as First Load
-JS. This document is about the part the gate cannot enforce: **the stated reason a
-route grew.**
+`scripts/check-bundle-budget.mjs` against a manifest of initial Webpack chunks
+emitted during `next build`. The checker sums their gzip sizes using the same
+whole-kB convention as the former Next.js route table. This document is about the
+part the gate cannot enforce: **the stated reason a route grew.**
 
 Every budget bump in that file carries a prose `//` note explaining what caused
 it. Those notes are read as precedent — later bumps cite earlier ones — so a wrong
@@ -127,7 +128,7 @@ the budgets, failing on a mismatch (#858). **That closes decay and nothing else.
 A claim's `kb` is compared to a measurement; its surrounding prose is not read.
 The one route proven to alternate across a whole-kB display boundary carries
 `toleranceKb: 1` (#1055). The checker rejects wider tolerances and still fails a
-movement of 2 kB, so this is measured display noise rather than budget headroom.
+movement of 2 kB, so this is measured whole-kB noise rather than budget headroom.
 No route budget receives that tolerance.
 
 So the guard would have caught #820 — the `307` — on the first CI run after the
@@ -136,8 +137,8 @@ those the number was already right.
 
 Two properties of that guard worth knowing before you rely on it:
 
-- **A claim is only about the platform that produced it.** Linux CI reads roughly
-  1 kB above a local Windows build, so entries for another platform `SKIP`. On a
+- **A claim is only about the platform that produced it.** Linux CI and local
+  Windows builds can differ by roughly 1 kB, so entries for another platform `SKIP`. On a
   developer machine all four currently skip and zero are verified — a clean local
   `pnpm check:bundle` is therefore not evidence about claims. They are only ever
   checked on Linux CI.
@@ -171,7 +172,7 @@ pnpm bundle:route-chunks -- \
   --expect-present 'useState'
 ```
 
-The command reads `.next/app-build-manifest.json`, limits the search to that
+The command reads `.next/bundle-budget-manifest.json`, limits the search to that
 route's first-load chunks, reports matching chunk paths and exits non-zero when an
 expectation fails. An absence assertion without `--expect-present` is rejected:
 zero hits are evidence only when the same search proves it can find something.
@@ -203,11 +204,10 @@ though the measurement settled nothing.
 
 ## Practical rules
 
-- Size a new budget from **CI figures, not local ones** (Linux reads ~1 kB high).
+- Size a new budget from **CI figures, not local ones** (platforms can differ by ~1 kB).
 - A new or raised budget must leave **2 kB of headroom** (#796). Inheriting an
-  existing tight budget is not a failure; three routes sit at zero headroom for
-  exactly that reason, tracked in #821.
-- A sub-kB webpack redistribution can move a route a full displayed kilobyte with
+  existing tight budget is not a failure.
+- A sub-kB webpack redistribution can move a route a full recorded kilobyte with
   no code change — measured at **145 bytes** in #789. A route that moved 1 kB has
   not necessarily gained anything.
 - When you update a claim, **update its `runId` too.** A value you cannot

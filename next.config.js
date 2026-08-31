@@ -9,6 +9,7 @@ import withSerwistInit from '@serwist/next';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import { BundleBudgetWebpackPlugin } from './scripts/bundle-budget-webpack-plugin.mjs';
 import { imageConfig } from './src/config/next-image.js';
 
 // Point the next-intl plugin at the request config (cookie-based locale
@@ -63,6 +64,12 @@ const config = {
   // PostHog's proxied endpoints are sensitive to trailing-slash redirects.
   skipTrailingSlashRedirect: true,
   images: imageConfig,
+  webpack(webpackConfig, { dev, isServer }) {
+    if (!dev && !isServer) {
+      webpackConfig.plugins.push(new BundleBudgetWebpackPlugin());
+    }
+    return webpackConfig;
+  },
   async rewrites() {
     // First-party reverse proxy for product analytics: browser capture hits
     // `/ingest/*` (same-origin, adblock-resilient) and Next forwards it to the

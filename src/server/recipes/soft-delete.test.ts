@@ -9,7 +9,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({
   unstable_cache: <A extends unknown[], R>(fn: (...args: A) => R) => fn,
   revalidatePath: vi.fn(),
-  revalidateTag: vi.fn(),
+  updateTag: vi.fn(),
 }));
 
 const { dbMock } = vi.hoisted(() => ({

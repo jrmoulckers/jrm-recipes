@@ -86,7 +86,7 @@ Soft-delete filtering is also part of the read convention: [`src/server/recipes/
 
 ## Auth boundary
 
-[`src/middleware.ts`](../src/middleware.ts) is the request boundary. It wraps requests in Clerk middleware when Clerk keys are configured, or a dev-bypass path for local/test runs when allowed. The same middleware also:
+[`src/proxy.ts`](../src/proxy.ts) is the request boundary. It wraps requests in Clerk middleware when Clerk keys are configured, or a dev-bypass path for local/test runs when allowed. The same proxy also:
 
 - mints a per-request CSP nonce and forwards it on `x-nonce`.
 - applies security headers.
@@ -100,7 +100,7 @@ App code does not generally import Clerk directly. [`src/server/auth/index.ts`](
 - `requireUser()` throws when an action or protected read needs a signed-in user.
 - Clerk profile update/delete webhooks keep the local `users` row in sync and soft-delete/anonymize on deletion.
 
-Because middleware does not call `.protect()` for every route, authorization is enforced at the data/action layer with `getCurrentUser()`, `requireUser()`, membership checks, and feature-specific guards — the server-side, default-deny placement required by [`ENG-API-003` (Server-enforced authorization)](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/api-backend.md) and [`ENG-SEC-004` (Least authority)](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md).
+Because the proxy does not call `.protect()` for every route, authorization is enforced at the data/action layer with `getCurrentUser()`, `requireUser()`, membership checks, and feature-specific guards — the server-side, default-deny placement required by [`ENG-API-003` (Server-enforced authorization)](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/api-backend.md) and [`ENG-SEC-004` (Least authority)](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md).
 
 ## Route handlers and runtime notes
 

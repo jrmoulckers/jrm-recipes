@@ -173,7 +173,7 @@ source lives under `src/**`; there are no native application modules in this rep
 
 | Surface | Recipes authority |
 | --- | --- |
-| Web and App Router | `src/app/**`, `src/components/**`, `src/styles/**`, `src/middleware.ts`, `next.config.js` |
+| Web and App Router | `src/app/**`, `src/components/**`, `src/styles/**`, `src/proxy.ts`, `next.config.js` |
 | API and server behavior | `src/app/api/**`, `src/app/import/route.ts`, `src/server/**`, `src/env.js` |
 | PostgreSQL and Drizzle | `src/server/db/**`, `src/server/db/schema/**`, `drizzle/**`, `drizzle.config.ts` |
 | Localization | `src/messages/*.json`, `src/i18n/**`, `src/config/i18n.ts`, `scripts/i18n-*.mjs` |
@@ -189,7 +189,7 @@ deliberately introduced in a future issue.
 
 ## Trust boundaries
 
-- Clerk identity must flow through `src/middleware.ts` and `src/server/auth/**`. Protected route
+- Clerk identity must flow through `src/proxy.ts` and `src/server/auth/**`. Protected route
   handlers, server actions, queries, and mutations must enforce authorization for the target
   resource; authentication alone is not authorization.
 - Treat route parameters, forms, imports, webhook bodies, and provider responses as untrusted.

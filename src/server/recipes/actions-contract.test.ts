@@ -14,7 +14,7 @@ const {
   requireUserMock,
   redirectMock,
   revalidatePathMock,
-  revalidateTagMock,
+  updateTagMock,
   checkRateLimitMock,
   getLimitStatusMock,
   isAnalyticsConfiguredMock,
@@ -29,7 +29,7 @@ const {
   requireUserMock: vi.fn(),
   redirectMock: vi.fn(),
   revalidatePathMock: vi.fn(),
-  revalidateTagMock: vi.fn(),
+  updateTagMock: vi.fn(),
   checkRateLimitMock: vi.fn(),
   getLimitStatusMock: vi.fn(),
   isAnalyticsConfiguredMock: vi.fn(),
@@ -43,7 +43,7 @@ const {
 
 vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
-  revalidateTag: revalidateTagMock,
+  updateTag: updateTagMock,
 }));
 vi.mock('next/navigation', () => ({ redirect: redirectMock }));
 vi.mock('~/server/auth', () => ({ requireUser: requireUserMock }));

@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { requireUser } from '~/server/auth';
@@ -165,7 +165,7 @@ export async function forkRecipeAction(sourceId: string, forkNote?: string): Pro
     revalidatePath('/recipes');
     await revalidateRecipePaths(recipe.source);
     revalidateRecipeTags(recipe.id);
-    revalidateTag(recipeTag(sourceId));
+    updateTag(recipeTag(sourceId));
     return ok({ id: recipe.id, slug: recipe.slug });
   } catch {
     return fail("We couldn't find that recipe to adapt.");
