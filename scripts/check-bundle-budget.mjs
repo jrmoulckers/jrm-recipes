@@ -63,7 +63,7 @@ export function parseFirstLoadJs(output) {
  * The gate records First Load JS as whole kB, so a route
  * with less than a kilobyte of margin can be tipped over by a sub-kB change —
  * including one that adds no code, when webpack redistributes shared modules.
- * Linux CI also reads ~1 kB above a local Windows build. Two kilobytes covers
+ * Linux CI and local Windows builds can differ by ~1 kB. Two kilobytes covers
  * both effects, so NEAR fires before the surprise rather than after it.
  */
 export const NEAR_KB = 2;
@@ -115,8 +115,7 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
  * check is precisely one the WARN band will stay quiet about.
  *
  * Absolute rather than proportional, because both effects it covers are
- * absolute: the gate records whole kB, and Linux CI reads
- * ~1 kB above a local Windows build.
+ * absolute: the gate records whole kB, and platforms can differ by ~1 kB.
  */
 export const REQUIRED_MARGIN_KB = NEAR_KB;
 
@@ -288,7 +287,7 @@ export function normalizePlatform(value) {
  * Rules, each of which is a constraint this repo learned the hard way:
  *
  * - A claim is only meaningful about the platform that produced it. Linux CI
- *   reads about 1 kB above a local Windows build, so an unqualified number is
+ *   and local Windows builds can differ by about 1 kB, so an unqualified number is
  *   not checkable at all. Claims for other platforms SKIP — that is #796's
  *   precedent, since a guard against spurious red must not become one.
  * - A claim with no `platform` FAILS everywhere rather than skipping. That is a
@@ -468,7 +467,7 @@ function main() {
         `${near.map((r) => r.route).join(', ')}.\n` +
         '  This is a warning, not a failure. A route this close can be tipped ' +
         'red by an\n  unrelated PR, because the gate records whole kB and ' +
-        'Linux CI reads ~1 kB\n  above a local Windows build. When that happens ' +
+        'Linux CI and local Windows builds can differ by ~1 kB. When that happens ' +
         'the red route is usually not\n  the cause — measure which modules ' +
         'entered the route before bumping (#778).',
     );
@@ -499,8 +498,8 @@ function main() {
     console.error(
       '  A budget set to exactly what it measures goes red on the next ' +
         'unrelated PR, which\n  is how every zero-headroom route here was ' +
-        'created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB ' +
-        'above a local Windows build, and the gate records\n  whole kB, so a ' +
+        'created (#778). Size the margin from CI\n  figures: Linux CI and local ' +
+        'Windows builds can differ by ~1 kB, and the gate records\n  whole kB, so a ' +
         'sub-kB webpack redistribution can move a route a full kB.',
     );
   } else if (subjects.length > 0) {
@@ -524,8 +523,8 @@ function main() {
       if (verified === 0) {
         console.log(
           `\nℹ ${skipped.length} recorded measurement claim(s) skipped (#858): all ` +
-            'were measured on\n  another platform. Linux CI reads ~1 kB above a ' +
-            'local Windows build, so they are\n  checked on CI, not here. This is ' +
+            'were measured on\n  another platform. Linux CI and local Windows ' +
+            'builds can differ by ~1 kB, so they are\n  checked on CI, not here. This is ' +
             'a skip, not a failure.',
         );
       } else {
@@ -546,7 +545,7 @@ function main() {
           console.error(
             `    ${r.route ?? '(no route)'}: claim has no "platform". A number ` +
               'without the platform that produced it is not checkable — Linux ' +
-              'CI reads ~1 kB above a local Windows build.',
+              'CI and local Windows builds can differ by ~1 kB.',
           );
         } else if (r.status === 'INVALID_CLAIM') {
           console.error(

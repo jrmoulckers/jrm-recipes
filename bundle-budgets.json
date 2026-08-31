@@ -9,38 +9,38 @@
   "//food-classifier-correction": "CORRECTION (issue #821). The //-note above justifies the /recipes/[id] 280->290 bump for #558 with the claim that the reader's ingredients panel imports the food classifier (food-units -> food-db curated dataset) and that, because volumeClassForItem is a synchronous render-path helper, 'it can't be code-split and lands in first-load'. The first half is still true as source -- src/components/recipe/ingredients-panel.tsx:26 does statically import it into a 'use client' module -- but the conclusion does NOT hold today: removing the import entirely moves the route by ZERO. Measured on 41b6a583, local Windows build: /recipes/[cook]/[recipe] reads 308.0 kB both with the real import and with volumeClassForItem replaced by an inline constant, with the page's own chunk unchanged at 199 B. The control that makes that a true negative rather than a failed experiment: the string 'volumeClass' appears in 0 of the route's 33 first-load chunks in the stubbed build, so the referent was genuinely gone -- while 'buttermilk' still appears in 6 of them and 'sodiumMg' in 1. The curated food data therefore reaches this route by at least one further path that survives the removal, and no honest headroom can be bought by code-splitting the classifier. That further path is NOT identified here; do not substitute a guess for it (same standing prohibition as //multi-creator). What this does and does not settle: the 280->290 bump itself is NOT reverted -- the route genuinely measured ~286 at the time and measures 308 now, so the limit is sound; only the stated cause is corrected, and only as of this commit. The note may well have been accurate when written and been overtaken by a later import, which is the same 'true when made' decay //multi-creator documents. This is the third diagnosis in this file corrected by measurement. MISCOUNTED, corrected in docs/performance-budgets.md: this note originally grouped it with #674 catalogs and #820 stale figure as 'all three reached by reasoning about which module must be responsible'. That grouping is wrong in both directions. #820 was DECAY -- a 307 that was correct when written and that the route outgrew -- and involved no module reasoning at all, so stubbing an import could never have caught it. And it omits #763, which corrected #690's own replacement guess (#666's URL rename, offered as 'likely but untested') and does belong in the set. The attribution errors are #674/#690, #763 and this one; #820 is a different failure mode with a different remedy, and only #820's kind is machine-guarded (#858). Prefer the experiment: stub the suspected import, rebuild, and assert the identifier is absent from the route's chunks before believing the delta.",
   "//lucide-1x": "Issue #988 (lucide-react 0.475.0 -> 1.27.0). / is re-baselined 225 -> 228 and the / measurement claim below moves 225 -> 226. WHAT WAS ACTUALLY MEASURED, including the part that refutes how this note was first written. A same-commit A/B on one local Windows machine, differing only in the installed lucide version, moved exactly one tracked route: /recipes 252.0 -> 253.0, with / (225.0), /recipes/[cook]/[recipe] (308.0) and /recipes/[cook]/[recipe]/edit (218.0) identical across both builds. This note originally called those three 'controls' and concluded the bump does not touch the zero-headroom routes. THAT CONCLUSION WAS FALSE and CI refuted it: on Linux, main (ca04c615, run 31612285966) reads / at 225.0 and this branch reads / at 226.0, while /recipes reads 253.0 on BOTH. So the two platforms disagree about WHICH route the bump moved -- Windows says /recipes, Linux says /. Neither is wrong. 'next build' prints First Load JS as whole kB at this magnitude, so a sub-kB increase is invisible until it crosses an integer boundary, and the boundary sits at a different fractional offset on each platform. The general lesson, which is the reason this paragraph is longer than the numbers warrant: AT THIS RESOLUTION, 'WHICH ROUTE MOVED' IS NOT A STABLE FACT, AND AN UNCHANGED ROUTE IS NOT A CONTROL. An unchanged reading means 'gained less than the distance to the next integer', not 'gained nothing', and those two are indistinguishable in the output. A local A/B can show a bump is at least this large; it can never show a zero-headroom route is safe, because the safe case and the about-to-tip case print the same number. Do not repeat the inference this note originally made. The route budget for / therefore moves 225 -> 228, which is the measured 226 plus the 2 kB //headroom-requirement minimum, replacing a zero-headroom budget rather than restoring one -- zero headroom on / is a pre-existing condition this bump exposed rather than created. /recipes, /recipes/[cook]/[recipe] and /recipes/[cook]/[recipe]/edit are NOT bumped: Linux measures them at 253/308/218, unchanged from main, and inheriting a tight budget is not a failure.",
   "//headroom-requirement": "Issue #796: a budget that is NEW or RAISED must leave at least 2 kB above the value the same run measures, or the gate fails and names the minimum acceptable number. Budgets you do not touch are never subject to this — inheriting an existing tight budget is not a failure, and three routes below sit at zero headroom for exactly that reason. Size a new budget from CI figures, not local ones: Linux reads about 1 kB above a local Windows build, and 'next build' prints whole kB, so a sub-kB webpack redistribution can move a route a full displayed kilobyte with no code change (measured at 145 bytes in #789). The 2 kB is the same band the NEAR warning uses, so a budget that passes this check is one the warning will stay quiet about. The check needs the base ref's copy of this file; when it cannot be read it SKIPS rather than fails.",
-  "//next-16": "Issue #1011 upgrades Next.js 15.5.7 -> 16.3.4. Next.js 16 removes the First Load JS columns from Webpack build output and no longer emits app-build-manifest.json, so the gate now emits its own bundle-budget-manifest.json from Webpack's initial page entrypoints. The measurement contract is unchanged: each route includes main-app plus its initial page files, duplicate chunks count once, gzip sizes are summed, and decimal kB is rounded to a whole number. A local Windows build measures / at 254 kB, /recipes at 280 kB, /recipes/[cook]/[recipe] at 334 kB, and /recipes/[cook]/[recipe]/edit at 247 kB. All four move together during the framework migration; no product client feature is added. Their budgets move to 257/283/337/250: the measured value plus 1 kB for the documented Windows-to-Linux offset and the required 2 kB headroom. The Linux claims below are updated from the first CI run of this migration rather than inferred from local figures.",
+  "//next-16": "Issue #1011 upgrades Next.js 15.5.7 -> 16.3.4. Next.js 16 removes the First Load JS columns from Webpack build output and no longer emits app-build-manifest.json, so the gate now emits its own bundle-budget-manifest.json from Webpack's initial page entrypoints. The measurement contract is unchanged: each route includes main-app plus its initial page files, duplicate chunks count once, gzip sizes are summed, and decimal kB is rounded to a whole number. A local Windows build measures 254/280/334/247 kB; Linux CI run 33438897933 measures 253/280/334/246 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit respectively. All four move together during the framework migration; no product client feature is added. Their budgets move to 257/283/337/250, leaving at least the required 2 kB headroom above the larger observed platform value plus 1 kB for cross-platform or rounding variance.",
   "//measured": {
     "//": "Machine-checked measurement claims (#858). check-bundle-budget.mjs verifies each of these against the same build that enforces the budgets below, and FAILS when one no longer matches. The prose notes above explain reasoning; these entries are what CI holds to reality. Four claims in this file have been corrected after the fact -- #674/#690, #763, #820 and #857 -- each found by a person who happened to look, because nothing compared them to a build. A claim is only about the platform that produced it: Linux CI reads ~1 kB above a local Windows build, so entries for other platforms are skipped rather than failed, and an entry with no platform fails as malformed. Update the number and the runId together; a value you cannot re-derive is a value you cannot audit. This guard closes DECAY only -- it compares a claim's kb to a build and never reads the prose around it, so it would have caught #820 and could not have caught #674, #763 or #857, where the number was already right. Attributing a regression to a module is a human obligation: see docs/performance-budgets.md.",
     "claims": [
       {
         "route": "/",
-        "kb": 226,
+        "kb": 253,
         "platform": "linux",
-        "runId": "31611770528",
-        "issue": 988
+        "runId": "33438897933",
+        "issue": 1011
       },
       {
         "route": "/recipes",
-        "kb": 254,
+        "kb": 280,
         "platform": "linux",
-        "runId": "32103794242",
-        "issue": 1047
+        "runId": "33438897933",
+        "issue": 1011
       },
       {
         "route": "/recipes/[cook]/[recipe]",
-        "kb": 309,
+        "kb": 334,
         "toleranceKb": 1,
         "platform": "linux",
-        "runId": "33379459164",
-        "issue": 1030
+        "runId": "33438897933",
+        "issue": 1011
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
-        "kb": 219,
+        "kb": 246,
         "platform": "linux",
-        "runId": "33386739441",
-        "issue": 115
+        "runId": "33438897933",
+        "issue": 1011
       }
     ]
   },

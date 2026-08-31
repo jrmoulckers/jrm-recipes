@@ -137,8 +137,8 @@ those the number was already right.
 
 Two properties of that guard worth knowing before you rely on it:
 
-- **A claim is only about the platform that produced it.** Linux CI reads roughly
-  1 kB above a local Windows build, so entries for another platform `SKIP`. On a
+- **A claim is only about the platform that produced it.** Linux CI and local
+  Windows builds can differ by roughly 1 kB, so entries for another platform `SKIP`. On a
   developer machine all four currently skip and zero are verified — a clean local
   `pnpm check:bundle` is therefore not evidence about claims. They are only ever
   checked on Linux CI.
@@ -204,7 +204,7 @@ though the measurement settled nothing.
 
 ## Practical rules
 
-- Size a new budget from **CI figures, not local ones** (Linux reads ~1 kB high).
+- Size a new budget from **CI figures, not local ones** (platforms can differ by ~1 kB).
 - A new or raised budget must leave **2 kB of headroom** (#796). Inheriting an
   existing tight budget is not a failure.
 - A sub-kB webpack redistribution can move a route a full recorded kilobyte with
