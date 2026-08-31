@@ -3487,7 +3487,15 @@
     "couldNotWeigh": "Gewicht ließ sich nicht bestimmen: {items}.",
     "noNutritionData": "Keine Nährwertdaten für: {items}.",
     "placedLine": "{item} aus {meal}",
-    "andMore": "+{count} weitere"
+    "andMore": "+{count} weitere",
+    "targetProgress": "Fortschritt bei den Tageszielen",
+    "targetProgressHelp": "Jedes Datum wird mit dem damals gültigen Ziel verglichen.",
+    "targetPeriods": "{count, plural, one {# Zielzeitraum} other {# Zielzeiträume}}",
+    "noTarget": "Kein Ziel festgelegt",
+    "dailyAverage": "Tagesdurchschnitt · {range}",
+    "loggedDayAverage": "Durchschnitt pro protokolliertem Tag · {range}",
+    "intakeConfidence": "{percent}% Sicherheit der Aufnahme",
+    "noComparableNutrients": "Kein erfasster Nährstoff hat ein vergleichbares Ziel."
   },
   "recipePreview": {
     "notice": "Eine Vorschau darauf, wie dieses Rezept beim Kochen aussieht. Noch ist nichts gespeichert.",

@@ -3487,7 +3487,15 @@
     "couldNotWeigh": "No se pudo calcular el peso de: {items}.",
     "noNutritionData": "Sin información nutricional de: {items}.",
     "placedLine": "{item} en {meal}",
-    "andMore": "+{count} más"
+    "andMore": "+{count} más",
+    "targetProgress": "Progreso hacia los objetivos diarios",
+    "targetProgressHelp": "Cada fecha se compara con el objetivo vigente en ese momento.",
+    "targetPeriods": "{count, plural, one {# período objetivo} other {# períodos objetivo}}",
+    "noTarget": "Sin objetivo definido",
+    "dailyAverage": "Promedio diario · {range}",
+    "loggedDayAverage": "Promedio por día registrado · {range}",
+    "intakeConfidence": "{percent}% de confianza en la ingesta",
+    "noComparableNutrients": "Ningún nutriente registrado tiene un objetivo comparable."
   },
   "recipePreview": {
     "notice": "Una vista previa de cómo verán esta receta quienes cocinan. Todavía no se ha guardado nada.",

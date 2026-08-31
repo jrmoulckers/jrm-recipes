@@ -3487,7 +3487,15 @@
     "couldNotWeigh": "Couldn't weigh: {items}.",
     "noNutritionData": "No nutrition data for: {items}.",
     "placedLine": "{item} in {meal}",
-    "andMore": "+{count} more"
+    "andMore": "+{count} more",
+    "targetProgress": "Daily target progress",
+    "targetProgressHelp": "Each date is scored against the target that was in force then.",
+    "targetPeriods": "{count, plural, one {# target period} other {# target periods}}",
+    "noTarget": "No target set",
+    "dailyAverage": "Daily average · {range}",
+    "loggedDayAverage": "Average per logged day · {range}",
+    "intakeConfidence": "{percent}% intake confidence",
+    "noComparableNutrients": "No captured nutrient has a comparable target."
   },
   "recipePreview": {
     "notice": "A preview of how this recipe will appear to cooks. Nothing is saved yet.",

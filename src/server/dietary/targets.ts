@@ -50,6 +50,9 @@ function ownerFilter(scope?: TargetScope) {
   return scope?.userId ? eq(memberDietaryProfiles.userId, scope.userId) : undefined;
 }
 
+/** Historical targets keyed first by profile id, then by requested ISO date. */
+export type NutritionTargetsOnDates = Map<string, Map<string, EffectiveNutritionTarget | null>>;
+
 /**
  * The nutrition target in force for `profileId` on `date` — the newest row
  * whose `effectiveFrom` is on or before it — or `null` when the member had set
@@ -93,21 +96,46 @@ export async function getNutritionTargetOn(
 }
 
 /**
- * {@link getNutritionTargetOn} for many members at once, keyed by profile id.
- * Every requested profile appears in the map, with `null` where no target
- * applied, so a caller can render a row per member without a second lookup.
+ * {@link getNutritionTargetOn} for many members and, optionally, many dates at
+ * once. A single date returns the original profile-keyed map. A date list
+ * returns a profile/date matrix, with `null` wherever no target applied.
  *
- * One query: candidate rows are narrowed by date in the database and reduced
- * per profile in memory, which is a handful of rows per family member.
+ * One query in either shape: candidate rows are narrowed by the latest
+ * requested date and reduced per profile/date in memory. This is the read path
+ * retrospective surfaces use so a week crossing a target change never becomes
+ * one query per day.
  */
 export async function getNutritionTargetsOn(
   profileIds: readonly string[],
   date: Date | string,
   scope?: TargetScope,
-): Promise<Map<string, EffectiveNutritionTarget | null>> {
-  const out = new Map<string, EffectiveNutritionTarget | null>(profileIds.map((id) => [id, null]));
-  if (!isDbConfigured() || profileIds.length === 0) return out;
-  const on = toIsoDate(date);
+): Promise<Map<string, EffectiveNutritionTarget | null>>;
+export async function getNutritionTargetsOn(
+  profileIds: readonly string[],
+  dates: readonly (Date | string)[],
+  scope?: TargetScope,
+): Promise<NutritionTargetsOnDates>;
+export async function getNutritionTargetsOn(
+  profileIds: readonly string[],
+  dateOrDates: Date | string | readonly (Date | string)[],
+  scope?: TargetScope,
+): Promise<Map<string, EffectiveNutritionTarget | null> | NutritionTargetsOnDates> {
+  const manyDates = Array.isArray(dateOrDates);
+  const requestedDates = [
+    ...new Set(
+      (manyDates ? dateOrDates : [dateOrDates]).map((date) => toIsoDate(date as Date | string)),
+    ),
+  ].sort();
+
+  const singleOut = new Map<string, EffectiveNutritionTarget | null>(
+    profileIds.map((id) => [id, null]),
+  );
+  const datesOut: NutritionTargetsOnDates = new Map(
+    profileIds.map((id) => [id, new Map(requestedDates.map((date) => [date, null] as const))]),
+  );
+  const emptyOut = manyDates ? datesOut : singleOut;
+  if (!isDbConfigured() || profileIds.length === 0 || requestedDates.length === 0) return emptyOut;
+  const latestDate = requestedDates.at(-1)!;
 
   const rows = await db
     .select({
@@ -121,7 +149,7 @@ export async function getNutritionTargetsOn(
     .where(
       and(
         inArray(nutritionTargets.profileId, [...profileIds]),
-        lte(nutritionTargets.effectiveFrom, on),
+        lte(nutritionTargets.effectiveFrom, latestDate),
         ownerFilter(scope),
       ),
     );
@@ -134,10 +162,20 @@ export async function getNutritionTargetsOn(
   }
 
   for (const id of profileIds) {
-    const best = selectEffectiveTarget(byProfile.get(id) ?? [], on);
-    out.set(id, best ? toEffective(best) : null);
+    const profileRows = byProfile.get(id) ?? [];
+    if (manyDates) {
+      const byDate = datesOut.get(id)!;
+      for (const date of requestedDates) {
+        const best = selectEffectiveTarget(profileRows, date);
+        byDate.set(date, best ? toEffective(best) : null);
+      }
+      continue;
+    }
+
+    const best = selectEffectiveTarget(profileRows, requestedDates[0]!);
+    singleOut.set(id, best ? toEffective(best) : null);
   }
-  return out;
+  return manyDates ? datesOut : singleOut;
 }
 
 /**

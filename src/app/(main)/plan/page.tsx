@@ -18,8 +18,9 @@ import {
   type ViewerGroup,
 } from '~/server/planner/queries';
 import { recipeAllergenMap } from '~/server/recipes/queries';
-import { rollUpMealNutrition, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
+import { rollUpMealNutritionWithTargets, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
 import { emptyNutritionRollUp, type NutritionRollUp } from '~/lib/nutrition-rollup';
+import { type MemberNutritionAdherence } from '~/lib/nutrition-adherence';
 import { NutritionRollUpCard } from '~/components/nutrition/nutrition-rollup-card';
 import { listMemberProfiles } from '~/server/dietary/queries';
 import { isAllergen, type Allergen } from '~/lib/allergens';
@@ -87,6 +88,7 @@ async function PlanPage({
   let prepReminders: PrepAheadReminder[] = [];
   let viewerGroups: ViewerGroup[] = [];
   let activeGroup: ViewerGroup | null = null;
+  let nutritionAdherence: MemberNutritionAdherence[] = [];
   if (dbConfigured && user) {
     viewerGroups = await listViewerGroups(user.id);
     // Group scope (#363): a `?scope=<slug>` for a group the viewer belongs to
@@ -199,8 +201,16 @@ async function PlanPage({
       title: entry.recipe?.title ?? entry.note?.trim() ?? tBoard('untitled'),
       context: `${dayLabelByDate.get(entry.date) ?? entry.date} ${tSlots(entry.slot).toLowerCase()}`,
       servings: entry.plannedServings ?? 1,
+      date: entry.date,
     }));
-    weekNutrition = await rollUpMealNutrition(meals);
+    const scored = await rollUpMealNutritionWithTargets({
+      meals,
+      periodDates: boardDays.map((day) => day.dateParam),
+      members,
+      userId: user.id,
+    });
+    weekNutrition = scored.rollUp;
+    nutritionAdherence = scored.adherence;
   }
 
   const showSignIn = authConfigured && dbConfigured && !user;
@@ -318,6 +328,7 @@ async function PlanPage({
             title={t('nutritionTitle')}
             perLabel={t('perDay')}
             perParts={days.length}
+            adherence={nutritionAdherence}
           />
           <PlannerBoard
             days={boardDays}
