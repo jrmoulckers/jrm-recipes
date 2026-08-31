@@ -3487,7 +3487,15 @@
     "couldNotWeigh": "تعذّر تحديد الوزن: {items}.",
     "noNutritionData": "لا تتوفر بيانات غذائية لـ: {items}.",
     "placedLine": "{item} في {meal}",
-    "andMore": "+{count} أخرى"
+    "andMore": "+{count} أخرى",
+    "targetProgress": "التقدم نحو الأهداف اليومية",
+    "targetProgressHelp": "تُقارن كلّ فترة بالهدف الذي كان سارياً في تواريخها.",
+    "targetPeriods": "{count, plural, zero {لا فترات أهداف} one {فترة هدف واحدة} two {فترتا أهداف} few {# فترات أهداف} many {# فترة هدف} other {# فترة هدف}}",
+    "noTarget": "لم يُحدَّد هدف",
+    "dailyAverage": "المتوسط اليومي · {range}",
+    "loggedDayAverage": "المتوسط لكل يوم مسجّل · {range}",
+    "intakeConfidence": "ثقة {percent}٪ في تقدير المدخول",
+    "noComparableNutrients": "لا يوجد هدف قابل للمقارنة لأي عنصر غذائي مسجّل."
   },
   "recipePreview": {
     "notice": "معاينة لكيفية ظهور هذه الوصفة للطهاة. لم يحفظ شيء بعد.",

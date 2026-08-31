@@ -21,9 +21,12 @@ import {
 } from '~/server/cooklog/queries';
 import { formatDate, formatRelativeTime } from '~/lib/dates';
 import { journalRangeSince, parseJournalRange } from '~/lib/journal-range';
-import { rollUpMealNutrition, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
+import { rollUpMealNutritionWithTargets, type RollUpMeal } from '~/server/recipes/nutrition-rollup';
 import { emptyNutritionRollUp, type NutritionRollUp } from '~/lib/nutrition-rollup';
+import { type MemberNutritionAdherence } from '~/lib/nutrition-adherence';
 import { NutritionRollUpCard } from '~/components/nutrition/nutrition-rollup-card';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { toIsoDate } from '~/lib/nutrition-targets';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { EmptyState } from '~/components/ui/empty-state';
@@ -53,7 +56,10 @@ async function JournalPage({
   const dbReady = isDbConfigured();
 
   const range = parseJournalRange(rangeParam);
-  const recipeOptions = dbReady && user ? await getCookedRecipeOptions(user.id) : [];
+  const [recipeOptions, members] =
+    dbReady && user
+      ? await Promise.all([getCookedRecipeOptions(user.id), listMemberProfiles(user.id)])
+      : [[], []];
   // Only honor a recipe filter the viewer actually has cooks for, so a stale or
   // hand-edited ?recipe= can't wedge the page into a permanently empty state.
   const selectedRecipeId =
@@ -87,7 +93,8 @@ async function JournalPage({
   // multiplier; a cook logged without one counts as a single serving rather than
   // being dropped, because the meal did happen.
   let cookNutrition: NutritionRollUp = emptyNutritionRollUp();
-  if (cooks.length > 0) {
+  let nutritionAdherence: MemberNutritionAdherence[] = [];
+  if (cooks.length > 0 && user) {
     const meals: RollUpMeal[] = cooks.map((cook) => {
       const cookedAt = new Date(cook.cookedAt);
       return {
@@ -96,9 +103,17 @@ async function JournalPage({
         title: cook.recipe?.title ?? t('entry.untitled'),
         context: Number.isNaN(cookedAt.getTime()) ? '' : formatDate(cookedAt, 'PP', locale),
         servings: normalizeServings(cook.servingsMade) ?? 1,
+        date: toIsoDate(cookedAt),
       };
     });
-    cookNutrition = await rollUpMealNutrition(meals);
+    const scored = await rollUpMealNutritionWithTargets({
+      meals,
+      periodDates: meals.map((meal) => meal.date),
+      members,
+      userId: user.id,
+    });
+    cookNutrition = scored.rollUp;
+    nutritionAdherence = scored.adherence;
   }
 
   return (
@@ -130,7 +145,12 @@ async function JournalPage({
 
           {insights.totalCooks > 0 && <InsightsStrip insights={insights} locale={locale} />}
 
-          <NutritionRollUpCard rollUp={cookNutrition} title={t('nutritionTitle')} />
+          <NutritionRollUpCard
+            rollUp={cookNutrition}
+            title={t('nutritionTitle')}
+            adherence={nutritionAdherence}
+            adherenceBasis="loggedDay"
+          />
 
           {cooks.length > 0 ? (
             <ol className="flex flex-col gap-4">

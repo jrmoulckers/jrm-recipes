@@ -4,9 +4,15 @@ import {
   emptyNutritionRollUp,
   rollUpNutritionViews,
   type NutritionRollUp,
-  type RollUpItem,
 } from '~/lib/nutrition-rollup';
+import {
+  buildNutritionAdherence,
+  type DatedRollUpItem,
+  type MemberNutritionAdherence,
+  type NutritionAdherenceMember,
+} from '~/lib/nutrition-adherence';
 import { emptyNutritionView } from '~/lib/recipe-nutrition';
+import { getNutritionTargetsOn } from '~/server/dietary/targets';
 
 import { getRecipeNutritionViews } from './nutrition';
 
@@ -26,7 +32,23 @@ export type RollUpMeal = {
   context: string;
   /** Servings this meal accounts for. Unrecorded counts as one. */
   servings: number;
+  /** `YYYY-MM-DD`, used to select the historical target in force. */
+  date: string;
 };
+
+function toRollUpItems(
+  meals: readonly RollUpMeal[],
+  views: Awaited<ReturnType<typeof getRecipeNutritionViews>>,
+): DatedRollUpItem[] {
+  return meals.map((meal) => ({
+    id: meal.id,
+    title: meal.title,
+    context: meal.context,
+    servings: meal.servings,
+    date: meal.date,
+    view: (meal.recipeId ? views.get(meal.recipeId) : null) ?? emptyNutritionView(),
+  }));
+}
 
 /**
  * Resolve every meal's nutrition through the one entry point and aggregate it.
@@ -48,14 +70,50 @@ export async function rollUpMealNutrition(meals: readonly RollUpMeal[]): Promise
     .map((meal) => meal.recipeId)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
   const views = await getRecipeNutritionViews(recipeIds);
+  return rollUpNutritionViews(toRollUpItems(meals, views));
+}
 
-  const items: RollUpItem[] = meals.map((meal) => ({
-    id: meal.id,
-    title: meal.title,
-    context: meal.context,
-    servings: meal.servings,
-    view: (meal.recipeId ? views.get(meal.recipeId) : null) ?? emptyNutritionView(),
-  }));
+export type NutritionRollUpWithTargets = {
+  rollUp: NutritionRollUp;
+  adherence: MemberNutritionAdherence[];
+};
 
-  return rollUpNutritionViews(items);
+/**
+ * Resolve one displayed meal set and its historical target matrix in two
+ * batched reads, then do all per-member/per-regime scoring in memory.
+ */
+export async function rollUpMealNutritionWithTargets({
+  meals,
+  periodDates,
+  members,
+  userId,
+}: {
+  meals: readonly RollUpMeal[];
+  periodDates: readonly string[];
+  members: readonly NutritionAdherenceMember[];
+  userId: string;
+}): Promise<NutritionRollUpWithTargets> {
+  if (meals.length === 0) {
+    return { rollUp: emptyNutritionRollUp(), adherence: [] };
+  }
+
+  const recipeIds = meals
+    .map((meal) => meal.recipeId)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+  const dates = [...new Set([...periodDates, ...meals.map((meal) => meal.date)])];
+
+  const [views, targetsByProfileAndDate] = await Promise.all([
+    getRecipeNutritionViews(recipeIds),
+    getNutritionTargetsOn(
+      members.map((member) => member.id),
+      dates,
+      { userId },
+    ),
+  ]);
+  const items = toRollUpItems(meals, views);
+
+  return {
+    rollUp: rollUpNutritionViews(items),
+    adherence: buildNutritionAdherence(items, dates, members, targetsByProfileAndDate),
+  };
 }
