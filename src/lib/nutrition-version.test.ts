@@ -30,14 +30,18 @@ describe('nutritionResolverVersion', () => {
   it('is stable across calls (memoized, not recomputed differently)', () => {
     expect(nutritionResolverVersion()).toBe(nutritionResolverVersion());
   });
+
+  it('invalidates cache rows produced before the USDA portion audit', () => {
+    expect(nutritionResolverVersion()).not.toBe('n1.dgc8hacm2rmi');
+  });
 });
 
 describe('nutritionInputsFingerprint covers every input that changes the answer', () => {
   const fingerprint = nutritionInputsFingerprint();
 
   it('includes the curated portion weights', () => {
-    // #1030 revises these against the real USDA `food_portion.csv`; each edit
-    // has to move the version with no constant to remember.
+    // #1030 revised these against USDA `food_portion.csv`; each edit has to move
+    // the version with no constant to remember.
     expect(fingerprint).toContain('portions:');
     expect(fingerprint).toMatch(/garlic\|clove\|\d+\.\d{6}\|/);
   });

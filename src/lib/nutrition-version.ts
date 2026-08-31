@@ -23,11 +23,11 @@
  * | the content hash  | the *values* — portion weights, densities, curated facts, the `CONFIDENCE_WEIGHT` tiers, the nutrient registry | automatic, on every data edit   |
  *
  * The content hash is what makes this hard to forget, and it is the half that
- * actually moves: #1030 revises many portion gram weights against the real USDA
- * `food_portion.csv`, and every one of those edits busts the cache with no
- * accompanying constant to remember. Hand-bumping is reserved for the rarer case
- * a hash cannot see — a formula rewrite over identical data — and is called out
- * in the constant's own doc comment.
+ * actually moves: #1030 validated and revised portion gram weights against USDA
+ * `food_portion.csv`, and those edits bust the cache with no accompanying
+ * constant to remember. Hand-bumping is reserved for the rarer case a hash cannot
+ * see — a formula rewrite over identical data — and is called out in the
+ * constant's own doc comment.
  *
  * ## Cost
  *

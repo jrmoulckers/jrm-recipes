@@ -59,8 +59,7 @@ import {
  * `getRecipeNutritionView` applies them:
  *
  * - `recipes.calories`/`proteinGrams`/… are the **cook's manually entered**
- *   per-serving figures (#414) — not, despite the wording in `nutrients.ts`, a
- *   denormalized cache of derived nutrition. Most recipes have none of them.
+ *   per-serving figures (#414). Most recipes have none of them.
  * - `recipe_nutrition_cache.perServing` (#1044) holds the derived answer for
  *   everything else, with its `confidence` and `source` in the same row.
  *
