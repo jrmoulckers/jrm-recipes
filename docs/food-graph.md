@@ -360,9 +360,10 @@ default), matching the convention the units session relies on.
   pending a follow‑up contract migration that drops them.
 
 - **Phase 5. Portions. DONE.** `food_portions` per (node, household measure),
-  from the public‑domain USDA FDC `food_portion` dataset (curated static module
-  `food-portions.ts`, mirrored to the table by the seed. Untouched by the mining
-  recompute). This supplies the **count → grams** edge the unit graph never had:
+  with USDA-labelled rows validated against the public-domain FDC SR Legacy
+  `food_portion` dataset and unmatched hand estimates labelled `kitchen` (curated
+  static module `food-portions.ts`, mirrored to the table by the seed. Untouched
+  by the mining recompute). This supplies the **count → grams** edge the unit graph never had:
   a nutrition roll‑up previously dropped every `2 eggs` / `3 cloves garlic` /
   `1 bunch parsley` line, and had no gram path at all for the 79 of 137 foods
   that carry no `densityGPerMl`. `food-grams.ts` is now the single resolver, and

@@ -3,7 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 - **Issue:** [#1024](https://github.com/jrmoulckers/jrm-recipes/issues/1024),
-  [#1025](https://github.com/jrmoulckers/jrm-recipes/issues/1025)
+  [#1025](https://github.com/jrmoulckers/jrm-recipes/issues/1025),
+  [#1030](https://github.com/jrmoulckers/jrm-recipes/issues/1030)
 
 ## Context
 
@@ -75,10 +76,45 @@ A new curated table, composite PK (`foodId`, `unit`):
 food_portions(foodId, unit, gramsPerUnit, modifier, source)
 ```
 
-Each row states "one `unit` of this food weighs `gramsPerUnit` grams". Values are generic USDA
-FoodData Central `food_portion` gram weights (public domain, CC0 1.0) — the same dataset already
-cited in `food_nutrition.sourceRef` — plus a small set of `kitchen` rows for informal measures FDC
-does not publish (`pinch`, `sprig`).
+Each row states "one `unit` of this food weighs `gramsPerUnit` grams". Rows labelled `usda` are
+normalized USDA FoodData Central `food_portion` gram weights (public domain, CC0 1.0). Rows labelled
+`kitchen` are hand estimates for informal or generic measures FDC does not publish, such as a
+`pinch`, `sprig`, or generic fish fillet.
+
+#### USDA validation completed
+
+The seeded values were subsequently checked against the authoritative
+[FoodData Central SR Legacy 2018-04 CSV archive](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip).
+That release is the appropriate stable source because the curated nutrition facts use SR Legacy FDC
+records. The archive SHA-256 is
+`b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0`; its extracted
+`food_portion.csv` SHA-256 is
+`6332e29da61e13f7bd950b759461af73303c76e8b0e64dc9df4e41d5347cf3d1`.
+
+[`scripts/verify-food-portions-usda.ts`](../../scripts/verify-food-portions-usda.ts) records each
+USDA-labelled row's exact FDC id, portion id, and normalization factor. It reproduces the audit
+without committing the upstream dataset:
+
+```sh
+pnpm verify:food-portions <path-to-extracted-food_portion.csv>
+```
+
+A difference is material when it is both at least **2 g** and more than **10%** of the USDA
+reference, or when it exceeds **50%** at any size. The normal two-part threshold reflects
+kitchen-scale repeatability and generic-food variation; the extreme-relative guard catches a
+doubled herb weight without treating harmless tenths of a gram as exact science.
+
+The audit materially corrected potato (`each` 173 → 213 g), cucumber (`cup` 133 → 104 g), avocado
+(`each` 150 → 201 g), corn (`ear` 90 → 102 g), mint (`cup` 30 → 25.6 g), rosemary (`tsp` 1.2 → 0.7
+g; `tbsp` 3.3 → 1.7 g), dill (`tbsp` 3 → 0.6 g; `tsp` 1 → 0.2 g), cheddar (`slice` 21 → 28 g), and
+mussels (`each` 8 → 10 g). Rows with no defensible matching FDC portion — including garlic heads,
+shallots, broccoli heads, individual generic berries, generic fish fillets, and red-pepper flakes —
+remain useful estimates but are now labelled `kitchen`, never `usda`.
+
+These data and provenance edits change the portion section of
+`nutritionInputsFingerprint()`. The derived `recipe_nutrition_cache` therefore gets a new
+`n1.<content hash>` resolver version automatically; the algorithm number remains `1` because the
+resolution procedure did not change.
 
 Like `food_nutrition`, this is **curated, not crowd-mined**: it mirrors the static
 `src/lib/food-portions.ts` module, is seeded from it, and is untouched by the graph-mining recompute.

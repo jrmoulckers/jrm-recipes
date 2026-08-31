@@ -114,9 +114,9 @@ version is a **miss**, filtered in SQL so a stale row costs nothing to skip.
   differently.
 
 Neither alone is sufficient, and the hash is the half that matters most in practice.
-[#1030](https://github.com/jrmoulckers/jrm-recipes/issues/1030) will revise many portion gram
-weights against the real USDA `food_portion.csv`; the hash makes that invalidation impossible to
-forget, which a hand-bumped constant alone would not. The split format keeps both halves legible
+[#1030](https://github.com/jrmoulckers/jrm-recipes/issues/1030) revised portion gram weights and
+provenance against USDA `food_portion.csv`; the hash made that invalidation automatic, which a
+hand-bumped constant alone would not. The split format keeps both halves legible
 in a database row: a version that moved only after the dot was a data edit, one that moved before
 it was a deliberate formula change.
 
@@ -128,8 +128,8 @@ distinction holds in the version derivation too.
 `pnpm db:backfill-nutrition` (`scripts/backfill-nutrition-cache.ts`) populates the table in
 batches. It is resumable and idempotent with no cursor file: a recipe is "done" when it has a row
 at the _current_ resolver version, so re-runs are self-terminating. That makes it the rollout
-mechanism for a version change as well as for the initial fill — after #1030 lands, running it
-again re-derives every row rather than waiting for organic traffic.
+mechanism for a version change as well as for the initial fill — after the #1030 USDA correction,
+running it again re-derives every row rather than waiting for organic traffic.
 
 The migration is expand-only per `docs/migrations.md`: a new table, guarded with `IF NOT EXISTS`,
 nothing dropped and nothing altered. Contract, if it is ever needed, is a separate change.

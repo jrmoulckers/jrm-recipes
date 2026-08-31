@@ -18,12 +18,12 @@
  * lines, because `1 cup shredded cheese` is a measured portion rather than a
  * computed one.
  *
- * Values are the generic USDA FoodData Central `food_portion` gram weights
- * (public domain, CC0 1.0) — the same dataset already cited in
- * `food_nutrition.sourceRef` — rounded to kitchen precision, with a small set of
- * `kitchen` rows for informal measures FDC does not model (`pinch`, `sprig`).
- * Coverage matters more than three-decimal precision: an onion that is 15% off
- * is enormously better than an onion counted as zero.
+ * `usda` values were checked against USDA FoodData Central's SR Legacy 2018-04
+ * `food_portion.csv` (public domain, CC0 1.0), normalized to one displayed unit
+ * and rounded to kitchen precision. `scripts/verify-food-portions-usda.ts`
+ * records the exact FDC and portion ids and reproduces that check. `kitchen`
+ * rows are hand estimates for informal or generic measures FDC does not model.
+ * The two provenances must remain distinct.
  *
  * Like `food-db.ts` and `food-nutrition.ts`, this module is pure and
  * dependency-free (no `units.ts`, no `db`, no `server-only`), so it stays
@@ -35,10 +35,10 @@
 import { canonicalFood, foodSlug } from './food-db';
 
 /**
- * Where a portion weight came from. `usda` rows are generic FoodData Central
- * `food_portion` gram weights. `kitchen` rows are conventional cooking
- * references for informal measures FDC does not publish (a `pinch`, a `sprig`),
- * and are held to the same "honest approximation" bar.
+ * Where a portion weight came from. `usda` rows have a recorded FoodData
+ * Central `food_portion` reference. `kitchen` rows are hand estimates for
+ * informal or generic measures FDC does not publish (a `pinch`, a `sprig`, a
+ * generic fish fillet), and are held to the same "honest approximation" bar.
  */
 export type PortionSource = 'usda' | 'kitchen';
 
@@ -97,29 +97,36 @@ const PORTION_SEEDS: PortionSeed[] = [
     portions: [
       usda('clove', 3),
       usda('each', 3, 'clove'),
-      usda('head', 40),
+      kitchen('head', 40),
       usda('tsp', 2.8, 'minced'),
     ],
   },
-  { name: 'Shallot', portions: [usda('each', 40), usda('cup', 160, 'chopped')] },
-  { name: 'Potato', portions: [usda('each', 173, 'medium'), usda('cup', 150, 'diced')] },
+  { name: 'Shallot', portions: [kitchen('each', 40), kitchen('cup', 160, 'chopped')] },
+  { name: 'Potato', portions: [usda('each', 213, 'medium'), usda('cup', 150, 'diced')] },
   { name: 'Sweet potato', portions: [usda('each', 130, 'medium'), usda('cup', 133, 'cubed')] },
   { name: 'Carrot', portions: [usda('each', 61, 'medium'), usda('cup', 128, 'chopped')] },
   { name: 'Tomato', portions: [usda('each', 123, 'medium'), usda('cup', 180, 'chopped')] },
   { name: 'Bell pepper', portions: [usda('each', 119, 'medium'), usda('cup', 149, 'chopped')] },
-  { name: 'Cucumber', portions: [usda('each', 301), usda('cup', 133, 'sliced')] },
-  { name: 'Zucchini', portions: [usda('each', 196, 'medium'), usda('cup', 124, 'sliced')] },
+  { name: 'Cucumber', portions: [usda('each', 301), usda('cup', 104, 'sliced')] },
+  { name: 'Zucchini', portions: [usda('each', 196, 'medium'), usda('cup', 124, 'chopped')] },
   { name: 'Eggplant', portions: [usda('each', 458), usda('cup', 82, 'cubed')] },
-  { name: 'Avocado', portions: [usda('each', 150), usda('cup', 146, 'cubed')] },
+  { name: 'Avocado', portions: [usda('each', 201), usda('cup', 146, 'sliced')] },
   { name: 'Mushroom', portions: [usda('each', 18), usda('cup', 70, 'sliced')] },
   {
     name: 'Celery',
     portions: [usda('each', 40, 'stalk'), usda('stalk', 40), usda('cup', 101, 'chopped')],
   },
-  { name: 'Corn', portions: [usda('each', 90, 'ear, kernels'), usda('ear', 90), usda('cup', 145)] },
+  {
+    name: 'Corn',
+    portions: [
+      usda('each', 102, 'medium ear, kernels'),
+      usda('ear', 102, 'medium'),
+      usda('cup', 145),
+    ],
+  },
   {
     name: 'Broccoli',
-    portions: [usda('each', 548, 'head'), usda('head', 548), usda('cup', 91, 'chopped')],
+    portions: [kitchen('each', 548, 'head'), kitchen('head', 548), usda('cup', 91, 'chopped')],
   },
   {
     name: 'Cauliflower',
@@ -141,7 +148,7 @@ const PORTION_SEEDS: PortionSeed[] = [
   { name: 'Mango', portions: [usda('each', 336), usda('cup', 165, 'diced')] },
   { name: 'Pineapple', portions: [usda('each', 905), usda('cup', 165, 'chunks')] },
   { name: 'Peach', portions: [usda('each', 150, 'medium'), usda('cup', 154, 'sliced')] },
-  { name: 'Berries', portions: [usda('cup', 144), usda('each', 5)] },
+  { name: 'Berries', portions: [usda('cup', 144, 'whole strawberries'), kitchen('each', 5)] },
   { name: 'Grapes', portions: [usda('cup', 151), usda('each', 5)] },
   { name: 'Raisins', portions: [usda('cup', 165), usda('tbsp', 10)] },
 
@@ -149,16 +156,20 @@ const PORTION_SEEDS: PortionSeed[] = [
   { name: 'Spinach', portions: [usda('cup', 30), usda('bunch', 340)] },
   {
     name: 'Lettuce',
-    portions: [usda('cup', 47, 'shredded'), usda('each', 300, 'head'), usda('head', 300)],
+    portions: [
+      usda('cup', 47, 'shredded romaine'),
+      usda('each', 300, 'red-leaf head'),
+      usda('head', 300, 'red-leaf'),
+    ],
   },
-  { name: 'Kale', portions: [usda('cup', 21, 'chopped'), usda('bunch', 200)] },
+  { name: 'Kale', portions: [usda('cup', 21, 'chopped'), kitchen('bunch', 200)] },
   {
     name: 'Cabbage',
     portions: [usda('cup', 89, 'shredded'), usda('each', 908, 'head'), usda('head', 908)],
   },
-  { name: 'Arugula', portions: [usda('cup', 20), usda('bunch', 100)] },
-  { name: 'Chard', portions: [usda('cup', 36, 'chopped'), usda('bunch', 200)] },
-  { name: 'Salad greens', portions: [usda('cup', 20), usda('bunch', 100)] },
+  { name: 'Arugula', portions: [usda('cup', 20), kitchen('bunch', 100)] },
+  { name: 'Chard', portions: [usda('cup', 36, 'chopped'), kitchen('bunch', 200)] },
+  { name: 'Salad greens', portions: [kitchen('cup', 20), kitchen('bunch', 100)] },
 
   // --- Fresh herbs: no density, so every suggested unit needs a portion ----
   {
@@ -194,9 +205,9 @@ const PORTION_SEEDS: PortionSeed[] = [
   {
     name: 'Mint',
     portions: [
-      usda('tbsp', 1.9, 'chopped'),
+      usda('tbsp', 1.9, 'chopped peppermint'),
       usda('tsp', 0.6),
-      usda('cup', 30),
+      usda('cup', 25.6, 'chopped peppermint'),
       kitchen('sprig', 0.5),
       kitchen('bunch', 30),
     ],
@@ -207,17 +218,27 @@ const PORTION_SEEDS: PortionSeed[] = [
   },
   {
     name: 'Rosemary',
-    portions: [usda('tsp', 1.2), usda('tbsp', 3.3), kitchen('sprig', 1), kitchen('bunch', 25)],
+    portions: [
+      usda('tsp', 0.7, 'fresh'),
+      usda('tbsp', 1.7, 'fresh'),
+      kitchen('sprig', 1),
+      kitchen('bunch', 25),
+    ],
   },
   {
     name: 'Oregano',
-    portions: [usda('tsp', 1), usda('tbsp', 3), kitchen('sprig', 0.5), kitchen('bunch', 25)],
+    portions: [
+      usda('tsp', 1, 'dried leaves'),
+      usda('tbsp', 3, 'dried leaves'),
+      kitchen('sprig', 0.5),
+      kitchen('bunch', 25),
+    ],
   },
   {
     name: 'Dill',
     portions: [
-      usda('tbsp', 3, 'chopped'),
-      usda('tsp', 1),
+      usda('tbsp', 0.6, 'fresh sprigs'),
+      usda('tsp', 0.2, 'fresh sprigs'),
       usda('cup', 8.9),
       kitchen('sprig', 0.3),
       kitchen('bunch', 30),
@@ -225,7 +246,12 @@ const PORTION_SEEDS: PortionSeed[] = [
   },
   {
     name: 'Sage',
-    portions: [usda('tsp', 0.7), usda('tbsp', 2), kitchen('sprig', 0.5), kitchen('bunch', 20)],
+    portions: [
+      usda('tsp', 0.7, 'ground'),
+      usda('tbsp', 2, 'ground'),
+      kitchen('sprig', 0.5),
+      kitchen('bunch', 20),
+    ],
   },
   { name: 'Chives', portions: [usda('tbsp', 3, 'chopped'), usda('tsp', 1), kitchen('bunch', 25)] },
   { name: 'Bay leaf', portions: [kitchen('each', 0.2), kitchen('leaf', 0.2)] },
@@ -258,7 +284,7 @@ const PORTION_SEEDS: PortionSeed[] = [
   },
   {
     name: 'Red pepper flakes',
-    portions: [usda('tsp', 1.8), usda('tbsp', 5.3), kitchen('pinch', 0.23)],
+    portions: [kitchen('tsp', 1.8), kitchen('tbsp', 5.3), kitchen('pinch', 0.23)],
   },
   { name: 'Salt', portions: [kitchen('pinch', 0.36)] },
 
@@ -270,7 +296,7 @@ const PORTION_SEEDS: PortionSeed[] = [
   // --- Dairy & dry goods with no density ----------------------------------
   {
     name: 'Cheese',
-    portions: [usda('cup', 113, 'shredded'), usda('tbsp', 7), usda('tsp', 2.4), usda('slice', 21)],
+    portions: [usda('cup', 113, 'shredded'), usda('tbsp', 7), usda('tsp', 2.4), usda('slice', 28)],
   },
   { name: 'Pasta', portions: [usda('cup', 100, 'dry')] },
 
@@ -281,8 +307,8 @@ const PORTION_SEEDS: PortionSeed[] = [
   // --- Seafood sold by the piece ------------------------------------------
   { name: 'Shrimp', portions: [usda('each', 7)] },
   { name: 'Scallops', portions: [usda('each', 15)] },
-  { name: 'Mussels', portions: [usda('each', 8)] },
-  { name: 'Fish', portions: [usda('each', 150, 'fillet'), usda('fillet', 150)] },
+  { name: 'Mussels', portions: [usda('each', 10, 'small')] },
+  { name: 'Fish', portions: [kitchen('each', 150, 'fillet'), kitchen('fillet', 150)] },
 ];
 
 /** Normalize a unit token for matching: trimmed, lowercased, singularized. */

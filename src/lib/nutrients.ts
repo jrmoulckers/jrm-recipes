@@ -26,7 +26,8 @@
  *  - `id` — the per-100 g basis, used by {@link NutritionFacts} and the
  *    `food_nutrients` vector (`kcal`, `proteinG`, …).
  *  - `nutritionKey` — the per-serving basis, used by the app's `Nutrition` shape
- *    and the denormalized `recipes` macro cache (`calories`, `proteinGrams`, …).
+ *    and the cook-entered `recipes` figures (`calories`, `proteinGrams`, …).
+ *    Derived figures live separately in `recipe_nutrition_cache`.
  *
  * Both are declared on the same row, so the mapping exists once instead of being
  * re-spelled at every boundary.
@@ -56,7 +57,7 @@ export type NutritionKey =
 export type NutrientDef = {
   /** Per-100 g identifier, stable and stored. Never rename without a migration. */
   id: NutrientId;
-  /** Per-serving key in the `Nutrition` shape / `recipes` macro cache. */
+  /** Per-serving key in the `Nutrition` shape / cook-entered `recipes` figures. */
   nutritionKey: NutritionKey;
   /** English display label. Localized labels live in `messages/*.json`. */
   label: string;

@@ -388,9 +388,9 @@ export const foodNutrition = pgTable(
  * 79 of 137 curated foods that carry no density had no gram path at all.
  *
  * Like {@link foodNutrition} this is curated, not crowd-mined: it mirrors the
- * static dataset in `src/lib/food-portions.ts` (generic USDA FoodData Central
- * `food_portion` gram weights, public domain) and is left untouched by the
- * graph-mining recompute. `unit` is stored normalized and singular (see
+ * static dataset in `src/lib/food-portions.ts` (validated USDA FoodData Central
+ * `food_portion` gram weights plus explicitly labelled kitchen estimates) and is
+ * left untouched by the graph-mining recompute. `unit` is stored normalized and singular (see
  * `normalizePortionUnit`) so `cloves` and `clove` resolve the same row.
  * Composite PK (`foodId`, `unit`) — one weight per food per measure.
  */
@@ -409,7 +409,7 @@ export const foodPortions = pgTable(
      * `drained`, `shredded`. Provenance and display only; never matched on.
      */
     modifier: varchar({ length: 60 }),
-    /** `usda` (FDC `food_portion`) or `kitchen` (conventional reference). */
+    /** `usda` (recorded FDC `food_portion`) or `kitchen` (hand estimate). */
     source: varchar({ length: 16 }).notNull().default('usda'),
     ...timestamps(),
   },
