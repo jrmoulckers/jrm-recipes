@@ -39,26 +39,11 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
 
   const matches = phrase.trim().toUpperCase() === DELETION_CONFIRM_PHRASE.toUpperCase();
 
-  // The erasure will be held rather than executed (#787). `heldRecipeCount`
-  // comes from the same `findEntanglement` the erasure path calls, so this is
-  // the actual outcome of pressing the button rather than a second guess at it.
-  const willBeHeld = preview.heldRecipeCount > 0;
-
   function handleDelete() {
     if (!matches || isPending) return;
     startTransition(async () => {
       const result = await deleteAccountAction(phrase);
       if (!result.ok) {
-        // A hold is the expected outcome for an entangled account, not an
-        // error, so it gets the translated explanation rather than the server's
-        // English fallback string and does not read as a failure.
-        if (result.code === 'ERASURE_HELD') {
-          toast.info(t('held.toast'));
-          setConfirmOpen(false);
-          setPhrase('');
-          router.refresh();
-          return;
-        }
         toast.error(result.error);
         return;
       }
@@ -81,36 +66,27 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface/40 p-5">
-        {/*
-          The hold notice leads, and the heading below it goes conditional (#830). Both are
-          ordering, not decoration: every line in this list states an outcome in the present
-          ("are permanently deleted", "is cancelled", "stop working"), while `held.what` says
-          nothing is deleted today. #792 added this block at the foot of the list, so a held
-          user read "All N of your recipes are permanently deleted" and, further down, "your
-          recipes and your photos all stay exactly as they are" -- a verbatim contradiction
-          under a heading promising exactly what happens. Framing the list once, before it is
-          read, is what makes the seven unchanged strings true again.
-        */}
-        {willBeHeld ? (
-          <div className="mb-4 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
-            <AlertTriangle
-              className="mt-0.5 size-4 shrink-0 text-warning-foreground"
-              aria-hidden="true"
-            />
-            <div className="min-w-0 text-sm">
-              <p className="font-medium">{t('held.title')}</p>
-              <p className="mt-1 text-muted-foreground">
-                {t('held.body', { count: preview.heldRecipeCount })}
-              </p>
-              <p className="mt-2 text-muted-foreground">{t('held.what')}</p>
-            </div>
-          </div>
-        ) : null}
-        <h3 className="text-sm font-semibold">
-          {t(willBeHeld ? 'consequences.titleHeld' : 'consequences.title')}
-        </h3>
+        <h3 className="text-sm font-semibold">{t('consequences.title')}</h3>
         <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
-          <li>{t('consequences.recipes', { count: preview.ownedRecipeCount })}</li>
+          <li>
+            {t('consequences.recipesDeleted', {
+              count: preview.deletedOwnedRecipeCount,
+            })}
+          </li>
+          {preview.unclaimedRecipeCount > 0 ? (
+            <li className="text-foreground">
+              {t('consequences.recipesUnclaimed', {
+                count: preview.unclaimedRecipeCount,
+              })}
+            </li>
+          ) : null}
+          {preview.deletedSharedRecipeCount > 0 ? (
+            <li>
+              {t('consequences.sharedRecipesDeleted', {
+                count: preview.deletedSharedRecipeCount,
+              })}
+            </li>
+          ) : null}
           <li>
             {t('consequences.cooking', {
               cookLogs: preview.cookLogEntryCount,
@@ -118,11 +94,16 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
               collections: preview.collectionCount,
             })}
           </li>
-          <li>{t('consequences.photos')}</li>
+          <li>
+            {t('consequences.photos', {
+              retained: preview.retainedMediaCount,
+            })}
+          </li>
           {preview.coCreatedRecipeCount > 0 ? (
             <li className="text-foreground">
               {t('consequences.coCreated', {
                 count: preview.coCreatedRecipeCount,
+                versions: preview.retainedVersionCount,
               })}
             </li>
           ) : null}
@@ -197,7 +178,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
             className="max-w-xs"
           />
           <p id="delete-confirm-help" className="text-xs text-muted-foreground">
-            {willBeHeld ? t('held.confirmHelp') : t('confirm.help')}
+            {t('confirm.help')}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button variant="destructive" disabled={!matches || isPending} onClick={handleDelete}>
@@ -206,7 +187,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
               ) : (
                 <Trash2 className="size-4" aria-hidden="true" />
               )}
-              {t(willBeHeld ? 'held.cta' : 'confirm.cta')}
+              {t('confirm.cta')}
             </Button>
             <Button
               variant="ghost"

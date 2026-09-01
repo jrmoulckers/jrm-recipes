@@ -1,7 +1,8 @@
-import { isNull, relations } from 'drizzle-orm';
-import { index, integer, pgEnum, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import { check, index, integer, pgEnum, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { fk, pk, softDelete, timestamps } from './_shared';
+import { recipes } from './recipes';
 import { users } from './users';
 
 /**
@@ -36,10 +37,19 @@ export const mediaAssets = pgTable(
     // the bookkeeping without ever calling `uploader.destroy`, stranding the
     // image on the CDN forever with nothing left pointing at it. Erasure must
     // destroy the remote bytes first and then delete these rows explicitly.
-    userId: fk()
-      .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+    userId: fk().references(() => users.id, { onDelete: 'restrict' }),
+    /**
+     * System custody for media whose recipe survived its owner's deletion
+     * without forcing ownership onto a co-creator (ADR-0009). Exactly one of
+     * `userId` and `custodianRecipeId` is present.
+     */
+    custodianRecipeId: fk().references(() => recipes.id, { onDelete: 'restrict' }),
     provider: mediaProvider().notNull().default('cloudinary'),
+    /**
+     * Cloudinary API resource type needed for deletion. External rows keep the
+     * default unused; Cloudinary rows derive it from their delivery URL.
+     */
+    resourceType: varchar({ length: 5 }).notNull().default('image'),
     /**
      * Cloudinary public id, required to call `uploader.destroy`. Null for
      * `external` assets, which we have no delete authority over.
@@ -64,6 +74,7 @@ export const mediaAssets = pgTable(
   (t) => [
     // Library listing: a user's newest assets first.
     index('media_assets_user_idx').on(t.userId, t.createdAt),
+    index('media_assets_custodian_recipe_idx').on(t.custodianRecipeId),
     // Lets the settings page answer "is this photo still in use?" by URL, and
     // covers the reverse lookup from a stored column back to its asset.
     index('media_assets_url_idx').on(t.url),
@@ -74,8 +85,15 @@ export const mediaAssets = pgTable(
     // Partial on live rows so a tombstoned asset can't block a re-upload that
     // happens to reuse a public id.
     uniqueIndex('media_assets_user_public_id_uq')
-      .on(t.userId, t.publicId)
-      .where(isNull(t.deletedAt)),
+      .on(t.userId, t.resourceType, t.publicId)
+      .where(sql`${t.userId} is not null and ${t.deletedAt} is null`),
+    uniqueIndex('media_assets_recipe_public_id_uq')
+      .on(t.custodianRecipeId, t.resourceType, t.publicId)
+      .where(sql`${t.custodianRecipeId} is not null and ${t.deletedAt} is null`),
+    check(
+      'media_assets_custodian_check',
+      sql`(${t.userId} is not null) <> (${t.custodianRecipeId} is not null)`,
+    ),
   ],
 );
 
@@ -84,6 +102,11 @@ export const mediaAssetsRelations = relations(mediaAssets, ({ one }) => ({
     fields: [mediaAssets.userId],
     references: [users.id],
     relationName: 'mediaOwner',
+  }),
+  custodianRecipe: one(recipes, {
+    fields: [mediaAssets.custodianRecipeId],
+    references: [recipes.id],
+    relationName: 'mediaCustodianRecipe',
   }),
 }));
 

@@ -12,6 +12,8 @@ export type RecipeDetailRef = {
   id: string;
   slug: string | null;
   cook?: string | null;
+  /** Explicitly null only when the recipe has no owner. */
+  authorId?: string | null;
 };
 
 /** The namespaced segment pair, or `null` when the cook slug is unknown. */
@@ -36,6 +38,7 @@ export function recipeDetailPath(recipe: RecipeDetailRef): Route {
   // Each segment is slash-free (slugs and ids are single URL segments), so this
   // resolves to a real route. TS can't prove that of a runtime string, so this
   // builder is the one place that asserts the typed Route (#189).
+  if (recipe.authorId === null) return `/recipes/unclaimed/${recipe.id}` as Route;
   return `/recipes/${namespaced(recipe) ?? recipe.slug ?? recipe.id}` as Route;
 }
 

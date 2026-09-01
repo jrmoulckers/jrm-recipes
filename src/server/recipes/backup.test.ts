@@ -53,8 +53,45 @@ describe('buildCookbookArchive', () => {
     expect(text).toContain('README.md');
     expect(text).toContain('recipes/banana-bread.md');
     expect(text).toContain('recipes.json');
+    expect(text).toContain('shared-recipe-contributions.json');
     // Markdown body is stored verbatim.
     expect(text).toContain('# Banana Bread');
+  });
+
+  it('exports shared recipe contributions in a distinct manifest', () => {
+    const text = decode(
+      buildCookbookArchive([recipe()], date, [
+        {
+          recipeId: 'shared-1',
+          recipeTitle: 'Sunday Sauce',
+          versions: [
+            {
+              versionNumber: 2,
+              label: null,
+              summary: 'Added the finishing step',
+              snapshot: {
+                title: 'Sunday Sauce',
+                cuisines: [],
+                mealTypes: [],
+                visibility: 'private',
+                status: 'published',
+                ingredients: [],
+                steps: [{ instruction: 'Simmer gently.', techniques: [] }],
+                tags: [],
+                equipment: [],
+                dietaryFlags: [],
+              },
+              createdAt: '2024-03-08T12:00:00.000Z',
+            },
+          ],
+          mediaUrls: ['https://example.com/sauce.jpg'],
+        },
+      ]).bytes,
+    );
+
+    expect(text).toContain('shared-recipe-contributions.json');
+    expect(text).toContain('"recipeTitle": "Sunday Sauce"');
+    expect(text).toContain('"mediaUrls"');
   });
 
   it('carries story and provenance into the exported Markdown (#377/#381)', () => {

@@ -30,7 +30,11 @@ Recipe deletion is a tombstone, not a hard delete. [`recipes`](../src/server/db/
 
 The read layer mirrors this convention: [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) defines a shared `notDeleted = isNull(recipes.deletedAt)` predicate and applies it to recipe list/detail/search/timeline reads.
 
-Users used to have a soft-delete-style tombstone in [`users`](../src/server/db/schema/users.ts). That is no longer how account deletion works: since issue #678 ([ADR-0004](./architecture/0004-account-erasure.md)) deletion is a **full erasure** — the `users` row is deleted outright and the cascading foreign keys remove everything hanging off it. `users.deletedAt` is retained only as a transitional column. See [Account erasure](#account-erasure-issue-678) below.
+Users used to have a soft-delete-style tombstone in [`users`](../src/server/db/schema/users.ts).
+Account deletion now removes the `users` row and personal profile rather than retaining that
+pseudonymous account. Contributions accepted into a shared recipe may survive without a user
+reference, and an owned recipe with accepted co-creators becomes unclaimed. See
+[ADR-0009](./architecture/0009-account-deletion-and-shared-recipes.md).
 
 ### Cascade and set-null convention
 
@@ -38,7 +42,11 @@ The schema generally uses:
 
 - `onDelete: "cascade"` for rows that are owned by the parent and should disappear with it, such as `group_members` under `groups`, `recipe_ingredients` under `recipes`, `collection_recipes` under `collections`, `shopping_list_items` under `shopping_lists`, and shopping ingredient routes under their preferred lists.
 - `onDelete: "set null"` for authorship, attribution, and optional scope columns where the record should survive parent deletion. Examples include `groups.createdById`, `group_invitations.invitedById`, `recipe_versions.authorId`, `recipe_events.actorId`, `shopping_list_items.foodId`, `shopping_ingredient_routes.foodId`, and `audit_log.actorId`.
-- `onDelete: "restrict"` for the two columns where a cascade would destroy the only handle on data that lives outside Postgres, or would pre-empt logic that has to run first. `recipes.authorId` and `media_assets.userId` are both `restrict` so that account erasure can destroy the Cloudinary bytes and resolve co-created recipes before any row disappears. Cascading `media_assets` in particular would drop the only record that an uploaded image exists, stranding it on the CDN forever with nothing pointing at it. `restrict` turns a missed erasure step into a loud foreign-key violation instead of silent, irreversible loss.
+- `onDelete: "restrict"` where a cascade would pre-empt lifecycle work. `recipes.authorId` stays
+  restrictive even though it is nullable: account deletion must deliberately make a co-created
+  recipe unclaimed or delete it. `media_assets.userId` and `custodianRecipeId` are restrictive so a
+  cascade cannot discard the only record of Cloudinary bytes before they are transferred or
+  destroyed.
 
 Some relationships are intentionally not database FKs. For example, [`audit_log.targetId`](../src/server/db/schema/audit.ts), [`reactions.targetId`](../src/server/db/schema/reactions.ts), and [`usage_counters.ownerId`](../src/server/db/schema/billing.ts) are polymorphic or cross-table identifiers, so the schema stores the id plus a type instead of a single FK.
 
@@ -74,15 +82,29 @@ A recipe can also resolve inside a co-creator's namespace, so `/recipes/ada/blue
 - **Removal writes no alias**, deliberately diverging from the alias-permanence rule above. The difference is a trust boundary: a rename alias stays within one owner, so the redirect is honest. An ex-creator's alias would point across a relationship that was just revoked, and would either leak the recipe's continued existence and current canonical URL to anyone holding the old link, or permanently burn a slug in the ex-creator's own namespace as a side effect of losing access. Removal therefore hard-stops — the row goes, the slug is free again, and the path 404s as if it had never resolved. The only party who can re-claim that freed slug is the ex-creator themselves, inside their own namespace, so no ambiguity is introduced.
 - A namespace is shared by three tables — `recipes`, `recipe_slug_aliases`, `recipe_creators` — each with its _own_ unique constraint, and Postgres has no cross-table unique. Two transactions could otherwise both probe a candidate as free and both commit it in different tables, violating nothing and so never retrying. `slugTaken` takes a transaction-scoped advisory lock on the namespace before probing all three, which closes that window. The lock supplements the constraints; they remain the source of truth.
 - An **accepted** co-creator may rewrite the recipe body (#685). Delete, restore, visibility, share-token rotation, version reverts and creator management stay owner-only. `updateRecipe` therefore authorizes on the _actor_ but allocates slugs and writes aliases against `recipes.authorId`: a co-creator's rename re-slugs in the owner's namespace, and the co-creator's own mirror slug does not move.
-- `recipe_creators` is also the survival predicate for account erasure: "does this recipe outlive its owner?" is "does an accepted creator remain?", one indexed query. `recipes.authorId` is deliberately `restrict` rather than `cascade` — a cascade would delete even the recipes the retention exception says must survive, and would do so before the Cloudinary bytes are destroyed. See [ADR-0004 (account erasure)](./architecture/0004-account-erasure.md).
+- `recipe_creators` is also the survival predicate for account deletion: an owned recipe with an
+  accepted creator becomes unclaimed rather than forcing ownership onto that person. Existing
+  accepted creators may continue editing and may explicitly claim it. See
+  [ADR-0009](./architecture/0009-account-deletion-and-shared-recipes.md).
 
-## Account erasure (issue #678)
+## Account and personal-profile deletion (issues #678 and #694)
 
-Account deletion deletes; it does not anonymize. See [ADR-0004](./architecture/0004-account-erasure.md) for the reasoning and the accepted risks.
+Account deletion removes the account, profile, and solely owned content. Shared contributions may
+remain without a live account reference; the product discloses that text and images may still be
+identifying from their content or family context. See
+[ADR-0009](./architecture/0009-account-deletion-and-shared-recipes.md).
 
-- `deletion_records` is the tombstone that outlives the erased row, and exists for two jobs: evidencing that the erasure happened, and telling the backup runbook _who_ to re-erase after a restore. It stores **salted hashes and counts only** — never an email, name, handle, slug, raw id, or any free text — because a record rich enough to be useful would otherwise re-create the profile the erasure just removed. The salt comes from `DELETION_HASH_SALT`; without it no record is written, rather than one with a guessable digest.
-- A recipe survives only if it has another **accepted** creator. A `pending` invitation is not a creator for survival purposes. When the _owner_ leaves, the recipe is deleted rather than retained: the whole body is their personal data, so keeping it under someone else's namespace would be pseudonymization. Ownership transfer is offered before confirmation instead.
-- Ordering is enforced by `restrict` foreign keys: destroy Cloudinary bytes → abort the whole erasure if any survived → delete rows in one transaction → delete `users` → assert nothing remains → write the tombstone.
+- `deletion_records` is the tombstone that outlives the erased row, and exists for two jobs: evidencing that the erasure happened, and telling the backup runbook _who_ to re-erase after a restore. It stores **salted hashes and counts only** — never an email, name, handle, slug, raw id, or any free text — because a record rich enough to be useful would otherwise re-create the profile the erasure just removed. The salt comes from `DELETION_HASH_SALT`; without it deletion fails closed. The tombstone and account deletion commit in the same transaction.
+- A recipe survives its owner's deletion only if another **accepted** creator remains. It becomes
+  ownerless at `/recipes/unclaimed/<recipe-id>` until an accepted creator explicitly claims it.
+- Retained version rows lose their author reference and render as **Unknown contributor**.
+- Media used by retained owned recipes transfers to their recipe owner. Media attached only to an
+  unclaimed recipe becomes system-custodied by that recipe. Its stored Cloudinary resource type
+  makes later image, video, and raw deletion exact. Remaining media is destroyed.
+- Ordering is enforced by restrictive foreign keys and one transaction: lock/classify recipes →
+  transfer retained media → destroy remaining Cloudinary bytes → transition or delete recipes →
+  delete `users` → write the tombstone. The committed state is then checked for live identity
+  references.
 
 ## Main tables
 

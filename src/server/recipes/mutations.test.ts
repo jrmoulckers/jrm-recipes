@@ -697,7 +697,12 @@ describe('updateRecipe group-membership enforcement', () => {
 
     const result = await updateRecipe('r1', parsed, author);
 
-    expect(result).toEqual({ id: 'r1', slug: 'apple-pie', cook: 'owner-cook' });
+    expect(result).toEqual({
+      id: 'r1',
+      slug: 'apple-pie',
+      cook: 'owner-cook',
+      authorId: 'user_1',
+    });
     expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ groupId: 'grp_1' }));
   });
 
@@ -897,7 +902,12 @@ describe('co-creator edit rights (i668)', () => {
       coCreator,
     );
 
-    expect(result).toEqual({ id: 'r1', slug: 'apple-pie', cook: 'owner-cook' });
+    expect(result).toEqual({
+      id: 'r1',
+      slug: 'apple-pie',
+      cook: 'owner-cook',
+      authorId: 'user_1',
+    });
     expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ notes: 'Chill the dough.' }));
   });
 

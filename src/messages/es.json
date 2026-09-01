@@ -2675,7 +2675,8 @@
         "adaptedByFamily": "Adaptada por la familia",
         "published": "Compartida con la familia",
         "suggestionApplied": "Sugerencia aplicada",
-        "updated": "Actualizada"
+        "updated": "Actualizada",
+        "claimed": "Propiedad asumida"
       }
     },
     "rotation": {
@@ -2987,45 +2988,38 @@
         "body": "La copia de tu recetario incluye todas las recetas de tu cuenta, así que necesitamos saber que eres tú."
       },
       "delete": {
-        "title": "Eliminar mi cuenta",
-        "description": "Esto elimina tu cuenta y todo lo que hay en ella. No ocultamos tus recetas ni guardamos una copia: se borran para siempre.",
+        "title": "Eliminar la cuenta y el perfil personal",
+        "description": "Esto elimina tu acceso, tu perfil y el contenido que solo te pertenece a ti. Las contribuciones aceptadas en recetas compartidas pueden permanecer sin vínculo con tu cuenta.",
         "consequences": {
           "title": "Esto es exactamente lo que ocurre",
-          "titleHeld": "Esto es exactamente lo que ocurre cuando podamos completarlo",
-          "recipes": "{count, plural, =0 {No tienes recetas propias que eliminar.} one {Tu # receta se elimina de forma permanente, junto con su historia, sus notas y sus fotos.} other {Tus # recetas se eliminan de forma permanente, junto con sus historias, sus notas y sus fotos.}}",
+          "recipesDeleted": "{count, plural, =0 {No tienes recetas de propiedad exclusiva que eliminar.} one {Tu # receta de propiedad exclusiva se elimina de forma permanente.} other {Tus # recetas de propiedad exclusiva se eliminan de forma permanente.}}",
+          "recipesUnclaimed": "{count, plural, one {# receta con otras personas colaboradoras aceptadas permanece sin propietario. Nadie está obligado a asumirla.} other {# recetas con otras personas colaboradoras aceptadas permanecen sin propietario. Nadie está obligado a asumirlas.}}",
+          "sharedRecipesDeleted": "{count, plural, one {Se elimina # receta no pública sin propietario porque no queda ninguna otra persona colaboradora aceptada.} other {Se eliminan # recetas no públicas sin propietario porque no queda ninguna otra persona colaboradora aceptada.}}",
           "cooking": "Tu historial de cocina también se va: {cookLogs, plural, one {# entrada del diario} other {# entradas del diario}}, {reviews, plural, one {# reseña} other {# reseñas}} y {collections, plural, one {# colección} other {# colecciones}}.",
-          "photos": "Todas las fotos que subiste se eliminan de nuestro almacenamiento de imágenes, no solo se desvinculan.",
-          "coCreated": "{count, plural, one {# receta que cuidas es de otra persona. Se queda con ella. Lo que hayas escrito en ella también se queda, porque no podemos separar de forma fiable tus cambios de los suyos.} other {# recetas que cuidas son de otras personas. Se quedan con ellas. Lo que hayas escrito en ellas también se queda, porque no podemos separar de forma fiable tus cambios de los suyos.}}",
+          "photos": "{retained, plural, =0 {Las fotos que no usa una receta compartida conservada se eliminan del almacenamiento.} one {Se conserva # archivo multimedia porque lo usa una receta compartida. Cambia quién gestiona su ciclo de vida. Los demás se eliminan.} other {Se conservan # archivos multimedia porque los usan recetas compartidas. Cambia quién gestiona su ciclo de vida. Los demás se eliminan.}}",
+          "coCreated": "{count, plural, one {Tus contribuciones a # receta compartida permanecen sin vínculo con tu cuenta.} other {Tus contribuciones a # recetas compartidas permanecen sin vínculo con tu cuenta.}} {versions, plural, one {# entrada del historial permanece como «Colaborador desconocido».} other {# entradas del historial permanecen como «Colaborador desconocido».}} El texto o las imágenes aún podrían identificarte por su contenido o contexto familiar.",
           "pendingInvites": "{count, plural, one {Se retira # invitación para co-crear una receta.} other {Se retiran # invitaciones para co-crear recetas.}}",
-          "subscription": "Tu suscripción se cancela. No podemos reembolsar el periodo en curso una vez eliminada la cuenta.",
-          "links": "Los enlaces de recetas que hayas compartido dejan de funcionar. Tu nombre de cocina queda libre para otra persona.",
-          "irreversible": "No hay forma de deshacerlo, ni periodo de gracia, ni manera de que podamos recuperar nada."
+          "subscription": "Eliminar tu cuenta no cancela la facturación activa. Cancela tu suscripción en Facturación antes de eliminar la cuenta.",
+          "links": "Tu nombre de cocina queda libre para otra persona. Las recetas conservadas sin propietario pasan a un enlace estable de receta sin reclamar.",
+          "irreversible": "Eliminar la cuenta no se puede deshacer y no tiene periodo de gracia. Después puedes pedir a soporte que retire texto o imágenes conservados que te identifiquen indicando el enlace de la receta."
         },
         "groups": {
           "title": "Eres la única persona propietaria de un grupo familiar",
           "body": "{groups} se quedaría sin propietario. Haz que otra persona sea propietaria antes, o quienes están dentro no podrán gestionarlo."
         },
-        "held": {
-          "title": "Todavía no podemos completar esta eliminación",
-          "body": "{count, plural, one {Compartes # receta con otra persona.} other {Compartes # recetas con otras personas.}} Aún no podemos separar lo que escribiste de lo suyo sin destruir el registro de quién escribió cada cosa, y no vamos a eliminarte a medias para conseguirlo.",
-          "what": "Si continúas, registraremos tu solicitud y hoy no eliminaremos nada. Tu cuenta, tus recetas y tus fotos se quedan tal y como están hasta que podamos hacerlo bien.",
-          "confirmHelp": "Al pulsar el botón se registra tu solicitud. Hoy no se elimina nada, y te escribiremos cuando esté hecho.",
-          "cta": "Enviar mi solicitud de eliminación",
-          "toast": "Tu solicitud está registrada y no se ha eliminado nada. Te avisaremos cuando podamos completarla."
-        },
         "export": {
-          "body": "Llévate primero tu recetario. La descarga es la misma copia completa y sigue funcionando sin conexión para siempre.",
+          "body": "Llévate primero tu recetario y el historial de contribuciones a recetas compartidas. La descarga funciona sin conexión.",
           "cta": "Descargar mi recetario primero"
         },
-        "start": "Eliminar mi cuenta",
+        "start": "Eliminar la cuenta y el perfil personal",
         "confirm": {
           "label": "Escribe {phrase} para confirmar",
-          "help": "En cuanto pulses el botón, todo lo anterior se elimina de inmediato.",
-          "cta": "Eliminarlo todo permanentemente",
+          "help": "Tu cuenta y tu perfil personal se eliminan de inmediato. El contenido compartido permanece solo como se describe arriba.",
+          "cta": "Eliminar la cuenta y el perfil personal",
           "cancel": "Conservar mi cuenta"
         },
         "toasts": {
-          "deleted": "Tu cuenta y todo lo que había en ella se han eliminado. Cuídate."
+          "deleted": "Tu cuenta y tu perfil personal se han eliminado. Cuídate."
         }
       }
     }
@@ -3830,7 +3824,18 @@
       }
     },
     "byline": {
-      "with": "con {names}"
+      "with": "con {names}",
+      "unknownContributor": "Colaborador desconocido"
+    },
+    "claim": {
+      "action": "Reclamar esta receta",
+      "pending": "Reclamando…",
+      "toast": "Esta receta ahora es tuya.",
+      "confirm": {
+        "title": "¿Reclamar esta receta?",
+        "description": "Pasarás a ser su propietario y asumirás la responsabilidad sobre su visibilidad, eliminación y archivos multimedia conservados.",
+        "confirmLabel": "Reclamar receta"
+      }
     },
     "leave": {
       "action": "Salir de esta receta",

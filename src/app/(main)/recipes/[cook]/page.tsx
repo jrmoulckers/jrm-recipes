@@ -32,7 +32,8 @@ async function LegacyRecipePage({ params }: { params: Promise<FlatRecipeRoutePar
     recipeDetailPath({
       id: recipe.id,
       slug: recipe.slug,
-      cook: recipe.author.slug,
+      cook: recipe.author?.slug,
+      authorId: recipe.authorId,
     }),
   );
 }

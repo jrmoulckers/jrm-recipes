@@ -23,6 +23,17 @@ describe('recipeDetailPath', () => {
   it('falls back to the id when a recipe has no slug', () => {
     expect(recipeDetailPath({ id: 'rec_123', slug: null, cook: 'ada' })).toBe('/recipes/rec_123');
   });
+
+  it('uses the stable unclaimed namespace for an ownerless recipe', () => {
+    expect(
+      recipeDetailPath({
+        id: 'rec_123',
+        slug: 'apple-pie',
+        cook: null,
+        authorId: null,
+      }),
+    ).toBe('/recipes/unclaimed/rec_123');
+  });
 });
 
 describe('sub-route builders', () => {
@@ -50,5 +61,13 @@ describe('recipeRevalidationPaths', () => {
     expect(recipeRevalidationPaths({ id: 'rec_123', slug: 'apple-pie' })).toEqual([
       '/recipes/apple-pie',
     ]);
+  });
+
+  it('fans ownerless canonical and accepted creator mirrors out together', () => {
+    expect(
+      recipeRevalidationPaths({ id: 'rec_123', slug: 'apple-pie', authorId: null }, [
+        { cook: 'ada', slug: 'apple-pie' },
+      ]),
+    ).toEqual(['/recipes/unclaimed/rec_123', '/recipes/apple-pie', '/recipes/ada/apple-pie']);
   });
 });

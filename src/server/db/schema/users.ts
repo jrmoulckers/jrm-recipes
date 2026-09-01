@@ -1,5 +1,5 @@
-import { relations } from 'drizzle-orm';
-import { boolean, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import { boolean, check, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 import { pk, fk, timestamps } from './_shared';
 import { groupMembers } from './groups';
@@ -52,7 +52,10 @@ export const users = pgTable(
     deletedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
-  (t) => [index('users_clerk_id_idx').on(t.clerkId)],
+  (t) => [
+    index('users_clerk_id_idx').on(t.clerkId),
+    check('users_slug_reserved_check', sql`${t.slug} <> 'unclaimed'`),
+  ],
 );
 
 /**
@@ -78,7 +81,10 @@ export const userSlugAliases = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index('user_slug_aliases_user_idx').on(t.userId)],
+  (t) => [
+    index('user_slug_aliases_user_idx').on(t.userId),
+    check('user_slug_aliases_reserved_check', sql`${t.slug} <> 'unclaimed'`),
+  ],
 );
 
 export const userSlugAliasesRelations = relations(userSlugAliases, ({ one }) => ({

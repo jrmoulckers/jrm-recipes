@@ -17,8 +17,9 @@ import type { Entitlements } from '~/config/plans';
 import { isAnalyticsConfigured } from '~/lib/analytics/config';
 import { buildIdentityTraits } from '~/lib/analytics/identity';
 import { captureServer, identifyServer } from '~/lib/analytics/server';
+import { log } from '~/lib/log';
 import { allocateUserSlug } from '~/server/users/slug';
-import { eraseUserAccount, type ErasureResult } from '~/server/users/erasure';
+import { eraseUserAccount, hasBeenErased, type ErasureResult } from '~/server/users/erasure';
 
 /**
  * Heirloom auth module.
@@ -139,6 +140,20 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
     where: and(eq(users.clerkId, clerkId), isNull(users.deletedAt)),
   });
   if (existing) return existing;
+
+  // A failed Clerk admin call must never resurrect an account whose local
+  // deletion committed. Retry identity cleanup when that Clerk session next
+  // reaches us, but fail closed even if the provider is still unavailable.
+  if (await hasBeenErased(clerkId)) {
+    try {
+      const { clerkClient } = await import('@clerk/nextjs/server');
+      const client = await clerkClient();
+      await client.users.deleteUser(clerkId);
+    } catch {
+      log.error('auth.erased_clerk_cleanup_failed');
+    }
+    return null;
+  }
 
   // First time we've seen this Clerk user. Pull their profile and store it.
   const { clerkClient } = await import('@clerk/nextjs/server');
@@ -326,10 +341,8 @@ export async function applyClerkUserUpdate(
  * and a repeat event after a successful erasure is recognised via the hashed
  * tombstone, so Clerk's retries converge instead of redelivering forever.
  *
- * Returns the outcome rather than swallowing it, because since #694 an erasure
- * can be *held* instead of executed. A held request must not be reported as a
- * completed deletion, and must not be reported as a failure either: a 5xx would
- * make Clerk redeliver an event that can never succeed until a remedy ships.
+ * Returns the outcome so verified webhook handling can distinguish an applied
+ * event from an unknown subject.
  */
 export async function applyClerkUserDeletion(
   clerkId: string,

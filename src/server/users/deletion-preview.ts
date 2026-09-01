@@ -10,11 +10,12 @@ import {
   groupMembers,
   groups,
   recipeCreators,
-  recipes,
+  recipeVersions,
   reviews,
   subscriptions,
 } from '~/server/db/schema';
-import { findEntanglement } from './erasure-holds';
+import { planRetainedMediaTransfers } from '~/server/media/custody';
+import { planAccountRecipeRetention } from './recipe-retention';
 
 /**
  * What a user is about to lose (issue #678, PR B).
@@ -37,8 +38,12 @@ export type SoleOwnerGroup = {
 };
 
 export type DeletionPreview = {
-  /** Recipes owned by this user. All of these are deleted. */
+  /** Recipes owned by this user before deletion. */
   ownedRecipeCount: number;
+  /** Solely owned recipes that are deleted with the account. */
+  deletedOwnedRecipeCount: number;
+  /** Owned recipes retained without an owner because accepted creators remain. */
+  unclaimedRecipeCount: number;
   /**
    * Recipes owned by *someone else* on which this user is an accepted creator.
    * These survive; only the creator link and its namespaced URL go away.
@@ -46,25 +51,14 @@ export type DeletionPreview = {
    * is not a recipe the user has any claim on.
    */
   coCreatedRecipeCount: number;
+  /** Ownerless non-public recipes deleted because no other creator remains. */
+  deletedSharedRecipeCount: number;
   /** Pending creator invitations, which are simply withdrawn. */
   pendingInviteCount: number;
-  /**
-   * How many recipes make this account's erasure *undeliverable today* (#787).
-   *
-   * Not a count of things being deleted — the opposite. If this is above zero
-   * the erasure is **held**: nothing is deleted, the account stays wholly
-   * intact, and the request is recorded for replay (#694).
-   *
-   * Deliberately derived from {@link findEntanglement}, the same function the
-   * erasure path calls to decide whether to halt, rather than from a query of
-   * its own. `coCreatedRecipeCount` above used to be the closest thing the
-   * notice had to this, and it is **not** the same predicate: it covers only
-   * recipes owned by someone else. A user who merely *owns* a recipe carrying
-   * accepted co-creators is halted by the erasure and was invisible here, so
-   * the notice promised them an immediate, permanent, irreversible deletion
-   * and then held it. One predicate, one caller, no drift.
-   */
-  heldRecipeCount: number;
+  /** User-authored snapshots retained without an account reference. */
+  retainedVersionCount: number;
+  /** User-owned media assets retained under another lifecycle custodian. */
+  retainedMediaCount: number;
   cookLogEntryCount: number;
   reviewCount: number;
   collectionCount: number;
@@ -80,9 +74,13 @@ export type DeletionPreview = {
 
 const EMPTY: DeletionPreview = {
   ownedRecipeCount: 0,
+  deletedOwnedRecipeCount: 0,
+  unclaimedRecipeCount: 0,
   coCreatedRecipeCount: 0,
+  deletedSharedRecipeCount: 0,
   pendingInviteCount: 0,
-  heldRecipeCount: 0,
+  retainedVersionCount: 0,
+  retainedMediaCount: 0,
   cookLogEntryCount: 0,
   reviewCount: 0,
   collectionCount: 0,
@@ -156,11 +154,12 @@ async function findSoleOwnerGroups(userId: string): Promise<SoleOwnerGroup[]> {
 export async function getDeletionPreview(userId: string): Promise<DeletionPreview> {
   if (!isDbConfigured()) return EMPTY;
 
+  const retention = await planAccountRecipeRetention(userId);
+  const mediaPlan = await planRetainedMediaTransfers(userId, retention.retainedRecipes);
+  const retainedRecipeIds = retention.retainedRecipes.map(({ recipeId }) => recipeId);
   const [
-    ownedRecipeCount,
-    coCreatedRecipeCount,
     pendingInviteCount,
-    entanglement,
+    retainedVersionCount,
     cookLogEntryCount,
     reviewCount,
     collectionCount,
@@ -168,35 +167,24 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
     liveSubscriptions,
   ] = await Promise.all([
     countRows(() =>
-      db.select({ value: count() }).from(recipes).where(eq(recipes.authorId, userId)),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(recipeCreators)
-        .innerJoin(recipes, eq(recipes.id, recipeCreators.recipeId))
-        .where(
-          and(
-            eq(recipeCreators.userId, userId),
-            eq(recipeCreators.status, 'accepted'),
-            // Belt and braces: the owner is never a row in this table, but a
-            // future backfill that duplicated `authorId` in must not inflate
-            // the "these will survive" number with recipes we are deleting.
-            ne(recipes.authorId, userId),
-          ),
-        ),
-    ),
-    countRows(() =>
       db
         .select({ value: count() })
         .from(recipeCreators)
         .where(and(eq(recipeCreators.userId, userId), eq(recipeCreators.status, 'pending'))),
     ),
-    // The erasure path's own halt predicate (#787). Calling it here rather than
-    // re-deriving it is the point: whatever the erasure would hold on is
-    // exactly what the notice discloses, including the owner-side direction
-    // that `coCreatedRecipeCount` above does not see.
-    findEntanglement(userId),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(recipeVersions)
+        .where(
+          retainedRecipeIds.length === 0
+            ? eq(recipeVersions.authorId, '__none__')
+            : and(
+                eq(recipeVersions.authorId, userId),
+                inArray(recipeVersions.recipeId, retainedRecipeIds),
+              ),
+        ),
+    ),
     countRows(() =>
       db.select({ value: count() }).from(cookLogEntries).where(eq(cookLogEntries.userId, userId)),
     ),
@@ -220,10 +208,14 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
   ]);
 
   return {
-    ownedRecipeCount,
-    coCreatedRecipeCount,
+    ownedRecipeCount: retention.ownedRecipeIds.length,
+    deletedOwnedRecipeCount: retention.ownedToDeleteIds.length,
+    unclaimedRecipeCount: retention.ownedToUnclaimIds.length,
+    coCreatedRecipeCount: retention.retainedCoCreatedRecipeIds.length,
+    deletedSharedRecipeCount: retention.ownerlessToDeleteIds.length,
     pendingInviteCount,
-    heldRecipeCount: entanglement.recipeIds.length,
+    retainedVersionCount,
+    retainedMediaCount: mediaPlan.transfers.length,
     cookLogEntryCount,
     reviewCount,
     collectionCount,
@@ -235,7 +227,8 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
 /** Total rows the user can see disappearing, for the headline sentence. */
 export function previewTotal(preview: DeletionPreview): number {
   return (
-    preview.ownedRecipeCount +
+    preview.deletedOwnedRecipeCount +
+    preview.deletedSharedRecipeCount +
     preview.cookLogEntryCount +
     preview.reviewCount +
     preview.collectionCount

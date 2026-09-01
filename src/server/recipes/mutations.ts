@@ -67,13 +67,10 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = 'recipe_creators_user_slug_uq';
  * and it is total rather than partial: **a NULL `ownerId` takes no lock at all.**
  * `hashtext` and every `pg_advisory_xact_lock` overload are STRICT, so the call
  * collapses to a NULL result, holds zero locks, and raises nothing — leaving the
- * three probes below completely unserialized. Not reachable today, because
- * `recipes.authorId` is `notNull` (see schema/recipes.ts) and every caller passes
- * a `string`; recorded because TypeScript is erased before this query runs, and
- * the identically named `recipe_versions.authorId` *is* nullable, so a future
- * author can have a nullable `authorId` in view while reading this comment. If
- * this ever takes an owner id that TypeScript cannot prove non-null, assert it
- * here rather than trusting the signature.
+ * three probes below completely unserialized. The allocator therefore accepts a
+ * `string`, never the nullable `recipes.authorId`; ownerless edits retain their
+ * existing slug until a creator claims the recipe. Keep that type boundary here
+ * rather than trusting TypeScript after it is erased.
  *
  * ## Do not widen this key (issue #712)
  *
@@ -639,7 +636,7 @@ async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {
 }
 
 function canForkSource(
-  source: { authorId: string; visibility: string; groupId: string | null },
+  source: { authorId: string | null; visibility: string; groupId: string | null },
   author: User,
   groupIds: string[],
 ) {
@@ -671,12 +668,14 @@ async function applyRecipeInput(
   actor: User,
   label: string,
   current: { slug: string; title: string; publishedAt: Date | null },
-  ownerId: string,
+  ownerId: string | null,
   groupId: string | null,
 ) {
   const nowPublished = input.status === 'published';
   const publishedAt = nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
-  const slug = await reslug(tx, id, input.title, ownerId, current);
+  // An ownerless recipe has no user namespace in which to allocate a new slug.
+  // Keep its internal slug stable until an accepted creator claims it.
+  const slug = ownerId ? await reslug(tx, id, input.title, ownerId, current) : current.slug;
 
   await tx
     .update(recipes)
@@ -819,7 +818,7 @@ async function assertRecipeEditAccess(
   tx: Tx,
   recipeId: string,
   actorId: string,
-  ownerId: string,
+  ownerId: string | null,
 ): Promise<void> {
   if (ownerId === actorId) return;
   const creator = await tx.query.recipeCreators.findFirst({
@@ -894,7 +893,11 @@ export async function updateRecipe(id: string, input: RecipeInput, actor: User) 
           metadata: { from: current.visibility, to: effective.visibility },
         });
       }
-      return { ...result, cook: current.author?.slug ?? null };
+      return {
+        ...result,
+        cook: current.author?.slug ?? null,
+        authorId: current.authorId,
+      };
     }),
   );
   // After the commit, never inside it: the recompute reads the rows the
@@ -972,10 +975,12 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
       // Expose the source's canonical segments so the action can revalidate the
       // source's detail page, whose lineage now includes this adaptation. The
       // author slug is needed because that path is namespaced (#666).
-      const sourceAuthor = await tx.query.users.findFirst({
-        where: eq(users.id, source.authorId),
-        columns: { slug: true },
-      });
+      const sourceAuthor = source.authorId
+        ? await tx.query.users.findFirst({
+            where: eq(users.id, source.authorId),
+            columns: { slug: true },
+          })
+        : null;
       return {
         ...recipe,
         source: {

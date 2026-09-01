@@ -1,6 +1,7 @@
 import { recipeDownloadFilename, serializeRecipeMarkdown } from '~/components/print/export';
 import type { PrintRecipe } from '~/components/print/types';
 import { createZip, type ZipEntry } from '~/lib/zip';
+import type { SharedRecipeContribution } from '~/server/users/contribution-export';
 
 export type CookbookArchive = {
   filename: string;
@@ -42,6 +43,8 @@ function readme(recipes: PrintRecipe[], date: Date): string {
     '- `recipes/`. One Markdown file per recipe (open in any text editor).',
     '- `recipes.json`. The same recipes as structured data, so a future tool',
     '  (or a future Heirloom) can read everything back in without loss.',
+    '- `shared-recipe-contributions.json`. Version snapshots you authored in',
+    '  recipes currently shared with you, plus references to media you uploaded.',
     '',
     'Stories, who a recipe was handed down from, and where it came from are all',
     "included so nothing about your family's history is left behind.",
@@ -61,6 +64,7 @@ function readme(recipes: PrintRecipe[], date: Date): string {
 export function buildCookbookArchive(
   recipes: PrintRecipe[],
   now: Date = new Date(),
+  contributions: SharedRecipeContribution[] = [],
 ): CookbookArchive {
   const taken = new Set<string>();
   const entries: ZipEntry[] = [{ name: 'README.md', data: readme(recipes, now) }];
@@ -75,6 +79,14 @@ export function buildCookbookArchive(
   entries.push({
     name: 'recipes.json',
     data: `${JSON.stringify({ exportedAt: now.toISOString(), version: 1, recipes }, null, 2)}\n`,
+  });
+  entries.push({
+    name: 'shared-recipe-contributions.json',
+    data: `${JSON.stringify(
+      { exportedAt: now.toISOString(), version: 1, contributions },
+      null,
+      2,
+    )}\n`,
   });
 
   return {

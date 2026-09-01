@@ -10,6 +10,7 @@ import {
 
 function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
   return {
+    id: 'rec_1',
     slug: 'aunt-mays-peach-cobbler',
     title: "Aunt May's Peach Cobbler",
     description: 'Bubbling fruit under a craggy biscuit top.',

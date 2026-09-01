@@ -39,13 +39,8 @@ export function extractProfile(data: ClerkUserData): ClerkUserProfile {
   };
 }
 
-/**
- * What a webhook event actually did, so the route can answer honestly.
- *
- * `held` exists because an erasure can now be recorded without being executed
- * (#694). It is neither success nor failure and must not be reported as either.
- */
-export type ClerkEventOutcome = 'ignored' | 'applied' | 'held';
+/** What a webhook event actually did, so the route can answer honestly. */
+export type ClerkEventOutcome = 'ignored' | 'applied';
 
 /**
  * Route a verified Clerk webhook event to the matching sync side effect
@@ -60,10 +55,9 @@ export async function handleClerkEvent(event: ClerkWebhookEvent): Promise<ClerkE
     case 'user.updated':
       await applyClerkUserUpdate(clerkId, extractProfile(event.data));
       return 'applied';
-    case 'user.deleted': {
-      const status = await applyClerkUserDeletion(clerkId);
-      return status === 'held' ? 'held' : 'applied';
-    }
+    case 'user.deleted':
+      await applyClerkUserDeletion(clerkId);
+      return 'applied';
     default:
       return 'ignored';
   }

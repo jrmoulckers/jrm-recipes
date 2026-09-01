@@ -4,6 +4,7 @@
 - **Date:** 2026-08-10
 - **Issue:** [#668](https://github.com/jrmoulckers/jrm-recipes/issues/668)
 - **Builds on:** [ADR-0002](./0002-user-scoped-recipe-slugs.md)
+- **Amended by:** [ADR-0009](./0009-account-deletion-and-shared-recipes.md)
 
 ## Context
 
@@ -26,12 +27,11 @@ A `recipe_creators` join table, and per-creator namespaced URLs. One recipe reso
 
 ### The owner is not a row
 
-`recipes.author_id` stays the sole owner and never appears in `recipe_creators`. A second
-representation of the same fact could only drift, and the `NOT NULL` FK already guarantees exactly
-one owner for the life of the recipe. This is also what makes the zero-creator state unreachable:
-there is always at least one namespace the recipe answers in, so no "recipe with no URL" case has
-to be designed. Ownership transfer, if it is ever built, is a swap of `author_id` plus a row move
-inside one transaction.
+`recipes.author_id` is the sole owner and never appears in `recipe_creators`. A second
+representation of the same fact could only drift. ADR-0009 later made the owner nullable so a
+co-created recipe can survive account deletion without forcing ownership onto another person. The
+ownerless state is explicit and claimable; claiming sets `author_id` and removes the claimant's
+creator row in one transaction.
 
 ### Consent is two-sided
 

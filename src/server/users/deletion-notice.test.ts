@@ -5,108 +5,36 @@ import de from '~/messages/de.json';
 import en from '~/messages/en.json';
 import es from '~/messages/es.json';
 
-/**
- * Pin the co-creator disclosure in every locale.
- *
- * Since #685 an accepted co-creator can edit a recipe they do not own, so
- * erasure leaves the departing user's prose inside somebody else's
- * `recipes.story`/`notes` and inside `recipe_versions` snapshots authored by
- * other people. The erasure path does not remove it and, until #678 picks a
- * remedy, will not.
- *
- * The notice therefore has to say so. A version of this sentence that mentions
- * only the byline coming off would describe an erasure the system does not
- * perform, which is the failure mode the whole pre-confirmation notice exists to
- * prevent. These assertions are deliberately about the *presence of a
- * limitation*, not about wording: a translator may rephrase freely, but nobody
- * should be able to quietly delete the disclosure while the gap is still open.
- *
- * When #678 lands a remedy that genuinely removes the text, this test should be
- * removed in the same change that removes the sentence, not before.
- */
 const catalogs = { en, de, es, ar } as const;
 
-/** A phrase each locale uses for "what you wrote stays". */
-const disclosure: Record<keyof typeof catalogs, string> = {
-  en: 'Anything you wrote',
-  de: 'Was du darin geschrieben hast',
-  es: 'Lo que hayas escrito',
-  ar: 'ويبقى ما كتبته فيها',
-};
-
-describe('co-created recipe disclosure', () => {
+describe('account and profile deletion disclosure', () => {
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    'tells %s readers that their contributions stay behind',
-    (locale) => {
-      const message = catalogs[locale].settings.dataPage.delete.consequences.coCreated;
-      expect(message).toContain(disclosure[locale]);
-    },
-  );
-
-  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    'keeps the disclosure in every non-zero plural form for %s',
-    (locale) => {
-      const message = catalogs[locale].settings.dataPage.delete.consequences.coCreated;
-      // Plural arms look like `one {...}`. The `=0` arm says the user has no
-      // co-created recipes at all, so it has nothing to disclose.
-      const arms = [...message.matchAll(/(?:^|\s)(=0|\w+) \{/g)].map((match) => match[1]!);
-      expect(arms.length).toBeGreaterThan(1);
-
-      const occurrences = message.split(disclosure[locale]).length - 1;
-      const expected = arms.filter((arm) => arm !== '=0').length;
-      expect(occurrences).toBe(expected);
-    },
-  );
-});
-
-/**
- * The held-erasure copy has to exist in every locale (#787).
- *
- * When the notice discloses a hold it stops being decoration and becomes the
- * only thing standing between a user and a promise we do not keep. A missing
- * translation here does not degrade gracefully: next-intl would surface the key
- * itself, in a warning box, at the moment the user is deciding whether to
- * delete their account.
- *
- * Asserted as *presence and shape*, not wording — a translator may rephrase
- * freely. The `count` placeholder is pinned because `held.body` is the sentence
- * that tells the user how many recipes are involved, and a translation that
- * dropped it would render a quantity-free claim.
- */
-describe('held-erasure disclosure', () => {
-  const HELD_KEYS = ['title', 'body', 'what', 'confirmHelp', 'cta', 'toast'];
-
-  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    'gives %s readers the whole held-erasure explanation',
-    (locale) => {
-      const held = catalogs[locale].settings.dataPage.delete.held as Record<string, string>;
-
-      // Pins the key list itself. Asserting only over `Object.keys(held)` would
-      // pass an empty block, which is the vacuity this repo keeps rediscovering.
-      for (const key of HELD_KEYS) {
-        expect(held[key], `${locale} is missing held.${key}`).toBeTruthy();
-      }
-      expect(Object.keys(held).sort()).toEqual([...HELD_KEYS].sort());
-    },
-  );
-
-  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    'keeps the recipe count in the %s held sentence',
-    (locale) => {
-      const body = catalogs[locale].settings.dataPage.delete.held.body;
-      expect(body).toContain('{count, plural,');
-    },
-  );
-
-  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    'does not promise an immediate deletion in the %s held help text',
+    'gives %s readers every shared-content outcome',
     (locale) => {
       const del = catalogs[locale].settings.dataPage.delete;
-      // The whole point of the held variant is that it replaces the standard
-      // confirm help, which says everything is deleted immediately. If the two
-      // ever became the same string the disclosure would be silently gone.
-      expect(del.held.confirmHelp).not.toBe(del.confirm.help);
-      expect(del.held.cta).not.toBe(del.confirm.cta);
+      const consequences = del.consequences as Record<string, string>;
+
+      expect(consequences.recipesDeleted).toContain('{count, plural,');
+      expect(consequences.recipesUnclaimed).toContain('{count, plural,');
+      expect(consequences.coCreated).toContain('{count, plural,');
+      expect(consequences.coCreated).toContain('{versions, plural,');
+      expect(consequences.photos).toContain('{retained, plural,');
+      expect(del.export.body).toBeTruthy();
     },
   );
+
+  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
+    'has no obsolete held-erasure branch in %s',
+    (locale) => {
+      const del = catalogs[locale].settings.dataPage.delete as Record<string, unknown>;
+      expect(del.held).toBeUndefined();
+    },
+  );
+
+  it('does not promise unconditional full deletion in English', () => {
+    const del = en.settings.dataPage.delete;
+    expect(del.description).toContain('may remain');
+    expect(del.confirm.help).toContain('Shared content remains');
+    expect(del.toasts.deleted).not.toContain('everything');
+  });
 });

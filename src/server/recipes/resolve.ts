@@ -83,6 +83,22 @@ export const resolveNamespacedRecipe = cache(
     const recipe = normalizeSegment(recipeSegment);
     if (!cook || !recipe) return null;
 
+    if (cook === 'unclaimed') {
+      const unclaimed = await db.query.recipes.findFirst({
+        where: and(eq(recipes.id, recipe), sql`${recipes.authorId} is null`),
+        columns: { id: true },
+      });
+      if (unclaimed) return { recipeId: unclaimed.id, disposition: 'canonical' };
+
+      // Keep this route resolving after a claim so the route can authorize the
+      // viewer before issuing its permanent redirect to the new owner path.
+      const claimed = await db.query.recipes.findFirst({
+        where: eq(recipes.id, recipe),
+        columns: { id: true },
+      });
+      return claimed ? { recipeId: claimed.id, disposition: 'alias' } : null;
+    }
+
     const owner = await resolveUserSlug(cook);
     if (!owner) return null;
 

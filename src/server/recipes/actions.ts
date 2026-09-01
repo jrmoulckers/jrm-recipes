@@ -138,7 +138,12 @@ const runUpdateRecipe = authedAction({
       // The canonical path is namespaced under the *owner*, who is not
       // necessarily the editor once co-creators can save (#668), so the owner's
       // slug is taken from the mutation rather than from the acting user.
-      await revalidateRecipePaths({ id, slug: recipe.slug, cook: recipe.cook });
+      await revalidateRecipePaths({
+        id,
+        slug: recipe.slug,
+        cook: recipe.cook,
+        authorId: recipe.authorId,
+      });
       revalidateRecipeTags(id);
       return ok({ id, slug: recipe.slug });
     } catch (error) {

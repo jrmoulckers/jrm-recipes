@@ -1,5 +1,6 @@
 import { type Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import type { Route } from 'next';
 
 import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
 import { toPrintRecipe } from '~/server/recipes/serialize';
@@ -7,6 +8,7 @@ import { KeepsakeView } from '~/components/recipe/keepsake-view';
 import { parseKeepsakeMessage } from '~/lib/keepsake';
 import { parseRecipeParams, type RecipeRouteParams } from '~/lib/route-params';
 import { withRouteMessages } from '~/components/i18n/route-messages';
+import { recipeKeepsakePath } from '~/lib/recipe-path';
 
 type KeepsakeSearchParams = {
   from?: string | string[];
@@ -52,8 +54,23 @@ async function KeepsakePage({
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const sp = await searchParams;
   const token = firstParam(sp.t);
-  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
+  const { recipe, disposition } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
   if (!recipe) notFound();
+  if (disposition === 'alias') {
+    const target = recipeKeepsakePath({
+      id: recipe.id,
+      slug: recipe.slug,
+      cook: recipe.author?.slug,
+      authorId: recipe.authorId,
+    });
+    const query = new URLSearchParams();
+    for (const key of ['from', 'note', 't'] as const) {
+      const value = firstParam(sp[key]);
+      if (value) query.set(key, value);
+    }
+    const suffix = query.toString();
+    permanentRedirect(suffix ? (`${target}?${suffix}` as Route) : target);
+  }
 
   const { from, note } = parseKeepsakeMessage({ from: sp.from, note: sp.note });
 

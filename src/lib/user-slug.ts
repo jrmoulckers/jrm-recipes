@@ -18,7 +18,8 @@ export const USER_SLUG_MAX_LENGTH = 60;
  *
  * `r` is reserved on top of that: `/r/<shareToken>` is the unlisted-recipe
  * entry point, and a cook whose profile links read `/r/...` would be confusing
- * at best. `admin`, `api`, and `www` are reserved as conventional footguns.
+ * at best. `unclaimed` is the ownerless-recipe namespace. `admin`, `api`, and
+ * `www` are reserved as conventional footguns.
  *
  * Deliberately dependency-free (no `next`, no DOM types) so it can be imported
  * from server mutations, route handlers, and the service-worker bundle alike.
@@ -26,6 +27,7 @@ export const USER_SLUG_MAX_LENGTH = 60;
 export const RESERVED_USER_SLUGS: ReadonlySet<string> = new Set([
   ...RESERVED_RECIPE_SLUGS,
   'r',
+  'unclaimed',
   'api',
   'admin',
   'www',

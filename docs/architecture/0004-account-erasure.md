@@ -1,10 +1,11 @@
-# ADR-0004: Account Deletion Is Full Erasure
+# ADR-0004: Account deletion removes personal account data
 
-- **Status:** Accepted
+- **Status:** Amended by ADR-0009
 - **Date:** 2026-08-16
 - **Issue:** [#678](https://github.com/jrmoulckers/jrm-recipes/issues/678)
 - **Supersedes:** the "Account deletion rotates the namespace" decision in
   [ADR-0002](./0002-user-scoped-recipe-slugs.md)
+- **Amended by:** [ADR-0009](./0009-account-deletion-and-shared-recipes.md)
 
 ## Context
 
@@ -33,10 +34,16 @@ Two further facts shaped the design:
 
 ## Decision
 
-**Account deletion is a full data deletion, not anonymization.** The `users` row is deleted, the
-Cloudinary bytes are destroyed, and the ~139 cascading foreign keys remove the rest.
+The original decision was full data deletion. ADR-0009 narrows that statement: the account,
+personal profile, and solely owned content are deleted, while contributions accepted into a shared
+recipe remain without a live account reference. The confirmation surface must disclose that
+exception and must not promise unconditional full erasure.
 
-### The co-creator exception, and its asymmetry
+### Historical co-creator exception (superseded)
+
+> This subsection records the former policy. ADR-0009 supersedes it: accepted shared
+> contributions remain without a live identity reference, and an owned recipe with accepted
+> co-creators becomes unclaimed.
 
 A recipe with other creators survives; only the departing user's creator link is removed.
 
@@ -79,7 +86,11 @@ permanently. Four candidate remedies and this ordering constraint are tracked on
 is implemented, because each changes what erasure means and that is a product and legal decision
 rather than an implementation detail.
 
-### Containment while the remedy is undecided
+### Historical containment while the remedy was undecided
+
+> This containment was the interim policy before ADR-0009. New requests are no longer held.
+> Existing `erasure_holds` rows are replayed automatically by the scheduled, cron-authenticated
+> backlog endpoint.
 
 **Decision (#694): an erasure that touches a co-created recipe is held, not executed.**
 
@@ -144,10 +155,11 @@ worst case, because the row is the only record that a Cloudinary asset exists, s
 destroys the bookkeeping without ever calling `uploader.destroy`. With `restrict`, a missed step is
 a loud foreign-key violation instead of irreversible data loss.
 
-The order is therefore: destroy remote bytes → **abort the whole erasure if any survived** → delete
-rows inside one transaction → delete the `users` row → assert nothing remains → write the tombstone.
-A retryable partial failure is strictly better than a half-erased account that everyone believes is
-gone.
+The current order is one database transaction: lock and classify affected recipes → transfer media
+used by retained shared recipes → destroy the remaining remote bytes → **abort and roll back if any
+survived** → apply recipe retention and row deletion → delete the `users` row → write the tombstone.
+After commit, the application asserts that no live identity reference remains. Remote deletion can
+partially precede a rollback, so retries treat already-absent Cloudinary assets as success.
 
 ### The tombstone stores hashes and counts only
 
@@ -158,7 +170,8 @@ the only identifying row is gone.
 A record rich enough to be useful would re-create the profile the erasure just removed, so
 identifiers are stored only as **salted** SHA-256 (`DELETION_HASH_SALT`). Salted, not bare: a plain
 hash of a known cuid2 is trivially confirmable by anyone holding the table. No email, name, handle,
-slug, raw id, recipe title, or any free text is stored — counts and hashes only.
+slug, raw id, recipe title, or any free text is stored — counts and hashes only. Account deletion
+fails closed when the salt is unavailable, and the evidence row commits atomically with deletion.
 
 ### Freed URLs return 404, and the slugs become claimable
 
@@ -194,6 +207,10 @@ It is contained, not eliminated:
 The residual — a reclaimed slug serving the new holder's same-named recipe — is the accepted part.
 
 ## The pre-confirmation notice
+
+ADR-0009 replaces the original full-erasure wording. The current notice names account and profile
+deletion, separately counts retained shared content and media, and warns that retained content may
+remain identifiable from context.
 
 Erasure is instantaneous and irreversible, so consent has to be informed _before_ the button, not
 explained after it. Three properties, implemented in `src/components/settings/delete-account-panel.tsx`:
@@ -241,9 +258,8 @@ a no-op.
 
 - Deletion is irreversible. There is no undo, and the pre-deletion export
   (`/api/backup`) is the only recovery path, which is why the confirmation flow must offer it.
-- **Erasure is not always immediate.** An account entangled in a co-created recipe is held until the
-  #694 remedy lands (see "Containment while the remedy is undecided"). The request is durable and
-  replayable, but the person is still waiting, so the backlog needs watching rather than filing.
+- Historical holds created before ADR-0009 remain durable until the authenticated replay endpoint
+  processes them through the current deletion path.
 - Restoring a backup taken before an erasure resurrects the deleted user.
   `docs/db-backup-and-recovery.md` gains a mandatory re-application gate before a restored instance
   can be promoted.

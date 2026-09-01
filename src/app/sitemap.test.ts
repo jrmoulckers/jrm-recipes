@@ -25,10 +25,18 @@ describe('sitemap', () => {
   it('lists static routes plus every public recipe with lastModified', async () => {
     const updatedAt = new Date('2024-05-02T10:00:00.000Z');
     mockList.mockResolvedValue([
-      { slug: 'peach-cobbler', cook: 'nonna', updatedAt },
       {
+        id: 'rec_1',
+        slug: 'peach-cobbler',
+        cook: 'nonna',
+        authorId: 'usr_1',
+        updatedAt,
+      },
+      {
+        id: 'rec_2',
         slug: 'sourdough',
         cook: 'nonna',
+        authorId: 'usr_1',
         updatedAt: new Date('2024-01-01T00:00:00.000Z'),
       },
     ]);
@@ -43,6 +51,21 @@ describe('sitemap', () => {
     expect(cobbler).toBeDefined();
     expect(cobbler!.lastModified).toEqual(updatedAt);
     expect(entries).toHaveLength(5);
+  });
+
+  it('lists an ownerless public recipe at its unclaimed canonical URL', async () => {
+    mockList.mockResolvedValue([
+      {
+        id: 'rec_orphan',
+        slug: 'soup',
+        cook: null,
+        authorId: null,
+        updatedAt: new Date('2024-05-02T10:00:00.000Z'),
+      },
+    ]);
+
+    const entries = await sitemap();
+    expect(entries.some((entry) => entry.url.endsWith('/recipes/unclaimed/rec_orphan'))).toBe(true);
   });
 
   it('includes public cook profiles', async () => {

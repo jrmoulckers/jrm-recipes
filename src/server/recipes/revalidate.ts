@@ -58,6 +58,7 @@ export async function revalidateRecipePaths(
     id: string;
     slug: string | null;
     cook?: string | null;
+    authorId?: string | null;
   },
   extraCreators: RecipeCreatorRef[] = [],
 ): Promise<void> {
@@ -84,7 +85,7 @@ export async function revalidateRecipeSlugPaths(recipeSlug: string): Promise<voi
   if (!isDbConfigured()) return;
   const owned = await db.query.recipes.findMany({
     where: and(eq(recipes.slug, recipeSlug), isNull(recipes.deletedAt)),
-    columns: { id: true, slug: true },
+    columns: { id: true, slug: true, authorId: true },
     with: { author: { columns: { slug: true } } },
   });
   const coCreated = await db.query.recipeCreators.findMany({
@@ -92,20 +93,30 @@ export async function revalidateRecipeSlugPaths(recipeSlug: string): Promise<voi
     columns: { id: true },
     with: {
       recipe: {
-        columns: { id: true, slug: true, deletedAt: true },
+        columns: { id: true, slug: true, authorId: true, deletedAt: true },
         with: { author: { columns: { slug: true } } },
       },
     },
   });
 
-  const targets = new Map<string, { slug: string | null; cook?: string }>();
-  for (const row of owned) targets.set(row.id, { slug: row.slug, cook: row.author?.slug });
+  const targets = new Map<
+    string,
+    { slug: string | null; cook?: string; authorId: string | null }
+  >();
+  for (const row of owned) {
+    targets.set(row.id, {
+      slug: row.slug,
+      cook: row.author?.slug,
+      authorId: row.authorId,
+    });
+  }
   for (const row of coCreated) {
     const recipe = row.recipe;
     if (!recipe || recipe.deletedAt) continue;
     targets.set(recipe.id, {
       slug: recipe.slug,
       cook: recipe.author?.slug,
+      authorId: recipe.authorId,
     });
   }
 
