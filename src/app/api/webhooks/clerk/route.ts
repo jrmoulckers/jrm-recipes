@@ -1,9 +1,5 @@
 import { env } from '~/env';
-import {
-  handleClerkEvent,
-  type ClerkEventOutcome,
-  type ClerkWebhookEvent,
-} from '~/server/auth/clerk-webhook';
+import { handleClerkEvent, type ClerkWebhookEvent } from '~/server/auth/clerk-webhook';
 import { verifySvixSignature } from '~/server/auth/svix';
 
 /**
@@ -50,24 +46,11 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Invalid payload.' }, { status: 400 });
   }
 
-  let outcome: ClerkEventOutcome;
   try {
-    outcome = await handleClerkEvent(event);
+    await handleClerkEvent(event);
   } catch {
     // Return 5xx so Clerk retries. Handlers are idempotent, so replay is safe.
     return Response.json({ error: 'Webhook processing failed.' }, { status: 500 });
-  }
-
-  // A held erasure (#694) is accepted and durably recorded, but not performed.
-  // 202, not 200: the request is not complete, and the body says so rather than
-  // reporting a deletion that did not happen. Deliberately not a 5xx — retrying
-  // cannot help until a remedy ships, so an error here would be an endless
-  // redelivery loop against a request we are intentionally holding.
-  if (outcome === 'held') {
-    return Response.json(
-      { received: true, status: 'held', reason: 'co_created_entanglement' },
-      { status: 202 },
-    );
   }
 
   return Response.json({ received: true });

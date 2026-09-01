@@ -434,19 +434,21 @@ export type PublicRecipeCard = NonNullable<Awaited<ReturnType<typeof getPublicRe
  * unconfigured so the sitemap still renders its static routes.
  */
 export async function listPublicRecipeSlugs(): Promise<
-  { slug: string; cook: string; updatedAt: Date }[]
+  { id: string; slug: string; cook: string | null; authorId: string | null; updatedAt: Date }[]
 > {
   if (!isDbConfigured()) return [];
   return db
     .select({
+      id: recipes.id,
       slug: recipes.slug,
       // The sitemap must advertise the canonical namespaced URL, not the flat
       // legacy one that only redirects to it (#666).
       cook: users.slug,
+      authorId: recipes.authorId,
       updatedAt: recipes.updatedAt,
     })
     .from(recipes)
-    .innerJoin(users, eq(users.id, recipes.authorId))
+    .leftJoin(users, eq(users.id, recipes.authorId))
     .where(and(notDeleted, eq(recipes.visibility, 'public'), eq(recipes.status, 'published')))
     .orderBy(desc(recipes.updatedAt));
 }
@@ -574,7 +576,7 @@ export async function isRecipeCreator(recipeId: string, userId: string): Promise
  * lazily, only for a viewer the cheaper grounds have already rejected.
  */
 export function canView(
-  recipe: { authorId: string; visibility: string; groupId: string | null },
+  recipe: { authorId: string | null; visibility: string; groupId: string | null },
   viewer: User | null,
   groupIds: string[],
   creatorIds: string[] = [],
@@ -604,7 +606,7 @@ export function canView(
 export async function canViewRecipe(
   recipe: {
     id?: string;
-    authorId: string;
+    authorId: string | null;
     visibility: string;
     groupId: string | null;
   },
@@ -2017,7 +2019,7 @@ type TreeRow = {
   slug: string;
   title: string;
   visibility: string;
-  authorId: string;
+  authorId: string | null;
   groupId: string | null;
   forkedFromId: string | null;
   author: { name: string | null } | null;

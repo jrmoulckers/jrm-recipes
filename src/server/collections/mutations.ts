@@ -27,7 +27,7 @@ async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {
 
 /** Mirror of the recipe visibility rules. Can this user see this recipe? */
 function canView(
-  recipe: { authorId: string; visibility: string; groupId: string | null },
+  recipe: { authorId: string | null; visibility: string; groupId: string | null },
   viewer: User,
   groupIds: string[],
 ): boolean {

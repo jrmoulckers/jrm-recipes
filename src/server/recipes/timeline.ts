@@ -167,6 +167,7 @@ const KIND_ORDER: Record<TimelineEntry['kind'], number> = {
   adapted: 0,
   updated: 1,
   suggestion_applied: 1,
+  claimed: 1,
   published: 2,
   adaptation: 3,
 };

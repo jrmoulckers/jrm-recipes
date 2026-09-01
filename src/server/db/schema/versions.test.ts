@@ -119,8 +119,6 @@ describe('recipe_versions retention (issue #699)', () => {
       pattern: /\.delete\(\s*recipeVersions\s*\)/,
       harm: 'destroys the snapshots outright',
       sanctioned: [
-        // Account erasure, scoped to the departing user's own rows.
-        ERASURE,
         // Dev-only reseed of an existing recipe.
         join('server', 'db', 'seed.ts'),
       ],
@@ -144,8 +142,8 @@ describe('recipe_versions retention (issue #699)', () => {
       pattern: /\.delete\(\s*users\s*\)/,
       harm:
         'nulls recipe_versions.author_id via `authorId ON DELETE set null`, which ' +
-        'deletes no row and no text but severs the attribution that derived ' +
-        'provenance (#686) needs, leaving a table that still looks fully populated',
+        'deletes no row and no text but removes its live identity reference. ' +
+        'ADR-0009 permits that only in the account-deletion path',
       sanctioned: [ERASURE],
       probe: 't.delete(users).where(eq(users.id, userId))',
     },

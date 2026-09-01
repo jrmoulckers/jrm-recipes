@@ -2,12 +2,14 @@
 
 import { z } from 'zod';
 
+import { recipeDetailPath } from '~/lib/recipe-path';
 import { authedAction } from '~/server/action';
 import { type ActionResult, fail, ok } from '~/server/action-result';
 import { messageForError } from '~/server/errors';
 import { checkRateLimit, RATE_LIMITED_MESSAGE } from '~/server/rate-limit';
 import {
   acceptRecipeCreatorInvite,
+  claimRecipe,
   declineRecipeCreatorInvite,
   findCreatorTarget,
   inviteRecipeCreator,
@@ -36,6 +38,7 @@ const MESSAGES = {
   ALREADY_ACCEPTED: "They're already a co-creator of this recipe.",
   NOT_PENDING: 'That invitation is no longer pending.',
   OWNER_CANT_LEAVE: "You own this recipe, so you can't step down from it.",
+  CONFLICT: 'Another creator already claimed this recipe.',
 } as const;
 
 const recipeCreatorInput = z.object({
@@ -131,6 +134,26 @@ export const leaveRecipeAsCreatorAction = authedAction({
     try {
       await fanOut(await leaveRecipeAsCreator(data.recipeId, user.id));
       return ok();
+    } catch (error) {
+      return fail(messageForError(error, MESSAGES));
+    }
+  },
+});
+
+/** Claim an ownerless recipe. The guarded update makes the first claimant win. */
+export const claimRecipeAction = authedAction({
+  input: recipeOnlyInput,
+  handler: async (
+    data,
+    user,
+  ): Promise<ActionResult<{ path: ReturnType<typeof recipeDetailPath> }>> => {
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+    try {
+      const claimed = await claimRecipe(data.recipeId, user.id);
+      await revalidateRecipePaths(claimed.before, [claimed.removed]);
+      await revalidateRecipePaths(claimed.after);
+      revalidateRecipeTags(data.recipeId);
+      return ok({ path: recipeDetailPath(claimed.after) });
     } catch (error) {
       return fail(messageForError(error, MESSAGES));
     }

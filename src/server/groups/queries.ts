@@ -45,7 +45,7 @@ export function isOwner(role: MemberRole | null | undefined): boolean {
  */
 export function canListInGroupCookbook(
   recipe: {
-    authorId: string;
+    authorId: string | null;
     visibility: string;
     status: string;
     deletedAt: Date | null;

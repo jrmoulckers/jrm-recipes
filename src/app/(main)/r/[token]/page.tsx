@@ -50,8 +50,8 @@ async function SharedRecipePage({ params }: { params: Promise<TokenRouteParams> 
   return (
     <RecipePage
       params={Promise.resolve({
-        cook: recipe.author.slug,
-        recipe: recipe.slug,
+        cook: recipe.author?.slug ?? 'unclaimed',
+        recipe: recipe.author ? recipe.slug : recipe.id,
       })}
       shareToken={token}
     />

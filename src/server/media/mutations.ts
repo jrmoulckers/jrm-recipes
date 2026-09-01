@@ -8,6 +8,7 @@ import { db, isDbConfigured } from '~/server/db';
 import { decrementUsage, incrementUsage } from '~/server/billing/usage';
 import { mediaAssets, type MediaAsset, type User } from '~/server/db/schema';
 import { type RecordUploadInput } from './validation';
+import { cloudinaryRefFromUrl } from './public-id';
 
 /**
  * Write side of the media library (issue #657, epic #655).
@@ -44,12 +45,14 @@ export async function recordUpload(
   user: User,
 ): Promise<MediaAsset | null> {
   if (!isDbConfigured()) return null;
+  const resourceType = cloudinaryRefFromUrl(input.url)?.resourceType ?? 'image';
 
   if (input.publicId) {
     const existing = await db.query.mediaAssets.findFirst({
       where: and(
         eq(mediaAssets.userId, user.id),
         eq(mediaAssets.publicId, input.publicId),
+        eq(mediaAssets.resourceType, resourceType),
         isNull(mediaAssets.deletedAt),
       ),
     });
@@ -61,6 +64,7 @@ export async function recordUpload(
         .update(mediaAssets)
         .set({
           url: input.url,
+          resourceType,
           altText: input.altText ?? existing.altText,
           width: input.width ?? existing.width,
           height: input.height ?? existing.height,
@@ -79,6 +83,7 @@ export async function recordUpload(
     .values({
       userId: user.id,
       provider: input.publicId ? 'cloudinary' : 'external',
+      resourceType,
       publicId: input.publicId ?? null,
       url: input.url,
       altText: input.altText ?? null,
@@ -160,7 +165,10 @@ export async function deleteAsset(id: string, user: User): Promise<void> {
 
     const result = (await cloudinary.uploader.destroy(asset.publicId, {
       invalidate: true,
-      resource_type: 'image',
+      resource_type:
+        asset.resourceType === 'video' || asset.resourceType === 'raw'
+          ? asset.resourceType
+          : (cloudinaryRefFromUrl(asset.url)?.resourceType ?? 'image'),
     })) as { result?: string };
 
     // `not found` means the asset is already gone (a prior half-completed

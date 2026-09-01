@@ -32,9 +32,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const recipeRoutes: MetadataRoute.Sitemap = recipes.map((recipe) => ({
     url: absoluteUrl(
       recipeDetailPath({
-        id: recipe.slug,
+        id: recipe.id,
         slug: recipe.slug,
         cook: recipe.cook,
+        authorId: recipe.authorId,
       }),
     ),
     lastModified: recipe.updatedAt,

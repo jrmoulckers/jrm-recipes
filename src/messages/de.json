@@ -2675,7 +2675,8 @@
         "adaptedByFamily": "Von der Familie angepasst",
         "published": "Mit der Familie geteilt",
         "suggestionApplied": "Vorschlag übernommen",
-        "updated": "Aktualisiert"
+        "updated": "Aktualisiert",
+        "claimed": "Inhaberschaft übernommen"
       }
     },
     "rotation": {
@@ -2987,45 +2988,38 @@
         "body": "Die Sicherung enthält jedes Rezept deines Kontos, deshalb müssen wir wissen, dass du es bist."
       },
       "delete": {
-        "title": "Mein Konto löschen",
-        "description": "Damit werden dein Konto und alles darin entfernt. Wir verstecken deine Rezepte nicht und behalten auch keine Kopie. Sie sind endgültig gelöscht.",
+        "title": "Konto und persönliches Profil löschen",
+        "description": "Damit werden deine Anmeldung, dein Profil und Inhalte entfernt, die ausschließlich dir gehören. Angenommene Beiträge zu geteilten Rezepten können ohne Verknüpfung zu deinem Konto bestehen bleiben.",
         "consequences": {
           "title": "Das passiert genau",
-          "titleHeld": "Das passiert genau, sobald wir das abschließen können",
-          "recipes": "{count, plural, =0 {Du hast keine eigenen Rezepte, die gelöscht werden.} one {Dein # Rezept wird endgültig gelöscht, samt Geschichte, Notizen und Fotos.} other {Alle # Rezepte von dir werden endgültig gelöscht, samt Geschichten, Notizen und Fotos.}}",
+          "recipesDeleted": "{count, plural, =0 {Du hast keine ausschließlich eigenen Rezepte, die gelöscht werden.} one {Dein # ausschließlich eigenes Rezept wird endgültig gelöscht.} other {Deine # ausschließlich eigenen Rezepte werden endgültig gelöscht.}}",
+          "recipesUnclaimed": "{count, plural, one {# Rezept mit weiteren angenommenen Mitwirkenden bleibt ohne Inhaberschaft bestehen. Niemand muss es übernehmen.} other {# Rezepte mit weiteren angenommenen Mitwirkenden bleiben ohne Inhaberschaft bestehen. Niemand muss sie übernehmen.}}",
+          "sharedRecipesDeleted": "{count, plural, one {# nicht öffentliches, nicht beanspruchtes Rezept wird gelöscht, weil keine weitere angenommene mitwirkende Person bleibt.} other {# nicht öffentliche, nicht beanspruchte Rezepte werden gelöscht, weil keine weitere angenommene mitwirkende Person bleibt.}}",
           "cooking": "Dein Kochverlauf geht ebenfalls: {cookLogs, plural, one {# Eintrag im Kochtagebuch} other {# Einträge im Kochtagebuch}}, {reviews, plural, one {# Bewertung} other {# Bewertungen}} und {collections, plural, one {# Sammlung} other {# Sammlungen}}.",
-          "photos": "Jedes Foto, das du hochgeladen hast, wird aus unserem Bildspeicher gelöscht, nicht nur ausgeblendet.",
-          "coCreated": "{count, plural, one {# Rezept, um das du dich mitkümmerst, gehört jemand anderem. Es bleibt dort. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.} other {# Rezepte, um die du dich mitkümmerst, gehören anderen. Sie bleiben bei ihren Besitzern. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.}}",
+          "photos": "{retained, plural, =0 {Fotos, die kein erhaltenes geteiltes Rezept nutzt, werden aus dem Bildspeicher gelöscht.} one {# hochgeladene Mediendatei bleibt erhalten, weil ein geteiltes Rezept sie nutzt. Ihre Lebenszyklus-Verantwortung wechselt. Andere Medien werden gelöscht.} other {# hochgeladene Mediendateien bleiben erhalten, weil geteilte Rezepte sie nutzen. Ihre Lebenszyklus-Verantwortung wechselt. Andere Medien werden gelöscht.}}",
+          "coCreated": "{count, plural, one {Deine Beiträge zu # geteilten Rezept bleiben ohne Verknüpfung zu deinem Konto bestehen.} other {Deine Beiträge zu # geteilten Rezepten bleiben ohne Verknüpfung zu deinem Konto bestehen.}} {versions, plural, one {# Verlaufseintrag bleibt als „Unbekannte mitwirkende Person“ bestehen.} other {# Verlaufseinträge bleiben als „Unbekannte mitwirkende Person“ bestehen.}} Text oder Bilder können dich durch ihren Inhalt oder familiären Zusammenhang weiterhin erkennen lassen.",
           "pendingInvites": "{count, plural, one {# Einladung, ein Rezept mitzugestalten, wird zurückgezogen.} other {# Einladungen, Rezepte mitzugestalten, werden zurückgezogen.}}",
-          "subscription": "Dein Abo wird gekündigt. Den laufenden Zeitraum können wir nach der Löschung nicht mehr erstatten.",
-          "links": "Geteilte Rezeptlinks funktionieren nicht mehr. Dein Kochname wird für andere wieder frei.",
-          "irreversible": "Es gibt kein Rückgängig, keine Schonfrist und keine Möglichkeit für uns, etwas davon zurückzuholen."
+          "subscription": "Das Löschen deines Kontos beendet keine aktive Abrechnung. Kündige dein Abo vor der Kontolöschung unter Abrechnung.",
+          "links": "Dein Kochname wird für andere wieder frei. Erhaltene Rezepte ohne Inhaberschaft bekommen einen stabilen Link für nicht beanspruchte Rezepte.",
+          "irreversible": "Die Kontolöschung kann nicht rückgängig gemacht werden und hat keine Schonfrist. Du kannst den Support später unter Angabe des Rezeptlinks bitten, bestimmte erkennbare Texte oder Bilder zu entfernen."
         },
         "groups": {
           "title": "Du bist die einzige Inhaberin oder der einzige Inhaber einer Familiengruppe",
           "body": "{groups} bliebe ohne Inhaberschaft zurück. Mach bitte vorher jemand anderen zur Inhaberin oder zum Inhaber, sonst können die Mitglieder die Gruppe nicht mehr verwalten."
         },
-        "held": {
-          "title": "Wir können diese Löschung noch nicht abschließen",
-          "body": "{count, plural, one {Du teilst # Rezept mit jemand anderem.} other {Du teilst # Rezepte mit anderen Personen.}} Wir können deine Texte noch nicht von ihren trennen, ohne die Aufzeichnung darüber zu zerstören, wer was geschrieben hat, und wir löschen dich nicht zur Hälfte, um dorthin zu kommen.",
-          "what": "Wenn du fortfährst, halten wir deine Anfrage fest und löschen heute nichts. Dein Konto, deine Rezepte und deine Fotos bleiben genau so, wie sie sind, bis wir das sauber erledigen können.",
-          "confirmHelp": "Mit dem Klick wird deine Anfrage festgehalten. Heute wird nichts gelöscht, und wir melden uns, sobald es erledigt ist.",
-          "cta": "Meine Löschanfrage senden",
-          "toast": "Deine Anfrage ist festgehalten, und es wurde nichts gelöscht. Wir melden uns, sobald wir sie abschließen können."
-        },
         "export": {
-          "body": "Nimm dein Kochbuch vorher mit. Der Download ist dieselbe vollständige Sicherung und funktioniert für immer offline.",
+          "body": "Nimm vorher dein Kochbuch und den Verlauf deiner Beiträge zu geteilten Rezepten mit. Der Download funktioniert offline.",
           "cta": "Erst mein Kochbuch herunterladen"
         },
-        "start": "Mein Konto löschen",
+        "start": "Konto und persönliches Profil löschen",
         "confirm": {
           "label": "Tippe {phrase}, um zu bestätigen",
-          "help": "Sobald du den Knopf drückst, wird alles oben Genannte sofort gelöscht.",
-          "cta": "Alles endgültig löschen",
+          "help": "Dein Konto und dein persönliches Profil werden sofort gelöscht. Geteilte Inhalte bleiben nur wie oben beschrieben bestehen.",
+          "cta": "Konto und persönliches Profil löschen",
           "cancel": "Mein Konto behalten"
         },
         "toasts": {
-          "deleted": "Dein Konto und alles darin wurde gelöscht. Mach's gut."
+          "deleted": "Dein Konto und dein persönliches Profil wurden gelöscht. Mach's gut."
         }
       }
     }
@@ -3830,7 +3824,18 @@
       }
     },
     "byline": {
-      "with": "mit {names}"
+      "with": "mit {names}",
+      "unknownContributor": "Unbekannte mitwirkende Person"
+    },
+    "claim": {
+      "action": "Dieses Rezept übernehmen",
+      "pending": "Wird übernommen…",
+      "toast": "Dieses Rezept gehört jetzt dir.",
+      "confirm": {
+        "title": "Dieses Rezept übernehmen?",
+        "description": "Du wirst für Sichtbarkeit, Löschung und erhaltene Medien dieses Rezepts verantwortlich.",
+        "confirmLabel": "Rezept übernehmen"
+      }
     },
     "leave": {
       "action": "Rezept verlassen",

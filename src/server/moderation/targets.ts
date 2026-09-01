@@ -21,7 +21,7 @@ export type ResolvedTarget = {
   recipeId: string;
   /** The owning recipe, for access checks + which group can moderate it. */
   recipe: {
-    authorId: string;
+    authorId: string | null;
     visibility: string;
     groupId: string | null;
   };

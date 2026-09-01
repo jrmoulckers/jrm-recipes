@@ -83,6 +83,7 @@ import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
 import { listRecipeCreators } from '~/server/recipes/creators';
 import { RecipeCreatorManager } from '~/components/recipe/creator-manager';
 import { LeaveRecipeButton } from '~/components/recipe/leave-recipe-button';
+import { ClaimRecipeButton } from '~/components/recipe/claim-recipe-button';
 import { getRecipeNutritionView } from '~/server/recipes/nutrition';
 import { getMembership } from '~/server/groups/queries';
 import { isKid } from '~/server/groups/kid-safe';
@@ -112,7 +113,8 @@ export async function generateMetadata({
     recipeDetailPath({
       id: recipe.id,
       slug: recipe.slug,
-      cook: recipe.author.slug,
+      cook: recipe.author?.slug,
+      authorId: recipe.authorId,
     }),
   );
   const isPublic = recipe.visibility === 'public';
@@ -193,7 +195,8 @@ async function RecipePage({
     const ref = {
       id: recipe.id,
       slug: recipe.slug,
-      cook: recipe.author.slug,
+      cook: recipe.author?.slug,
+      authorId: recipe.authorId,
     };
     // A pre-cutover sub-route link (`/recipes/<slug>/cook`) keeps its sub-route
     // and its query, so a shared keepsake link still arrives with its note.
@@ -224,7 +227,8 @@ async function RecipePage({
   const pathRef = {
     id: recipe.id,
     slug: recipe.slug,
-    cook: recipe.author.slug,
+    cook: recipe.author?.slug,
+    authorId: recipe.authorId,
   };
   const classifications = groupRecipeClassifications(recipe.tags, recipe.cuisine);
   const declaredDietary = (recipe.dietaryFlags ?? []).filter(isDietaryTag);
@@ -469,10 +473,10 @@ async function RecipePage({
           )}
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            {recipe.author?.name && (
+            {(recipe.author?.name || recipe.authorId === null) && (
               <span>
                 {t('by')}{' '}
-                {recipe.author.handle ? (
+                {recipe.author?.handle ? (
                   <Link
                     href={`/cooks/${recipe.author.handle}`}
                     className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
@@ -480,7 +484,9 @@ async function RecipePage({
                     {recipe.author.name}
                   </Link>
                 ) : (
-                  <span className="font-medium text-foreground">{recipe.author.name}</span>
+                  <span className="font-medium text-foreground">
+                    {recipe.author?.name ?? tCreators('byline.unknownContributor')}
+                  </span>
                 )}
                 {/* Co-creators are named next to the owner rather than in a
                     separate block (#668): they wrote part of this recipe, and
@@ -619,6 +625,9 @@ async function RecipePage({
                       entirely the owner's call, so this is their only way to end
                       an attachment that is public under their own name (#668). */}
                   {viewerIsCreator && <LeaveRecipeButton recipeId={recipe.id} />}
+                  {viewerIsCreator && recipe.authorId === null && (
+                    <ClaimRecipeButton recipeId={recipe.id} />
+                  )}
                 </GrownUpControls>
               )}
             </RecipeActionsMenu>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { log } from '~/lib/log';
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import { eraseUserAccount } from '~/server/users/erasure';
@@ -21,14 +22,14 @@ function messageFor(error: unknown): { error: string; code?: string } {
     return {
       code: 'MEDIA_PURGE_INCOMPLETE',
       error:
-        "We couldn't remove all of your photos, so we stopped before deleting anything else. Nothing has been lost. Please try again in a few minutes.",
+        "We couldn't remove all of your photos. Some remote photos may already be gone, but your account and database records remain so the deletion can be retried safely.",
     };
   }
   if (code === 'MEDIA_PURGE_NOT_CONFIGURED') {
     return {
       code: 'MEDIA_PURGE_NOT_CONFIGURED',
       error:
-        "Photo storage isn't configured on this server, so we can't guarantee a complete deletion. Nothing has been deleted.",
+        "Photo storage isn't configured on this server, so we can't guarantee a complete deletion. Your account and database records remain.",
     };
   }
   if (code === 'UNAUTHENTICATED') {
@@ -38,7 +39,8 @@ function messageFor(error: unknown): { error: string; code?: string } {
     };
   }
   return {
-    error: "We couldn't complete the deletion, so nothing has been deleted. Please try again.",
+    error:
+      "We couldn't complete the deletion. Some remote photos may already be gone; please try again.",
   };
 }
 
@@ -77,23 +79,10 @@ export async function deleteAccountAction(confirmation: string): Promise<DeleteA
     const user = await requireUser();
     clerkId = user.clerkId ?? null;
 
-    const result = await eraseUserAccount(user.id, {
+    await eraseUserAccount(user.id, {
       trigger: 'in_app',
       noticeVersion: DELETION_NOTICE_VERSION,
     });
-
-    // Held, not failed, and not done (#694). Nothing was deleted, so the Clerk
-    // identity must stay too: removing it here would strand a sign-in for an
-    // account whose data is still present. Say so plainly rather than reporting
-    // an erasure that has not happened.
-    if (result.status === 'held') {
-      return {
-        ok: false,
-        code: 'ERASURE_HELD',
-        error:
-          "Your request is recorded, and nothing has been deleted yet. Some of your writing is part of a recipe you share with someone else, and we can't separate it safely today. We'll finish your deletion as soon as we can, and we'll be in touch.",
-      };
-    }
   } catch (error) {
     return { ok: false, ...messageFor(error) };
   }
@@ -110,6 +99,7 @@ export async function deleteAccountAction(confirmation: string): Promise<DeleteA
       // Swallowed on purpose. The webhook and a manual admin delete both
       // converge on the same erased state, and `hasBeenErased` makes the
       // repeat a no-op.
+      log.error('account.clerk_cleanup_failed');
     }
   }
 

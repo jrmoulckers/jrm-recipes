@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import type { Route } from 'next';
 
 import { getCurrentUser } from '~/server/auth';
@@ -12,6 +12,7 @@ import { parseRecipeParams, type RecipeRouteParams } from '~/lib/route-params';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { resolveNamespacedRecipe } from '~/server/recipes/resolve';
 import { withRouteMessages } from '~/components/i18n/route-messages';
+import { recipeEditPath } from '~/lib/recipe-path';
 
 export const metadata = { title: 'Edit recipe' };
 
@@ -29,6 +30,16 @@ async function EditRecipePage({ params }: { params: Promise<RecipeRouteParams> }
   // (#668). A pending invitee resolves to nothing and gets a 404.
   const recipe = await getEditableRecipe(resolved.recipeId, user.id);
   if (!recipe) notFound();
+  if (resolved.disposition === 'alias') {
+    permanentRedirect(
+      recipeEditPath({
+        id: recipe.id,
+        slug: recipe.slug,
+        cook: recipe.author?.slug,
+        authorId: recipe.authorId,
+      }),
+    );
+  }
 
   const groups = await listUserGroups(user.id);
   const customUnits = isDbConfigured() ? toCustomUnitDefs(await listCustomUnits(user.id)) : [];

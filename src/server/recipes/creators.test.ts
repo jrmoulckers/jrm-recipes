@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { dbMock, hiddenMock, notifyMock, uniqueSlugMock } = vi.hoisted(() => ({
+const { custodyTransferMock, dbMock, hiddenMock, notifyMock, uniqueSlugMock } = vi.hoisted(() => ({
+  custodyTransferMock: vi.fn(),
   dbMock: {
     query: {
       recipes: { findFirst: vi.fn() },
@@ -22,6 +23,17 @@ vi.mock('~/server/moderation/blocks', () => ({
   getHiddenAuthorIds: hiddenMock,
 }));
 vi.mock('~/server/notifications/notify', () => ({ notify: notifyMock }));
+vi.mock('~/server/media/custody', () => ({
+  transferCustodiedMediaToClaimantInTransaction: custodyTransferMock,
+}));
+vi.mock('~/server/media/purge', () => ({
+  purgeRecipeCustodiedMedia: vi.fn(async () => ({
+    purged: 0,
+    failed: [],
+    skippedExternal: 0,
+  })),
+  isPurgeComplete: (result: { failed: string[] }) => result.failed.length === 0,
+}));
 vi.mock('./mutations', () => ({
   uniqueSlug: uniqueSlugMock,
   // Pass-through: the retry wrapper's own behaviour is covered in mutations.test.
@@ -30,6 +42,7 @@ vi.mock('./mutations', () => ({
 
 import {
   acceptRecipeCreatorInvite,
+  claimRecipe,
   declineRecipeCreatorInvite,
   inviteRecipeCreator,
   leaveRecipeAsCreator,
@@ -51,11 +64,21 @@ const RECIPE = {
 function txDouble() {
   const inserted: Record<string, unknown>[] = [];
   const updated: Record<string, unknown>[] = [];
+  const operations: string[] = [];
   let deleteResult: unknown[] = [];
   let updateResult: unknown[] = [{ id: 'rc_1' }];
 
   const tx = {
-    query: { recipeCreators: { findFirst: vi.fn() } },
+    query: {
+      recipes: {
+        findFirst: vi.fn().mockImplementation(() => dbMock.query.recipes.findFirst()),
+      },
+      recipeCreators: { findFirst: vi.fn() },
+    },
+    execute: vi.fn().mockImplementation(() => {
+      operations.push('lock');
+      return Promise.resolve([]);
+    }),
     insert: () => ({
       values: (v: Record<string, unknown>) => {
         inserted.push(v);
@@ -69,7 +92,10 @@ function txDouble() {
       },
     }),
     delete: () => ({
-      where: () => ({ returning: () => deleteResult }),
+      where: () => {
+        operations.push('delete');
+        return { returning: () => deleteResult };
+      },
     }),
   };
 
@@ -78,6 +104,7 @@ function txDouble() {
   return {
     tx,
     inserted,
+    operations,
     updated,
     setDeleteResult: (rows: unknown[]) => {
       deleteResult = rows;
@@ -92,6 +119,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   hiddenMock.mockResolvedValue(new Set<string>());
   uniqueSlugMock.mockResolvedValue('apple-pie');
+  custodyTransferMock.mockResolvedValue({
+    transferredToUsers: 0,
+    transferredToRecipes: 0,
+    convergedDuplicates: 0,
+    meteredMb: 0,
+  });
   dbMock.query.recipes.findFirst.mockResolvedValue(RECIPE);
   dbMock.query.users.findFirst.mockResolvedValue({
     id: INVITEE,
@@ -119,6 +152,47 @@ describe('inviteRecipeCreator (owner consent)', () => {
       },
     ]);
     expect(inserted[0]).not.toHaveProperty('slug');
+  });
+
+  describe('claimRecipe', () => {
+    it('promotes an accepted creator with a guarded owner update and records an event', async () => {
+      const { tx, inserted, updated } = txDouble();
+      tx.query.recipeCreators.findFirst.mockResolvedValue({
+        id: 'creator_1',
+        slug: 'apple-pie',
+        user: { slug: 'bo' },
+      });
+
+      await expect(claimRecipe(RECIPE.id, INVITEE)).resolves.toEqual({
+        before: { id: RECIPE.id, slug: 'apple-pie', authorId: null },
+        after: {
+          id: RECIPE.id,
+          slug: 'apple-pie',
+          cook: 'bo',
+          authorId: INVITEE,
+        },
+        removed: { cook: 'bo', slug: 'apple-pie' },
+      });
+      expect(updated[0]).toMatchObject({ authorId: INVITEE, slug: 'apple-pie' });
+      expect(custodyTransferMock).toHaveBeenCalledWith(tx, RECIPE.id, INVITEE);
+      expect(inserted).toContainEqual({
+        recipeId: RECIPE.id,
+        actorId: INVITEE,
+        type: 'claimed',
+      });
+    });
+
+    it('loses the race when another creator has already claimed', async () => {
+      const { tx, setUpdateResult } = txDouble();
+      tx.query.recipeCreators.findFirst.mockResolvedValue({
+        id: 'creator_1',
+        slug: 'apple-pie',
+        user: { slug: 'bo' },
+      });
+      setUpdateResult([]);
+
+      await expect(claimRecipe(RECIPE.id, INVITEE)).rejects.toThrow('CONFLICT');
+    });
   });
 
   it('notifies the invitee', async () => {
@@ -223,6 +297,7 @@ describe('acceptRecipeCreatorInvite (invitee consent)', () => {
       id: RECIPE.id,
       slug: RECIPE.slug,
       cook: 'ada',
+      authorId: OWNER,
     });
   });
 
@@ -330,6 +405,7 @@ describe('removeRecipeCreator (revocation)', () => {
       id: RECIPE.id,
       slug: 'apple-pie',
       cook: 'ada',
+      authorId: OWNER,
     });
   });
 
@@ -373,6 +449,42 @@ describe('removeRecipeCreator (revocation)', () => {
 });
 
 describe('leaveRecipeAsCreator', () => {
+  it('soft-deletes a non-public ownerless recipe when its last accepted creator leaves', async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValue({
+      ...RECIPE,
+      authorId: null,
+      visibility: 'private',
+      author: null,
+    });
+    const { operations, setDeleteResult, updated } = txDouble();
+    setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);
+
+    await leaveRecipeAsCreator(RECIPE.id, INVITEE);
+
+    expect(updated).toContainEqual(
+      expect.objectContaining({
+        deletedAt: expect.any(Date),
+        deletedBy: INVITEE,
+      }),
+    );
+    expect(operations.indexOf('lock')).toBeLessThan(operations.indexOf('delete'));
+  });
+
+  it('keeps a public ownerless recipe when its last accepted creator leaves', async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValue({
+      ...RECIPE,
+      authorId: null,
+      visibility: 'public',
+      author: null,
+    });
+    const { setDeleteResult, updated } = txDouble();
+    setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);
+
+    await leaveRecipeAsCreator(RECIPE.id, INVITEE);
+
+    expect(updated).toEqual([]);
+  });
+
   it('lets a creator step down and frees their slug', async () => {
     const { setDeleteResult } = txDouble();
     setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);

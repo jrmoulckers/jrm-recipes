@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { GitFork, Globe, Lightbulb, Pencil, Sparkles, Sprout, Utensils } from 'lucide-react';
+import { GitFork, Globe, Hand, Lightbulb, Pencil, Sparkles, Sprout, Utensils } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import type { TimelineEntry } from '~/server/recipes/timeline';
@@ -35,6 +35,8 @@ function entryStyle(entry: TimelineEntry): EntryStyle {
       return { icon: Globe, titleKey: 'published', linked: false };
     case 'suggestion_applied':
       return { icon: Lightbulb, titleKey: 'suggestionApplied', linked: false };
+    case 'claimed':
+      return { icon: Hand, titleKey: 'claimed', linked: false };
     case 'updated':
     default:
       return { icon: Pencil, titleKey: 'updated', linked: false };

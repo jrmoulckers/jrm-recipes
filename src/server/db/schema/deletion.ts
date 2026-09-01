@@ -53,6 +53,8 @@ export const deletionRecords = pgTable(
     clerkIdHash: varchar({ length: 64 }),
     trigger: deletionTrigger().notNull(),
     requestedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    /** Number of recorded requests, including retries while legacy work was held. */
+    requestCount: integer().notNull().default(1),
     /** Null until the erasure finishes; a non-null value is the completion proof. */
     completedAt: timestamp({ withTimezone: true }),
     /**
@@ -61,15 +63,14 @@ export const deletionRecords = pgTable(
      * erasure actually reached each store.
      */
     deletedCounts: jsonb().$type<Record<string, number>>(),
-    /**
-     * Recipes that survived because the departing user was a non-owner creator.
-     *
-     * Accurate as retention evidence. But this column is also the only
-     * retrospective estimate of the #694 remediation population, and for that
-     * purpose it is an **upper bound** — it counts recipes the user could have
-     * edited, not ones they did (#728).
-     */
+    /** Shared recipes retained after the account reference is removed. */
     retainedRecipeCount: integer().notNull().default(0),
+    /** Formerly owned recipes retained without an owner (ADR-0009). */
+    unclaimedRecipeCount: integer().notNull().default(0),
+    /** User-authored snapshots retained with a null author reference. */
+    retainedVersionCount: integer().notNull().default(0),
+    /** Media assets moved to another lifecycle custodian rather than purged. */
+    transferredAssetCount: integer().notNull().default(0),
     /** Cloudinary assets successfully destroyed before the DB delete. */
     purgedAssetCount: integer().notNull().default(0),
     /**

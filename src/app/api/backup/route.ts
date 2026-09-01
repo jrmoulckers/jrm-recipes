@@ -4,6 +4,7 @@ import { checkRateLimit } from '~/server/rate-limit';
 import { buildCookbookArchive } from '~/server/recipes/backup';
 import { listOwnedRecipesForBackup } from '~/server/recipes/queries';
 import { toPrintRecipe } from '~/server/recipes/serialize';
+import { listSharedRecipeContributionsForExport } from '~/server/users/contribution-export';
 
 // Buffers the whole archive in memory and reads the DB, so keep it on Node.
 export const runtime = 'nodejs';
@@ -39,8 +40,11 @@ export async function GET() {
     );
   }
 
-  const recipes = await listOwnedRecipesForBackup(user.id);
-  const archive = buildCookbookArchive(recipes.map(toPrintRecipe));
+  const [recipes, contributions] = await Promise.all([
+    listOwnedRecipesForBackup(user.id),
+    listSharedRecipeContributionsForExport(user.id),
+  ]);
+  const archive = buildCookbookArchive(recipes.map(toPrintRecipe), new Date(), contributions);
 
   // Copy into a fresh ArrayBuffer-backed view so the response body is a plain,
   // transferable byte buffer.

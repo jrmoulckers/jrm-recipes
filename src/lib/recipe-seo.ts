@@ -50,6 +50,7 @@ export type SeoNutrition = {
  * query layer is structurally assignable to this, so callers just pass the row.
  */
 export type SeoRecipe = {
+  id: string;
   slug: string;
   title: string;
   description: string | null;
@@ -60,7 +61,7 @@ export type SeoRecipe = {
   prepMinutes: number | null;
   cookMinutes: number | null;
   totalMinutes: number | null;
-  authorId: string;
+  authorId: string | null;
   author: { name: string | null; slug?: string } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
@@ -103,7 +104,7 @@ function resolveTotalMinutes(recipe: SeoRecipe): number | null {
  */
 function aggregateRatings(
   ratings: { value: number; userId: string }[],
-  ownerId: string,
+  ownerId: string | null,
 ): {
   average: number;
   count: number;
@@ -242,9 +243,10 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
     name: recipe.title,
     url: absoluteUrl(
       recipeDetailPath({
-        id: recipe.slug,
+        id: recipe.id,
         slug: recipe.slug,
         cook: recipe.author?.slug,
+        authorId: recipe.authorId,
       }),
     ),
   };
@@ -337,7 +339,7 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
  * JSON-LD `<script>` gated to public recipes, exactly like the Recipe JSON-LD.
  */
 export function buildBreadcrumbJsonLd(
-  recipe: Pick<SeoRecipe, 'slug' | 'title' | 'author'>,
+  recipe: Pick<SeoRecipe, 'id' | 'slug' | 'title' | 'author' | 'authorId'>,
 ): Record<string, unknown> {
   const crumbs: { name: string; path: string }[] = [
     { name: 'Home', path: '/' },
@@ -345,9 +347,10 @@ export function buildBreadcrumbJsonLd(
     {
       name: recipe.title,
       path: recipeDetailPath({
-        id: recipe.slug,
+        id: recipe.id,
         slug: recipe.slug,
         cook: recipe.author?.slug,
+        authorId: recipe.authorId,
       }),
     },
   ];

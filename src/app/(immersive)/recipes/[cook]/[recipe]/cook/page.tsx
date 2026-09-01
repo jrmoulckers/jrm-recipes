@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import { getLocale } from 'next-intl/server';
 
@@ -12,6 +12,7 @@ import { isDbConfigured } from '~/server/db';
 import { toUnitPrefs, toCustomUnitDefs } from '~/lib/unit-prefs';
 import { parseRecipeParams, type RecipeRouteParams } from '~/lib/route-params';
 import { withRouteMessages } from '~/components/i18n/route-messages';
+import { recipeCookPath } from '~/lib/recipe-path';
 
 export async function generateMetadata({
   params,
@@ -28,8 +29,18 @@ export async function generateMetadata({
 
 async function CookPage({ params }: { params: Promise<RecipeRouteParams> }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
-  const { user, recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
+  const { user, recipe, disposition } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   if (!recipe) notFound();
+  if (disposition === 'alias') {
+    permanentRedirect(
+      recipeCookPath({
+        id: recipe.id,
+        slug: recipe.slug,
+        cook: recipe.author?.slug,
+        authorId: recipe.authorId,
+      }),
+    );
+  }
 
   // Auto-convert amounts to the cook's saved units while they cook (#…). Fetched
   // here and made ambient so Cook Mode's nested ingredient panels pick them up.

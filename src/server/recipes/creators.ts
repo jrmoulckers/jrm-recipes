@@ -4,9 +4,11 @@ import { and, eq, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '~/server/db';
 import { DomainError } from '~/server/errors';
+import { transferCustodiedMediaToClaimantInTransaction } from '~/server/media/custody';
+import { isPurgeComplete, purgeRecipeCustodiedMedia } from '~/server/media/purge';
 import { getHiddenAuthorIds } from '~/server/moderation/blocks';
 import { notify } from '~/server/notifications/notify';
-import { recipeCreators, recipes, users } from '~/server/db/schema';
+import { recipeCreators, recipeEvents, recipes, users } from '~/server/db/schema';
 import type { RecipeDetailRef } from '~/lib/recipe-path';
 import { recipeSlug } from './validation';
 import { uniqueSlug, withSlugConflictRetry } from './mutations';
@@ -40,7 +42,12 @@ export type CreatorNamespace = { cook: string; slug: string };
 
 /** What a removal freed, so the caller can revalidate what no longer resolves. */
 export type CreatorRemoval = {
-  recipe: { id: string; slug: string | null; cook: string | null };
+  recipe: {
+    id: string;
+    slug: string | null;
+    cook: string | null;
+    authorId: string | null;
+  };
   /** The removed creator's namespace entry, or null if they never accepted. */
   removed: CreatorNamespace | null;
 };
@@ -49,7 +56,8 @@ type RecipeForCreators = {
   id: string;
   slug: string | null;
   title: string;
-  authorId: string;
+  authorId: string | null;
+  visibility: string;
   deletedAt: Date | null;
   author: { slug: string | null } | null;
 };
@@ -69,6 +77,7 @@ async function loadRecipe(recipeId: string): Promise<RecipeForCreators> {
       slug: true,
       title: true,
       authorId: true,
+      visibility: true,
       deletedAt: true,
     },
     with: { author: { columns: { slug: true } } },
@@ -132,6 +141,17 @@ export async function inviteRecipeCreator(
     throw new DomainError(existing.status === 'accepted' ? 'ALREADY_ACCEPTED' : 'ALREADY_INVITED');
 
   return await db.transaction(async (tx) => {
+    await tx.execute(sql`select 1 from ${recipes} where ${recipes.id} = ${recipeId} for update`);
+    const currentRecipe = await tx.query.recipes.findFirst({
+      where: and(
+        eq(recipes.id, recipeId),
+        eq(recipes.authorId, ownerId),
+        isNull(recipes.deletedAt),
+      ),
+      columns: { title: true },
+    });
+    if (!currentRecipe) throw new DomainError('NOT_FOUND');
+
     const [row] = await tx
       .insert(recipeCreators)
       .values({
@@ -146,7 +166,7 @@ export async function inviteRecipeCreator(
       actorId: ownerId,
       type: 'recipe_creator_invite',
       recipeId,
-      context: recipe.title,
+      context: currentRecipe.title,
     });
     return { id: row!.id };
   });
@@ -176,10 +196,21 @@ export async function acceptRecipeCreatorInvite(
   recipeId: string,
   userId: string,
 ): Promise<{ recipe: RecipeDetailRef; slug: string }> {
-  const recipe = await loadRecipe(recipeId);
-
   return await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      await tx.execute(sql`select 1 from ${recipes} where ${recipes.id} = ${recipeId} for update`);
+      const recipe = await tx.query.recipes.findFirst({
+        where: and(eq(recipes.id, recipeId), isNull(recipes.deletedAt)),
+        columns: {
+          id: true,
+          slug: true,
+          title: true,
+          authorId: true,
+        },
+        with: { author: { columns: { slug: true } } },
+      });
+      if (!recipe) throw new DomainError('NOT_FOUND');
+
       const invite = await tx.query.recipeCreators.findFirst({
         where: and(eq(recipeCreators.recipeId, recipeId), eq(recipeCreators.userId, userId)),
         columns: { id: true, status: true },
@@ -202,24 +233,84 @@ export async function acceptRecipeCreatorInvite(
         .returning({ id: recipeCreators.id });
       if (updated.length === 0) throw new DomainError('NOT_PENDING');
 
-      await notify(tx, {
-        recipientId: recipe.authorId,
-        actorId: userId,
-        type: 'recipe_creator_accepted',
-        recipeId,
-        context: recipe.title,
-      });
+      if (recipe.authorId) {
+        await notify(tx, {
+          recipientId: recipe.authorId,
+          actorId: userId,
+          type: 'recipe_creator_accepted',
+          recipeId,
+          context: recipe.title,
+        });
+      }
 
       return {
         recipe: {
           id: recipe.id,
           slug: recipe.slug,
           cook: recipe.author?.slug ?? null,
+          authorId: recipe.authorId,
         },
         slug,
       };
     }),
   );
+}
+
+export type RecipeClaim = {
+  before: RecipeDetailRef;
+  after: RecipeDetailRef;
+  removed: CreatorNamespace;
+};
+
+/**
+ * Atomically promote an accepted creator to owner of an unclaimed recipe.
+ *
+ * The conditional recipe update is the race arbiter: only one transaction can
+ * change a NULL author. The winner adopts their already-public creator slug and
+ * loses their creator row so ownership is represented exactly once.
+ */
+export async function claimRecipe(recipeId: string, userId: string): Promise<RecipeClaim> {
+  return db.transaction(async (tx) => {
+    const recipe = await tx.query.recipes.findFirst({
+      where: and(eq(recipes.id, recipeId), isNull(recipes.authorId), isNull(recipes.deletedAt)),
+      columns: { id: true, slug: true },
+    });
+    if (!recipe) throw new DomainError('CONFLICT');
+
+    const creator = await tx.query.recipeCreators.findFirst({
+      where: and(
+        eq(recipeCreators.recipeId, recipeId),
+        eq(recipeCreators.userId, userId),
+        eq(recipeCreators.status, 'accepted'),
+      ),
+      columns: { id: true, slug: true },
+      with: { user: { columns: { slug: true } } },
+    });
+    if (!creator?.slug || !creator.user?.slug) throw new DomainError('NOT_FOUND');
+
+    const [claimed] = await tx
+      .update(recipes)
+      .set({ authorId: userId, slug: creator.slug, updatedAt: new Date() })
+      .where(and(eq(recipes.id, recipeId), isNull(recipes.authorId), isNull(recipes.deletedAt)))
+      .returning({ id: recipes.id });
+    if (!claimed) throw new DomainError('CONFLICT');
+
+    await transferCustodiedMediaToClaimantInTransaction(tx, recipeId, userId);
+
+    await tx.delete(recipeCreators).where(eq(recipeCreators.id, creator.id));
+    await tx.insert(recipeEvents).values({ recipeId, actorId: userId, type: 'claimed' });
+
+    return {
+      before: { id: recipeId, slug: recipe.slug, authorId: null },
+      after: {
+        id: recipeId,
+        slug: creator.slug,
+        cook: creator.user.slug,
+        authorId: userId,
+      },
+      removed: { cook: creator.user.slug, slug: creator.slug },
+    };
+  });
 }
 
 /**
@@ -260,13 +351,46 @@ async function deleteCreatorRow(
   recipe: RecipeForCreators,
   userId: string,
 ): Promise<CreatorRemoval> {
-  const deleted = await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
+    // Serialize the membership decision per recipe. Without this lock, the last
+    // two creators can each delete themselves while still seeing the other's
+    // uncommitted row, leaving a non-public ownerless recipe live forever.
+    await tx.execute(sql`select 1 from ${recipes} where ${recipes.id} = ${recipe.id} for update`);
+    const currentRecipe = await tx.query.recipes.findFirst({
+      where: and(eq(recipes.id, recipe.id), isNull(recipes.deletedAt)),
+      columns: {
+        id: true,
+        slug: true,
+        authorId: true,
+        visibility: true,
+      },
+      with: { author: { columns: { slug: true } } },
+    });
+    if (!currentRecipe) throw new DomainError('NOT_FOUND');
+
     const [row] = await tx
       .delete(recipeCreators)
       .where(and(eq(recipeCreators.recipeId, recipe.id), eq(recipeCreators.userId, userId)))
       .returning({ slug: recipeCreators.slug, status: recipeCreators.status });
-    return row;
+    if (row && currentRecipe.authorId === null) {
+      const remaining = await tx.query.recipeCreators.findFirst({
+        where: and(eq(recipeCreators.recipeId, recipe.id), eq(recipeCreators.status, 'accepted')),
+        columns: { id: true },
+      });
+      if (!remaining && currentRecipe.visibility !== 'public') {
+        const mediaPurge = await purgeRecipeCustodiedMedia(recipe.id, tx as unknown as typeof db);
+        if (!isPurgeComplete(mediaPurge)) throw new Error('MEDIA_PURGE_INCOMPLETE');
+        // Keep the recipe row as the lifecycle owner of any system-custodied
+        // media until its terminal purge above succeeds.
+        await tx
+          .update(recipes)
+          .set({ deletedAt: new Date(), deletedBy: userId })
+          .where(and(eq(recipes.id, recipe.id), isNull(recipes.deletedAt)));
+      }
+    }
+    return { row, currentRecipe };
   });
+  const deleted = result.row;
   if (!deleted) throw new DomainError('NOT_FOUND');
 
   let removed: CreatorNamespace | null = null;
@@ -281,8 +405,9 @@ async function deleteCreatorRow(
   return {
     recipe: {
       id: recipe.id,
-      slug: recipe.slug,
-      cook: recipe.author?.slug ?? null,
+      slug: result.currentRecipe.slug,
+      cook: result.currentRecipe.author?.slug ?? null,
+      authorId: result.currentRecipe.authorId,
     },
     removed,
   };

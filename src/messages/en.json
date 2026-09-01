@@ -2675,7 +2675,8 @@
         "adaptedByFamily": "Adapted by the family",
         "published": "Shared with the family",
         "suggestionApplied": "Suggestion applied",
-        "updated": "Updated"
+        "updated": "Updated",
+        "claimed": "Ownership claimed"
       }
     },
     "rotation": {
@@ -2987,45 +2988,38 @@
         "body": "Your cookbook backup includes every recipe on your account, so we need to know it's you."
       },
       "delete": {
-        "title": "Delete my account",
-        "description": "This removes your account and everything in it. We don't hide your recipes or keep a copy. They're deleted for good.",
+        "title": "Delete account and personal profile",
+        "description": "This removes your sign-in, profile, and content that is yours alone. Contributions accepted into shared recipes may remain without a link to your account.",
         "consequences": {
           "title": "Here's exactly what happens",
-          "titleHeld": "Here's exactly what happens once we can finish this",
-          "recipes": "{count, plural, =0 {You have no recipes of your own to delete.} one {Your # recipe is permanently deleted, along with its story, notes, and photos.} other {All # of your recipes are permanently deleted, along with their stories, notes, and photos.}}",
+          "recipesDeleted": "{count, plural, =0 {You have no solely owned recipes to delete.} one {Your # solely owned recipe is permanently deleted.} other {Your # solely owned recipes are permanently deleted.}}",
+          "recipesUnclaimed": "{count, plural, one {# recipe with other accepted contributors remains as an unclaimed recipe. Nobody is forced to own it.} other {# recipes with other accepted contributors remain as unclaimed recipes. Nobody is forced to own them.}}",
+          "sharedRecipesDeleted": "{count, plural, one {# non-public unclaimed recipe is deleted because no other accepted contributor remains.} other {# non-public unclaimed recipes are deleted because no other accepted contributor remains.}}",
           "cooking": "Your cooking history goes too: {cookLogs, plural, one {# cook log entry} other {# cook log entries}}, {reviews, plural, one {# review} other {# reviews}}, and {collections, plural, one {# collection} other {# collections}}.",
-          "photos": "Every photo you uploaded is deleted from our image storage, not just unlinked.",
-          "coCreated": "{count, plural, one {# recipe you help look after belongs to someone else. It stays with them. Anything you wrote in it stays too, because we can't reliably tell your edits apart from theirs.} other {# recipes you help look after belong to other people. They stay with their owners. Anything you wrote in them stays too, because we can't reliably tell your edits apart from theirs.}}",
+          "photos": "{retained, plural, =0 {Photos not used by a retained shared recipe are deleted from image storage.} one {# uploaded media item remains because a shared recipe uses it. Its lifecycle custody changes. Other uploaded media is deleted.} other {# uploaded media items remain because shared recipes use them. Their lifecycle custody changes. Other uploaded media is deleted.}}",
+          "coCreated": "{count, plural, one {Your contributions to # shared recipe remain without a link to your account.} other {Your contributions to # shared recipes remain without a link to your account.}} {versions, plural, one {# version-history entry remains as “Unknown contributor.”} other {# version-history entries remain as “Unknown contributor.”}} The text or images may still identify you from their content or family context.",
           "pendingInvites": "{count, plural, one {# invitation to co-create a recipe is withdrawn.} other {# invitations to co-create recipes are withdrawn.}}",
-          "subscription": "Your subscription is cancelled. We can't refund the current period once the account is gone.",
-          "links": "Any recipe links you've shared stop working. Your cook name becomes available for someone else to use.",
-          "irreversible": "There is no undo, no grace period, and no way for us to bring any of it back."
+          "subscription": "Deleting your account does not cancel active billing. Cancel your subscription in Billing before deleting your account.",
+          "links": "Your cook name becomes available for someone else to use. Retained ownerless recipes move to a stable unclaimed-recipe link.",
+          "irreversible": "Deleting the account has no undo or grace period. You may later ask support to remove specific identifiable retained text or images by providing the recipe link."
         },
         "groups": {
           "title": "You're the only owner of a family group",
           "body": "{groups} would be left without an owner. Please make someone else an owner first, or the people in it won't be able to manage it."
         },
-        "held": {
-          "title": "We can't finish this deletion yet",
-          "body": "{count, plural, one {You share # recipe with someone else.} other {You share # recipes with other people.}} We can't yet separate your writing from theirs without destroying the record of who wrote what, and we won't delete half of you to get there.",
-          "what": "If you continue, we'll record your request and delete nothing today. Your account, your recipes and your photos all stay exactly as they are until we can do this properly.",
-          "confirmHelp": "Pressing the button records your request. Nothing is deleted today, and we'll email you when it's done.",
-          "cta": "Send my deletion request",
-          "toast": "Your request is recorded and nothing has been deleted. We'll be in touch when we can finish it."
-        },
         "export": {
-          "body": "Take your cookbook with you first. The download is the same complete backup, and it keeps working offline forever.",
+          "body": "Take your cookbook and shared-recipe contribution history with you first. The download keeps working offline.",
           "cta": "Download my cookbook first"
         },
-        "start": "Delete my account",
+        "start": "Delete account and personal profile",
         "confirm": {
           "label": "Type {phrase} to confirm",
-          "help": "Once you press the button, everything above is deleted immediately.",
-          "cta": "Permanently delete everything",
+          "help": "Your account and personal profile are deleted immediately. Shared content remains only as described above.",
+          "cta": "Delete account and personal profile",
           "cancel": "Keep my account"
         },
         "toasts": {
-          "deleted": "Your account and everything in it has been deleted. Take care."
+          "deleted": "Your account and personal profile have been deleted. Take care."
         }
       }
     }
@@ -3830,7 +3824,18 @@
       }
     },
     "byline": {
-      "with": "with {names}"
+      "with": "with {names}",
+      "unknownContributor": "Unknown contributor"
+    },
+    "claim": {
+      "action": "Claim this recipe",
+      "pending": "Claiming…",
+      "toast": "This recipe is now yours.",
+      "confirm": {
+        "title": "Claim this recipe?",
+        "description": "You will become its owner and take responsibility for its visibility, deletion, and retained media.",
+        "confirmLabel": "Claim recipe"
+      }
     },
     "leave": {
       "action": "Leave this recipe",

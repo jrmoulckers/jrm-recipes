@@ -48,6 +48,7 @@ export const recipeEventType = pgEnum('recipe_event_type', [
   'updated',
   'published',
   'suggestion_applied',
+  'claimed',
 ]);
 
 /** The core recipe record. */
@@ -73,9 +74,7 @@ export const recipes = pgTable(
     // that logic. Restricting makes an unhandled dependency a loud failure
     // instead of irreversible data loss, and `deleteUserAccount` is responsible
     // for deleting these rows in the right order.
-    authorId: fk()
-      .notNull()
-      .references(() => users.id, { onDelete: 'restrict' }),
+    authorId: fk().references(() => users.id, { onDelete: 'restrict' }),
     groupId: fk().references(() => groups.id, { onDelete: 'set null' }),
 
     visibility: recipeVisibility().notNull().default('private'),
@@ -503,11 +502,9 @@ export const recipeSlugAliasesRelations = relations(recipeSlugAliases, ({ one })
 /**
  * Role a non-owner creator holds on a recipe (issue #668).
  *
- * `owner` is deliberately **absent**. The owner is `recipes.authorId` and never
- * has a row here: that FK is `notNull`, so exactly one owner is guaranteed for
- * the life of the recipe, and a second representation of the same fact could
- * only ever drift out of step with it. This table is strictly additive on top of
- * a guaranteed owner.
+ * `owner` is deliberately **absent**. When present, the owner is
+ * `recipes.authorId` and never has a row here. A null author marks an unclaimed
+ * recipe; its accepted creator rows are the people eligible to claim it.
  */
 export const recipeCreatorRole = pgEnum('recipe_creator_role', ['creator']);
 

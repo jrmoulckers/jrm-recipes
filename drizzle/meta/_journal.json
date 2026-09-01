@@ -372,6 +372,13 @@
       "when": 1787029029303,
       "tag": "0052_cloudy_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788220297200,
+      "tag": "0053_small_cannonball",
+      "breakpoints": true
     }
   ]
 }

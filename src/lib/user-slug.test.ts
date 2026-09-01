@@ -22,6 +22,7 @@ describe('RESERVED_USER_SLUGS', () => {
 
   it('reserves the share-link and infrastructure prefixes', () => {
     expect(isReservedUserSlug('r')).toBe(true);
+    expect(isReservedUserSlug('unclaimed')).toBe(true);
     expect(isReservedUserSlug('api')).toBe(true);
     expect(isReservedUserSlug('admin')).toBe(true);
     expect(isReservedUserSlug('www')).toBe(true);

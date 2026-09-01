@@ -34,7 +34,7 @@ async function isGroupMember(tx: Tx, groupId: string, userId: string): Promise<b
 }
 
 function canView(
-  recipe: { authorId: string; visibility: string; groupId: string | null },
+  recipe: { authorId: string | null; visibility: string; groupId: string | null },
   viewer: User,
   groupIds: string[],
 ) {

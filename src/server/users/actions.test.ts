@@ -15,15 +15,13 @@ const { state, eraseUserAccount, requireUser, deleteUser } = vi.hoisted(() => {
     configured: true,
     eraseError: null as Error | null,
     clerkError: null as Error | null,
-    /** What the erasure reports. `held` is the #694 containment outcome. */
-    eraseStatus: 'erased' as 'erased' | 'held',
   };
   return {
     state,
     eraseUserAccount: vi.fn(async () => {
       if (state.eraseError) throw state.eraseError;
       return {
-        status: state.eraseStatus,
+        status: 'erased' as const,
         counts: {},
         retainedRecipeCount: 0,
         purgedAssetCount: 0,
@@ -50,7 +48,6 @@ beforeEach(() => {
   state.configured = true;
   state.eraseError = null;
   state.clerkError = null;
-  state.eraseStatus = 'erased';
   vi.clearAllMocks();
 });
 
@@ -105,12 +102,15 @@ describe('deleteAccountAction', () => {
     expect(order).toEqual(['erase', 'clerk']);
   });
 
-  it('reports a purge failure truthfully as nothing having been deleted', async () => {
+  it('reports partial remote purge while confirming database state remains', async () => {
     state.eraseError = new Error('MEDIA_PURGE_INCOMPLETE: 3 asset(s) survived');
     const result = await deleteAccountAction('DELETE');
 
     expect(result).toMatchObject({ ok: false, code: 'MEDIA_PURGE_INCOMPLETE' });
-    if (!result.ok) expect(result.error).toContain('Nothing has been lost');
+    if (!result.ok) {
+      expect(result.error).toContain('Some remote photos may already be gone');
+      expect(result.error).toContain('account and database records remain');
+    }
     expect(deleteUser).not.toHaveBeenCalled();
   });
 
@@ -128,20 +128,5 @@ describe('deleteAccountAction', () => {
     const result = await deleteAccountAction('DELETE');
     expect(result.ok).toBe(false);
     expect(eraseUserAccount).not.toHaveBeenCalled();
-  });
-
-  /**
-   * A held erasure (#694) deleted nothing, so the Clerk identity has to stay
-   * too. Removing it would leave a person unable to sign in to an account whose
-   * data is still there — the half-erased state the whole ordering exists to
-   * avoid — and it is not reported as success, because nothing was deleted.
-   */
-  it('reports a held erasure honestly and leaves the Clerk identity alone', async () => {
-    state.eraseStatus = 'held';
-
-    const result = await deleteAccountAction('DELETE');
-
-    expect(result).toMatchObject({ ok: false, code: 'ERASURE_HELD' });
-    expect(deleteUser).not.toHaveBeenCalled();
   });
 });

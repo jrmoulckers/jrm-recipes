@@ -15,7 +15,7 @@ export type ReactionTargetType = 'comment' | 'review' | 'cook_log';
 type RecipeAccessRow = {
   id: string;
   title: string;
-  authorId: string;
+  authorId: string | null;
   visibility: string;
   groupId: string | null;
 };

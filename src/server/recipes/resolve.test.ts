@@ -39,6 +39,27 @@ beforeEach(() => {
 });
 
 describe('resolveNamespacedRecipe', () => {
+  it('resolves an ownerless id in the unclaimed namespace as canonical', async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: 'rec_1' });
+
+    await expect(resolveNamespacedRecipe('unclaimed', 'rec_1')).resolves.toEqual({
+      recipeId: 'rec_1',
+      disposition: 'canonical',
+    });
+    expect(resolveUserSlugMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a claimed unclaimed URL as an authorized redirect source', async () => {
+    dbMock.query.recipes.findFirst
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: 'rec_1' });
+
+    await expect(resolveNamespacedRecipe('unclaimed', 'rec_1')).resolves.toEqual({
+      recipeId: 'rec_1',
+      disposition: 'alias',
+    });
+  });
+
   it("resolves a live slug in the owner's namespace as canonical", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: 'rec_1' });
 

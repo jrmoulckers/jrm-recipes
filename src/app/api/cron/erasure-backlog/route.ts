@@ -1,6 +1,7 @@
 import { isCronAuthorized, isCronConfigured } from '~/server/cron/auth';
 import { isDbConfigured } from '~/server/db';
 import { getErasureBacklog } from '~/server/users/erasure-holds';
+import { replayOpenErasureHolds } from '~/server/users/erasure-replay';
 
 // Reads Postgres, so keep it on the Node runtime. Always dynamic: a cached
 // backlog count is a wrong backlog count.
@@ -11,12 +12,9 @@ export const revalidate = 0;
 /**
  * Erasure backlog report (issue #694).
  *
- * Erasure requests that touch a co-created recipe are held rather than executed,
- * because executing them destroys the only evidence needed to remedy the
- * co-creator gap. A held request nobody can see is indistinguishable from a
- * dropped one, which is its own compliance failure — so the backlog is reported
- * here: how many are open, how long the oldest has waited, and how many recipes
- * the eventual remedy has to cover.
+ * Historical erasure requests held before ADR-0009 are replayed in bounded
+ * batches by the scheduled GET. Authenticated POST provides the same operation
+ * for an explicit operator retry.
  *
  * Authenticated with the shared cron secret, like the other scheduled
  * endpoints: unset disables it (503) so it can never be read anonymously, and a
@@ -28,7 +26,11 @@ export const revalidate = 0;
  * waiting on a product decision, and it is meant to stay visible until that
  * decision lands.
  */
-async function handle(request: Request): Promise<Response> {
+export function GET(request: Request) {
+  return POST(request);
+}
+
+export async function POST(request: Request) {
   if (!isCronConfigured()) {
     return Response.json({ error: 'Erasure backlog endpoint is not configured.' }, { status: 503 });
   }
@@ -36,22 +38,16 @@ async function handle(request: Request): Promise<Response> {
     return Response.json({ error: 'Unauthorized.' }, { status: 401 });
   }
   if (!isDbConfigured()) {
-    return Response.json({
-      ok: true,
-      open: 0,
-      oldestRequestedAt: null,
-      totalEntangledRecipes: 0,
-    });
+    return Response.json({ ok: true, attempted: 0, erased: 0, failed: 0 });
   }
 
+  const replay = await replayOpenErasureHolds();
   const backlog = await getErasureBacklog();
-  return Response.json({ ok: true, ...backlog }, { headers: { 'cache-control': 'no-store' } });
-}
-
-export function GET(request: Request) {
-  return handle(request);
-}
-
-export function POST(request: Request) {
-  return handle(request);
+  return Response.json(
+    { ok: replay.failed === 0, ...replay, backlog },
+    {
+      status: replay.failed === 0 ? 200 : 500,
+      headers: { 'cache-control': 'no-store' },
+    },
+  );
 }
