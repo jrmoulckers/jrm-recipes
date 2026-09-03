@@ -85,12 +85,12 @@ function snapshotReferences(
   recipeId: string,
   snapshot: {
     coverImageUrl?: string;
-    steps?: { imageUrl?: string; videoUrl?: string }[];
+    steps?: { imageUrl?: string; videoUrl?: string; captionUrl?: string }[];
   },
 ): RecipeReference[] {
   const urls = [
     snapshot.coverImageUrl,
-    ...(snapshot.steps ?? []).flatMap((step) => [step.imageUrl, step.videoUrl]),
+    ...(snapshot.steps ?? []).flatMap((step) => [step.imageUrl, step.videoUrl, step.captionUrl]),
   ];
   return urls.filter((url): url is string => Boolean(url)).map((url) => ({ recipeId, url }));
 }
@@ -129,6 +129,7 @@ export async function planRetainedMediaTransfers(
         recipeId: recipeSteps.recipeId,
         imageUrl: recipeSteps.imageUrl,
         videoUrl: recipeSteps.videoUrl,
+        captionUrl: recipeSteps.captionUrl,
       })
       .from(recipeSteps)
       .where(inArray(recipeSteps.recipeId, recipeIds)),
@@ -151,7 +152,7 @@ export async function planRetainedMediaTransfers(
     if (recipe.coverImageUrl) references.push({ recipeId: recipe.id, url: recipe.coverImageUrl });
   }
   for (const step of steps) {
-    for (const url of [step.imageUrl, step.videoUrl]) {
+    for (const url of [step.imageUrl, step.videoUrl, step.captionUrl]) {
       if (url) references.push({ recipeId: step.recipeId, url });
     }
   }

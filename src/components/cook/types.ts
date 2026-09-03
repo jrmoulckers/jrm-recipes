@@ -25,6 +25,9 @@ export type CookStep = {
   /** Author-written alt for the step photo, or null to use the generated one (#125). */
   imageAlt: string | null;
   videoUrl: string | null;
+  /** WebVTT captions and their BCP-47 language, or null when unavailable (#989). */
+  captionUrl: string | null;
+  captionLanguage: string | null;
   timerSeconds: number | null;
   /** Target internal/oven temperature in °C, or null (#417). */
   targetTempC?: number | null;

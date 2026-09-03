@@ -43,6 +43,8 @@ export type AdaptationSource = {
     instruction: string;
     imageUrl?: string | null;
     videoUrl?: string | null;
+    captionUrl?: string | null;
+    captionLanguage?: string | null;
     timerSeconds?: number | null;
     targetTempC?: number | null;
     doneness?: string | null;
@@ -73,7 +75,7 @@ export function adaptationTitle(sourceTitle: string): string {
  * every ingredient, step (incl. media + techniques), and tag is copied. The
  * fork always starts as a private draft owned by whoever forks it.
  */
-export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
+function mapRecipeInput(source: AdaptationSource, preserveLegacyVideos: boolean): RecipeInput {
   const cuisines = source.tags
     .filter(({ tag }) => tag.category === 'cuisine')
     .map(({ tag }) => tag.name);
@@ -122,18 +124,27 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
       stepPosition: ing.stepPosition ?? undefined,
       optional: ing.optional,
     })),
-    steps: source.steps.map((step) => ({
-      section: step.section ?? undefined,
-      instruction: step.instruction,
-      imageUrl: step.imageUrl ?? undefined,
-      videoUrl: step.videoUrl ?? undefined,
-      timerSeconds: step.timerSeconds ?? undefined,
-      targetTempC: step.targetTempC ?? undefined,
-      doneness: step.doneness ?? undefined,
-      techniques: step.techniques ?? [],
-    })),
+    steps: source.steps.map((step) => {
+      const hasCaptions = Boolean(step.captionUrl && step.captionLanguage);
+      return {
+        section: step.section ?? undefined,
+        instruction: step.instruction,
+        imageUrl: step.imageUrl ?? undefined,
+        videoUrl: preserveLegacyVideos || hasCaptions ? (step.videoUrl ?? undefined) : undefined,
+        captionUrl: hasCaptions ? (step.captionUrl ?? undefined) : undefined,
+        captionLanguage: hasCaptions ? (step.captionLanguage ?? undefined) : undefined,
+        timerSeconds: step.timerSeconds ?? undefined,
+        targetTempC: step.targetTempC ?? undefined,
+        doneness: step.doneness ?? undefined,
+        techniques: step.techniques ?? [],
+      };
+    }),
     tags: generalTags,
   };
+}
+
+export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
+  return mapRecipeInput(source, false);
 }
 
 /**
@@ -143,7 +154,7 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
  * "(Adaptation)" marker) so a "current vs. version" diff reads truthfully.
  */
 export function recipeToInput(source: AdaptationSource): RecipeInput {
-  return { ...buildAdaptationInput(source), title: source.title.trim() };
+  return { ...mapRecipeInput(source, true), title: source.title.trim() };
 }
 
 /** One rendered milestone in a recipe's timeline. */

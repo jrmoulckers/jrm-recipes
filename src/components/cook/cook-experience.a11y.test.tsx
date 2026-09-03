@@ -35,6 +35,8 @@ function makeStep(overrides: Partial<CookStep> = {}): CookStep {
     imageUrl: null,
     imageAlt: null,
     videoUrl: null,
+    captionUrl: null,
+    captionLanguage: null,
     timerSeconds: null,
     techniques: null,
     ...overrides,

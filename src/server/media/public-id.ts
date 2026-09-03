@@ -86,7 +86,12 @@ export function cloudinaryRefFromUrl(raw: string): CloudinaryRef | null {
     .filter((s) => !isTransformSegment(s) && !isVersionSegment(s));
   if (rest.length === 0) return null;
 
-  const publicId = decodeURIComponent(rest.join('/')).replace(/\.[A-Za-z0-9]{1,8}$/, '');
+  const decodedPublicId = decodeURIComponent(rest.join('/'));
+  // Cloudinary raw assets include their extension in the public id; image and
+  // video public ids do not. Losing `.vtt` would make erasure target the wrong
+  // object and leave the real caption file behind.
+  const publicId =
+    resourceType === 'raw' ? decodedPublicId : decodedPublicId.replace(/\.[A-Za-z0-9]{1,8}$/, '');
   if (publicId.length === 0) return null;
   if (publicId.includes('..') || publicId.startsWith('/')) return null;
 

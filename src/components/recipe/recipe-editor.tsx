@@ -69,6 +69,7 @@ import { NativeSelect } from '~/components/ui/native-select';
 import { Textarea } from '~/components/ui/textarea';
 import { Label } from '~/components/ui/label';
 import { ImageUploadField } from '~/components/ui/image-upload';
+import { CaptionUploadField } from '~/components/ui/caption-upload';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { useConfirm } from '~/components/ui/confirm-dialog-context';
@@ -120,6 +121,8 @@ type StepRow = {
   imageUrl: string;
   imageAlt: string;
   videoUrl: string;
+  captionUrl: string;
+  captionLanguage: string;
   timerMinutes: string;
   targetTempC: string;
   doneness: string;
@@ -190,6 +193,8 @@ const EMPTY_STEP: Omit<StepRow, 'key'> = {
   imageUrl: '',
   imageAlt: '',
   videoUrl: '',
+  captionUrl: '',
+  captionLanguage: '',
   timerMinutes: '',
   targetTempC: '',
   doneness: '',
@@ -1270,6 +1275,8 @@ export function RecipeEditor({
           imageUrl: r.imageUrl.trim() || undefined,
           imageAlt: r.imageAlt.trim() || undefined,
           videoUrl: r.videoUrl.trim() || undefined,
+          captionUrl: r.captionUrl.trim() || undefined,
+          captionLanguage: r.captionLanguage.trim() || undefined,
           timerSeconds: r.timerMinutes.trim() ? Math.round(Number(r.timerMinutes) * 60) : undefined,
           targetTempC: numOrUndef(r.targetTempC),
           doneness: r.doneness.trim() || undefined,
@@ -1972,6 +1979,8 @@ export function RecipeEditor({
                       row.targetTempC ||
                       row.doneness ||
                       row.videoUrl ||
+                      row.captionUrl ||
+                      row.captionLanguage ||
                       row.imageUrl,
                     );
                     const optionsOpen = hasOptionData || openStepOptions.has(row.key);
@@ -2141,6 +2150,38 @@ export function RecipeEditor({
                                   )
                                 }
                                 placeholder={t('placeholders.videoUrl')}
+                              />
+                            </RowField>
+                            <RowField label={t('captionUrl')} className="sm:col-span-2">
+                              <CaptionUploadField
+                                value={row.captionUrl}
+                                onChange={(captionUrl) =>
+                                  setSteps((list) =>
+                                    list.map((candidate) =>
+                                      candidate.key === row.key
+                                        ? { ...candidate, captionUrl }
+                                        : candidate,
+                                    ),
+                                  )
+                                }
+                              />
+                            </RowField>
+                            <RowField label={t('captionLanguage')} className="sm:col-span-2">
+                              <Input
+                                value={row.captionLanguage}
+                                onChange={(event) =>
+                                  setSteps((list) =>
+                                    list.map((candidate) =>
+                                      candidate.key === row.key
+                                        ? { ...candidate, captionLanguage: event.target.value }
+                                        : candidate,
+                                    ),
+                                  )
+                                }
+                                placeholder={t('placeholders.captionLanguage')}
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                maxLength={35}
                               />
                             </RowField>
                             <div className="flex min-w-0 flex-col gap-1 sm:col-span-2">

@@ -92,6 +92,23 @@ describe('retained media custody planning', () => {
     });
   });
 
+  it('keeps a retained raw caption public id intact for custody transfer', () => {
+    const captionUrl =
+      'https://res.cloudinary.com/demo/raw/upload/v1/heirloom/captions/step.en.vtt';
+    const plan = buildRetainedMediaTransferPlan(
+      'departing',
+      [recipe('kept', null, '2021-01-01', true)],
+      [{ recipeId: 'kept', url: captionUrl }],
+      [],
+    );
+
+    expect(plan.transfers[0]).toMatchObject({
+      publicId: 'heirloom/captions/step.en.vtt',
+      resourceType: 'raw',
+      destination: { kind: 'recipe', recipeId: 'kept' },
+    });
+  });
+
   it("does not claim an owner's unbookkept media during a co-creator deletion", () => {
     const plan = buildRetainedMediaTransferPlan(
       'departing-contributor',

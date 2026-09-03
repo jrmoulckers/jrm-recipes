@@ -16,6 +16,7 @@ const { state, dbMock } = vi.hoisted(() => {
     configured: true,
     asset: undefined as { id: string; url: string; userId: string } | undefined,
     assetWhere: undefined as unknown,
+    assetsWhere: undefined as unknown,
     counts: new Map<unknown, number>(),
     countWheres: [] as { table: unknown; condition: unknown }[],
   };
@@ -26,6 +27,10 @@ const { state, dbMock } = vi.hoisted(() => {
         findFirst: vi.fn(async ({ where }: { where: unknown }) => {
           state.assetWhere = where;
           return state.asset;
+        }),
+        findMany: vi.fn(async ({ where }: { where: unknown }) => {
+          state.assetsWhere = where;
+          return [];
         }),
       },
     },
@@ -42,7 +47,7 @@ vi.mock('~/server/db', () => ({
 
 import type { User } from '~/server/db/schema';
 import { groupMembers, groups } from '~/server/db/schema';
-import { getAssetUsage } from './queries';
+import { getAssetUsage, listAssets } from './queries';
 
 const dialect = new PgDialect({ casing: 'snake_case' });
 const user = { id: 'u1' } as User;
@@ -69,15 +74,27 @@ beforeEach(() => {
   state.configured = true;
   state.asset = undefined;
   state.assetWhere = undefined;
+  state.assetsWhere = undefined;
   state.counts.clear();
   state.countWheres = [];
   vi.clearAllMocks();
+  dbMock.select.mockReset();
 
   // The first select builds the membership subquery consumed by the group
   // predicate. Later selects are the six independent URL counts.
   dbMock.select
     .mockImplementationOnce(() => queryBuilderDb.select({ id: groupMembers.groupId }))
     .mockImplementation(() => countChain());
+});
+
+describe('listAssets', () => {
+  it('keeps raw caption files out of the photo picker', async () => {
+    await listAssets(user);
+
+    const query = dialect.sqlToQuery(state.assetsWhere as SQL);
+    expect(query.sql).toContain('"media_assets"."resource_type"');
+    expect(query.params).toContain('image');
+  });
 });
 
 describe('getAssetUsage', () => {

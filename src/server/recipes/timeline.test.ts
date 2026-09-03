@@ -129,6 +129,42 @@ describe('buildAdaptationInput', () => {
     expect(input.steps).toEqual([]);
     expect(input.tags).toEqual([]);
   });
+
+  it('does not copy a legacy uncaptioned video into a new adaptation', () => {
+    const input = buildAdaptationInput(
+      sourceRecipe({
+        steps: [
+          {
+            instruction: 'Watch',
+            videoUrl: 'https://cdn.example.com/legacy.mp4',
+          },
+        ],
+      }),
+    );
+
+    expect(input.steps[0]?.videoUrl).toBeUndefined();
+  });
+
+  it('copies a captioned video into a new adaptation', () => {
+    const input = buildAdaptationInput(
+      sourceRecipe({
+        steps: [
+          {
+            instruction: 'Watch',
+            videoUrl: 'https://cdn.example.com/step.mp4',
+            captionUrl: 'https://cdn.example.com/step.en.vtt',
+            captionLanguage: 'en',
+          },
+        ],
+      }),
+    );
+
+    expect(input.steps[0]).toMatchObject({
+      videoUrl: 'https://cdn.example.com/step.mp4',
+      captionUrl: 'https://cdn.example.com/step.en.vtt',
+      captionLanguage: 'en',
+    });
+  });
 });
 
 describe('assembleTimeline', () => {

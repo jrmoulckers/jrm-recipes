@@ -18,7 +18,7 @@ import { getLimitStatus } from '~/server/billing/entitlements';
 import { checkRateLimit, RATE_LIMITED_MESSAGE } from '~/server/rate-limit';
 import { importRecipeFromUrl, type ImportResult } from './import';
 import { parseRecipeText } from './import-text';
-import { recipeInput, type RecipeInput } from './validation';
+import { recipeWriteInput, type RecipeInput } from './validation';
 import { recipeTag } from './cache-tags';
 import { diffRecipeSnapshots, type RecipeDiff } from '~/lib/recipe-diff';
 import { recipeToInput } from './timeline';
@@ -59,7 +59,7 @@ function groupForbiddenResult(): ActionResult {
 }
 
 const runCreateRecipe = authedAction({
-  input: recipeInput,
+  input: recipeWriteInput,
   handler: async (data, user): Promise<ActionResult> => {
     // Throttle write spam / storage exhaustion (issue #199).
     if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
@@ -122,7 +122,7 @@ export async function createRecipeAction(input: RecipeInput): Promise<ActionResu
 }
 
 const runUpdateRecipe = authedAction({
-  input: recipeInput,
+  input: recipeWriteInput,
   handler: async (data, user, id: string): Promise<ActionResult> => {
     if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {

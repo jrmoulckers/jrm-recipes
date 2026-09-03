@@ -956,12 +956,7 @@ function StepMedia({
           />
         </div>
       )}
-      {step.videoUrl && (
-        // Step videos are user-uploaded and the data model has no caption/track
-        // storage, so there is no caption to render. Adding an empty <track> would
-        // satisfy the rule while giving deaf and hard-of-hearing users nothing —
-        // the honest fix is a captions-upload feature, tracked in #989.
-        // eslint-disable-next-line jsx-a11y/media-has-caption
+      {step.videoUrl && step.captionUrl && step.captionLanguage ? (
         <video
           controls
           playsInline
@@ -969,9 +964,20 @@ function StepMedia({
           className="aspect-video w-full rounded-xl bg-background short-landscape:aspect-auto short-landscape:h-[28dvh]"
         >
           <source src={step.videoUrl} />
+          <track
+            kind="captions"
+            src={step.captionUrl}
+            srcLang={step.captionLanguage}
+            label={step.captionLanguage}
+            default
+          />
           {tS('videoFallback')}
         </video>
-      )}
+      ) : step.videoUrl ? (
+        <p role="note" className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+          {tS('captionsRequired')}
+        </p>
+      ) : null}
     </div>
   );
 }

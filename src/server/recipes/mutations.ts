@@ -25,7 +25,7 @@ import { AuditAction, recordAudit } from '~/server/audit';
 import { assertKidAllowed } from '~/server/groups/kid-safe';
 import { resolveFoodIds } from '~/server/db/resolve-food';
 import { isReservedRecipeSlug } from '~/lib/recipe-reserved-slugs';
-import { recipeSlug, type RecipeInput } from './validation';
+import { recipeSlug, recipeWriteInput, type RecipeInput } from './validation';
 import { generateShareToken } from './share-token';
 import { parseSnapshot } from './queries';
 import { buildAdaptationInput } from './timeline';
@@ -529,6 +529,8 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
         imageUrl: step.imageUrl ?? null,
         imageAlt: step.imageAlt ?? null,
         videoUrl: step.videoUrl ?? null,
+        captionUrl: step.captionUrl ?? null,
+        captionLanguage: step.captionLanguage ?? null,
         timerSeconds: step.timerSeconds ?? null,
         targetTempC: step.targetTempC ?? null,
         doneness: step.doneness ?? null,
@@ -1024,6 +1026,7 @@ export async function revertRecipe(id: string, versionNumber: number, author: Us
 
       const input = parseSnapshot(version.snapshot);
       if (!input) throw new DomainError('BAD_SNAPSHOT');
+      if (!recipeWriteInput.safeParse(input).success) throw new DomainError('BAD_SNAPSHOT');
 
       const result = await applyRecipeInput(
         tx,

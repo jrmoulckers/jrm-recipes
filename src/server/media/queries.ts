@@ -49,6 +49,7 @@ export async function listAssets(
   const rows = await db.query.mediaAssets.findMany({
     where: and(
       eq(mediaAssets.userId, user.id),
+      eq(mediaAssets.resourceType, 'image'),
       isNull(mediaAssets.deletedAt),
       validCursor ? lt(mediaAssets.createdAt, validCursor) : undefined,
     ),

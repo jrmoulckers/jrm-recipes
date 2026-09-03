@@ -321,6 +321,9 @@ export const recipeSteps = pgTable(
     /** Author-written description of the step photo (#125). See `coverImageAlt`. */
     imageAlt: varchar({ length: 300 }),
     videoUrl: varchar({ length: 2048 }),
+    /** WebVTT captions for `videoUrl`, paired with their BCP-47 language (#989). */
+    captionUrl: varchar({ length: 2048 }),
+    captionLanguage: varchar({ length: 35 }),
     timerSeconds: integer(),
     // Target internal / doneness temperature in Celsius (#417). The truth a
     // timer only approximates ("crumb at 96°C", "chicken at 74°C"). Stored in °C
@@ -337,6 +340,10 @@ export const recipeSteps = pgTable(
     index('recipe_steps_image_url_idx')
       .on(t.imageUrl)
       .where(sql`${t.imageUrl} is not null`),
+    check(
+      'recipe_steps_caption_pair_check',
+      sql`(${t.captionUrl} is null and ${t.captionLanguage} is null) or (${t.captionUrl} is not null and ${t.captionLanguage} is not null and ${t.videoUrl} is not null)`,
+    ),
     // A step timer can't run negative. Mirrors `stepInput.timerSeconds` (min 0).
     check('recipe_steps_timer_seconds_check', sql`${t.timerSeconds} >= 0`),
   ],
