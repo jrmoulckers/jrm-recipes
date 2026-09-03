@@ -186,6 +186,8 @@ export function makeRecipeStep(overrides: Partial<RecipeStep> = {}): RecipeStep 
     imageUrl: null,
     imageAlt: null,
     videoUrl: null,
+    captionUrl: null,
+    captionLanguage: null,
     timerSeconds: null,
     targetTempC: null,
     doneness: null,

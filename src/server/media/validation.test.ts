@@ -23,6 +23,10 @@ describe('mediaPublicId', () => {
     expect(mediaPublicId.safeParse('heirloom/recipes/abc_123-x').success).toBe(true);
   });
 
+  it('accepts the extension Cloudinary retains for a raw WebVTT public id', () => {
+    expect(mediaPublicId.safeParse('heirloom/captions/step.en.vtt').success).toBe(true);
+  });
+
   it.each(['../secrets', 'heirloom/../other', 'heirloom/a..b', 'a/../b'])(
     'rejects traversal attempt %s',
     (value) => {
@@ -48,6 +52,17 @@ describe('recordUploadInput', () => {
       bytes: 240_000,
       format: 'webp',
       folder: 'heirloom/recipes',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it('accepts a raw WebVTT upload payload', () => {
+    const parsed = recordUploadInput.safeParse({
+      url: 'https://res.cloudinary.com/demo/raw/upload/v1/heirloom/captions/step.en.vtt',
+      publicId: 'heirloom/captions/step.en.vtt',
+      bytes: 2_400,
+      format: 'vtt',
+      folder: 'heirloom/captions',
     });
     expect(parsed.success).toBe(true);
   });

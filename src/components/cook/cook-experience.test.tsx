@@ -88,6 +88,8 @@ function makeRecipe(overrides: Partial<CookRecipe> = {}): CookRecipe {
         imageUrl: null,
         imageAlt: null,
         videoUrl: null,
+        captionUrl: null,
+        captionLanguage: null,
         timerSeconds: null,
         techniques: null,
       },
@@ -95,6 +97,48 @@ function makeRecipe(overrides: Partial<CookRecipe> = {}): CookRecipe {
     ...overrides,
   };
 }
+
+describe('Cook Mode step-video captions (issue #989)', () => {
+  it('renders the stored WebVTT track as the default captions', () => {
+    const { container } = render(
+      <CookExperience
+        recipe={makeRecipe({
+          steps: [
+            {
+              ...makeRecipe().steps[0]!,
+              videoUrl: 'https://cdn.example.com/step.mp4',
+              captionUrl: 'https://cdn.example.com/step.en.vtt',
+              captionLanguage: 'en-US',
+            },
+          ],
+        })}
+      />,
+    );
+
+    const track = container.querySelector('video track[kind="captions"]');
+    expect(track).toHaveAttribute('src', 'https://cdn.example.com/step.en.vtt');
+    expect(track).toHaveAttribute('srclang', 'en-US');
+    expect(track).toHaveAttribute('default');
+  });
+
+  it('does not embed a legacy video until captions are added', () => {
+    render(
+      <CookExperience
+        recipe={makeRecipe({
+          steps: [
+            {
+              ...makeRecipe().steps[0]!,
+              videoUrl: 'https://cdn.example.com/legacy.mp4',
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(document.querySelector('video')).toBeNull();
+    expect(screen.getByRole('note')).toHaveTextContent(/unavailable until.*captions/i);
+  });
+});
 
 describe('Cook Mode chrome safe-area insets (issue #283)', () => {
   it('pads the sticky footer so Previous/Next/Done clear the home indicator and side notch', () => {
@@ -196,6 +240,8 @@ describe('Cook Mode kid-safety callout (issue #423)', () => {
           imageUrl: null,
           imageAlt: null,
           videoUrl: null,
+          captionUrl: null,
+          captionLanguage: null,
           timerSeconds: null,
           techniques: ['Sauté'],
         },
@@ -252,6 +298,8 @@ describe('Cook Mode get-ready gate (issue #444)', () => {
             imageUrl: null,
             imageAlt: null,
             videoUrl: null,
+            captionUrl: null,
+            captionLanguage: null,
             timerSeconds: null,
             techniques: null,
           },
@@ -382,6 +430,8 @@ describe('Cook Mode Kids countdown ring (issue #442)', () => {
           imageUrl: null,
           imageAlt: null,
           videoUrl: null,
+          captionUrl: null,
+          captionLanguage: null,
           timerSeconds: 300,
           techniques: null,
         },
@@ -426,6 +476,8 @@ describe('Cook Mode Kids step trail (issue #441)', () => {
       imageUrl: null,
       imageAlt: null,
       videoUrl: null,
+      captionUrl: null,
+      captionLanguage: null,
       timerSeconds: null,
       techniques: null,
     });

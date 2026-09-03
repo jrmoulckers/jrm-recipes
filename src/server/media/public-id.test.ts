@@ -34,6 +34,17 @@ describe('cloudinaryRefFromUrl', () => {
     ).toEqual({ publicId: 'heirloom/steps/clip', resourceType: 'video' });
   });
 
+  it('preserves the extension in a raw caption public id', () => {
+    expect(
+      cloudinaryRefFromUrl(
+        'https://res.cloudinary.com/heirloom/raw/upload/v1/heirloom/captions/step.en.vtt',
+      ),
+    ).toEqual({
+      publicId: 'heirloom/captions/step.en.vtt',
+      resourceType: 'raw',
+    });
+  });
+
   it('refuses URLs on other hosts', () => {
     expect(cloudinaryRefFromUrl('https://example.com/image/upload/v1/a.jpg')).toBeNull();
     // Suffix attack: a hostname that merely ends with the Cloudinary host.

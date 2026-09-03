@@ -1,6 +1,12 @@
 ﻿import { describe, expect, it, vi } from 'vitest';
 
-import { ingredientInput, recipeInput, recipeSlug, stepInput } from './validation';
+import {
+  ingredientInput,
+  recipeInput,
+  recipeSlug,
+  recipeWriteInput,
+  stepInput,
+} from './validation';
 
 describe('recipeInput', () => {
   it('trims titles and fills recipe defaults', () => {
@@ -74,6 +80,8 @@ describe('recipeInput', () => {
             instruction: ' Mix filling ',
             imageUrl: '',
             videoUrl: '',
+            captionUrl: '',
+            captionLanguage: '',
             timerSeconds: '',
           },
         ],
@@ -101,6 +109,8 @@ describe('recipeInput', () => {
           instruction: 'Mix filling',
           imageUrl: undefined,
           videoUrl: undefined,
+          captionUrl: undefined,
+          captionLanguage: undefined,
           timerSeconds: undefined,
           techniques: [],
         },
@@ -290,6 +300,76 @@ describe('stepInput', () => {
   it('rejects empty instructions and out-of-range timers', () => {
     expect(() => stepInput.parse({ instruction: ' ' })).toThrow(/Add step text/);
     expect(() => stepInput.parse({ instruction: 'Wait', timerSeconds: '86401' })).toThrow();
+  });
+
+  it('requires caption URLs and languages as a pair on a video step', () => {
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+        captionUrl: 'https://cdn.example.com/step.vtt',
+        captionLanguage: 'en-US',
+      }).success,
+    ).toBe(true);
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+      }).success,
+    ).toBe(true);
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+        captionUrl: 'https://cdn.example.com/step.vtt',
+      }).success,
+    ).toBe(false);
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        captionUrl: 'https://cdn.example.com/step.vtt',
+        captionLanguage: 'en',
+      }).success,
+    ).toBe(false);
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+        captionUrl: 'https://cdn.example.com/step.vtt',
+        captionLanguage: 'English',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('reports a malformed caption URL without throwing from safeParse', () => {
+    expect(() =>
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+        captionUrl: 'not-a-url.vtt',
+        captionLanguage: 'en',
+      }),
+    ).not.toThrow();
+    expect(
+      stepInput.safeParse({
+        instruction: 'Watch',
+        videoUrl: 'https://cdn.example.com/step.mp4',
+        captionUrl: 'not-a-url.vtt',
+        captionLanguage: 'en',
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('recipeWriteInput', () => {
+  it('rejects a new uncaptioned video while the snapshot schema remains backward compatible', () => {
+    const legacyVideo = {
+      title: 'Legacy video',
+      steps: [{ instruction: 'Watch', videoUrl: 'https://cdn.example.com/step.mp4' }],
+    };
+
+    expect(recipeInput.safeParse(legacyVideo).success).toBe(true);
+    expect(recipeWriteInput.safeParse(legacyVideo).success).toBe(false);
   });
 });
 

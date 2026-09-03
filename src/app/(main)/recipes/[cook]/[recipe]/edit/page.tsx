@@ -102,6 +102,8 @@ async function EditRecipePage({ params }: { params: Promise<RecipeRouteParams> }
       imageUrl: step.imageUrl ?? '',
       imageAlt: step.imageAlt ?? '',
       videoUrl: step.videoUrl ?? '',
+      captionUrl: step.captionUrl ?? '',
+      captionLanguage: step.captionLanguage ?? '',
       timerMinutes:
         step.timerSeconds != null ? String(Math.round((step.timerSeconds / 60) * 100) / 100) : '',
       targetTempC: step.targetTempC != null ? String(step.targetTempC) : '',

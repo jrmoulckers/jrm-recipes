@@ -379,6 +379,13 @@
       "when": 1788220297200,
       "tag": "0053_small_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788453924311,
+      "tag": "0054_bizarre_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

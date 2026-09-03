@@ -68,11 +68,25 @@ const mediaUrl = z
   .optional()
   .or(z.literal('').transform(() => undefined));
 
+const captionUrl = mediaUrl.refine((value) => {
+  if (value == null) return true;
+  try {
+    return new URL(value).pathname.toLowerCase().endsWith('.vtt');
+  } catch {
+    return false;
+  }
+}, 'Captions must be a WebVTT (.vtt) file');
+
 /**
  * Author-written alt text (#125). Bounded to the column width; blank collapses
  * to undefined, which stores NULL and returns the surface to its generated alt.
  */
 const imageAlt = optionalString(300);
+
+const captionLanguage = optionalString(35).refine(
+  (value) => value == null || /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value),
+  'Use a valid caption language, such as en or en-US',
+);
 
 /** A nullable, coercible non-negative number from a possibly-empty form field. */
 const optionalNumber = z
@@ -102,24 +116,45 @@ export const ingredientInput = z.object({
   optional: z.boolean().optional().default(false),
 });
 
-export const stepInput = z.object({
-  section: optionalString(120),
-  title: optionalString(200),
-  instruction: z
-    .string()
-    .trim()
-    .min(1, 'Add step text')
-    .max(5000, 'Keep each step under 5,000 characters'),
-  imageUrl: mediaUrl,
-  imageAlt,
-  videoUrl: mediaUrl,
-  timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
-  // Target internal/doneness temperature in °C + a short doneness cue (#417).
-  // Bounds cover freezer (-50) through a very hot oven (400 °C). NULL passes.
-  targetTempC: optionalNumber.pipe(z.number().int().min(-50).max(400).optional()),
-  doneness: optionalString(200),
-  techniques: z.array(z.string().trim().min(1).max(80)).optional().default([]),
-});
+export const stepInput = z
+  .object({
+    section: optionalString(120),
+    title: optionalString(200),
+    instruction: z
+      .string()
+      .trim()
+      .min(1, 'Add step text')
+      .max(5000, 'Keep each step under 5,000 characters'),
+    imageUrl: mediaUrl,
+    imageAlt,
+    videoUrl: mediaUrl,
+    captionUrl,
+    captionLanguage,
+    timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
+    // Target internal/doneness temperature in °C + a short doneness cue (#417).
+    // Bounds cover freezer (-50) through a very hot oven (400 °C). NULL passes.
+    targetTempC: optionalNumber.pipe(z.number().int().min(-50).max(400).optional()),
+    doneness: optionalString(200),
+    techniques: z.array(z.string().trim().min(1).max(80)).optional().default([]),
+  })
+  .superRefine((step, context) => {
+    if (step.captionUrl && !step.videoUrl) {
+      context.addIssue({
+        code: 'custom',
+        path: ['captionUrl'],
+        message: 'Add a video before adding captions',
+      });
+    }
+    if (Boolean(step.captionUrl) !== Boolean(step.captionLanguage)) {
+      context.addIssue({
+        code: 'custom',
+        path: step.captionUrl ? ['captionLanguage'] : ['captionUrl'],
+        message: step.captionUrl
+          ? 'Choose the language used in the captions'
+          : 'Add a WebVTT caption file',
+      });
+    }
+  });
 
 export const recipeVisibility = z.enum(['private', 'group', 'unlisted', 'public']);
 export const recipeStatus = z.enum(['draft', 'published']);
@@ -205,6 +240,23 @@ export const recipeInput = z
       });
     }
   });
+
+/**
+ * New recipe writes require every prerecorded step video to carry real captions.
+ * `recipeInput` itself remains backward-compatible so historical version
+ * snapshots containing legacy uncaptioned videos can still be read and diffed.
+ */
+export const recipeWriteInput = recipeInput.superRefine((recipe, context) => {
+  recipe.steps.forEach((step, index) => {
+    if (step.videoUrl && (!step.captionUrl || !step.captionLanguage)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['steps', index, step.captionUrl ? 'captionLanguage' : 'captionUrl'],
+        message: 'Add a WebVTT caption file and its language for this video',
+      });
+    }
+  });
+});
 
 export type RecipeInput = z.infer<typeof recipeInput>;
 export type IngredientInput = z.infer<typeof ingredientInput>;

@@ -160,11 +160,12 @@ export async function collectUserAssets(
   if (recipeIds.length > 0) {
     const steps = await executor.query.recipeSteps.findMany({
       where: inArray(recipeSteps.recipeId, recipeIds),
-      columns: { imageUrl: true, videoUrl: true },
+      columns: { imageUrl: true, videoUrl: true, captionUrl: true },
     });
     for (const step of steps) {
       add(step.imageUrl);
       add(step.videoUrl);
+      add(step.captionUrl);
     }
   }
 
@@ -276,7 +277,7 @@ async function replacementCustodian(
     sql`exists (
       select 1 from ${recipeSteps}
       where ${recipeSteps.recipeId} = ${recipes.id}
-        and (${recipeSteps.imageUrl} = ${url} or ${recipeSteps.videoUrl} = ${url})
+        and (${recipeSteps.imageUrl} = ${url} or ${recipeSteps.videoUrl} = ${url} or ${recipeSteps.captionUrl} = ${url})
     )`,
     sql`exists (
       select 1 from ${recipeVersions}

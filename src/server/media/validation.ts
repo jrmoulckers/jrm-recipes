@@ -32,7 +32,11 @@ export const mediaPublicId = z
   .trim()
   .min(1)
   .max(255)
-  .regex(/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/, 'Unsupported image reference.');
+  .regex(
+    /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)*$/,
+    'Unsupported media reference.',
+  )
+  .refine((value) => !value.includes('..'), 'Unsupported media reference.');
 
 /** Alt text. Empty collapses to `undefined`, which clears the column. */
 export const mediaAltText = z

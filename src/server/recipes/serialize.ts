@@ -59,6 +59,8 @@ export function toCookRecipe(recipe: FullRecipe): CookRecipe {
       imageUrl: step.imageUrl,
       imageAlt: step.imageAlt,
       videoUrl: step.videoUrl,
+      captionUrl: step.captionUrl,
+      captionLanguage: step.captionLanguage,
       timerSeconds: step.timerSeconds,
       targetTempC: step.targetTempC,
       doneness: step.doneness,
