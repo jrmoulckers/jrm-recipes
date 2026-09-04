@@ -553,7 +553,7 @@ export function CookExperience({
                 prominent={kidSafe}
               />
               {totalSteps > 1 && (
-                <p className="text-xs text-muted-foreground/80">{tCook('step.swipeHint')}</p>
+                <p className="text-xs text-muted-foreground">{tCook('step.swipeHint')}</p>
               )}
             </div>
 
