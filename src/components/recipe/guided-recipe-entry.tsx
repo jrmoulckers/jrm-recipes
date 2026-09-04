@@ -126,7 +126,8 @@ export function GuidedRecipeEntry({ draftOwnerId }: { draftOwnerId?: string }) {
     return true;
   }
 
-  function nextStep() {
+  function nextStep(event?: React.SyntheticEvent) {
+    event?.preventDefault();
     if (!validateStep(stepKey)) return;
     setDraftValue((current) => ({
       ...current,

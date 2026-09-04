@@ -125,6 +125,7 @@ describe('GuidedRecipeEntry (#398)', () => {
 
     expect(await screen.findByTestId('recipe-preview')).toHaveTextContent('Sunday sauce');
     expect(screen.getByText('Only you can see this recipe')).toBeInTheDocument();
+    expect(mockedCreate).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Save recipe' }));
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledOnce());
