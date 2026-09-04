@@ -41,10 +41,12 @@ import {
 import { absoluteUrl, formatMinutes } from '~/lib/utils';
 import { brand } from '~/config/brand';
 import { pickNutrition } from '~/lib/nutrition';
+import { todayIso } from '~/lib/nutrition-targets';
 import { isAllergen, type Allergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { getNutritionTargetOn } from '~/server/dietary/targets';
 import { getUnitSettings } from '~/server/units/queries';
 import { toUnitPrefs, toCustomUnitDefs } from '~/lib/unit-prefs';
 import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from '~/lib/recipe-seo';
@@ -296,6 +298,19 @@ async function RecipePage({
   // facts + portions), falling back to a free-text match. The panel renders the
   // provenance tag rather than re-deriving the precedence. Compute-on-read only.
   const manualNutrition = pickNutrition(recipe);
+  const displayedDate = todayIso();
+  const memberProfilesPromise =
+    user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]);
+  const calorieTargetsPromise =
+    user && dbEnabled
+      ? memberProfilesPromise.then((profiles) =>
+          Promise.all(
+            profiles.map((profile) =>
+              getNutritionTargetOn(profile.id, displayedDate, { userId: user.id }),
+            ),
+          ),
+        )
+      : Promise.resolve([]);
   const [
     lineage,
     familyTree,
@@ -304,6 +319,7 @@ async function RecipePage({
     similar,
     favoriteIds,
     memberProfiles,
+    calorieTargets,
     anchoredSuggestions,
     unitSettings,
     nutritionView,
@@ -315,7 +331,8 @@ async function RecipePage({
     user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
     listSimilarRecipes(user, recipe.id),
     getFavoriteRecipeIds(user?.id),
-    user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
+    memberProfilesPromise,
+    calorieTargetsPromise,
     dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
     user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
     dbEnabled ? getRecipeNutritionView(recipe.id, manualNutrition) : Promise.resolve(null),
@@ -334,13 +351,13 @@ async function RecipePage({
     else suggestionsByAnchor.set(key, [suggestion]);
   }
   const canSuggest = Boolean(user);
-  // Family members drive the nutrition panel's calorie-goal indicator (#430)
+  // Family members drive the nutrition panel's calorie-target indicator (#430)
   // and the ingredient conflict flags (#429). Narrow the stored string arrays
   // back to the canonical unions here so the client gets typed data.
-  const calorieMembers = memberProfiles.map((m) => ({
+  const calorieMembers = memberProfiles.map((m, index) => ({
     id: m.id,
     name: m.name,
-    calorieGoal: m.calorieGoal,
+    calorieTarget: calorieTargets[index]?.targets.calories ?? null,
     allergens: (m.allergens ?? []).filter(isAllergen),
     diets: (m.diets ?? []).filter(isDietaryTag),
   }));

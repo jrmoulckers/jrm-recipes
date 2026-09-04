@@ -10,7 +10,61 @@ vi.mock('~/server/db', () => ({
   isDbConfigured: () => true,
 }));
 
-import { getNutritionTargetsOn } from './targets';
+import { getNutritionTargetOn, getNutritionTargetsOn } from './targets';
+
+describe('getNutritionTargetOn', () => {
+  beforeEach(() => {
+    select.mockReset();
+  });
+
+  it('returns the effective target selected by the displayed date query', async () => {
+    select.mockImplementationOnce(() => ({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () =>
+                Promise.resolve([
+                  {
+                    id: 'target-1',
+                    profileId: 'member-1',
+                    effectiveFrom: '2026-09-01',
+                    targets: { calories: 1800 },
+                  },
+                ]),
+            }),
+          }),
+        }),
+      }),
+    }));
+
+    await expect(
+      getNutritionTargetOn('member-1', '2026-09-04', { userId: 'owner-1' }),
+    ).resolves.toMatchObject({
+      profileId: 'member-1',
+      effectiveFrom: '2026-09-01',
+      targets: { calories: 1800 },
+    });
+  });
+
+  it('returns null when no target was in force on the displayed date', async () => {
+    select.mockImplementationOnce(() => ({
+      from: () => ({
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([]),
+            }),
+          }),
+        }),
+      }),
+    }));
+
+    await expect(
+      getNutritionTargetOn('member-1', '2026-08-31', { userId: 'owner-1' }),
+    ).resolves.toBeNull();
+  });
+});
 
 describe('getNutritionTargetsOn date batching', () => {
   beforeEach(() => {

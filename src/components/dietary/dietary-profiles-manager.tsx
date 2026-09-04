@@ -45,7 +45,6 @@ export type MemberProfileView = {
   name: string;
   allergens: Allergen[];
   diets: DietaryTag[];
-  calorieGoal: number | null;
   groupId: string | null;
   /** Target history, newest first (#1046). Empty when none were ever set. */
   targets: EffectiveNutritionTarget[];

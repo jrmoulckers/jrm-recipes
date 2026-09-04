@@ -17,10 +17,7 @@ import { memberDietaryProfiles, nutritionTargets } from '~/server/db/schema';
  *
  * Retrospective surfaces (planner roll-ups, cook-log totals, adherence over
  * time) must score a day against the target that was in force *that day*, not
- * against whatever the member is aiming for now. Reading
- * `memberDietaryProfiles.calorieGoal` gets the latter and is wrong for anything
- * historical; that column survives only for the expand/contract window and is
- * dual-written from these rows.
+ * against whatever the member is aiming for now.
  *
  * Every function is non-throwing and degrades to "no target" when the database
  * is not configured, so a caller can fold the result into a view without

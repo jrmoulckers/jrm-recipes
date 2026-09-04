@@ -25,11 +25,11 @@ type Basis = 'serving' | 'whole';
 /** Toggle order for the per-serving / whole-recipe basis switch. */
 const BASIS_OPTIONS = ['serving', 'whole'] as const;
 
-/** A family member whose daily calorie goal a serving can be framed against. */
+/** A family member whose effective daily calorie target a serving can be framed against. */
 export type CalorieMember = {
   id: string;
   name: string;
-  calorieGoal: number | null;
+  calorieTarget: number | null;
 };
 
 /** Badge variant + level key for each dietary band (issue #416). */
@@ -68,8 +68,8 @@ export function NutritionPanel({
   servingsNoun?: string | null;
   className?: string;
   /**
-   * Optional family members (issue #430). When any carry a calorie goal, the
-   * panel frames the shown calories against the active member's goal.
+   * Optional family members (issue #430). When any carry a calorie target, the
+   * panel frames the shown calories against the active member's target.
    */
   members?: CalorieMember[];
   /**
@@ -122,13 +122,13 @@ export function NutritionPanel({
   // selection falls back to the first such member so an indicator shows without
   // the cook having to pick one.
   const calorieCandidates = (members ?? []).filter(
-    (m): m is CalorieMember & { calorieGoal: number } =>
-      typeof m.calorieGoal === 'number' && m.calorieGoal > 0,
+    (m): m is CalorieMember & { calorieTarget: number } =>
+      typeof m.calorieTarget === 'number' && m.calorieTarget > 0,
   );
   const activeMember =
     calorieCandidates.find((m) => m.id === activeMemberId) ?? calorieCandidates[0] ?? null;
   const caloriePercent = activeMember
-    ? caloriePercentOfGoal(scaled.calories, activeMember.calorieGoal)
+    ? caloriePercentOfGoal(scaled.calories, activeMember.calorieTarget)
     : null;
 
   return (

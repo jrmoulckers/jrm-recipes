@@ -1,8 +1,8 @@
 import 'server-only';
 
-import { and, desc, eq, lte } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
-import { selectEffectiveTarget, todayIso } from '~/lib/nutrition-targets';
+import { todayIso } from '~/lib/nutrition-targets';
 import { db } from '~/server/db';
 import {
   groupMembers,
@@ -42,38 +42,6 @@ function profileFields(input: MemberProfileInput, groupId: string | null) {
   };
 }
 
-/**
- * Mirror the calorie target in force today onto the legacy
- * `memberDietaryProfiles.calorieGoal` column (#1046).
- *
- * The column is the *old* shape of this fact and is being removed in the
- * contract migration. Until that ships, code deployed before the targets table
- * still reads it, so every write that can change today's target dual-writes it
- * here rather than leaving the two to drift — which is exactly the failure mode
- * folding the goal into the targets table was meant to end.
- */
-async function syncProfileCalorieGoal(tx: Tx, profileId: string) {
-  const today = todayIso();
-  const rows = await tx
-    .select({
-      effectiveFrom: nutritionTargets.effectiveFrom,
-      targets: nutritionTargets.targets,
-    })
-    .from(nutritionTargets)
-    .where(
-      and(eq(nutritionTargets.profileId, profileId), lte(nutritionTargets.effectiveFrom, today)),
-    )
-    .orderBy(desc(nutritionTargets.effectiveFrom))
-    .limit(1);
-
-  const current = selectEffectiveTarget(rows, today);
-  const calories = current?.targets?.calories;
-  await tx
-    .update(memberDietaryProfiles)
-    .set({ calorieGoal: typeof calories === 'number' ? Math.round(calories) : null })
-    .where(eq(memberDietaryProfiles.id, profileId));
-}
-
 /** Load a profile the user owns, or throw NOT_FOUND. */
 async function requireOwnedProfile(tx: Tx, id: string, user: User) {
   const profile = await tx.query.memberDietaryProfiles.findFirst({
@@ -91,7 +59,6 @@ export async function createMemberProfile(input: MemberProfileInput, user: User)
       .insert(memberDietaryProfiles)
       .values({
         ...profileFields(input, groupId),
-        calorieGoal: input.calorieGoal ?? null,
         userId: user.id,
       })
       .returning({ id: memberDietaryProfiles.id });
@@ -110,14 +77,7 @@ export async function createMemberProfile(input: MemberProfileInput, user: User)
   });
 }
 
-/**
- * Update a profile's name, restrictions and group scope.
- *
- * `calorieGoal` is deliberately **not** written here (#1046). It is a mirror of
- * the target in force today, owned by {@link setNutritionTarget}; writing it
- * from the profile form as well would give one fact two editors and let them
- * disagree.
- */
+/** Update a profile's name, restrictions and group scope. */
 export async function updateMemberProfile(id: string, input: MemberProfileInput, user: User) {
   return db.transaction(async (tx) => {
     await requireOwnedProfile(tx, id, user);
@@ -169,7 +129,6 @@ export async function setNutritionTarget(input: NutritionTargetInput, user: User
             eq(nutritionTargets.effectiveFrom, input.effectiveFrom),
           ),
         );
-      await syncProfileCalorieGoal(tx, input.profileId);
       return { id: input.profileId };
     }
 
@@ -187,7 +146,6 @@ export async function setNutritionTarget(input: NutritionTargetInput, user: User
       .returning({ id: nutritionTargets.id });
     if (!row) throw new Error('CONFLICT');
 
-    await syncProfileCalorieGoal(tx, input.profileId);
     return row;
   });
 }
@@ -207,7 +165,6 @@ export async function deleteNutritionTarget(id: string, user: User) {
     await requireOwnedProfile(tx, target.profileId, user);
 
     await tx.delete(nutritionTargets).where(eq(nutritionTargets.id, id));
-    await syncProfileCalorieGoal(tx, target.profileId);
     return { id };
   });
 }
