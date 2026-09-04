@@ -4,7 +4,7 @@ import type * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { SignedIn, SignedOut, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
+import { Show, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
 import {
   Bell,
   ChefHat,
@@ -127,7 +127,7 @@ export function ProfileHub({
 
       {/* Signed-out call to action (Clerk-configured deployments). */}
       {isConfigured ? (
-        <SignedOut>
+        <Show when="signed-out">
           <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-token sm:flex-row">
             <SignUpButton mode="modal">
               <Button className="flex-1" onClick={() => track('signup_started', {})}>
@@ -140,7 +140,7 @@ export function ProfileHub({
               </Button>
             </SignInButton>
           </div>
-        </SignedOut>
+        </Show>
       ) : null}
 
       {/* Profile photo. Signed-in only: there is no row to write to otherwise. */}
@@ -232,7 +232,7 @@ export function ProfileHub({
           })}
         </ul>
         {isConfigured ? (
-          <SignedIn>
+          <Show when="signed-in">
             <div className="mt-3 border-t border-border pt-3">
               <SignOutButton>
                 <Button variant="ghost" className="w-full justify-start gap-3">
@@ -241,7 +241,7 @@ export function ProfileHub({
                 </Button>
               </SignOutButton>
             </div>
-          </SignedIn>
+          </Show>
         ) : null}
       </Section>
     </div>

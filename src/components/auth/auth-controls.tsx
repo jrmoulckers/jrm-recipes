@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 
 import { Button } from '~/components/ui/button';
 import { track } from '~/lib/analytics';
@@ -52,7 +52,7 @@ export function AuthControls({
 
   return (
     <>
-      <SignedOut>
+      <Show when="signed-out">
         <div className="flex items-center gap-2">
           <SignInButton mode="modal">
             <Button variant="ghost" size="sm">
@@ -65,10 +65,10 @@ export function AuthControls({
             </Button>
           </SignUpButton>
         </div>
-      </SignedOut>
-      <SignedIn>
+      </Show>
+      <Show when="signed-in">
         <UserButton appearance={{ elements: { avatarBox: 'h-9 w-9' } }} />
-      </SignedIn>
+      </Show>
     </>
   );
 }
@@ -85,13 +85,13 @@ export function StartCookingButton({
 
   if (isConfigured) {
     return (
-      <SignedOut>
+      <Show when="signed-out">
         <SignUpButton mode="modal">
           <Button size="lg" className={className} onClick={() => track('signup_started', {})}>
             {t('startCookbook')}
           </Button>
         </SignUpButton>
-      </SignedOut>
+      </Show>
     );
   }
   return (
