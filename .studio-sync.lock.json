@@ -1,12 +1,18 @@
 {
   "version": 1,
   "backbone": "jrmoulckers/.github",
-  "generatedAt": "2026-08-11T04:27:03.888Z",
+  "classifierSha256": "de7337e8bf0b270e6b75a2b1e4bc69b7a91c770dcc1f8bd8f669f02508239d89",
+  "generatedAt": "2026-08-31T14:55:16.358Z",
   "entries": {
     ".gitattributes": {
       "sourceSha256": "4be6041de14159436002446da3193a178a4defa235fe71585c04002d070d80c7",
       "targetSha256": "a591a7816b02daf54849d69af18396ff6175f24de0b06d0a1def97d0b5a9274a",
       "syncedAt": "2026-08-11T04:27:03.877Z"
+    },
+    ".github/agents/3d-print-specialist.agent.md": {
+      "sourceSha256": "52b8b229d57d4cbc519cd1990213ce69806f8d410e180b8e3ae7bf608d933faa",
+      "targetSha256": "d49253ace120841304bfeeb48922ff3867653c251038fd65959049291712e06b",
+      "syncedAt": "2026-08-31T14:55:16.349Z"
     },
     ".github/agents/accessibility-reviewer.agent.md": {
       "sourceSha256": "f83d90b50ea87be04935ba849c0a93eda729452a2d7eee81e0cb02b4bf04dae5",
@@ -119,34 +125,39 @@
       "syncedAt": "2026-08-07T15:34:43.458Z"
     },
     ".github/copilot-instructions.md": {
-      "sourceSha256": "f8f1ed9ad63ac948bf568540bfd3551d269af4d511112771d0818805f3c7e09d",
-      "targetSha256": "7c8a5883a4b81879ac7f0fafe2aeb40b6627387f5beb7934a1c31f2493ac4dd4",
-      "syncedAt": "2026-08-11T04:27:03.876Z"
+      "sourceSha256": "eb12e55218cdec94ecb73e113907a5cefa381560090c8b4fe4b704319681f519",
+      "targetSha256": "7b5e184805767845d0a81dfefc6259530411433ea8d4fc90596f67f902d717c4",
+      "syncedAt": "2026-08-31T14:55:16.348Z"
     },
     ".github/instructions/agents.instructions.md": {
-      "sourceSha256": "70f066ca74342a504f7411fbb21e62012b5b8ce05403ed32e93c3d39d145c8aa",
-      "targetSha256": "a772cb8d4790f9ae3763e6b94013000c16fb9192ab184b8ce20c3a297a10e78a",
-      "syncedAt": "2026-08-08T22:40:38.860Z"
+      "sourceSha256": "ab4641148ed4655e564d0ed5f3e1775d763f099aa69faed98a0cdd39fa62ac65",
+      "targetSha256": "e8b78155a814d2b06bd3d0090bb0fc311c98755fdbdc99e2294114e6a14eac18",
+      "syncedAt": "2026-08-31T14:55:16.353Z"
+    },
+    ".github/instructions/canon-formatting.instructions.md": {
+      "sourceSha256": "ee7e1146dfb546b87f4d7df6415497d7042b6d91391633e082e73405369988e5",
+      "targetSha256": "c7855d63c5ebd3144cfc44a3ed55c3a18191c1307f1333415cea42ef290e6337",
+      "syncedAt": "2026-08-31T14:55:16.353Z"
     },
     ".github/instructions/docs.instructions.md": {
-      "sourceSha256": "bb072694458d15a359bf7797cf081c821b0a91505be5da647a11eaba5c412b39",
-      "targetSha256": "6e0eb456aa7802230c6783dde741278a0f2831bebb90dad6a3aec2256a48a948",
-      "syncedAt": "2026-08-08T22:40:38.862Z"
+      "sourceSha256": "db90e20d33d96a6b079e288e0195a8fcfeb2fc984eda56cc258ca26dc653884a",
+      "targetSha256": "2d10dd1f79465f915f403761a7e57f2ecbac3ea42666334145748e6beae2178d",
+      "syncedAt": "2026-08-31T14:55:16.353Z"
     },
     ".github/instructions/skills.instructions.md": {
-      "sourceSha256": "6271f97c927a53ebe9de2d50d8d2de4b9f6b1904379c5c870498ca7a046e818a",
-      "targetSha256": "849a3c2e360cdd69b3b1f68aaab5b16f46f87268fa3a541e62793a627e45d7aa",
-      "syncedAt": "2026-08-08T22:40:38.864Z"
+      "sourceSha256": "18b2de57bd6ede3ec03d0281555122e507af2d2988df9b6f5a48d9eaa8257b17",
+      "targetSha256": "b75a00c46f43be3a17896606de7021958c945a4e70815c66489b4382f87cf38b",
+      "syncedAt": "2026-08-31T14:55:16.354Z"
     },
     ".github/instructions/tokens.instructions.md": {
-      "sourceSha256": "da5d995cceba6a3f72ed47b771b3ba81658132cdfe3f9a83e13fe7cc5635ee1b",
-      "targetSha256": "492b9cc97e2fe3e05b412ccc4bc72796e7a8f713319f49da1920b8db56f5fe71",
-      "syncedAt": "2026-08-11T04:27:03.887Z"
+      "sourceSha256": "514d378bbc952da122b2e9caa03ca45b0dd2db979939e758afc1f672e3c4b3ea",
+      "targetSha256": "81bd5937e736caf1ab38b3d5d451ce280219ff7d8ce59fdb722f388f1afedf28",
+      "syncedAt": "2026-08-31T14:55:16.354Z"
     },
     ".github/instructions/workflow.instructions.md": {
-      "sourceSha256": "f832c6dfa49f91055a8f5f4a91d0fccf88481fad9dc09dcde08381c67bed5c7c",
-      "targetSha256": "4206060d01da2c70515289c2750a497eff07c3f33c7a51c074b94234a09f279a",
-      "syncedAt": "2026-08-11T04:27:03.887Z"
+      "sourceSha256": "68eb1c69f316267c520319772f60a969250bd64a30d11b1e7ab29dde70db5cea",
+      "targetSha256": "901992802fe799a74ea821609d4c8e1e4c07e9f2e30d56218b9179c3571b5eaa",
+      "syncedAt": "2026-08-31T14:55:16.356Z"
     },
     ".github/prompts/backlog.prompt.md": {
       "sourceSha256": "662578e4e512ac591b86127f50c601283a27b6ce96c9e09b022b833f720fe750",
@@ -187,6 +198,11 @@
       "sourceSha256": "ad23c3f288955ff4c369d26f846c47c62b8e687c7f9e1683e550bf89335de571",
       "targetSha256": "350f984d725ae4042418f65e8f91888a12dd651c543060fb6ce4e3e131cf16b4",
       "syncedAt": "2026-08-08T21:04:42.761Z"
+    },
+    ".github/skills/3d-print-preparation/SKILL.md": {
+      "sourceSha256": "e741a53196c1e423d4d8b8fd14269087b39309ce0f8af8b85941e5bd18784bcf",
+      "targetSha256": "26bba404fb867678c2c5610b60cce3eda9b145ab8c68a954b246c601fd51816c",
+      "syncedAt": "2026-08-31T14:55:16.351Z"
     },
     ".github/skills/accessibility-testing/CHECKLIST.md": {
       "sourceSha256": "3beba6418cb63661b908ed82bb156ecd1fd4b588996f5f0dbdad7443655670ad",
@@ -294,9 +310,9 @@
       "syncedAt": "2026-08-07T15:34:43.460Z"
     },
     "AGENTS.md": {
-      "sourceSha256": "06c07af49b0234f194414caf3fef7c15fc9e2ee93dde2c23231a16b2070c6275",
-      "targetSha256": "8d8e14c1193b620a04cccc4bcd19ad435e7c93016c5303bc44b1962dc7bf3ef7",
-      "syncedAt": "2026-08-08T22:40:38.829Z"
+      "sourceSha256": "d2cc55e24f581d56c30303987e638ec0896a301798a0d3e75203dbb655c31a72",
+      "targetSha256": "124fb6bf5454b6e1acda7b24277ec843776923a69446eb9e19998b026538921e",
+      "syncedAt": "2026-08-31T14:55:16.347Z"
     },
     "agency.toml": {
       "sourceSha256": "b097fc1ca3d98462ac07d6ba013858773a3c4eee4d98262f8373223709286e1a",
