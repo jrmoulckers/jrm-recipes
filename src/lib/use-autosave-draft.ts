@@ -7,7 +7,9 @@ const PREFIX = 'heirloom:recipe-draft';
 export const DRAFT_SCHEMA_VERSION = 1;
 
 export type DraftContext =
-  { userId: string; mode: 'create' } | { userId: string; mode: 'edit'; recipeId: string };
+  | { userId: string; mode: 'create' }
+  | { userId: string; mode: 'guided-create' }
+  | { userId: string; mode: 'edit'; recipeId: string };
 
 export type DraftIssue =
   'expired' | 'incompatible' | 'malformed' | 'storage-unavailable' | 'cross-tab-conflict';
@@ -17,13 +19,18 @@ export type AutosaveDraft<T> = {
   acceptDraft: () => void;
   discardDraft: () => void;
   clear: () => void;
+  flush: () => Promise<void>;
   allowNavigation: () => void;
 };
 
 export function draftStorageKey(context: DraftContext): string {
   const user = encodeURIComponent(context.userId);
   const target =
-    context.mode === 'edit' ? `edit:${encodeURIComponent(context.recipeId)}` : 'create:new';
+    context.mode === 'edit'
+      ? `edit:${encodeURIComponent(context.recipeId)}`
+      : context.mode === 'guided-create'
+        ? 'guided-create:new'
+        : 'create:new';
   return `${PREFIX}:v${DRAFT_SCHEMA_VERSION}:${user}:${target}`;
 }
 
@@ -155,6 +162,35 @@ export function useAutosaveDraft<T>({
     setAvailableDraft(null);
   }, [clearPendingWrite, removeStoredDraft]);
 
+  const flush = React.useCallback(async () => {
+    clearPendingWrite();
+    if (
+      storageKey === null ||
+      !dirtyRef.current ||
+      persistenceSuspendedRef.current ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    await import('./draft-storage').then(
+      ({ serializeDraft }) => {
+        if (persistenceSuspendedRef.current) return;
+        const storage = getStorage();
+        if (storage === null) return;
+        try {
+          storage.setItem(
+            storageKey,
+            serializeDraft(snapshotRef.current, nowRef.current(), DRAFT_SCHEMA_VERSION),
+          );
+        } catch {
+          report('storage-unavailable');
+        }
+      },
+      () => report('storage-unavailable'),
+    );
+  }, [clearPendingWrite, getStorage, report, storageKey]);
+
   const discardDraft = React.useCallback(() => {
     persistenceSuspendedRef.current = false;
     clearPendingWrite();
@@ -259,6 +295,7 @@ export function useAutosaveDraft<T>({
     acceptDraft: () => setAvailableDraft(null),
     discardDraft,
     clear,
+    flush,
     allowNavigation: () => {
       navigationAllowedRef.current = true;
     },

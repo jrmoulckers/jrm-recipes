@@ -560,6 +560,115 @@
     "emptyHeading": "No ingredients listed yet",
     "emptyBody": "The recipe owner has not added an ingredient list, but you can still follow the cooking steps."
   },
+  "guidedRecipe": {
+    "entry": {
+      "heading": "How would you like to add your recipe?",
+      "description": "Choose the amount of help that feels right.",
+      "guidedTitle": "Step by step",
+      "guidedDescription": "One simple question at a time.",
+      "fullTitle": "Full editor",
+      "fullDescription": "See every recipe field on one page.",
+      "calloutAria": "Step-by-step recipe option",
+      "calloutTitle": "Prefer one question at a time?",
+      "calloutDescription": "The step-by-step guide keeps things simple.",
+      "calloutAction": "Add step by step"
+    },
+    "eyebrow": "Step-by-step recipe",
+    "heading": "Add a recipe",
+    "description": "Take your time. Your progress is saved on this device.",
+    "planLimitTitle": "You've reached your plan's limit",
+    "toast": {
+      "created": "Recipe created"
+    },
+    "draft": {
+      "aria": "Unfinished step-by-step recipe",
+      "title": "You have an unfinished recipe",
+      "description": "Continue where you stopped, or start fresh.",
+      "discard": "Start fresh",
+      "restore": "Continue",
+      "restored": "Your unfinished recipe is ready",
+      "storageUnavailable": "Local draft saving isn't available. Keep this tab open until you save.",
+      "changedElsewhere": "This recipe changed in another tab. Your current work is still here.",
+      "expired": "An old local draft expired and was removed.",
+      "invalid": "A local draft couldn't be restored and was removed."
+    },
+    "progress": {
+      "aria": "Recipe entry progress",
+      "position": "Step {current} of {total}",
+      "complete": "Complete"
+    },
+    "steps": {
+      "title": {
+        "short": "Name",
+        "title": "What's this recipe called?",
+        "description": "Use the name your family knows."
+      },
+      "ingredients": {
+        "short": "Ingredients",
+        "title": "What ingredients do you need?",
+        "description": "Write each ingredient as one line, such as “2 cups flour.”"
+      },
+      "steps": {
+        "short": "Steps",
+        "title": "How do you make it?",
+        "description": "Add the instructions in the order someone should follow them."
+      },
+      "story": {
+        "short": "Story",
+        "title": "Who's this recipe from?",
+        "description": "These details are optional. Add what you want your family to remember."
+      },
+      "review": {
+        "short": "Review",
+        "title": "Does everything look right?",
+        "description": "Review your recipe before saving it."
+      }
+    },
+    "fields": {
+      "title": "Recipe name",
+      "ingredient": "Ingredient {position}",
+      "instruction": "Step {position}",
+      "handedDownFrom": "Who shared this recipe?",
+      "story": "What's the story behind it?"
+    },
+    "placeholders": {
+      "title": "Grandma's Sunday marinara",
+      "ingredient": "2 cups all-purpose flour",
+      "instruction": "Mix the ingredients until smooth.",
+      "handedDownFrom": "Great-Grandma Rosa",
+      "story": "We make this together every holiday…"
+    },
+    "hints": {
+      "title": "You can change this later.",
+      "ingredientsRequired": "Add at least one ingredient.",
+      "stepsRequired": "Add at least one step."
+    },
+    "validation": {
+      "title": "Give your recipe a name before continuing.",
+      "ingredients": "Add at least one ingredient before continuing.",
+      "steps": "Add at least one step before continuing."
+    },
+    "actions": {
+      "addIngredient": "Add another ingredient",
+      "removeIngredient": "Remove ingredient {position}",
+      "addStep": "Add another step",
+      "removeStep": "Remove step {position}",
+      "cancel": "Back to recipes",
+      "back": "Back",
+      "next": "Next",
+      "save": "Save recipe"
+    },
+    "leave": {
+      "title": "Leave this recipe?",
+      "description": "Your progress stays on this device so you can continue later.",
+      "confirm": "Leave",
+      "cancel": "Keep adding"
+    },
+    "review": {
+      "privateTitle": "Only you can see this recipe",
+      "privateDescription": "You can change who sees it later in the full editor."
+    }
+  },
   "recipeEditor": {
     "importUrl": "Recipe URL to import",
     "quantity": "Quantity",

@@ -560,6 +560,115 @@
     "emptyHeading": "Aún no hay ingredientes",
     "emptyBody": "El creador de la receta no ha añadido ingredientes, pero puedes seguir los pasos de cocción."
   },
+  "guidedRecipe": {
+    "entry": {
+      "heading": "¿Cómo quieres añadir tu receta?",
+      "description": "Elige el nivel de ayuda que prefieras.",
+      "guidedTitle": "Paso a paso",
+      "guidedDescription": "Una pregunta sencilla cada vez.",
+      "fullTitle": "Editor completo",
+      "fullDescription": "Muestra todos los campos de la receta en una página.",
+      "calloutAria": "Opción de receta paso a paso",
+      "calloutTitle": "¿Prefieres una pregunta cada vez?",
+      "calloutDescription": "La guía paso a paso mantiene todo sencillo.",
+      "calloutAction": "Añadir paso a paso"
+    },
+    "eyebrow": "Receta paso a paso",
+    "heading": "Añade una receta",
+    "description": "Tómate tu tiempo. Tu progreso se guarda en este dispositivo.",
+    "planLimitTitle": "Has alcanzado el límite de tu plan",
+    "toast": {
+      "created": "Receta creada"
+    },
+    "draft": {
+      "aria": "Receta paso a paso sin terminar",
+      "title": "Tienes una receta sin terminar",
+      "description": "Continúa donde lo dejaste o empieza de nuevo.",
+      "discard": "Empezar de nuevo",
+      "restore": "Continuar",
+      "restored": "Tu receta sin terminar está lista",
+      "storageUnavailable": "No se puede guardar un borrador local. Mantén esta pestaña abierta hasta guardar.",
+      "changedElsewhere": "Esta receta cambió en otra pestaña. Tu trabajo actual sigue aquí.",
+      "expired": "Un borrador local antiguo caducó y se eliminó.",
+      "invalid": "No se pudo restaurar un borrador local y se eliminó."
+    },
+    "progress": {
+      "aria": "Progreso de creación de la receta",
+      "position": "Paso {current} de {total}",
+      "complete": "Completado"
+    },
+    "steps": {
+      "title": {
+        "short": "Nombre",
+        "title": "¿Cómo se llama esta receta?",
+        "description": "Usa el nombre que conoce tu familia."
+      },
+      "ingredients": {
+        "short": "Ingredientes",
+        "title": "¿Qué ingredientes necesitas?",
+        "description": "Escribe cada ingrediente en una línea, por ejemplo «2 tazas de harina»."
+      },
+      "steps": {
+        "short": "Pasos",
+        "title": "¿Cómo se prepara?",
+        "description": "Añade las instrucciones en el orden en que deben seguirse."
+      },
+      "story": {
+        "short": "Historia",
+        "title": "¿De quién viene esta receta?",
+        "description": "Estos datos son opcionales. Añade lo que quieras que recuerde tu familia."
+      },
+      "review": {
+        "short": "Revisar",
+        "title": "¿Está todo bien?",
+        "description": "Revisa tu receta antes de guardarla."
+      }
+    },
+    "fields": {
+      "title": "Nombre de la receta",
+      "ingredient": "Ingrediente {position}",
+      "instruction": "Paso {position}",
+      "handedDownFrom": "¿Quién compartió esta receta?",
+      "story": "¿Cuál es su historia?"
+    },
+    "placeholders": {
+      "title": "La marinara dominical de la abuela",
+      "ingredient": "2 tazas de harina de trigo",
+      "instruction": "Mezcla los ingredientes hasta que quede suave.",
+      "handedDownFrom": "La bisabuela Rosa",
+      "story": "La preparamos juntos cada fiesta…"
+    },
+    "hints": {
+      "title": "Puedes cambiarlo más tarde.",
+      "ingredientsRequired": "Añade al menos un ingrediente.",
+      "stepsRequired": "Añade al menos un paso."
+    },
+    "validation": {
+      "title": "Ponle un nombre a tu receta antes de continuar.",
+      "ingredients": "Añade al menos un ingrediente antes de continuar.",
+      "steps": "Añade al menos un paso antes de continuar."
+    },
+    "actions": {
+      "addIngredient": "Añadir otro ingrediente",
+      "removeIngredient": "Eliminar el ingrediente {position}",
+      "addStep": "Añadir otro paso",
+      "removeStep": "Eliminar el paso {position}",
+      "cancel": "Volver a las recetas",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "save": "Guardar receta"
+    },
+    "leave": {
+      "title": "¿Salir de esta receta?",
+      "description": "Tu progreso queda en este dispositivo para que continúes más tarde.",
+      "confirm": "Salir",
+      "cancel": "Seguir añadiendo"
+    },
+    "review": {
+      "privateTitle": "Solo tú puedes ver esta receta",
+      "privateDescription": "Puedes cambiar quién la ve más tarde en el editor completo."
+    }
+  },
   "recipeEditor": {
     "importUrl": "URL de la receta para importar",
     "quantity": "Cantidad",

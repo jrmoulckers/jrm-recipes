@@ -560,6 +560,115 @@
     "emptyHeading": "Noch keine Zutaten",
     "emptyBody": "Der Rezeptersteller hat noch keine Zutatenliste hinzugefügt, aber du kannst den Kochschritten folgen."
   },
+  "guidedRecipe": {
+    "entry": {
+      "heading": "Wie möchtest du dein Rezept hinzufügen?",
+      "description": "Wähle so viel Hilfe, wie du möchtest.",
+      "guidedTitle": "Schritt für Schritt",
+      "guidedDescription": "Immer nur eine einfache Frage.",
+      "fullTitle": "Vollständiger Editor",
+      "fullDescription": "Alle Rezeptfelder auf einer Seite.",
+      "calloutAria": "Schrittweise Rezepteingabe",
+      "calloutTitle": "Lieber eine Frage nach der anderen?",
+      "calloutDescription": "Die Schritt-für-Schritt-Anleitung hält alles einfach.",
+      "calloutAction": "Schrittweise hinzufügen"
+    },
+    "eyebrow": "Rezept Schritt für Schritt",
+    "heading": "Rezept hinzufügen",
+    "description": "Lass dir Zeit. Dein Fortschritt wird auf diesem Gerät gespeichert.",
+    "planLimitTitle": "Du hast das Limit deines Tarifs erreicht",
+    "toast": {
+      "created": "Rezept erstellt"
+    },
+    "draft": {
+      "aria": "Unfertiges Schritt-für-Schritt-Rezept",
+      "title": "Du hast ein unfertiges Rezept",
+      "description": "Mach dort weiter, wo du aufgehört hast, oder fang neu an.",
+      "discard": "Neu anfangen",
+      "restore": "Weitermachen",
+      "restored": "Dein unfertiges Rezept ist bereit",
+      "storageUnavailable": "Lokales Speichern ist nicht verfügbar. Lass diesen Tab bis zum Speichern geöffnet.",
+      "changedElsewhere": "Dieses Rezept wurde in einem anderen Tab geändert. Deine aktuelle Arbeit ist noch da.",
+      "expired": "Ein alter lokaler Entwurf ist abgelaufen und wurde entfernt.",
+      "invalid": "Ein lokaler Entwurf konnte nicht wiederhergestellt werden und wurde entfernt."
+    },
+    "progress": {
+      "aria": "Fortschritt der Rezepteingabe",
+      "position": "Schritt {current} von {total}",
+      "complete": "Fertig"
+    },
+    "steps": {
+      "title": {
+        "short": "Titel",
+        "title": "Wie heißt dieses Rezept?",
+        "description": "Nimm den Namen, den deine Familie kennt."
+      },
+      "ingredients": {
+        "short": "Zutaten",
+        "title": "Welche Zutaten brauchst du?",
+        "description": "Schreibe jede Zutat in eine eigene Zeile, zum Beispiel „2 Tassen Mehl“."
+      },
+      "steps": {
+        "short": "Schritte",
+        "title": "Wie wird es zubereitet?",
+        "description": "Füge die Anweisungen in der richtigen Reihenfolge hinzu."
+      },
+      "story": {
+        "short": "Geschichte",
+        "title": "Von wem stammt dieses Rezept?",
+        "description": "Diese Angaben sind freiwillig. Halte fest, woran sich deine Familie erinnern soll."
+      },
+      "review": {
+        "short": "Prüfen",
+        "title": "Sieht alles richtig aus?",
+        "description": "Prüfe dein Rezept, bevor du es speicherst."
+      }
+    },
+    "fields": {
+      "title": "Rezeptname",
+      "ingredient": "Zutat {position}",
+      "instruction": "Schritt {position}",
+      "handedDownFrom": "Wer hat dieses Rezept geteilt?",
+      "story": "Welche Geschichte steckt dahinter?"
+    },
+    "placeholders": {
+      "title": "Omas Sonntags-Marinara",
+      "ingredient": "2 Tassen Weizenmehl",
+      "instruction": "Die Zutaten glatt verrühren.",
+      "handedDownFrom": "Urgroßmutter Rosa",
+      "story": "Wir machen es an jedem Feiertag zusammen…"
+    },
+    "hints": {
+      "title": "Du kannst das später ändern.",
+      "ingredientsRequired": "Füge mindestens eine Zutat hinzu.",
+      "stepsRequired": "Füge mindestens einen Schritt hinzu."
+    },
+    "validation": {
+      "title": "Gib deinem Rezept einen Namen, bevor du fortfährst.",
+      "ingredients": "Füge mindestens eine Zutat hinzu, bevor du fortfährst.",
+      "steps": "Füge mindestens einen Schritt hinzu, bevor du fortfährst."
+    },
+    "actions": {
+      "addIngredient": "Weitere Zutat hinzufügen",
+      "removeIngredient": "Zutat {position} entfernen",
+      "addStep": "Weiteren Schritt hinzufügen",
+      "removeStep": "Schritt {position} entfernen",
+      "cancel": "Zurück zu den Rezepten",
+      "back": "Zurück",
+      "next": "Weiter",
+      "save": "Rezept speichern"
+    },
+    "leave": {
+      "title": "Dieses Rezept verlassen?",
+      "description": "Dein Fortschritt bleibt auf diesem Gerät, damit du später weitermachen kannst.",
+      "confirm": "Verlassen",
+      "cancel": "Weiter hinzufügen"
+    },
+    "review": {
+      "privateTitle": "Nur du kannst dieses Rezept sehen",
+      "privateDescription": "Im vollständigen Editor kannst du später ändern, wer es sehen darf."
+    }
+  },
   "recipeEditor": {
     "importUrl": "Rezept-URL zum Importieren",
     "quantity": "Menge",

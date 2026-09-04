@@ -55,11 +55,14 @@ describe('useAutosaveDraft (#115)', () => {
   it('isolates drafts by schema, user, create/edit context, and recipe', () => {
     const createA = draftStorageKey(CREATE_CONTEXT);
     const createB = draftStorageKey({ userId: 'user-b', mode: 'create' });
+    const guidedA = draftStorageKey({ userId: 'user-a', mode: 'guided-create' });
     const editA1 = draftStorageKey({ userId: 'user-a', mode: 'edit', recipeId: 'recipe-1' });
     const editA2 = draftStorageKey({ userId: 'user-a', mode: 'edit', recipeId: 'recipe-2' });
 
     expect(createA).toContain(`:v${DRAFT_SCHEMA_VERSION}:`);
-    expect(new Set([createA, createB, editA1, editA2]).size).toBe(4);
+    expect(createA).toContain(':create:new');
+    expect(guidedA).toContain(':guided-create:new');
+    expect(new Set([createA, createB, guidedA, editA1, editA2]).size).toBe(5);
   });
 
   it('offers a valid saved draft after client hydration', async () => {
@@ -93,6 +96,23 @@ describe('useAutosaveDraft (#115)', () => {
       vi.advanceTimersByTime(500);
       await import('./draft-storage');
     });
+
+    expect(window.localStorage.getItem(draftStorageKey(CREATE_CONTEXT))).toBe(
+      serializeDraft({ title: 'Pie' }),
+    );
+  });
+
+  it('flushes the latest dirty snapshot before navigation', async () => {
+    const { result, rerender } = renderDraft({ snapshot: { title: 'Pi' }, dirty: true });
+    await flushDraftModule();
+    rerender({
+      context: CREATE_CONTEXT,
+      snapshot: { title: 'Pie' },
+      dirty: true,
+      onIssue: undefined,
+    });
+
+    await act(async () => result.current.flush());
 
     expect(window.localStorage.getItem(draftStorageKey(CREATE_CONTEXT))).toBe(
       serializeDraft({ title: 'Pie' }),

@@ -10,15 +10,19 @@ import { isDbConfigured } from '~/server/db';
 import { safeSharedImageUrl } from '~/lib/share-target';
 import { UsageLimitNotice } from '~/components/billing/usage-limit-notice';
 import { withRouteMessages } from '~/components/i18n/route-messages';
+import {
+  RecipeCreationFlow,
+  type RecipeCreationFlowName,
+} from '~/components/recipe/recipe-creation-flow';
 
 export const metadata: Metadata = { title: 'New recipe' };
 
 async function NewRecipePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cover?: string; title?: string; import?: string }>;
+  searchParams: Promise<{ cover?: string; title?: string; import?: string; flow?: string }>;
 }) {
-  const { cover, title, import: importUrl } = await searchParams;
+  const { cover, title, import: importUrl, flow } = await searchParams;
   // Only a Cloudinary https URL we just uploaded (via the photo share target)
   // is trusted as a pre-filled cover. Anything else is ignored.
   const initialCoverImageUrl = safeSharedImageUrl(cover);
@@ -32,6 +36,9 @@ async function NewRecipePage({
   // sane. The editor still requires the user to confirm and save.
   const initialTitle =
     typeof title === 'string' && title.trim().length > 0 ? title.trim().slice(0, 120) : undefined;
+  const requestedFlow: RecipeCreationFlowName | undefined =
+    flow === 'guided' || flow === 'full' ? flow : undefined;
+  const hasPrefill = Boolean(initialCoverImageUrl || initialImportUrl || initialTitle);
 
   const user = await getCurrentUser();
   const groups = user ? await listUserGroups(user.id) : [];
@@ -51,14 +58,21 @@ async function NewRecipePage({
           <UsageLimitNotice used={limit.used} limit={limit.limit} state={limit.state} />
         </div>
       ) : null}
-      <RecipeEditor
-        mode="create"
-        groups={groups}
-        customUnits={customUnits}
-        initialCoverImageUrl={initialCoverImageUrl}
-        initialTitle={initialTitle}
-        initialImportUrl={initialImportUrl}
+      <RecipeCreationFlow
+        requestedFlow={requestedFlow}
+        hasPrefill={hasPrefill}
         draftOwnerId={user?.id}
+        fullEditor={
+          <RecipeEditor
+            mode="create"
+            groups={groups}
+            customUnits={customUnits}
+            initialCoverImageUrl={initialCoverImageUrl}
+            initialTitle={initialTitle}
+            initialImportUrl={initialImportUrl}
+            draftOwnerId={user?.id}
+          />
+        }
       />
     </>
   );
