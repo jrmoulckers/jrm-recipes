@@ -86,18 +86,12 @@ export function buildFoodAliasRows(): NewFoodAlias[] {
 }
 
 /**
- * Build the curated `food_nutrition` rows from the static dataset
- * (`src/lib/food-nutrition.ts`). Keyed by the same slug/id as `food_items`, so
+ * Build the curated `food_nutrition` provenance rows from the static dataset
+ * (`src/lib/food-nutrition.ts`). Nutrient amounts live in `food_nutrients`
+ * ({@link buildFoodNutrientRows}). Keyed by the same slug/id as `food_items`, so
  * each row's `foodId` points at the node the food seed created. Only foods with
  * curated facts get a row (partial coverage is expected). Idempotent: the PK is
  * the node id, so re-seeding upserts in place.
- *
- * Since #1028 the nutrient **amounts** live in `food_nutrients`
- * ({@link buildFoodNutrientRows}); this row carries the per-food provenance
- * (`sourceRef`). Its legacy nutrient columns are still written for one deploy so
- * the expand/contract convention in `docs/migrations.md` holds — code serving
- * during the deploy that introduces the vector still reads them — and are
- * dropped in the follow-up contract migration.
  */
 export function buildFoodNutritionRows(): NewFoodNutrition[] {
   const rows: NewFoodNutrition[] = [];
@@ -106,13 +100,6 @@ export function buildFoodNutritionRows(): NewFoodNutrition[] {
     if (!facts) continue;
     rows.push({
       foodId: foodNodeId(food.name),
-      kcal: facts.kcal ?? 0,
-      proteinG: facts.proteinG ?? 0,
-      carbsG: facts.carbsG ?? 0,
-      fatG: facts.fatG ?? 0,
-      fiberG: facts.fiberG ?? null,
-      sugarG: facts.sugarG ?? null,
-      sodiumMg: facts.sodiumMg ?? null,
       sourceRef: facts.sourceRef,
     } satisfies NewFoodNutrition);
   }

@@ -238,13 +238,10 @@ on `food_nutrition`, whose hand‑spelled column set had already stranded
 `recipes.saturatedFatGrams`: the column existed with no source of values.
 
 **`food_nutrition`**: external enrichment (Phase 4), now provenance‑only.
-`foodId` fk (unique) · `sourceRef` (e.g. USDA FDC id) · `timestamps`, plus the
-**legacy** per‑100g macro columns (`kcal`, `proteinG`, `carbsG`, `fatG`, …).
-Deliberately per canonical node, from an authoritative source, not crowd‑sourced
-(ADR‑4). The legacy columns are still written but no longer read: per
-`docs/migrations.md` a column cannot be dropped in the same deploy as the code
-that stops using it, so #1028 is the **expand** phase and the drop is a
-follow‑up **contract** PR.
+`foodId` fk (unique) · `sourceRef` (e.g. USDA FDC id) · `timestamps`. Deliberately
+per canonical node, from an authoritative source, not crowd‑sourced (ADR‑4).
+Nutrient values live only in `food_nutrients`; #1043 completed the contract phase
+after #1028's vector migration was deployed.
 
 ## 7. Ranking
 

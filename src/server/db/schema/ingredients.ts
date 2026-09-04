@@ -335,15 +335,8 @@ export const foodNutrients = pgTable(
  * FoodData Central), seeded by `seed-ingredients.ts`, and is left untouched by
  * the graph-mining recompute. `foodId` is the PK (one row per node) and
  * `sourceRef` carries the FDC id.
- *
- * The nutrient **amounts** moved to {@link foodNutrients} in #1028. The columns
- * below are the legacy fixed shape, retained and still written for one deploy so
- * the expand/contract convention in `docs/migrations.md` holds: code serving
- * during the deploy that introduces the vector still reads them. They are dead
- * to every reader in this tree and are dropped in the follow-up contract
- * migration. Do not add a nutrient here — add a registry row instead.
- *
- * @deprecated The nutrient columns only. Read {@link foodNutrients}.
+ * Nutrient amounts live exclusively in {@link foodNutrients}; do not add them
+ * here.
  */
 export const foodNutrition = pgTable(
   'food_nutrition',
@@ -351,31 +344,11 @@ export const foodNutrition = pgTable(
     foodId: fk()
       .primaryKey()
       .references(() => foodItems.id, { onDelete: 'cascade' }),
-    /** Legacy. Energy in kilocalories per 100 g. Superseded by `food_nutrients`. */
-    kcal: real().notNull(),
-    /** Legacy. Protein in grams per 100 g. Superseded by `food_nutrients`. */
-    proteinG: real().notNull(),
-    /** Legacy. Total carbohydrate in grams per 100 g. Superseded by `food_nutrients`. */
-    carbsG: real().notNull(),
-    /** Legacy. Total fat in grams per 100 g. Superseded by `food_nutrients`. */
-    fatG: real().notNull(),
-    /** Legacy. Dietary fibre (g/100 g), or NULL when unknown. */
-    fiberG: real(),
-    /** Legacy. Total sugars (g/100 g), or NULL when unknown. */
-    sugarG: real(),
-    /** Legacy. Sodium (mg/100 g), or NULL when unknown. */
-    sodiumMg: real(),
     /** Provenance. The USDA FDC id (or other authoritative reference). */
     sourceRef: varchar({ length: 64 }).notNull(),
     ...timestamps(),
   },
-  (t) => [
-    index('food_nutrition_source_idx').on(t.sourceRef),
-    check('food_nutrition_kcal_check', sql`${t.kcal} >= 0`),
-    check('food_nutrition_protein_check', sql`${t.proteinG} >= 0`),
-    check('food_nutrition_carbs_check', sql`${t.carbsG} >= 0`),
-    check('food_nutrition_fat_check', sql`${t.fatG} >= 0`),
-  ],
+  (t) => [index('food_nutrition_source_idx').on(t.sourceRef)],
 );
 
 /**

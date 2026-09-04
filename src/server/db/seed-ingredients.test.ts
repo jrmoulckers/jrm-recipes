@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { FOOD_ITEMS } from '~/lib/food-db';
-import { NUTRIENT_REGISTRY, nutrientById } from '~/lib/nutrients';
+import { FOOD_ITEMS, foodNodeId } from '~/lib/food-db';
+import { NUTRITION_BY_SLUG } from '~/lib/food-nutrition';
+import { NUTRIENT_REGISTRY, nutrientById, type NutrientId } from '~/lib/nutrients';
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
@@ -92,8 +93,17 @@ describe('buildFoodNutritionRows', () => {
       expect(itemIds.has(row.foodId)).toBe(true);
       expect(row.sourceRef.length).toBeGreaterThan(0);
       expect(row.sourceRef.length).toBeLessThanOrEqual(64);
-      expect(row.kcal).toBeGreaterThanOrEqual(0);
-      expect(row.proteinG).toBeGreaterThanOrEqual(0);
+      expect(Object.keys(row).sort()).toEqual(['foodId', 'sourceRef']);
+    }
+  });
+
+  it('preserves the source ref for every curated nutrition entry', () => {
+    for (const food of FOOD_ITEMS) {
+      const facts = NUTRITION_BY_SLUG.get(foodSlug(food.name));
+      if (!facts) continue;
+      expect(rows.find((row) => row.foodId === foodNodeId(food.name))?.sourceRef).toBe(
+        facts.sourceRef,
+      );
     }
   });
 });
@@ -136,5 +146,29 @@ describe('buildFoodNutrientRows', () => {
   it('carries saturated fat, which no legacy column could ever hold (#1028)', () => {
     const satFat = rows.filter((r) => r.nutrientId === 'satFatG');
     expect(satFat.length).toBeGreaterThan(0);
+  });
+
+  it('preserves every value formerly stored in a legacy nutrient column', () => {
+    const legacyNutrients: readonly NutrientId[] = [
+      'kcal',
+      'proteinG',
+      'carbsG',
+      'fatG',
+      'fiberG',
+      'sugarG',
+      'sodiumMg',
+    ];
+    const requiredLegacyNutrients = new Set<NutrientId>(['kcal', 'proteinG', 'carbsG', 'fatG']);
+    const byPair = new Map(rows.map((row) => [`${row.foodId}:${row.nutrientId}`, row.per100g]));
+
+    for (const food of FOOD_ITEMS) {
+      const facts = NUTRITION_BY_SLUG.get(foodSlug(food.name));
+      if (!facts) continue;
+      for (const nutrientId of legacyNutrients) {
+        const expected =
+          facts[nutrientId] ?? (requiredLegacyNutrients.has(nutrientId) ? 0 : undefined);
+        expect(byPair.get(`${foodNodeId(food.name)}:${nutrientId}`)).toBe(expected);
+      }
+    }
   });
 });
