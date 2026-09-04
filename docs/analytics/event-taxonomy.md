@@ -35,20 +35,26 @@ stated bound on reuse before measurement is approved.
 
 ## Capture, consent, and scrubbing
 
-Browser capture flows through `track()` in `src/lib/analytics/index.ts`. Server
-capture flows through `captureServer()` in `src/lib/analytics/server.ts`. Both
-paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
-Scrubbing drops keys that look identifying, except allowlisted PostHog fields,
-and redacts email- or phone-like string values.
+Browser capture flows through `track()` in `src/lib/analytics/index.ts`, and
+server capture flows through `captureServer()` in `src/lib/analytics/server.ts`.
+Both paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
+The PostHog browser adapter also runs the scrubber in `before_send`, the final
+boundary for every outbound browser event, including events generated inside
+the SDK.
 
-That coverage depends on those two functions being the only capture paths.
-Events the PostHog SDK generates by itself do not pass through either, so they
-are not scrubbed. Autocapture is therefore disabled explicitly in
-`src/lib/analytics/posthog-client.ts` (#703): it would otherwise send `$el_text`
-for clicked elements, which here means recipe titles, cook names, and group
-names. Session recording is disabled for the same reason. Turning on any
-SDK-internal capture path puts data outside the scrubber and needs its own
-review.
+Ordinary properties drop identifying keys and redact email- or phone-like
+values. PostHog's reserved session, device, and feature-flag properties pass
+through unchanged. Reserved properties that can carry private content receive
+stricter treatment: DOM text, element attributes, and element chains are
+redacted; current URLs retain only their origin and normalized app path; and
+referrers retain only their origin. URL query strings and fragments are always
+dropped.
+
+Autocapture remains disabled explicitly in
+`src/lib/analytics/posthog-client.ts` (#703) because it collects unnecessary DOM
+content. Session recording remains disabled for the same data-minimization
+reason. These controls reduce collection, while `before_send` ensures an
+SDK-internal capture path cannot bypass structural PII scrubbing (#705).
 
 Capture is gated by consent before data leaves the app. The browser gate is
 `isCaptureAllowed()` in `src/lib/analytics/consent.ts`: DNT/GPC always blocks,

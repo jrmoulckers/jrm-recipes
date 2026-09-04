@@ -47,6 +47,12 @@ describe('scrubProperties', () => {
     });
   });
 
+  it('preserves approved ISO date traits', () => {
+    expect(scrubProperties({ created_at: '2024-03-01' })).toEqual({
+      created_at: '2024-03-01',
+    });
+  });
+
   it('scrubs nested objects and arrays', () => {
     expect(
       scrubProperties({

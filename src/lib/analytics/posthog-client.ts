@@ -12,6 +12,7 @@
  */
 import { type AnalyticsBackend } from './backend';
 import { INGEST_PATH, analyticsHost, analyticsKey } from './config';
+import { scrubPostHogCapture } from './scrub';
 
 let initialized = false;
 
@@ -49,6 +50,9 @@ export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
       // Honor Do Not Track at the SDK level too (belt-and-braces with #324).
       respect_dnt: true,
       disable_session_recording: true,
+      // Last outbound boundary: this also covers SDK-internal events such as
+      // `$pageleave`, which never traverse the app's typed `track()` API.
+      before_send: scrubPostHogCapture,
     });
     initialized = true;
   }
