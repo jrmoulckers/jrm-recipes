@@ -170,7 +170,7 @@ jobs:
       packages: read
       pull-requests: read
     with:
-      node-version: '20'
+      node-version: '24'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
@@ -186,7 +186,7 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: '20'
+      node-version: '24'
       package-manager: pnpm
       audit-command: pnpm audit:ci
       run-package-audit: true
@@ -219,7 +219,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
       - name: Validate catalogs
         run: node scripts/i18n-validate.mjs
       # Catches values that were reworded but left in English. Catalog parity
@@ -265,7 +265,7 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: '20'
+      node-version: '24'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
@@ -289,7 +289,7 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: '20'
+      node-version: '24'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
@@ -321,7 +321,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://npm.pkg.github.com
           scope: '@jrmoulckers'
@@ -383,7 +383,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://npm.pkg.github.com
           scope: '@jrmoulckers'
@@ -467,7 +467,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://npm.pkg.github.com
           scope: '@jrmoulckers'
@@ -585,7 +585,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://npm.pkg.github.com
           scope: '@jrmoulckers'

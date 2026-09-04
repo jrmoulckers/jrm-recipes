@@ -1,9 +1,8 @@
 /**
  * Recursively list source files under `src/`.
  *
- * The obvious implementation is `globSync` from `node:fs`, but that landed in
- * Node 22 and CI pins Node 20 (`engines` allows >=20), so it would pass locally
- * and crash in CI. This walker uses only long-stable builtins.
+ * This walker keeps directory and extension filtering explicit while relying
+ * only on stable Node builtins.
  */
 import { readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
