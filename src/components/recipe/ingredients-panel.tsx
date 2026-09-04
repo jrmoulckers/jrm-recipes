@@ -81,7 +81,7 @@ type PanelIngredient = {
 };
 
 /**
- * A saved family member, carrying both their calorie goal (for the nutrition
+ * A saved family member, carrying both their effective calorie target (for the nutrition
  * panel, #430) and their allergens + diets (for ingredient conflict flagging,
  * #429). A superset of {@link CalorieMember}, so it drops straight into the
  * nutrition panel too.
@@ -285,7 +285,7 @@ export function IngredientsPanel({
    * only the text rung available.
    */
   nutritionView?: RecipeNutritionView | null;
-  /** Optional saved family members (calorie goals #430 + conflict flags #429). */
+  /** Optional saved family members (calorie targets #430 + conflict flags #429). */
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
   ingredientSuggestions?: IngredientSuggestions;

@@ -1,14 +1,5 @@
 import { relations } from 'drizzle-orm';
-import {
-  date,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { date, index, jsonb, pgTable, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import type { Nutrition } from '~/lib/nutrition';
 
@@ -18,9 +9,9 @@ import { groups } from './groups';
 
 /**
  * Per-family-member dietary profiles (issue #396). A cook records each person
- * they cook for once. Their allergens, the diets they follow, and an optional
- * daily calorie goal, so downstream "safe for" features can check recipes
- * against real restrictions instead of the cook holding it all in their head.
+ * they cook for once. Their allergens and the diets they follow let downstream
+ * "safe for" features check recipes against real restrictions instead of the
+ * cook holding it all in their head.
  *
  * `allergens` stores canonical {@link Allergen} strings and `diets` stores
  * canonical `DietaryTag` strings. Validation guarantees no drift from the
@@ -40,14 +31,6 @@ export const memberDietaryProfiles = pgTable(
     name: varchar({ length: 80 }).notNull(),
     allergens: text().array(),
     diets: text().array(),
-    /**
-     * @deprecated Superseded by {@link nutritionTargets} (#1046). Retained for
-     * the expand/contract window and dual-written from the target in force
-     * today, so code deployed before the targets table still reads a correct
-     * number. Drop it in the contract migration; read
-     * `getNutritionTargetOn(profileId, date)` instead.
-     */
-    calorieGoal: integer(),
     ...timestamps(),
   },
   (t) => [
@@ -74,9 +57,8 @@ export const memberDietaryProfilesRelations = relations(memberDietaryProfiles, (
  * A target is a **fact with a history**, not a current setting. The row that
  * applies to a date is the one with the greatest `effectiveFrom` on or before
  * it, so a week cooked during a cut stays scored against the cut's numbers
- * after the member switches to a bulk. Storing one mutable goal per profile —
- * which is what `memberDietaryProfiles.calorieGoal` was — silently rewrites
- * every retrospective surface the moment the goal changes.
+ * after the member switches to a bulk. Storing one mutable goal per profile
+ * silently rewrites every retrospective surface the moment the goal changes.
  *
  * `targets` is a partial map in the app's `Nutrition` key space rather than a
  * column per nutrient, following the same reasoning as the `food_nutrients`

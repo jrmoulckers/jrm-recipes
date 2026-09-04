@@ -140,8 +140,8 @@ describe('NutritionPanel', () => {
 
 describe('NutritionPanel calorie goal (issue #430)', () => {
   const MEMBERS: CalorieMember[] = [
-    { id: 'mom', name: 'Mom', calorieGoal: 2000 },
-    { id: 'kid', name: 'Kid', calorieGoal: 1000 },
+    { id: 'mom', name: 'Mom', calorieTarget: 2000 },
+    { id: 'kid', name: 'Kid', calorieTarget: 1000 },
   ];
 
   beforeEach(() => {
@@ -182,7 +182,7 @@ describe('NutritionPanel calorie goal (issue #430)', () => {
       <NutritionPanel
         nutrition={PER_SERVING}
         servings={4}
-        members={[{ id: 'dad', name: 'Dad', calorieGoal: null }]}
+        members={[{ id: 'dad', name: 'Dad', calorieTarget: null }]}
       />,
     );
     expect(screen.queryByText(/daily calories/i)).not.toBeInTheDocument();

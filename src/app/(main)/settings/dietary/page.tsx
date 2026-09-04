@@ -46,7 +46,6 @@ async function DietaryProfilesPage() {
     name: p.name,
     allergens: (p.allergens ?? []).filter((a): a is Allergen => ALLERGEN_SET.has(a)),
     diets: (p.diets ?? []).filter((d): d is DietaryTag => DIET_SET.has(d)),
-    calorieGoal: p.calorieGoal,
     groupId: p.groupId,
     targets: targetsByProfile.get(p.id) ?? [],
   }));
