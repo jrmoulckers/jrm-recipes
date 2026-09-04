@@ -75,7 +75,7 @@ ready.
 
 ## Quick start (local development)
 
-**Prerequisites:** [Node 20+](https://nodejs.org), [pnpm 10+](https://pnpm.io/installation), and
+**Prerequisites:** [Node 24.15.0+](https://nodejs.org), [pnpm 10+](https://pnpm.io/installation), and
 (optional, for a real database) [Docker](https://docs.docker.com/get-docker/).
 
 ```bash

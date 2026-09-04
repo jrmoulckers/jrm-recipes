@@ -204,7 +204,7 @@ deliberately introduced in a future issue.
 
 ## Package manager and validation
 
-Use Node.js 20 or newer and the repository-pinned `pnpm@10.6.1`. Do not generate npm or Yarn
+Use Node.js 24.15.0 or newer and the repository-pinned `pnpm@10.6.1`. Do not generate npm or Yarn
 lockfiles. Before every push, run the complete local gate:
 
 ```bash
