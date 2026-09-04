@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -43,16 +43,26 @@ function renderGuided(props: React.ComponentProps<typeof GuidedRecipeEntry> = {}
   );
 }
 
-async function reachReview(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Recipe name'), 'Sunday sauce');
-  await user.click(screen.getByRole('button', { name: 'Next' }));
-  await user.type(screen.getByLabelText('Ingredient 1'), '2 cans tomatoes');
-  await user.click(screen.getByRole('button', { name: 'Next' }));
-  await user.type(screen.getByLabelText('Step 1'), 'Simmer slowly.');
-  await user.click(screen.getByRole('button', { name: 'Next' }));
-  await user.type(screen.getByLabelText('Who shared this recipe?'), 'Grandma Rosa');
-  await user.type(screen.getByLabelText("What's the story behind it?"), 'Sunday dinner.');
-  await user.click(screen.getByRole('button', { name: 'Next' }));
+function reachReview() {
+  fireEvent.change(screen.getByLabelText('Recipe name'), {
+    target: { value: 'Sunday sauce' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.change(screen.getByLabelText('Ingredient 1'), {
+    target: { value: '2 cans tomatoes' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.change(screen.getByLabelText('Step 1'), {
+    target: { value: 'Simmer slowly.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.change(screen.getByLabelText('Who shared this recipe?'), {
+    target: { value: 'Grandma Rosa' },
+  });
+  fireEvent.change(screen.getByLabelText("What's the story behind it?"), {
+    target: { value: 'Sunday dinner.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 }
 
 beforeEach(() => {
@@ -111,7 +121,7 @@ describe('GuidedRecipeEntry (#398)', () => {
       cook: 'rosa',
     });
     renderGuided();
-    await reachReview(user);
+    reachReview();
 
     expect(await screen.findByTestId('recipe-preview')).toHaveTextContent('Sunday sauce');
     expect(screen.getByText('Only you can see this recipe')).toBeInTheDocument();
@@ -136,7 +146,7 @@ describe('GuidedRecipeEntry (#398)', () => {
     const user = userEvent.setup();
     mockedCreate.mockResolvedValue({ ok: false, error: 'Save failed' });
     renderGuided();
-    await reachReview(user);
+    reachReview();
 
     await user.click(screen.getByRole('button', { name: 'Save recipe' }));
 
