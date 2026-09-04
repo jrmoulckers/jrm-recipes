@@ -84,9 +84,11 @@ test('creates a recipe with the guided flow at a narrow viewport', async ({ page
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
   expect(hasHorizontalOverflow).toBe(false);
-  await expect(page.getByRole('button', { name: 'Save recipe' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Save recipe' }).click();
+  const saveButton = page.getByRole('button', { name: 'Save recipe' });
+  await expect(saveButton).toBeEnabled();
+  // Keyboard activation returns after dispatch, avoiding a Playwright pointer
+  // actionability retry when React immediately swaps the button into loading.
+  await saveButton.press('Enter');
   const landed = await page
     .waitForURL(/\/recipes\/[\w-]+\/(?!new$)[\w-]+$/, { timeout: 15_000 })
     .then(() => true)
