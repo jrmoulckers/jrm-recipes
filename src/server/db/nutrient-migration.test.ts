@@ -14,6 +14,10 @@ import { NUTRIENT_REGISTRY, nutrientById } from '~/lib/nutrients';
  * one mapped onto the wrong nutrient id.
  */
 const MIGRATION = readFileSync(join(process.cwd(), 'drizzle', '0050_high_tattoo.sql'), 'utf8');
+const CONTRACT_MIGRATION = readFileSync(
+  join(process.cwd(), 'drizzle', '0055_romantic_blacklash.sql'),
+  'utf8',
+);
 
 /** Every nutrient `food_nutrition` stored as a column, and where it must land. */
 const LEGACY_COLUMNS: readonly { column: string; nutrientId: string }[] = [
@@ -64,5 +68,21 @@ describe('0050 nutrient vector migration', () => {
     expect(inserts.length).toBe(LEGACY_COLUMNS.length + 1);
     expect(onConflict.length).toBe(inserts.length);
     expect(MIGRATION).not.toContain('DO UPDATE');
+  });
+});
+
+describe('0055 nutrient column contract migration', () => {
+  it('drops every legacy column idempotently', () => {
+    for (const { column } of LEGACY_COLUMNS) {
+      expect(CONTRACT_MIGRATION).toContain(
+        `ALTER TABLE "food_nutrition" DROP COLUMN IF EXISTS "${column}"`,
+      );
+    }
+  });
+
+  it('keeps provenance and the nutrient vector intact', () => {
+    expect(CONTRACT_MIGRATION).not.toContain('DROP TABLE "food_nutrition"');
+    expect(CONTRACT_MIGRATION).not.toContain('DROP COLUMN IF EXISTS "source_ref"');
+    expect(CONTRACT_MIGRATION).not.toContain('"food_nutrients"');
   });
 });

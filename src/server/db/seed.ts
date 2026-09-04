@@ -1072,13 +1072,6 @@ async function seedFoodItems(tx: Tx): Promise<void> {
       .onConflictDoUpdate({
         target: foodNutrition.foodId,
         set: {
-          kcal: row.kcal,
-          proteinG: row.proteinG,
-          carbsG: row.carbsG,
-          fatG: row.fatG,
-          fiberG: row.fiberG ?? null,
-          sugarG: row.sugarG ?? null,
-          sodiumMg: row.sodiumMg ?? null,
           sourceRef: row.sourceRef,
           updatedAt: new Date(),
         },

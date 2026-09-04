@@ -11,9 +11,9 @@
  * (no `db`, no `server-only`), so it stays client-safe, offline, and trivially
  * unit-testable. Gram resolution is delegated to `food-grams.ts` — the single
  * shared ingredient-line → grams path (ADR-0006) — rather than duplicated here.
- * The `food_nutrition` Drizzle table mirrors this dataset and is seeded from it.
- * Server features may read the table, but this module is the single source of
- * truth.
+ * The `food_nutrients` Drizzle table mirrors the values in this dataset, while
+ * `food_nutrition` retains each food's `sourceRef`. Server features may read
+ * those tables, but this module is the single source of truth.
  */
 import { canonicalFood, foodSlug } from './food-db';
 import {
