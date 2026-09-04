@@ -140,6 +140,7 @@ export const ROUTE_NAMESPACES: Readonly<Record<string, readonly string[]>> = {
   '/recipes/new': [
     'billing',
     'classificationNames',
+    'guidedRecipe',
     'imageUpload',
     'mediaPicker',
     'recipe',
