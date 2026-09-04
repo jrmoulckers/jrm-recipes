@@ -347,7 +347,10 @@ describe('custom-unit shopping quantity preservation', () => {
         const operationRecord: { table: unknown; values?: unknown } = { table };
         tx.operations.push(operationRecord);
         return {
-          values: vi.fn((values: Record<string, unknown>) => {
+          values: vi.fn((values: unknown) => {
+            if (typeof values !== 'object' || values === null || Array.isArray(values)) {
+              throw new TypeError('Expected insert values to be a record');
+            }
             operationRecord.values = values;
             return {
               returning: vi.fn(async () => [

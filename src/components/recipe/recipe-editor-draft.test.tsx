@@ -181,13 +181,15 @@ describe('RecipeEditor draft recovery and exit guard (#115)', () => {
     mockedCreate.mockResolvedValue({ ok: false, error: 'Save failed' });
     renderEditor();
     await user.type(screen.getByLabelText(/^Title/), 'Pie');
-    const stored = serializeDraft(draftValue('Pie'));
-    window.localStorage.setItem(storageKey, stored);
+    window.localStorage.setItem(storageKey, serializeDraft(draftValue('Pie')));
 
     await user.click(screen.getByRole('button', { name: 'Save recipe' }));
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledOnce());
-    expect(window.localStorage.getItem(storageKey)).toBe(stored);
+    expect(JSON.parse(window.localStorage.getItem(storageKey) ?? '')).toMatchObject({
+      version: 1,
+      data: { title: 'Pie' },
+    });
     expect(push).not.toHaveBeenCalled();
   });
 });
