@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-type CaptureResult = import('posthog-js').CaptureResult;
+import type { CaptureResult } from 'posthog-js';
 
 /**
  * Guards the privacy-relevant options passed to `posthog.init()` (#703).
