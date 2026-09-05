@@ -32,7 +32,8 @@
     "a11y:alt-audit": "node scripts/alt-audit.mjs",
     "copy:check": "pnpm run i18n:validate && pnpm run i18n:english-leak && pnpm run i18n:rich-tags && pnpm run i18n:route-scope -- --check && pnpm run a11y:alt-audit",
     "i18n:pseudo": "node scripts/i18n-pseudo.mjs",
-    "audit:ci": "pnpm audit --audit-level=high",
+    "audit:suppressions": "node scripts/check-audit-suppressions.mjs",
+    "audit:ci": "pnpm audit:suppressions && pnpm audit --audit-level=high",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -145,12 +146,11 @@
       "brace-expansion": "^5.0.9",
       "ip-address": "^10.3.1",
       "js-yaml@^3": "^3.15.1",
-      "js-yaml@^4": "^4.3.1"
+      "js-yaml@^4": "^4.3.1",
+      "tmp@<0.2.6": "^0.2.7"
     },
     "auditConfig": {
       "ignoreGhsas": [
-        "GHSA-gpj5-g38j-94v9",
-        "GHSA-ph9p-34f9-6g65",
         "GHSA-jmr9-qjv8-65gv"
       ]
     }

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "suppressions": [
+    {
+      "ghsa": "GHSA-jmr9-qjv8-65gv",
+      "auditId": 1139346,
+      "ecosystem": "npm",
+      "package": "extract-zip",
+      "severity": "high",
+      "residualRisk": "low",
+      "confidence": "high",
+      "affectedVersions": "<= 2.0.1",
+      "fixedVersion": null,
+      "dependencyPath": "@lhci/cli > lighthouse > puppeteer-core > @puppeteer/browsers > extract-zip",
+      "auditPaths": [".>@lhci/cli>lighthouse>puppeteer-core>@puppeteer/browsers>extract-zip"],
+      "affectedAssets": ["CI runner workspace", "CI browser installation cache"],
+      "trustBoundaries": [
+        "Browser archive bytes cross from Puppeteer's configured download source into an ephemeral CI runner before extraction.",
+        "The @lhci/cli dependency tree is development-only and is not included in the deployed application."
+      ],
+      "reachability": "The vulnerable extractor is only called while @puppeteer/browsers installs a downloaded browser. This repository's Lighthouse job uses the runner's existing Chrome and runs lhci autorun; it does not install a browser or accept an archive URL from product users.",
+      "rationale": "No patched extract-zip release exists. Exploitation would require the CI workflow to install a malicious browser archive, such as after compromise of the configured download source. The package is not imported by product code and cannot access production data or user requests.",
+      "invalidationConditions": [
+        "extract-zip publishes a patched release",
+        "@lhci/cli or Lighthouse upgrades to a Puppeteer browser dependency that removes extract-zip",
+        "CI starts installing browsers through Puppeteer",
+        "an untrusted input can control a browser archive, download base URL, or extraction path",
+        "extract-zip enters a production dependency path or is imported directly"
+      ],
+      "reviewedAt": "2026-09-04",
+      "expiresAt": "2026-10-04",
+      "sources": [
+        "https://github.com/advisories/GHSA-jmr9-qjv8-65gv",
+        "https://github.com/puppeteer/puppeteer/pull/14960"
+      ]
+    }
+  ]
+}
