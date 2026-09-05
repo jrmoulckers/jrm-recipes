@@ -64,7 +64,7 @@ export function IngredientsDrawer({
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           size="lg"
           aria-label={t('region', { label })}
           className={cn(sizeClasses, className)}

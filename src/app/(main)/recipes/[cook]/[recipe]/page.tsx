@@ -528,6 +528,7 @@ async function RecipePage({
             ))}
             {count > 0 && (
               <span
+                role="img"
                 className="inline-flex items-center gap-1.5"
                 aria-label={t('ratingLabel', {
                   average: average.toFixed(1),
