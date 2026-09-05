@@ -10,10 +10,15 @@
 
 /** Collection segments whose following segment is a dynamic id/slug. */
 const DYNAMIC_SEGMENTS: Record<string, { placeholder: string; statics: ReadonlySet<string> }> = {
-  recipes: { placeholder: ':id', statics: new Set(['new']) },
   collections: { placeholder: ':id', statics: new Set() },
+  cooks: { placeholder: ':handle', statics: new Set() },
   groups: { placeholder: ':slug', statics: new Set() },
+  join: { placeholder: ':token', statics: new Set() },
+  r: { placeholder: ':token', statics: new Set() },
 };
+
+const RECIPE_STATIC_SEGMENTS = new Set(['cook-with', 'new', 'tags']);
+const RECIPE_ACTION_SEGMENTS = new Set(['cook', 'edit', 'keepsake', 'print']);
 
 /**
  * Collapse dynamic route params to placeholders, preserving static children
@@ -22,6 +27,23 @@ const DYNAMIC_SEGMENTS: Record<string, { placeholder: string; statics: ReadonlyS
 export function normalizePathname(pathname: string): string {
   if (!pathname) return '/';
   const segments = pathname.split('/');
+
+  const recipesIndex = segments.indexOf('recipes');
+  if (recipesIndex >= 0) {
+    const first = segments[recipesIndex + 1];
+    const second = segments[recipesIndex + 2];
+    if (first && !RECIPE_STATIC_SEGMENTS.has(first)) {
+      segments[recipesIndex + 1] = first === 'unclaimed' ? 'unclaimed' : ':cook';
+      if (first === 'unclaimed' && second) {
+        segments[recipesIndex + 2] = ':id';
+      } else if (second && !RECIPE_ACTION_SEGMENTS.has(second)) {
+        segments[recipesIndex + 2] = ':recipe';
+      } else {
+        segments[recipesIndex + 1] = ':id';
+      }
+    }
+  }
+
   for (let i = 0; i < segments.length - 1; i++) {
     const rule = DYNAMIC_SEGMENTS[segments[i] ?? ''];
     const next = segments[i + 1];

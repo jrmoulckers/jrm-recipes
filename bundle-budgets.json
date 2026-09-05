@@ -11,22 +11,23 @@
   "//headroom-requirement": "Issue #796: a budget that is NEW or RAISED must leave at least 2 kB above the value the same run measures, or the gate fails and names the minimum acceptable number. Budgets you do not touch are never subject to this — inheriting an existing tight budget is not a failure, and three routes below sit at zero headroom for exactly that reason. Size a new budget from CI figures, not local ones: Linux reads about 1 kB above a local Windows build, and 'next build' prints whole kB, so a sub-kB webpack redistribution can move a route a full displayed kilobyte with no code change (measured at 145 bytes in #789). The 2 kB is the same band the NEAR warning uses, so a budget that passes this check is one the warning will stay quiet about. The check needs the base ref's copy of this file; when it cannot be read it SKIPS rather than fails.",
   "//next-16": "Issue #1011 upgrades Next.js 15.5.7 -> 16.3.4. Next.js 16 removes the First Load JS columns from Webpack build output and no longer emits app-build-manifest.json, so the gate now emits its own bundle-budget-manifest.json from Webpack's initial page entrypoints. The measurement contract is unchanged: each route includes main-app plus its initial page files, duplicate chunks count once, gzip sizes are summed, and decimal kB is rounded to a whole number. A local Windows build measures 254/280/334/247 kB; Linux CI run 33438897933 measures 253/280/334/246 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit respectively. All four move together during the framework migration; no product client feature is added. Their budgets move to 257/283/337/250, leaving at least the required 2 kB headroom above the larger observed platform value plus 1 kB for cross-platform or rounding variance.",
   "//step-video-captions": "Issue #989 adds the small always-on caption URL/language field wrapper to the recipe editor while keeping the Cloudinary upload widget behind next/dynamic. Linux CI run 33783547137 measures the editor route at 247 kB, up 1 kB from the Next.js 16 baseline and still 3 kB below the unchanged 250 kB budget.",
+  "//posthog-before-send": "Issue #705 makes structural PII scrubbing synchronous at PostHog's final before_send boundary, so the shared analytics client now carries the URL and reserved-property scrubber on every configured route. Linux CI run 33928210364 measures 255/281/334/248 kB, compared with current main run 33982323696 at 253/280/334/247 kB. The route budgets are unchanged and retain 2/2/3/2 kB headroom; only the machine-checked measurements move.",
   "//measured": {
     "//": "Machine-checked measurement claims (#858). check-bundle-budget.mjs verifies each of these against the same build that enforces the budgets below, and FAILS when one no longer matches. The prose notes above explain reasoning; these entries are what CI holds to reality. Four claims in this file have been corrected after the fact -- #674/#690, #763, #820 and #857 -- each found by a person who happened to look, because nothing compared them to a build. A claim is only about the platform that produced it: Linux CI reads ~1 kB above a local Windows build, so entries for other platforms are skipped rather than failed, and an entry with no platform fails as malformed. Update the number and the runId together; a value you cannot re-derive is a value you cannot audit. This guard closes DECAY only -- it compares a claim's kb to a build and never reads the prose around it, so it would have caught #820 and could not have caught #674, #763 or #857, where the number was already right. Attributing a regression to a module is a human obligation: see docs/performance-budgets.md.",
     "claims": [
       {
         "route": "/",
-        "kb": 253,
+        "kb": 255,
         "platform": "linux",
-        "runId": "33438897933",
-        "issue": 1011
+        "runId": "33928210364",
+        "issue": 705
       },
       {
         "route": "/recipes",
-        "kb": 280,
+        "kb": 281,
         "platform": "linux",
-        "runId": "33438897933",
-        "issue": 1011
+        "runId": "33928210364",
+        "issue": 705
       },
       {
         "route": "/recipes/[cook]/[recipe]",
@@ -38,10 +39,10 @@
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
-        "kb": 247,
+        "kb": 248,
         "platform": "linux",
-        "runId": "33783547137",
-        "issue": 989
+        "runId": "33928210364",
+        "issue": 705
       }
     ]
   },
