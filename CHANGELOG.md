@@ -5,6 +5,36 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.4.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.2...heirloom-v0.4.0) (2026-09-05)
+
+
+### Features
+
+* **collaboration:** preserve shared recipes on account deletion ([#686](https://github.com/jrmoulckers/jrm-recipes/issues/686)) ([5886e9d](https://github.com/jrmoulckers/jrm-recipes/commit/5886e9db2eb7db64cb6ac8c1e84b5f562ec4f380)), closes [#694](https://github.com/jrmoulckers/jrm-recipes/issues/694)
+* **dietary:** versioned macro targets with an effective-from date ([#1046](https://github.com/jrmoulckers/jrm-recipes/issues/1046)) ([#1050](https://github.com/jrmoulckers/jrm-recipes/issues/1050)) ([8a21227](https://github.com/jrmoulckers/jrm-recipes/commit/8a21227a08c075da4e36722af9cc52ee3e03481d)), closes [#1024](https://github.com/jrmoulckers/jrm-recipes/issues/1024)
+* **editor:** prevent lost recipe work ([#115](https://github.com/jrmoulckers/jrm-recipes/issues/115)) ([#1061](https://github.com/jrmoulckers/jrm-recipes/issues/1061)) ([c964372](https://github.com/jrmoulckers/jrm-recipes/commit/c964372a7377f5bba2e279c4922acc152f254445))
+* **engagement:** unify the recipe discussion tab into ratings and conversation ([#1018](https://github.com/jrmoulckers/jrm-recipes/issues/1018)) ([4874545](https://github.com/jrmoulckers/jrm-recipes/commit/4874545942ebf1aeca0b6d7d80bef1bf5a1c8cb9))
+* **nutrition:** collapse the two engines into one server-owned path ([#1032](https://github.com/jrmoulckers/jrm-recipes/issues/1032)) ([72f82f6](https://github.com/jrmoulckers/jrm-recipes/commit/72f82f6ccdce8ca2410ed454e623dae65d7c0931))
+* **nutrition:** persist a versioned derived nutrition cache ([#1044](https://github.com/jrmoulckers/jrm-recipes/issues/1044)) ([#1045](https://github.com/jrmoulckers/jrm-recipes/issues/1045)) ([6de919b](https://github.com/jrmoulckers/jrm-recipes/commit/6de919b7a7187782782d26448b173d6efbcb405f))
+* **nutrition:** replace hardcoded nutrient columns with a registry and vector ([#1042](https://github.com/jrmoulckers/jrm-recipes/issues/1042)) ([860df85](https://github.com/jrmoulckers/jrm-recipes/commit/860df85bfd90daa135cde1c93c4e5696b191735c))
+* **nutrition:** replace massCoverage with a confidence-weighted roll-up ([#1027](https://github.com/jrmoulckers/jrm-recipes/issues/1027)) ([#1041](https://github.com/jrmoulckers/jrm-recipes/issues/1041)) ([42681bd](https://github.com/jrmoulckers/jrm-recipes/commit/42681bde40936345b32970f620cd2735e27628c8)), closes [#1024](https://github.com/jrmoulckers/jrm-recipes/issues/1024)
+* **nutrition:** resolve household measures to grams via curated portions ([#1025](https://github.com/jrmoulckers/jrm-recipes/issues/1025)) ([#1026](https://github.com/jrmoulckers/jrm-recipes/issues/1026)) ([d4f8bb7](https://github.com/jrmoulckers/jrm-recipes/commit/d4f8bb7932bc274d45ff10f4220387b13e3114bd)), closes [#1024](https://github.com/jrmoulckers/jrm-recipes/issues/1024)
+* **nutrition:** roll up planner and cook-log nutrition with honest confidence ([#1048](https://github.com/jrmoulckers/jrm-recipes/issues/1048)) ([#1051](https://github.com/jrmoulckers/jrm-recipes/issues/1051)) ([20e8ea4](https://github.com/jrmoulckers/jrm-recipes/commit/20e8ea4bd430e101f0fee5adce4fcfc94274f94b)), closes [#1024](https://github.com/jrmoulckers/jrm-recipes/issues/1024)
+* **nutrition:** score rollups against historical targets ([#1053](https://github.com/jrmoulckers/jrm-recipes/issues/1053)) ([9e58522](https://github.com/jrmoulckers/jrm-recipes/commit/9e5852292025bbd49840b01cb52554d238ed4be8))
+* **recipes:** add guided recipe entry ([#1077](https://github.com/jrmoulckers/jrm-recipes/issues/1077)) ([409a6d9](https://github.com/jrmoulckers/jrm-recipes/commit/409a6d96a3e8e25433475fafa787839f150bb1d2))
+* **search:** filter and sort recipes by per-serving macros ([#1052](https://github.com/jrmoulckers/jrm-recipes/issues/1052)) ([01a0524](https://github.com/jrmoulckers/jrm-recipes/commit/01a05244d16061059b04f0db32eda233254e9801))
+
+
+### Bug Fixes
+
+* **a11y:** add step video captions ([#1074](https://github.com/jrmoulckers/jrm-recipes/issues/1074)) ([9521c36](https://github.com/jrmoulckers/jrm-recipes/commit/9521c36c7b95705ce6bf320804c94a41ef488ab2))
+* **analytics:** scrub every PostHog event ([#705](https://github.com/jrmoulckers/jrm-recipes/issues/705)) ([#1083](https://github.com/jrmoulckers/jrm-recipes/issues/1083)) ([64a4a02](https://github.com/jrmoulckers/jrm-recipes/commit/64a4a02a88a1318ceaa068e548407909f2452014))
+* **ci:** harden delivery signals ([#1055](https://github.com/jrmoulckers/jrm-recipes/issues/1055), [#1017](https://github.com/jrmoulckers/jrm-recipes/issues/1017)) ([#1059](https://github.com/jrmoulckers/jrm-recipes/issues/1059)) ([d59c3db](https://github.com/jrmoulckers/jrm-recipes/commit/d59c3db563a01e4f060ffcec0cfd1550a372482b))
+* **deploy:** complete Next.js 16 migration ([#1011](https://github.com/jrmoulckers/jrm-recipes/issues/1011)) ([dc05a70](https://github.com/jrmoulckers/jrm-recipes/commit/dc05a7025640dc3def13f633273c3ea6bcbb71ab))
+* **deps:** declare explicit npm default registry for Dependabot ([#1021](https://github.com/jrmoulckers/jrm-recipes/issues/1021)) ([#1031](https://github.com/jrmoulckers/jrm-recipes/issues/1031)) ([73ca4f4](https://github.com/jrmoulckers/jrm-recipes/commit/73ca4f4ca1043931dfd020093774eb5a9532428d))
+* **nutrition:** validate USDA portion provenance ([#1058](https://github.com/jrmoulckers/jrm-recipes/issues/1058)) ([3dab13b](https://github.com/jrmoulckers/jrm-recipes/commit/3dab13ba93adf54514cc57e40ebe43b185eb56e9))
+* **security:** enforce audit suppression rationales ([#1014](https://github.com/jrmoulckers/jrm-recipes/issues/1014)) ([880988e](https://github.com/jrmoulckers/jrm-recipes/commit/880988e97676898ba6957ca2ca115256bef05884))
+
 ## [0.3.2](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.1...heirloom-v0.3.2) (2026-08-16)
 
 
