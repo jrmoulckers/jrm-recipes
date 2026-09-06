@@ -479,8 +479,8 @@ jobs:
 
       # Reuse the canonical web build instead of compiling again, since
       # playwright.config.ts runs `pnpm start` (not build) under CI. The archive
-      # carries both `.next` and generated `public/sw.js`; extract it at the repo
-      # root to restore each file to its original path.
+      # carries `.next` plus generated service-worker and local OCR assets;
+      # extract it at the repo root to restore each file to its original path.
       - name: Download build output
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -493,6 +493,12 @@ jobs:
           tar -xzf ci-artifact/next-build.tar.gz
           test -f .next/BUILD_ID
           test -f public/sw.js
+          test -f public/ocr/worker.min.js
+          test -f public/ocr/tesseract-core-lstm.wasm.js
+          test -f public/ocr/ara.traineddata.gz
+          test -f public/ocr/deu.traineddata.gz
+          test -f public/ocr/eng.traineddata.gz
+          test -f public/ocr/spa.traineddata.gz
 
       - name: Run migrations
         run: node scripts/migrate.mjs
@@ -607,6 +613,12 @@ jobs:
           tar -xzf ci-artifact/next-build.tar.gz
           test -f .next/BUILD_ID
           test -f public/sw.js
+          test -f public/ocr/worker.min.js
+          test -f public/ocr/tesseract-core-lstm.wasm.js
+          test -f public/ocr/ara.traineddata.gz
+          test -f public/ocr/deu.traineddata.gz
+          test -f public/ocr/eng.traineddata.gz
+          test -f public/ocr/spa.traineddata.gz
 
       - name: Run migrations
         run: node scripts/migrate.mjs

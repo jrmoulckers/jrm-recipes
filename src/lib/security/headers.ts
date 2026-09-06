@@ -85,6 +85,10 @@ export function buildContentSecurityPolicy(nonce: string, publishableKey?: strin
       "'self'",
       `'nonce-${nonce}'`,
       "'strict-dynamic'",
+      // Tesseract's local OCR core compiles first-party WebAssembly. This
+      // narrower source permits WASM compilation without allowing JavaScript
+      // eval in production.
+      "'wasm-unsafe-eval'",
       // Dev-only: unblock `next dev`'s eval-based HMR/source maps (see above).
       ...(isDev ? ["'unsafe-eval'"] : []),
       // Cloudinary upload widget + Clerk prod FAPI load scripts that

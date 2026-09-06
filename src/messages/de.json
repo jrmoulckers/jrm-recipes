@@ -671,6 +671,7 @@
   },
   "recipeEditor": {
     "importUrl": "Rezept-URL zum Importieren",
+    "scanReplaceConfirm": "Wenn du diesen Scan verwendest, werden die Zutaten oder Schritte in diesem Entwurf ersetzt. Möchtest du fortfahren?",
     "quantity": "Menge",
     "unit": "Einheit",
     "ingredient": "Zutat",
@@ -2597,6 +2598,7 @@
       "methodAria": "Importmethode",
       "fromLink": "Aus einem Link importieren",
       "pasteText": "Text einfügen",
+      "fromPhoto": "Foto scannen",
       "urlHelp": "Füge eine Rezept-URL ein, und wir füllen die Details aus, damit du sie prüfen kannst.",
       "textHelp": "Füge ein Rezept als einfachen Text ein, und wir bringen es für dich zum Prüfen in Form.",
       "importing": "Wird importiert…",
@@ -2610,7 +2612,49 @@
         "linkError": "Beim Importieren dieses Links ist etwas schiefgelaufen.",
         "textError": "Beim Lesen dieses Textes ist etwas schiefgelaufen."
       },
-      "textPlaceholder": "Omas Marinara\n\nZutaten\n2 Tassen passierte Tomaten\n1 Knoblauchzehe, fein gehackt\n\nZubereitung\n1. Das Öl erhitzen.\n2. Knoblauch dazugeben und köcheln lassen."
+      "textPlaceholder": "Omas Marinara\n\nZutaten\n2 Tassen passierte Tomaten\n1 Knoblauchzehe, fein gehackt\n\nZubereitung\n1. Das Öl erhitzen.\n2. Knoblauch dazugeben und köcheln lassen.",
+      "scan": {
+        "privateTitle": "Dein Foto bleibt auf diesem Gerät",
+        "privateDescription": "Die Karte wird in deinem Browser gelesen. Das Foto wird nur hochgeladen oder gespeichert, wenn du es separat als Bild des Originalrezepts hinzufügst.",
+        "languageLabel": "Sprache auf der Karte",
+        "languageHelp": "Wähle die Sprache der Karte. Schreibschrift und verblasste Schrift können schwieriger zu lesen sein.",
+        "languages": {
+          "ara": "Arabisch",
+          "deu": "Deutsch",
+          "eng": "Englisch",
+          "spa": "Spanisch"
+        },
+        "takePhoto": "Foto aufnehmen",
+        "choosePhoto": "Foto auswählen",
+        "previewAlt": "Vorschau der ausgewählten Rezeptkarte",
+        "previewCaption": "Achte darauf, dass die Schrift gerade, gut beleuchtet und scharf ist.",
+        "scan": "Diese Karte lesen",
+        "reading": "Rezeptkarte wird gelesen…",
+        "progressLabel": "Fortschritt beim Lesen der Rezeptkarte",
+        "progress": "Karte wird gelesen: {progress}",
+        "cancel": "Abbrechen",
+        "reviewTitle": "Bitte prüfe, was ich gelesen habe",
+        "reviewDescription": "Handschrift kann schwierig sein. Prüfe den Text und danach jedes Rezeptfeld, bevor du speicherst.",
+        "confidence": {
+          "good": "Der Großteil der Schrift war klar, aber es können noch Fehler enthalten sein.",
+          "mixed": "Ein Teil der Schrift war schwer zu lesen. Bitte prüfe alles sorgfältig.",
+          "low": "Ein großer Teil der Schrift war schwer zu lesen. Korrigiere den Text, bevor du ihn verwendest."
+        },
+        "transcriptLabel": "Von der Karte gelesener Text",
+        "transcriptHelp": "Korrigiere hier alle Fehler. Beim Verwenden des Entwurfs teilen wir den Text in Rezeptfelder auf.",
+        "apply": "Rezeptentwurf verwenden",
+        "tryAgain": "Anderes Foto versuchen",
+        "sourceImageHelp": "Das Foto wird dabei nicht gespeichert. Um es beim Rezept zu behalten, füge es vor dem Speichern unter Bilder des Originalrezepts hinzu.",
+        "applied": "Rezeptentwurf eingefügt. Prüfe jedes Feld und speichere erst, wenn du bereit bist.",
+        "errors": {
+          "type": "Wähle ein JPEG-, PNG- oder WebP-Bild.",
+          "size": "Das Foto ist zu groß. Wähle ein Bild unter 10 MB.",
+          "noText": "Ich konnte auf diesem Foto keinen lesbaren Text finden. Versuche es mit einem schärferen, helleren Foto.",
+          "cancelled": "Das Lesen wurde gestoppt. Du kannst es erneut versuchen, wenn du bereit bist.",
+          "read": "Ich konnte dieses Foto nicht lesen. Versuche es mit einem schärferen, helleren Bild oder gib das Rezept ein.",
+          "parse": "Ich habe das Foto gelesen, konnte aber keinen Rezeptentwurf erstellen. Prüfe den Text und versuche es erneut."
+        }
+      }
     },
     "keepsake": {
       "trigger": "Weitergeben",

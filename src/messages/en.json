@@ -671,6 +671,7 @@
   },
   "recipeEditor": {
     "importUrl": "Recipe URL to import",
+    "scanReplaceConfirm": "Using this scan will replace the ingredients or steps already in this draft. Continue?",
     "quantity": "Quantity",
     "unit": "Unit",
     "ingredient": "Ingredient",
@@ -2597,6 +2598,7 @@
       "methodAria": "Import method",
       "fromLink": "Import from a link",
       "pasteText": "Paste text",
+      "fromPhoto": "Scan a photo",
       "urlHelp": "Paste a recipe URL and we'll fill in the details for you to review.",
       "textHelp": "Paste any recipe as plain text and we'll structure it for you to review.",
       "importing": "Importing…",
@@ -2610,7 +2612,49 @@
         "linkError": "Something went wrong importing that link.",
         "textError": "Something went wrong reading that text."
       },
-      "textPlaceholder": "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer."
+      "textPlaceholder": "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer.",
+      "scan": {
+        "privateTitle": "Your photo stays on this device",
+        "privateDescription": "The card is read in your browser. The photo is not uploaded or saved unless you add it separately as an original recipe image.",
+        "languageLabel": "Language on the card",
+        "languageHelp": "Choose the language used on the card. Cursive and faded writing may be harder to read.",
+        "languages": {
+          "ara": "Arabic",
+          "deu": "German",
+          "eng": "English",
+          "spa": "Spanish"
+        },
+        "takePhoto": "Take a photo",
+        "choosePhoto": "Choose a photo",
+        "previewAlt": "Selected recipe card preview",
+        "previewCaption": "Make sure the writing is upright, well lit, and in focus.",
+        "scan": "Read this card",
+        "reading": "Reading the recipe card…",
+        "progressLabel": "Recipe card reading progress",
+        "progress": "Reading the card: {progress}",
+        "cancel": "Cancel",
+        "reviewTitle": "Please check what I read",
+        "reviewDescription": "Handwriting can be tricky. Review the text below, then check every recipe field before you save.",
+        "confidence": {
+          "good": "Most of the writing was clear, but there may still be mistakes.",
+          "mixed": "Some writing was hard to read. Please check it carefully.",
+          "low": "Much of the writing was hard to read. Correct the text before using it."
+        },
+        "transcriptLabel": "Text read from the card",
+        "transcriptHelp": "Edit any mistakes here. We will split this text into recipe fields when you use the draft.",
+        "apply": "Use recipe draft",
+        "tryAgain": "Try another photo",
+        "sourceImageHelp": "This does not save the photo. To keep it with the recipe, add it under Original recipe images before saving.",
+        "applied": "Recipe draft added. Review every field, then save when you are ready.",
+        "errors": {
+          "type": "Choose a JPEG, PNG, or WebP image.",
+          "size": "That photo is too large. Choose one smaller than 10 MB.",
+          "noText": "I couldn't find readable text in that photo. Try a clearer, brighter photo.",
+          "cancelled": "Reading stopped. You can try again when you are ready.",
+          "read": "I couldn't read that photo. Try a clearer, brighter image or type the recipe instead.",
+          "parse": "I read the photo, but couldn't make a recipe draft. Check the text and try again."
+        }
+      }
     },
     "keepsake": {
       "trigger": "Hand down",

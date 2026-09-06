@@ -84,6 +84,40 @@ describe('parseRecipeText', () => {
     expect(result.steps[0]?.instruction).toBe('Spread the beans.');
   });
 
+  it('recognizes localized section headings', () => {
+    const spanish = parseRecipeText(
+      [
+        'Tortilla',
+        'Ingredientes',
+        '2 huevos',
+        '1 patata',
+        'Preparación',
+        '1. Bate los huevos.',
+        '2. Cocina la patata.',
+      ].join('\n'),
+      'spa',
+    );
+    expect(spanish.title).toBe('Tortilla');
+    expect(spanish.ingredients).toHaveLength(2);
+    expect(spanish.steps).toHaveLength(2);
+
+    const arabic = parseRecipeText(
+      [
+        'شوربة العدس',
+        'المكونات',
+        '٢ كوب عدس',
+        '١ بصلة',
+        'الطريقة',
+        '١. اغسل العدس.',
+        '٢. اطبخ المكونات.',
+      ].join('\n'),
+      'ara',
+    );
+    expect(arabic.title).toBe('شوربة العدس');
+    expect(arabic.ingredients).toHaveLength(2);
+    expect(arabic.steps).toHaveLength(2);
+  });
+
   it('never throws on empty or junk input', () => {
     expect(parseRecipeText('').title).toBe('');
     expect(parseRecipeText('').ingredients).toHaveLength(0);

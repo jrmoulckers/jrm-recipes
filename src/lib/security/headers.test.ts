@@ -20,6 +20,7 @@ describe('buildContentSecurityPolicy', () => {
     expect(csp).toContain('script-src');
     expect(csp).toContain("'nonce-abc123'");
     expect(csp).toContain("'strict-dynamic'");
+    expect(csp).toContain("'wasm-unsafe-eval'");
   });
 
   it('locks down framing, base-uri, and objects', () => {
