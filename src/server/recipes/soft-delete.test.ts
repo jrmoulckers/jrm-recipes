@@ -97,9 +97,13 @@ describe('recipe read paths exclude soft-deleted rows (issue #165)', () => {
   it('searchRecipes filters on deleted_at', async () => {
     await searchRecipes(author, {
       meals: [],
+      mealMatch: 'any',
       cuisines: [],
+      cuisineMatch: 'any',
       tags: [],
+      tagMatch: 'all',
       diets: [],
+      dietMatch: 'all',
       mine: false,
       showUncertain: false,
       sort: 'newest',

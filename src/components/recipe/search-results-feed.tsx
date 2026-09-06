@@ -58,21 +58,43 @@ export function SearchResultsFeed({
   showingUncertain?: boolean;
 }) {
   const t = useTranslations('recipe');
-  const [items, setItems] = React.useState<RecipeSearchResult[]>(initialItems);
-  const [nextOffset, setNextOffset] = React.useState<number | null>(initialNextOffset);
+  const [page, setPage] = React.useState(() => ({
+    queryString,
+    items: initialItems,
+    nextOffset: initialNextOffset,
+  }));
   const [pending, startTransition] = React.useTransition();
   const favoritedSet = React.useMemo(() => new Set(favoritedIds), [favoritedIds]);
+  const currentQuery = React.useRef(queryString);
+  currentQuery.current = queryString;
+
+  // Client state owns pages appended by "Load more", but a new filter query
+  // must immediately use the new server result instead of retaining the first
+  // query's state until a hard refresh.
+  const currentPage =
+    page.queryString === queryString
+      ? page
+      : { queryString, items: initialItems, nextOffset: initialNextOffset };
+  const { items, nextOffset } = currentPage;
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
+    const requestedQuery = queryString;
+    const requestedItems = items;
     startTransition(async () => {
-      const result = await loadMoreSearchAction(queryString, nextOffset);
-      setItems((prev) => {
-        const seen = new Set(prev.map((r) => r.id));
+      const result = await loadMoreSearchAction(requestedQuery, nextOffset);
+      if (currentQuery.current !== requestedQuery) return;
+      setPage((previousPage) => {
+        const previousItems =
+          previousPage.queryString === requestedQuery ? previousPage.items : requestedItems;
+        const seen = new Set(previousItems.map((r) => r.id));
         const fresh = result.items.filter((r) => !seen.has(r.id));
-        return fresh.length > 0 ? [...prev, ...fresh] : prev;
+        return {
+          queryString: requestedQuery,
+          items: fresh.length > 0 ? [...previousItems, ...fresh] : previousItems,
+          nextOffset: result.nextOffset,
+        };
       });
-      setNextOffset(result.nextOffset);
     });
   }
 

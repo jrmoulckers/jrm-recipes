@@ -17,11 +17,15 @@ describe('parseRecipeSearch', () => {
       q: undefined,
       ingredient: undefined,
       meals: [],
+      mealMatch: 'any',
       cuisines: [],
+      cuisineMatch: 'any',
       difficulty: undefined,
       maxTime: undefined,
       tags: [],
+      tagMatch: 'all',
       diets: [],
+      dietMatch: 'all',
       safeFor: undefined,
       group: undefined,
       mine: false,
@@ -59,6 +63,53 @@ describe('parseRecipeSearch', () => {
     expect(parseRecipeSearch({ meal: 'Dinner' }).meals).toEqual(['Dinner']);
     expect(parseRecipeSearch({ tag: 'quick' }).tags).toEqual(['quick']);
     expect(parseRecipeSearch({ cuisine: 'Italian' }).cuisines).toEqual(['Italian']);
+  });
+
+  it('uses category-aware match defaults and accepts valid overrides (#1088)', () => {
+    expect(parseRecipeSearch({})).toMatchObject({
+      mealMatch: 'any',
+      cuisineMatch: 'any',
+      tagMatch: 'all',
+      dietMatch: 'all',
+    });
+    expect(
+      parseRecipeSearch({
+        meal: ['Dinner', 'Supper'],
+        mealMatch: 'all',
+        cuisine: ['Italian', 'Thai'],
+        cuisineMatch: 'all',
+        tag: ['quick', 'favorite'],
+        tagMatch: 'any',
+        diet: ['vegan', 'gluten-free'],
+        dietMatch: 'any',
+      }),
+    ).toMatchObject({
+      mealMatch: 'all',
+      cuisineMatch: 'all',
+      tagMatch: 'any',
+      dietMatch: 'any',
+    });
+  });
+
+  it('falls back to category defaults for invalid match modes (#1088)', () => {
+    expect(
+      parseRecipeSearch({
+        mealMatch: 'neither',
+        cuisineMatch: 'both',
+        tagMatch: 'maybe',
+        dietMatch: 'nope',
+      }),
+    ).toMatchObject({
+      mealMatch: 'any',
+      cuisineMatch: 'any',
+      tagMatch: 'all',
+      dietMatch: 'all',
+    });
+  });
+
+  it('ignores match overrides until a facet has multiple values (#1088)', () => {
+    expect(parseRecipeSearch({ cuisine: 'Italian', cuisineMatch: 'all' }).cuisineMatch).toBe('any');
+    expect(parseRecipeSearch({ diet: 'vegan', dietMatch: 'any' }).dietMatch).toBe('all');
   });
 
   it("keeps classifications up to the schema's 80-character limit", () => {
@@ -261,15 +312,36 @@ describe('recipeSearchToParams', () => {
     expect(params.getAll('tag')).toEqual(['vegan', 'weeknight']);
   });
 
+  it('serializes only meaningful non-default match modes (#1088)', () => {
+    const params = recipeSearchToParams({
+      meals: ['Dinner', 'Supper'],
+      mealMatch: 'all',
+      cuisines: ['Italian', 'Tex-Mex'],
+      cuisineMatch: 'any',
+      tags: ['quick', 'favorite'],
+      tagMatch: 'any',
+      diets: ['vegan'],
+      dietMatch: 'any',
+    });
+    expect(params.get('mealMatch')).toBe('all');
+    expect(params.get('cuisineMatch')).toBeNull();
+    expect(params.get('tagMatch')).toBe('any');
+    expect(params.get('dietMatch')).toBeNull();
+  });
+
   it('round-trips multi-select facets through parseRecipeSearch (#271)', () => {
     const original = parseRecipeSearch({
       cuisine: ['Mexican', 'Thai'],
       tag: ['vegan', 'weeknight'],
+      cuisineMatch: 'all',
+      tagMatch: 'any',
     });
     const params = recipeSearchToParams(original);
     const reparsed = parseRecipeSearch({
       cuisine: params.getAll('cuisine'),
+      cuisineMatch: params.get('cuisineMatch') ?? undefined,
       tag: params.getAll('tag'),
+      tagMatch: params.get('tagMatch') ?? undefined,
     });
     expect(reparsed).toEqual(original);
   });

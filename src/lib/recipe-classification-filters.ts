@@ -12,6 +12,7 @@
  */
 
 import { type CanonicalTag, type TagCategory } from './tag-taxonomy';
+import { parseFacetList } from '~/server/recipes/search';
 
 /** A classification chip: a canonical tag plus how many recipes carry it. */
 export type ClassificationOption = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
@@ -51,7 +52,9 @@ export function isClassificationActive(
   item: Pick<ClassificationOption, 'slug' | 'name' | 'category'>,
 ): boolean {
   const value = classificationValue(item).toLowerCase();
-  return params.getAll(classificationParam(item)).some((entry) => entry.toLowerCase() === value);
+  return parseFacetList(params.getAll(classificationParam(item)), 80).some(
+    (entry) => entry.toLowerCase() === value,
+  );
 }
 
 /**
@@ -67,10 +70,12 @@ export function toggleClassification(
   const key = classificationParam(item);
   const value = classificationValue(item);
   const lower = value.toLowerCase();
-  const kept = next.getAll(key).filter((entry) => entry.toLowerCase() !== lower);
-  if (kept.length === next.getAll(key).length) kept.push(value);
+  const currentValues = parseFacetList(next.getAll(key), 80);
+  const kept = currentValues.filter((entry) => entry.toLowerCase() !== lower);
+  if (kept.length === currentValues.length) kept.push(value);
   next.delete(key);
   for (const entry of kept) next.append(key, entry);
+  if (kept.length < 2) next.delete(`${key}Match`);
   return next;
 }
 

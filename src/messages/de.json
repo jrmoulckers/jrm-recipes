@@ -3785,8 +3785,22 @@
       "maxCalories": "≤ {amount} kcal",
       "maxCarbs": "≤ {amount} g Kohlenhydrate"
     },
-    "facetSelected": "{count} ausgewählt",
-    "facetAria": "Filter {label}, {count} ausgewählt",
+    "logicSummary": "Übereinstimmung: <summary>{summary}</summary>",
+    "advancedMatchRules": "Erweiterte Übereinstimmungsregeln",
+    "matchRulesHelp": "Lege fest, wie mehrere Werte innerhalb eines Filters kombiniert werden. Verschiedene Filter müssen alle zutreffen.",
+    "matchRulesEmpty": "Wähle mindestens zwei Werte in einem Filter aus, um seine Übereinstimmungsregel zu ändern.",
+    "matchRuleAria": "Übereinstimmungsregel für {label}",
+    "matchAny": "Beliebig",
+    "matchAll": "Alle",
+    "facetSelectedAny": "{count, plural, one {1 ausgewählt} other {Beliebige von #}}",
+    "facetSelectedAll": "{count, plural, one {1 ausgewählt} other {Alle #}}",
+    "facetAriaEmpty": "Filter {label}, keine Auswahl",
+    "facetAriaAny": "Filter {label}, beliebige von {count} ausgewählt",
+    "facetAriaAll": "Filter {label}, alle {count} ausgewählt",
+    "matchHint": {
+      "any": "Rezepte dürfen mit einem beliebigen ausgewählten Wert übereinstimmen.",
+      "all": "Rezepte müssen mit jedem ausgewählten Wert übereinstimmen."
+    },
     "anyAmount": "Beliebige Menge",
     "macroOption": {
       "minProtein": "{amount} g oder mehr",

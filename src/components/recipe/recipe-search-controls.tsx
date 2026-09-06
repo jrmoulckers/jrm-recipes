@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { useFormatter, useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Check, ChevronDown, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react';
 
@@ -37,7 +38,9 @@ import {
 } from '~/lib/recipe-classification-filters';
 import {
   activeMacroFilters,
+  DEFAULT_FACET_MATCH_MODES,
   defaultSortFor,
+  type FacetMatchMode,
   hasActiveRecipeFilters,
   MACRO_FILTERS,
   parseRecipeSearch,
@@ -45,11 +48,18 @@ import {
   recipeSortLabels,
   recipeSortValues,
   type MacroFilterParam,
+  type RecipeFacetParam,
   type RecipeSearch,
 } from '~/server/recipes/search';
 import { type SearchParams } from '~/lib/route-params';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS } from '~/lib/substitutions';
 import { type SavedSearch } from '~/server/searches/queries';
+import type { RecipeMatchRule } from './recipe-match-rules';
+
+const RecipeMatchRules = dynamic(
+  () => import('./recipe-match-rules').then((mod) => mod.RecipeMatchRules),
+  { ssr: false },
+);
 
 /** Sentinel for "no filter". Radix Select forbids empty-string item values. */
 const ANY = 'any';
@@ -80,11 +90,15 @@ type GroupOption = { id: string; name: string };
 type ParamKey =
   | 'q'
   | 'meal'
+  | 'mealMatch'
   | 'cuisine'
+  | 'cuisineMatch'
   | 'difficulty'
   | 'maxTime'
   | 'tag'
+  | 'tagMatch'
   | 'diet'
+  | 'dietMatch'
   | 'safeFor'
   | 'group'
   | 'mine'
@@ -94,6 +108,15 @@ type ParamKey =
   | 'maxCalories'
   | 'maxCarbs'
   | 'showUncertain';
+
+type FacetMatchParam = 'mealMatch' | 'cuisineMatch' | 'tagMatch' | 'dietMatch';
+
+const MATCH_PARAM_BY_FACET: Record<RecipeFacetParam, FacetMatchParam> = {
+  meal: 'mealMatch',
+  cuisine: 'cuisineMatch',
+  tag: 'tagMatch',
+  diet: 'dietMatch',
+};
 
 /**
  * Preset bounds per macro filter (#1047). Presets rather than free numbers: a
@@ -130,7 +153,11 @@ function advancedFilterCount(search: RecipeSearch): number {
     (search.group != null ? 1 : 0) +
     (search.ingredient != null ? 1 : 0) +
     activeMacroFilters(search).length +
-    (search.mine ? 1 : 0)
+    (search.mine ? 1 : 0) +
+    (search.mealMatch !== DEFAULT_FACET_MATCH_MODES.meal ? 1 : 0) +
+    (search.cuisineMatch !== DEFAULT_FACET_MATCH_MODES.cuisine ? 1 : 0) +
+    (search.tagMatch !== DEFAULT_FACET_MATCH_MODES.tag ? 1 : 0) +
+    (search.dietMatch !== DEFAULT_FACET_MATCH_MODES.diet ? 1 : 0)
   );
 }
 
@@ -156,6 +183,7 @@ export function RecipeSearchControls({
   const tLibrary = useTranslations('recipe.library');
   const tDifficulty = useTranslations('recipeDetail.difficulty');
   const tNames = useTranslations('classificationNames');
+  const format = useFormatter();
   const pathname = usePathname();
   const currentParams = useSearchParams();
   const searchId = React.useId();
@@ -167,6 +195,13 @@ export function RecipeSearchControls({
   // open only when the incoming URL already carries one of its filters, so a
   // shared link never hides the reason the results look narrow.
   const [filtersOpen, setFiltersOpen] = React.useState(() => advancedFilterCount(search) > 0);
+  const [matchRulesOpen, setMatchRulesOpen] = React.useState(
+    () =>
+      search.mealMatch !== DEFAULT_FACET_MATCH_MODES.meal ||
+      search.cuisineMatch !== DEFAULT_FACET_MATCH_MODES.cuisine ||
+      search.tagMatch !== DEFAULT_FACET_MATCH_MODES.tag ||
+      search.dietMatch !== DEFAULT_FACET_MATCH_MODES.diet,
+  );
   const [isPending, startTransition] = React.useTransition();
 
   // Optimistic querystring (#661). Every control renders from this instead of
@@ -233,22 +268,37 @@ export function RecipeSearchControls({
   // Multi-select facets carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
-    (key: 'meal' | 'cuisine' | 'tag' | 'diet', values: string[]) => {
+    (key: RecipeFacetParam, values: string[]) => {
       const params = new URLSearchParams(activeParams.toString());
       params.delete(key);
       for (const value of values) params.append(key, value);
+      if (values.length < 2) params.delete(MATCH_PARAM_BY_FACET[key]);
       navigate(params);
     },
     [activeParams, navigate],
   );
 
   const toggleListValue = React.useCallback(
-    (key: 'meal' | 'cuisine' | 'tag' | 'diet', current: string[], value: string, on: boolean) => {
+    (key: RecipeFacetParam, current: string[], value: string, on: boolean) => {
       const lower = value.toLowerCase();
       const next = on ? [...current, value] : current.filter((v) => v.toLowerCase() !== lower);
       pushListParam(key, next);
     },
     [pushListParam],
+  );
+
+  const pushMatchMode = React.useCallback(
+    (key: RecipeFacetParam, mode: FacetMatchMode) => {
+      const params = new URLSearchParams(activeParams.toString());
+      const matchParam = MATCH_PARAM_BY_FACET[key];
+      if (mode === DEFAULT_FACET_MATCH_MODES[key]) {
+        params.delete(matchParam);
+      } else {
+        params.set(matchParam, mode);
+      }
+      navigate(params);
+    },
+    [activeParams, navigate],
   );
 
   // Preset chips (#378): compose several existing params in one tap. Reuses the
@@ -343,6 +393,45 @@ export function RecipeSearchControls({
     for (const g of groups) map.set(g.id, g.name);
     return map;
   }, [groups]);
+
+  const facetSummaryGroups = [
+    {
+      values: activeSearch.meals.map((meal) => {
+        const slug = meal.toLowerCase();
+        const name = facets.meals.find((item) => item.slug === slug)?.name ?? meal;
+        return tNames.has(slug) ? tNames(slug) : name;
+      }),
+      mode: activeSearch.mealMatch,
+    },
+    {
+      values: activeSearch.cuisines.map((cuisine) => {
+        const slug = slugify(cuisine);
+        return tNames.has(slug) ? tNames(slug) : cuisine;
+      }),
+      mode: activeSearch.cuisineMatch,
+    },
+    {
+      values: activeSearch.tags.map((tag) => {
+        const slug = tag.toLowerCase();
+        const name = tagNameBySlug.get(slug) ?? tag;
+        return tNames.has(slug) ? tNames(slug) : name;
+      }),
+      mode: activeSearch.tagMatch,
+    },
+    {
+      values: activeSearch.diets.map((diet) =>
+        tNames.has(diet) ? tNames(diet) : DIETARY_TAG_LABELS[diet],
+      ),
+      mode: activeSearch.dietMatch,
+    },
+  ].flatMap(({ values, mode }) => {
+    if (values.length === 0) return [];
+    const joined = format.list(values, {
+      type: mode === 'any' ? 'disjunction' : 'conjunction',
+    });
+    return [values.length > 1 ? `(${joined})` : joined];
+  });
+  const facetSummary = format.list(facetSummaryGroups);
 
   const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
   if (activeSearch.q) {
@@ -468,6 +557,34 @@ export function RecipeSearchControls({
   }
 
   const advancedCount = advancedFilterCount(activeSearch);
+  const matchRules: RecipeMatchRule[] = (
+    [
+      {
+        facet: 'meal',
+        label: t('field.meal'),
+        mode: activeSearch.mealMatch,
+        count: activeSearch.meals.length,
+      },
+      {
+        facet: 'cuisine',
+        label: t('field.cuisine'),
+        mode: activeSearch.cuisineMatch,
+        count: activeSearch.cuisines.length,
+      },
+      {
+        facet: 'tag',
+        label: t('field.tag'),
+        mode: activeSearch.tagMatch,
+        count: activeSearch.tags.length,
+      },
+      {
+        facet: 'diet',
+        label: t('field.dietary'),
+        mode: activeSearch.dietMatch,
+        count: activeSearch.diets.length,
+      },
+    ] satisfies RecipeMatchRule[]
+  ).filter((rule) => rule.count > 1);
 
   const clearAll = () => {
     setQuery('');
@@ -611,6 +728,7 @@ export function RecipeSearchControls({
               label={t('field.meal')}
               placeholder={t('anyMeal')}
               selected={activeSearch.meals}
+              mode={activeSearch.mealMatch}
               options={facets.meals
                 .filter(
                   (meal) =>
@@ -630,6 +748,7 @@ export function RecipeSearchControls({
               label={t('field.cuisine')}
               placeholder={t('anyCuisine')}
               selected={activeSearch.cuisines}
+              mode={activeSearch.cuisineMatch}
               options={facets.cuisines
                 .filter(
                   (c) =>
@@ -690,6 +809,7 @@ export function RecipeSearchControls({
               label={t('field.tag')}
               placeholder={t('anyTag')}
               selected={activeSearch.tags}
+              mode={activeSearch.tagMatch}
               options={facets.tags
                 .filter(
                   (t) => t.count > 0 || activeSearch.tags.some((s) => s.toLowerCase() === t.slug),
@@ -706,6 +826,7 @@ export function RecipeSearchControls({
             label={t('field.dietary')}
             placeholder={t('anyDiet')}
             selected={activeSearch.diets}
+            mode={activeSearch.dietMatch}
             options={DIETARY_TAGS.map((tag) => ({
               value: tag,
               label: tNames.has(tag) ? tNames(tag) : DIETARY_TAG_LABELS[tag],
@@ -805,8 +926,25 @@ export function RecipeSearchControls({
               </label>
             </FilterField>
           )}
+
+          {filtersOpen && (
+            <RecipeMatchRules
+              rules={matchRules}
+              open={matchRulesOpen}
+              onOpenChange={setMatchRulesOpen}
+              onModeChange={pushMatchMode}
+            />
+          )}
         </div>
       </div>
+
+      {facetSummary && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t.rich('logicSummary', {
+            summary: () => <bdi className="font-medium text-foreground">{facetSummary}</bdi>,
+          })}
+        </p>
+      )}
 
       {activeChips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -909,12 +1047,14 @@ function FacetMultiSelect({
   placeholder,
   options,
   selected,
+  mode,
   onToggle,
 }: {
   label: string;
   placeholder: string;
   options: { value: string; label: string }[];
   selected: string[];
+  mode: FacetMatchMode;
   onToggle: (value: string, on: boolean) => void;
 }) {
   const t = useTranslations('recipeSearch');
@@ -931,10 +1071,16 @@ function FacetMultiSelect({
             type="button"
             variant="outline"
             className="min-w-[9rem] justify-between font-normal"
-            aria-label={t('facetAria', { label, count })}
+            aria-label={
+              count === 0
+                ? t('facetAriaEmpty', { label })
+                : t(mode === 'any' ? 'facetAriaAny' : 'facetAriaAll', { label, count })
+            }
           >
             <span className={cn(count === 0 && 'text-muted-foreground')}>
-              {count === 0 ? placeholder : t('facetSelected', { count })}
+              {count === 0
+                ? placeholder
+                : t(mode === 'any' ? 'facetSelectedAny' : 'facetSelectedAll', { count })}
             </span>
             <ChevronDown className="size-4 shrink-0 opacity-60" />
           </Button>
@@ -944,6 +1090,9 @@ function FacetMultiSelect({
           aria-label={label}
           className="max-h-72 w-56 overflow-y-auto p-1.5"
         >
+          <p className="border-b border-border px-2 py-2 text-xs text-muted-foreground">
+            {t(mode === 'any' ? 'matchHint.any' : 'matchHint.all')}
+          </p>
           <ul className="flex flex-col">
             {options.map((option) => {
               const checked = selectedSet.has(option.value.toLowerCase());

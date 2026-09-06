@@ -62,11 +62,49 @@ describe('searchFilterConditions (scoped facet counts, #274)', () => {
     expect((sql.match(/cuisine/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
+  it('uses the legacy cuisine scalar only when no typed cuisine exists', () => {
+    const sql = render(parseRecipeSearch({ cuisine: 'Italian' }));
+    expect(sql).toContain('not exists');
+    expect((sql.match(/category/g) ?? []).length).toBe(2);
+  });
+
+  it('ANDs meal and cuisine facets', () => {
+    const conditions = searchFilterConditions(
+      parseRecipeSearch({ meal: 'Dinner', cuisine: 'Italian' }),
+    );
+    expect(conditions).toHaveLength(2);
+    expect(render(parseRecipeSearch({ meal: 'Dinner', cuisine: 'Italian' }))).toContain(' and ');
+  });
+
+  it('ANDs multiple cuisines when requested', () => {
+    const conditions = searchFilterConditions(
+      parseRecipeSearch({ cuisine: ['Italian', 'Thai'], cuisineMatch: 'all' }),
+    );
+    expect(conditions).toHaveLength(2);
+  });
+
   it('ORs selected meals within a category-aware tag predicate', () => {
     const sql = render(parseRecipeSearch({ meal: ['Breakfast', 'Brunch'] }));
     expect(sql).toContain('exists');
     expect(sql).toContain('category');
     expect(sql).toContain(' in ');
+  });
+
+  it('ANDs selected meals when requested', () => {
+    const conditions = searchFilterConditions(
+      parseRecipeSearch({ meal: ['Breakfast', 'Brunch'], mealMatch: 'all' }),
+    );
+    expect(conditions).toHaveLength(2);
+  });
+
+  it('ORs selected general tags when requested', () => {
+    const conditions = searchFilterConditions(
+      parseRecipeSearch({ tag: ['weeknight', 'favorite'], tagMatch: 'any' }),
+    );
+    expect(conditions).toHaveLength(1);
+    expect(
+      render(parseRecipeSearch({ tag: ['weeknight', 'favorite'], tagMatch: 'any' })),
+    ).toContain(' or ');
   });
 });
 
@@ -86,6 +124,15 @@ describe('searchFilterConditions. Dietary filter (#273)', () => {
     const sql = render(search);
     expect((sql.match(/dietary_tags/g) ?? []).length).toBe(2);
     expect((sql.match(/dietary_flags/g) ?? []).length).toBe(2);
+  });
+
+  it('OR-combines multiple selected diets when requested', () => {
+    const search = parseRecipeSearch({
+      diet: ['vegan', 'gluten-free'],
+      dietMatch: 'any',
+    });
+    expect(searchFilterConditions(search)).toHaveLength(1);
+    expect(render(search)).toContain(' or ');
   });
 
   it('adds no dietary predicate when none is selected', () => {

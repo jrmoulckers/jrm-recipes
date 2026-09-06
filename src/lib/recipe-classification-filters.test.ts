@@ -56,10 +56,11 @@ describe('toggleClassification', () => {
 
   it('removes only itself when already active', () => {
     const next = toggleClassification(
-      new URLSearchParams('meal=lunch&meal=dinner'),
+      new URLSearchParams('meal=lunch&meal=dinner&mealMatch=all'),
       option('dinner', 'meal'),
     );
     expect(next.getAll('meal')).toEqual(['lunch']);
+    expect(next.get('mealMatch')).toBeNull();
   });
 
   it('clears a differently-cased value from the URL', () => {
@@ -68,6 +69,15 @@ describe('toggleClassification', () => {
       option('italian', 'cuisine', 1, 'Italian'),
     );
     expect(next.getAll('cuisine')).toEqual([]);
+  });
+
+  it('normalizes and removes values from comma-joined shared URLs', () => {
+    const next = toggleClassification(
+      new URLSearchParams('meal=lunch,dinner&mealMatch=all'),
+      option('dinner', 'meal'),
+    );
+    expect(next.getAll('meal')).toEqual(['lunch']);
+    expect(next.get('mealMatch')).toBeNull();
   });
 
   it('leaves the source params untouched', () => {
