@@ -671,6 +671,7 @@
   },
   "recipeEditor": {
     "importUrl": "URL de la receta para importar",
+    "scanReplaceConfirm": "Usar este escaneo reemplazará los ingredientes o pasos que ya contiene el borrador. ¿Quieres continuar?",
     "quantity": "Cantidad",
     "unit": "Unidad",
     "ingredient": "Ingrediente",
@@ -2597,6 +2598,7 @@
       "methodAria": "Método de importación",
       "fromLink": "Importar desde un enlace",
       "pasteText": "Pegar texto",
+      "fromPhoto": "Escanear una foto",
       "urlHelp": "Pega la URL de una receta y rellenaremos los detalles para que los revises.",
       "textHelp": "Pega cualquier receta como texto sin formato y la ordenaremos para que la revises.",
       "importing": "Importando…",
@@ -2610,7 +2612,49 @@
         "linkError": "Algo salió mal al importar ese enlace.",
         "textError": "Algo salió mal al leer ese texto."
       },
-      "textPlaceholder": "Marinara de la abuela\n\nIngredientes\n2 tazas de tomate triturado\n1 diente de ajo picado\n\nPreparación\n1. Calienta el aceite.\n2. Añade el ajo y deja cocer a fuego lento."
+      "textPlaceholder": "Marinara de la abuela\n\nIngredientes\n2 tazas de tomate triturado\n1 diente de ajo picado\n\nPreparación\n1. Calienta el aceite.\n2. Añade el ajo y deja cocer a fuego lento.",
+      "scan": {
+        "privateTitle": "Tu foto permanece en este dispositivo",
+        "privateDescription": "La tarjeta se lee en tu navegador. La foto no se sube ni se guarda, a menos que la añadas por separado como imagen de la receta original.",
+        "languageLabel": "Idioma de la tarjeta",
+        "languageHelp": "Elige el idioma usado en la tarjeta. La letra cursiva o descolorida puede ser más difícil de leer.",
+        "languages": {
+          "ara": "Árabe",
+          "deu": "Alemán",
+          "eng": "Inglés",
+          "spa": "Español"
+        },
+        "takePhoto": "Hacer una foto",
+        "choosePhoto": "Elegir una foto",
+        "previewAlt": "Vista previa de la tarjeta de receta seleccionada",
+        "previewCaption": "Comprueba que el texto esté derecho, bien iluminado y enfocado.",
+        "scan": "Leer esta tarjeta",
+        "reading": "Leyendo la tarjeta de receta…",
+        "progressLabel": "Progreso de lectura de la tarjeta",
+        "progress": "Leyendo la tarjeta: {progress}",
+        "cancel": "Cancelar",
+        "reviewTitle": "Comprueba lo que he leído",
+        "reviewDescription": "La escritura a mano puede ser difícil. Revisa el texto y comprueba todos los campos de la receta antes de guardar.",
+        "confidence": {
+          "good": "La mayor parte del texto era claro, pero aún puede haber errores.",
+          "mixed": "Parte del texto era difícil de leer. Revísalo con atención.",
+          "low": "Gran parte del texto era difícil de leer. Corrígelo antes de usarlo."
+        },
+        "transcriptLabel": "Texto leído de la tarjeta",
+        "transcriptHelp": "Corrige aquí cualquier error. Separaremos este texto en los campos de la receta cuando uses el borrador.",
+        "apply": "Usar borrador de receta",
+        "tryAgain": "Probar otra foto",
+        "sourceImageHelp": "Esto no guarda la foto. Para conservarla con la receta, añádela en Imágenes de la receta original antes de guardar.",
+        "applied": "Se añadió el borrador. Revisa todos los campos y guarda cuando esté listo.",
+        "errors": {
+          "type": "Elige una imagen JPEG, PNG o WebP.",
+          "size": "La foto es demasiado grande. Elige una de menos de 10 MB.",
+          "noText": "No pude encontrar texto legible en esa foto. Prueba con una foto más clara y luminosa.",
+          "cancelled": "La lectura se detuvo. Puedes volver a intentarlo cuando quieras.",
+          "read": "No pude leer esa foto. Prueba con una imagen más clara y luminosa o escribe la receta.",
+          "parse": "Leí la foto, pero no pude crear un borrador. Revisa el texto e inténtalo de nuevo."
+        }
+      }
     },
     "keepsake": {
       "trigger": "Regalar",

@@ -35,6 +35,7 @@ export default nextConfig({
     // SHA-256. A lint finding here would have no legal fix: editing the file
     // breaks the hash, so the fix has to happen upstream.
     'config/engineering/',
+    'public/ocr/',
     'public/sw.js',
     'public/swe-worker*.js',
     'src/app/sw.ts',

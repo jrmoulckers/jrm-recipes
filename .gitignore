@@ -21,6 +21,9 @@ next-env.d.ts
 /public/sw.js.map
 /public/swe-worker-*.js
 
+# OCR worker, WASM wrapper, and language data copied from pinned npm packages
+/public/ocr/
+
 # production
 /build
 

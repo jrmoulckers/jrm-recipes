@@ -2,15 +2,21 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Download, Link2, Loader2 } from 'lucide-react';
+import { Camera, Download, Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { friendlyError } from '~/lib/error-copy';
+import {
+  scannedRecipeWouldReplaceRows,
+  type ExistingIngredient,
+  type ExistingStep,
+} from '~/lib/recipe-import-replacement';
 import { importRecipeFromUrlAction } from '~/server/recipes/actions';
 import { type ImportedRecipe } from '~/server/recipes/import';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { PasteImportPanel } from '~/components/recipe/paste-import-panel';
+import { ScanRecipeCardPanel } from '~/components/recipe/scan-recipe-card-panel';
 
 /**
  * "Import a recipe" import affordance. Create mode only (#294,
@@ -20,10 +26,16 @@ import { PasteImportPanel } from '~/components/recipe/paste-import-panel';
  */
 export function ImportRecipePanel({
   onImported,
+  existingIngredients,
+  existingSteps,
+  photoReplaceConfirm,
   urlLabel,
   initialUrl,
 }: {
   onImported: (recipe: ImportedRecipe) => void;
+  existingIngredients: ExistingIngredient[];
+  existingSteps: ExistingStep[];
+  photoReplaceConfirm: string;
   urlLabel: string;
   /** A URL shared into the PWA to pre-fill and auto-import on mount (#50/#55). */
   initialUrl?: string;
@@ -31,8 +43,7 @@ export function ImportRecipePanel({
   const t = useTranslations('recipe');
   const [importUrl, setImportUrl] = React.useState(initialUrl ?? '');
   const [importing, setImporting] = React.useState(false);
-  // "Import from a link" vs. "Paste text" (#370).
-  const [importMode, setImportMode] = React.useState<'url' | 'text'>('url');
+  const [importMode, setImportMode] = React.useState<'url' | 'text' | 'photo'>('url');
 
   const onImportedRef = React.useRef(onImported);
   onImportedRef.current = onImported;
@@ -78,13 +89,25 @@ export function ImportRecipePanel({
     void runImport(url);
   }, [initialUrl, runImport]);
 
+  function applyPhotoImported(recipe: ImportedRecipe): boolean {
+    if (
+      scannedRecipeWouldReplaceRows(recipe, existingIngredients, existingSteps) &&
+      !window.confirm(photoReplaceConfirm)
+    ) {
+      return false;
+    }
+
+    onImported(recipe);
+    return true;
+  }
+
   return (
     <section className="rounded-xl border border-border bg-muted/40 p-4">
       <div className="flex items-center gap-2">
         <Link2 className="size-4 text-primary" />
         <h2 className="font-display text-base font-semibold">{t('import.title')}</h2>
       </div>
-      <div className="mt-3 flex gap-2" role="tablist" aria-label={t('import.methodAria')}>
+      <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label={t('import.methodAria')}>
         <Button
           type="button"
           size="sm"
@@ -104,6 +127,17 @@ export function ImportRecipePanel({
           onClick={() => setImportMode('text')}
         >
           {t('import.pasteText')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={importMode === 'photo' ? 'default' : 'outline'}
+          role="tab"
+          aria-selected={importMode === 'photo'}
+          onClick={() => setImportMode('photo')}
+        >
+          <Camera aria-hidden="true" />
+          {t('import.fromPhoto')}
         </Button>
       </div>
 
@@ -137,8 +171,12 @@ export function ImportRecipePanel({
             </Button>
           </div>
         </>
-      ) : (
+      ) : importMode === 'text' ? (
         <PasteImportPanel onImported={onImported} />
+      ) : (
+        <div className="mt-3">
+          <ScanRecipeCardPanel onImported={applyPhotoImported} />
+        </div>
       )}
     </section>
   );

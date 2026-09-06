@@ -1672,6 +1672,9 @@ export function RecipeEditor({
             {mode === 'create' ? (
               <ImportRecipePanel
                 onImported={applyImported}
+                existingIngredients={ingredients}
+                existingSteps={steps}
+                photoReplaceConfirm={t('scanReplaceConfirm')}
                 urlLabel={t('importUrl')}
                 initialUrl={initialImportUrl}
               />

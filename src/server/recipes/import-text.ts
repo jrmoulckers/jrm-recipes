@@ -34,22 +34,27 @@ const EMPTY: ImportedRecipe = {
   steps: [],
 };
 
-const INGREDIENT_HEADINGS = ['ingredients', 'you will need', "you'll need"];
-const STEP_HEADINGS = [
-  'instructions',
-  'directions',
-  'method',
-  'steps',
-  'preparation',
-  'directions',
-  'to make',
-];
+export type RecipeTextLanguage = 'ara' | 'deu' | 'eng' | 'spa';
+
+const INGREDIENT_HEADINGS: Record<RecipeTextLanguage, string[]> = {
+  ara: ['المكونات', 'المقادير'],
+  deu: ['zutaten', 'du brauchst'],
+  eng: ['ingredients', 'you will need', "you'll need"],
+  spa: ['ingredientes', 'necesitarás', 'necesitas'],
+};
+const STEP_HEADINGS: Record<RecipeTextLanguage, string[]> = {
+  ara: ['الطريقة', 'التحضير', 'التعليمات', 'الخطوات'],
+  deu: ['anleitung', 'methode', 'schritte', 'zubereitung'],
+  eng: ['instructions', 'directions', 'method', 'steps', 'preparation', 'to make'],
+  spa: ['elaboración', 'instrucciones', 'método', 'pasos', 'preparación'],
+};
 
 /** Normalize a line to a comparable heading token (letters only, lowercased). */
 function headingToken(line: string): string {
   return line
     .toLowerCase()
-    .replace(/[^a-z' ]/g, '')
+    .normalize('NFC')
+    .replace(/[^\p{L}' ]/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -63,21 +68,21 @@ function matchesHeading(line: string, headings: string[]): boolean {
 /** Strip a leading bullet or ordinal marker ("1.", "1)", "-", "•", "Step 2:"). */
 function stripMarker(line: string): string {
   return line
-    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, '')
-    .replace(/^\s*\d+\s*[.)]\s+/, '')
+    .replace(/^\s*(?:step|paso|schritt|خطوة)\s*\p{N}+\s*[:.)-]?\s*/iu, '')
+    .replace(/^\s*\p{N}+\s*[.)،-]\s+/u, '')
     .replace(/^\s*[-*•·]\s+/, '')
     .trim();
 }
 
 const QUANTITY_PREFIX =
-  /^\s*(?:[-*•·]\s*)?(?:\d+[\d.,/\s-]*|[½¼¾⅓⅔⅛⅜⅝⅞]|a\s|an\s|one\s|two\s|three\s|half\s)/i;
+  /^\s*(?:[-*•·]\s*)?(?:\p{N}+[\p{N}.,/\s-]*|[½¼¾⅓⅔⅛⅜⅝⅞]|a\s|an\s|one\s|two\s|three\s|half\s)/iu;
 
 function looksLikeIngredient(line: string): boolean {
   if (/^\s*[-*•·]\s+/.test(line)) return true;
   return QUANTITY_PREFIX.test(line);
 }
 
-const NUMBERED_STEP = /^\s*(?:step\s*)?\d+\s*[.)]\s+/i;
+const NUMBERED_STEP = /^\s*(?:(?:step|paso|schritt|خطوة)\s*)?\p{N}+\s*[.)،-]\s+/iu;
 
 function looksLikeNumberedStep(line: string): boolean {
   return NUMBERED_STEP.test(line);
@@ -119,7 +124,9 @@ function buildIngredients(lines: string[]): ImportedIngredient[] {
  * unrecognizable blob still yields a title (first line) so the user lands in the
  * editor with something to edit.
  */
-export function parseRecipeText(raw: string): ImportedRecipe {
+export function parseRecipeText(raw: string, language: RecipeTextLanguage = 'eng'): ImportedRecipe {
+  const ingredientHeadings = INGREDIENT_HEADINGS[language] ?? INGREDIENT_HEADINGS.eng;
+  const stepHeadings = STEP_HEADINGS[language] ?? STEP_HEADINGS.eng;
   const text = (raw ?? '').replace(/\r\n?/g, '\n');
   const rawLines = text.split('\n');
   const lines = rawLines.map((l) => l.trim());
@@ -130,9 +137,9 @@ export function parseRecipeText(raw: string): ImportedRecipe {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     if (!line) continue;
-    if (ingredientsAt === -1 && matchesHeading(line, INGREDIENT_HEADINGS)) {
+    if (ingredientsAt === -1 && matchesHeading(line, ingredientHeadings)) {
       ingredientsAt = i;
-    } else if (stepsAt === -1 && matchesHeading(line, STEP_HEADINGS)) {
+    } else if (stepsAt === -1 && matchesHeading(line, stepHeadings)) {
       stepsAt = i;
     }
   }

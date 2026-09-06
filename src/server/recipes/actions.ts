@@ -264,12 +264,15 @@ export async function importRecipeFromUrlAction(url: string): Promise<ImportResu
  * and offline - no fetch, no AI - so it only needs an authenticated session to
  * curb abuse. The editor applies the result for the user to review before save.
  */
-export async function importRecipeTextAction(text: string): Promise<ImportResult> {
+export async function importRecipeTextAction(
+  text: string,
+  language: 'ara' | 'deu' | 'eng' | 'spa' = 'eng',
+): Promise<ImportResult> {
   const user = await requireUser();
   if (!checkRateLimit('import', user.id).ok) {
     return { ok: false, error: RATE_LIMITED_MESSAGE };
   }
-  const recipe = parseRecipeText(text ?? '');
+  const recipe = parseRecipeText(text ?? '', language);
   if (!recipe.title && recipe.ingredients.length === 0 && recipe.steps.length === 0) {
     return {
       ok: false,
