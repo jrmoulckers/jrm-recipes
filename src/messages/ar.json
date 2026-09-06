@@ -2342,7 +2342,8 @@
       "placeholder": "اقترح تعديلًا لـ {label}…",
       "send": "إرسال الاقتراح",
       "cancel": "إلغاء",
-      "trigger": "اقتراح تعديل"
+      "trigger": "اقتراح تعديل",
+      "triggerAria": "اقتراح تعديل لـ {label}"
     },
     "ratingsReviews": {
       "toast": {

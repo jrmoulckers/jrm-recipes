@@ -2342,7 +2342,8 @@
       "placeholder": "Sugiere una edición para {label}…",
       "send": "Enviar sugerencia",
       "cancel": "Cancelar",
-      "trigger": "Sugerir una edición"
+      "trigger": "Sugerir una edición",
+      "triggerAria": "Sugerir una edición para {label}"
     },
     "ratingsReviews": {
       "toast": {
