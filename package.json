@@ -147,6 +147,7 @@
       "ip-address": "^10.3.1",
       "js-yaml@^3": "^3.15.1",
       "js-yaml@^4": "^4.3.1",
+      "@radix-ui/react-collection": "1.1.12",
       "tmp@<0.2.6": "^0.2.7"
     },
     "auditConfig": {
