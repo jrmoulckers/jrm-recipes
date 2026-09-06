@@ -3740,8 +3740,22 @@
       "maxCalories": "≤ {amount} kcal",
       "maxCarbs": "≤ {amount} g de carbohidratos"
     },
-    "facetSelected": "{count} seleccionados",
-    "facetAria": "Filtro de {label}, {count} seleccionados",
+    "logicSummary": "Coincidencias: <summary>{summary}</summary>",
+    "advancedMatchRules": "Reglas de coincidencia avanzadas",
+    "matchRulesHelp": "Elige cómo se combinan varios valores dentro de cada filtro. Todos los filtros diferentes deben coincidir.",
+    "matchRulesEmpty": "Selecciona al menos dos valores en un filtro para cambiar su regla de coincidencia.",
+    "matchRuleAria": "Regla de coincidencia de {label}",
+    "matchAny": "Cualquiera",
+    "matchAll": "Todos",
+    "facetSelectedAny": "{count, plural, one {1 seleccionado} other {Cualquiera de #}}",
+    "facetSelectedAll": "{count, plural, one {1 seleccionado} other {Los #}}",
+    "facetAriaEmpty": "Filtro de {label}, sin selección",
+    "facetAriaAny": "Filtro de {label}, cualquiera de {count} seleccionados",
+    "facetAriaAll": "Filtro de {label}, los {count} seleccionados",
+    "matchHint": {
+      "any": "Las recetas pueden coincidir con cualquier valor seleccionado.",
+      "all": "Las recetas deben coincidir con todos los valores seleccionados."
+    },
     "anyAmount": "Cualquier cantidad",
     "macroOption": {
       "minProtein": "{amount} g o más",

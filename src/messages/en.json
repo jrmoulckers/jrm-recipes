@@ -3740,8 +3740,22 @@
       "maxCalories": "≤ {amount} kcal",
       "maxCarbs": "≤ {amount} g carbs"
     },
-    "facetSelected": "{count} selected",
-    "facetAria": "{label} filter, {count} selected",
+    "logicSummary": "Matches: <summary>{summary}</summary>",
+    "advancedMatchRules": "Advanced match rules",
+    "matchRulesHelp": "Choose how multiple values inside each filter are combined. Different filters must all match.",
+    "matchRulesEmpty": "Select at least two values in a filter to change its match rule.",
+    "matchRuleAria": "{label} match rule",
+    "matchAny": "Any",
+    "matchAll": "All",
+    "facetSelectedAny": "{count, plural, one {1 selected} other {Any of #}}",
+    "facetSelectedAll": "{count, plural, one {1 selected} other {All #}}",
+    "facetAriaEmpty": "{label} filter, no selection",
+    "facetAriaAny": "{label} filter, any of {count} selected",
+    "facetAriaAll": "{label} filter, all {count} selected",
+    "matchHint": {
+      "any": "Recipes may match any selected value.",
+      "all": "Recipes must match every selected value."
+    },
     "anyAmount": "Any amount",
     "macroOption": {
       "minProtein": "{amount} g or more",

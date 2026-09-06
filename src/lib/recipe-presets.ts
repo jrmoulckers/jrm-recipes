@@ -8,6 +8,7 @@
  * here. This module is pure (no React / no `server-only`) so it can drive the
  * client chips and be unit-tested exhaustively.
  */
+import { parseFacetList } from '~/server/recipes/search';
 
 /** A single param a preset owns. `tag`/`cuisine` are treated as multi-value. */
 export type PresetParam = { key: string; value: string };
@@ -21,7 +22,7 @@ export type RecipePreset = {
 };
 
 /** Params that can carry several values at once (repeated in the URL). */
-export const MULTI_VALUE_PRESET_KEYS = new Set(['tag', 'cuisine']);
+export const MULTI_VALUE_PRESET_KEYS = new Set(['meal', 'cuisine', 'tag', 'diet']);
 
 /**
  * The preset chips, in display order. `weeknight` is the headline: it composes
@@ -59,7 +60,9 @@ export const RECIPE_PRESETS: RecipePreset[] = [
 export function isPresetActive(current: URLSearchParams, preset: RecipePreset): boolean {
   return preset.params.every((param) =>
     MULTI_VALUE_PRESET_KEYS.has(param.key)
-      ? current.getAll(param.key).some((value) => value.toLowerCase() === param.value.toLowerCase())
+      ? parseFacetList(current.getAll(param.key), 80).some(
+          (value) => value.toLowerCase() === param.value.toLowerCase(),
+        )
       : current.get(param.key) === param.value,
   );
 }
@@ -76,12 +79,13 @@ export function togglePreset(current: URLSearchParams, preset: RecipePreset): UR
 
   for (const param of preset.params) {
     if (MULTI_VALUE_PRESET_KEYS.has(param.key)) {
-      const kept = next
-        .getAll(param.key)
-        .filter((value) => value.toLowerCase() !== param.value.toLowerCase());
+      const kept = parseFacetList(next.getAll(param.key), 80).filter(
+        (value) => value.toLowerCase() !== param.value.toLowerCase(),
+      );
       if (!active) kept.push(param.value);
       next.delete(param.key);
       for (const value of kept) next.append(param.key, value);
+      if (kept.length < 2) next.delete(`${param.key}Match`);
     } else if (active) {
       next.delete(param.key);
     } else {

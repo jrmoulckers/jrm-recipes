@@ -1085,9 +1085,9 @@ export function searchFilterConditions(
 
   if (opts.skip !== 'cuisine' && search.cuisines.length > 0) {
     const cuisineSlugs = search.cuisines.map(tagFilterSlug);
-    conditions.push(
+    const cuisineConditions = search.cuisines.map((c, index) =>
       or(
-        ...search.cuisines.map((c) => ilike(recipes.cuisine, c)),
+        ilike(recipes.cuisine, c),
         exists(
           qb
             .select({ one: sql`1` })
@@ -1097,66 +1097,118 @@ export function searchFilterConditions(
               and(
                 eq(recipeTags.recipeId, recipes.id),
                 eq(tags.category, 'cuisine'),
-                inArray(tags.slug, cuisineSlugs),
+                eq(tags.slug, cuisineSlugs[index] ?? tagFilterSlug(c)),
               ),
             ),
         ),
       ),
     );
+    conditions.push(
+      ...(search.cuisineMatch === 'all' ? cuisineConditions : [or(...cuisineConditions)]),
+    );
   }
 
   if (opts.skip !== 'meal' && search.meals.length > 0) {
-    conditions.push(
-      exists(
-        qb
-          .select({ one: sql`1` })
-          .from(recipeTags)
-          .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-          .where(
-            and(
-              eq(recipeTags.recipeId, recipes.id),
-              eq(tags.category, 'meal'),
-              inArray(tags.slug, search.meals.map(tagFilterSlug)),
-            ),
+    if (search.mealMatch === 'all') {
+      for (const meal of search.meals) {
+        conditions.push(
+          exists(
+            qb
+              .select({ one: sql`1` })
+              .from(recipeTags)
+              .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+              .where(
+                and(
+                  eq(recipeTags.recipeId, recipes.id),
+                  eq(tags.category, 'meal'),
+                  eq(tags.slug, tagFilterSlug(meal)),
+                ),
+              ),
           ),
-      ),
-    );
-  }
-  if (search.difficulty) conditions.push(eq(recipes.difficulty, search.difficulty));
-  if (search.maxTime != null) conditions.push(lte(recipes.totalMinutes, search.maxTime));
-
-  // Tags narrow conjunctively: a recipe must carry *every* selected tag, so each
-  // becomes its own EXISTS. Cuisines above are disjunctive (any-of).
-  if (opts.skip !== 'tag') {
-    for (const tag of search.tags) {
-      const slug = tagFilterSlug(tag);
+        );
+      }
+    } else {
       conditions.push(
         exists(
-          db
+          qb
             .select({ one: sql`1` })
             .from(recipeTags)
             .innerJoin(tags, eq(recipeTags.tagId, tags.id))
             .where(
               and(
                 eq(recipeTags.recipeId, recipes.id),
-                or(eq(tags.slug, slug), ilike(tags.name, tag)),
+                eq(tags.category, 'meal'),
+                inArray(tags.slug, search.meals.map(tagFilterSlug)),
               ),
             ),
         ),
       );
     }
   }
+  if (search.difficulty) conditions.push(eq(recipes.difficulty, search.difficulty));
+  if (search.maxTime != null) conditions.push(lte(recipes.totalMinutes, search.maxTime));
 
-  // Dietary tags (#273) narrow conjunctively, but each is satisfied by the UNION
-  // of the derived `dietaryTags` (auto "-free" from ingredients) and the
-  // author-declared `dietaryFlags` (#404), so a recipe must, for *every*
-  // selected diet, carry it in *either* column. Hence an AND over per-diet ORs.
-  // (A single `or(arrayContains(tags, diets), arrayContains(flags, diets))`
-  // would be wrong for mixed sources, e.g. dairy-free derived + vegan declared.)
-  for (const diet of search.diets) {
+  // Tags default to conjunctive matching, with an explicit any-of override.
+  // Each all-match value gets its own EXISTS so one row cannot satisfy two tags.
+  if (opts.skip !== 'tag') {
+    if (search.tagMatch === 'any' && search.tags.length > 0) {
+      conditions.push(
+        exists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeTags)
+            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+            .where(
+              and(
+                eq(recipeTags.recipeId, recipes.id),
+                or(
+                  inArray(tags.slug, search.tags.map(tagFilterSlug)),
+                  ...search.tags.map((tag) => ilike(tags.name, tag)),
+                ),
+              ),
+            ),
+        ),
+      );
+    } else {
+      for (const tag of search.tags) {
+        const slug = tagFilterSlug(tag);
+        conditions.push(
+          exists(
+            qb
+              .select({ one: sql`1` })
+              .from(recipeTags)
+              .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+              .where(
+                and(
+                  eq(recipeTags.recipeId, recipes.id),
+                  or(eq(tags.slug, slug), ilike(tags.name, tag)),
+                ),
+              ),
+          ),
+        );
+      }
+    }
+  }
+
+  // Dietary tags (#273) default to conjunctive matching, but each is satisfied
+  // by the union of derived `dietaryTags` (auto "-free" from ingredients) and
+  // author-declared `dietaryFlags` (#404). The all-match path therefore keeps
+  // one condition per diet so mixed sources still satisfy the full selection.
+  if (search.dietMatch === 'any' && search.diets.length > 0) {
     conditions.push(
-      or(arrayContains(recipes.dietaryTags, [diet]), arrayContains(recipes.dietaryFlags, [diet])),
+      or(
+        ...search.diets.flatMap((diet) => [
+          arrayContains(recipes.dietaryTags, [diet]),
+          arrayContains(recipes.dietaryFlags, [diet]),
+        ]),
+      ),
     );
+  } else {
+    for (const diet of search.diets) {
+      conditions.push(
+        or(arrayContains(recipes.dietaryTags, [diet]), arrayContains(recipes.dietaryFlags, [diet])),
+      );
+    }
   }
 
   // Ingredient-led filter: constrain to recipes that use the resolved canonical
@@ -1542,9 +1594,10 @@ export async function suggestSearchTerm(
 
 /**
  * Typed classifications present in a viewer's visible recipes, each with a result
- * count scoped to the *other* active filters (the counted facet itself is
- * excluded, so a count answers "how many if I also pick this?"). When `search`
- * is omitted the counts are global. Empty when the DB is off.
+ * count scoped to the active match rule. ANY facets exclude their own predicate
+ * so a count answers "how many if I also pick this?"; ALL facets retain it so
+ * a count reflects the additional intersection. When `search` is omitted the
+ * counts are global. Empty when the DB is off.
  *
  * Any currently-selected facet value is always included, even at count 0, so
  * the UI can still display and clear it.
@@ -1567,15 +1620,31 @@ export async function listRecipeFacets(
   // once and thread it into both facet queries (it's never the skipped facet).
   const ingredientFoodId = search ? await resolveIngredientFilter(search) : undefined;
 
-  // OR facets exclude themselves so alternatives stay visible. General tags use
-  // AND semantics, so their counts retain selected tags and show intersections.
-  const facetRecipeIds = (skip?: 'cuisine' | 'meal') =>
-    db
+  // ANY facets exclude themselves so alternatives that broaden the result set
+  // remain visible. ALL facets retain themselves so counts show intersections.
+  const facetRecipeIds = (facet: 'cuisine' | 'meal' | 'tag') => {
+    const mode = search
+      ? {
+          cuisine: search.cuisineMatch,
+          meal: search.mealMatch,
+          tag: search.tagMatch,
+        }[facet]
+      : undefined;
+    return db
       .select({ id: recipes.id })
       .from(recipes)
       .where(
-        and(scope, ...(search ? searchFilterConditions(search, { skip, ingredientFoodId }) : [])),
+        and(
+          scope,
+          ...(search
+            ? searchFilterConditions(search, {
+                skip: mode === 'any' ? facet : undefined,
+                ingredientFoodId,
+              })
+            : []),
+        ),
       );
+  };
 
   const [cuisineRows, mealRows, tagRows] = await Promise.all([
     db
@@ -1609,7 +1678,7 @@ export async function listRecipeFacets(
       })
       .from(tags)
       .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-      .where(and(eq(tags.category, 'general'), inArray(recipeTags.recipeId, facetRecipeIds())))
+      .where(and(eq(tags.category, 'general'), inArray(recipeTags.recipeId, facetRecipeIds('tag'))))
       .groupBy(tags.slug, tags.name)
       .orderBy(asc(tags.name)),
   ]);

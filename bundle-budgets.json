@@ -48,9 +48,10 @@
   },
   "//measurement-tolerance": "Issue #1055 resolves the strict-equality limitation recorded in //zero-headroom-variance and reconfirmed in //macro-search-filters. Only /recipes/[cook]/[recipe] receives a 1 kB claim tolerance: the same application code measured 309 and 310 on consecutive Linux CI runs, with only this JSON file changed between them. scripts/check-bundle-budget.mjs rejects any tolerance above 1 kB and still fails this claim at 311 or 307, so measured display noise passes without masking a real movement. Route budgets are unchanged. Use pnpm bundle:route-chunks with both --expect-absent and --expect-present to prove whether a suspected module reaches this route; the required present assertion is the positive control that makes zero hits readable.",
   "//unsaved-changes-guard": "Issue #115 adds the editor's always-on dirty-state and navigation guard. A local Windows build on 2026-08-31 moved /recipes/[cook]/[recipe]/edit from the inherited 218 kB zero-headroom baseline to 219 kB. The draft envelope codec, expiry/compatibility checks, and storage parser are dynamically imported after hydration and confirmed absent from the route's first-load chunks; the shared confirm context was split from its alert-dialog renderer so the editor imports only the context. The route budget moves 218 -> 222: the measured 219 kB plus the required 2 kB headroom and 1 kB for the documented Windows-to-Linux offset. No other route budget changes.",
+  "//search-match-rules": "Issue #1088 adds always-on recipe-filter match semantics: URL-backed per-facet modes, semantic Any/All selection labels, and the locale-aware active-query summary. A local Windows production build measures /recipes at 284 kB against the inherited 283 kB limit. The larger advanced-rule control is dynamically imported only after Filters opens; route-chunk attribution finds the parent key facetSelectedAny in 1/26 first-load chunks and matchRulesEmpty from the advanced component in 0/26. The /recipes budget moves 283 -> 286, the measured 284 kB plus the required 2 kB headroom. No other route budget changes.",
   "routes": {
     "/": 257,
-    "/recipes": 283,
+    "/recipes": 286,
     "/recipes/[cook]/[recipe]": 337,
     "/recipes/[cook]/[recipe]/edit": 250
   },

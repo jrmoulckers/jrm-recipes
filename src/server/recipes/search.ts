@@ -11,7 +11,7 @@ import type { SearchParams } from '~/lib/route-params';
  * This module is deliberately free of `server-only` and database imports so it
  * can be shared by the server query (`searchRecipes`) and the client controls
  * that push URL params. State lives entirely in the querystring
- * (`?q=&meal=&cuisine=&difficulty=&maxTime=&tag=&diet=&safeFor=&group=&mine=&sort=`)
+ * (`?q=&meal=&mealMatch=&cuisine=&cuisineMatch=&difficulty=&maxTime=&tag=&tagMatch=&diet=&dietMatch=&safeFor=&group=&mine=&sort=`)
  * so results are shareable and SSR-friendly. Classification params may repeat
  * or be comma-joined to select several values at once.
  */
@@ -114,6 +114,21 @@ export function defaultSortFor(q: string | undefined | null): RecipeSort {
 export const recipeDifficultyValues = ['easy', 'medium', 'hard'] as const;
 export type RecipeDifficultyFilter = (typeof recipeDifficultyValues)[number];
 
+export const facetMatchModeValues = ['any', 'all'] as const;
+export type FacetMatchMode = (typeof facetMatchModeValues)[number];
+export type RecipeFacetParam = 'meal' | 'cuisine' | 'tag' | 'diet';
+
+/**
+ * Defaults follow the meaning of each facet: meals and cuisines describe
+ * alternatives, while tags and dietary requirements narrow cumulatively.
+ */
+export const DEFAULT_FACET_MATCH_MODES: Record<RecipeFacetParam, FacetMatchMode> = {
+  meal: 'any',
+  cuisine: 'any',
+  tag: 'all',
+  diet: 'all',
+};
+
 /**
  * Raw search params as delivered by Next.js. Aliases the shared
  * {@link SearchParams} contract (#208) so the query parser and every page agree
@@ -123,6 +138,16 @@ export type RawSearchParams = SearchParams;
 
 const first = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
+
+const facetMatchModeSchema = z.enum(facetMatchModeValues);
+
+function parseFacetMatchMode(
+  value: string | string[] | undefined,
+  fallback: FacetMatchMode,
+): FacetMatchMode {
+  const parsed = facetMatchModeSchema.safeParse(first(value));
+  return parsed.success ? parsed.data : fallback;
+}
 
 /** Upper bound on selected values for a single multi-select facet. */
 export const MAX_FACET_VALUES = 12;
@@ -265,17 +290,21 @@ export const recipeSearchSchema = z.object({
 });
 
 export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
-  /** Selected meals/courses (OR-matched). Empty when unfiltered. */
+  /** Selected meals/courses. Empty when unfiltered. */
   meals: string[];
-  /** Selected cuisines (OR-matched). Empty when unfiltered. */
+  mealMatch: FacetMatchMode;
+  /** Selected cuisines. Empty when unfiltered. */
   cuisines: string[];
-  /** Selected tags (AND-matched. A recipe must carry every one). */
+  cuisineMatch: FacetMatchMode;
+  /** Selected tags. */
   tags: string[];
+  tagMatch: FacetMatchMode;
   /**
-   * Selected dietary tags (AND-matched. A recipe must satisfy every one,
-   * via its declared ∪ derived dietary tags). Empty when unfiltered (#273).
+   * Selected dietary tags, satisfied through declared ∪ derived dietary tags.
+   * Empty when unfiltered (#273).
    */
   diets: DietaryTag[];
+  dietMatch: FacetMatchMode;
   sort: RecipeSort;
 };
 
@@ -293,12 +322,32 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     ...Object.fromEntries(MACRO_FILTERS.map((f) => [f.param, first(params[f.param])])),
     sort: first(params.sort),
   });
+  const meals = parseFacetList(params.meal, 80);
+  const cuisines = parseFacetList(params.cuisine, 80);
+  const tags = parseFacetList(params.tag, 80);
+  const diets = parseDietList(params.diet);
   return {
     ...parsed,
-    meals: parseFacetList(params.meal, 80),
-    cuisines: parseFacetList(params.cuisine, 80),
-    tags: parseFacetList(params.tag, 80),
-    diets: parseDietList(params.diet),
+    meals,
+    mealMatch:
+      meals.length > 1
+        ? parseFacetMatchMode(params.mealMatch, DEFAULT_FACET_MATCH_MODES.meal)
+        : DEFAULT_FACET_MATCH_MODES.meal,
+    cuisines,
+    cuisineMatch:
+      cuisines.length > 1
+        ? parseFacetMatchMode(params.cuisineMatch, DEFAULT_FACET_MATCH_MODES.cuisine)
+        : DEFAULT_FACET_MATCH_MODES.cuisine,
+    tags,
+    tagMatch:
+      tags.length > 1
+        ? parseFacetMatchMode(params.tagMatch, DEFAULT_FACET_MATCH_MODES.tag)
+        : DEFAULT_FACET_MATCH_MODES.tag,
+    diets,
+    dietMatch:
+      diets.length > 1
+        ? parseFacetMatchMode(params.dietMatch, DEFAULT_FACET_MATCH_MODES.diet)
+        : DEFAULT_FACET_MATCH_MODES.diet,
     sort: parsed.sort ?? defaultSortFor(parsed.q),
   };
 }
@@ -355,11 +404,39 @@ export function recipeSearchToParams(search: Partial<RecipeSearch>): URLSearchPa
   const params = new URLSearchParams();
   if (search.q) params.set('q', search.q);
   for (const meal of search.meals ?? []) params.append('meal', meal);
+  if (
+    (search.meals?.length ?? 0) > 1 &&
+    search.mealMatch &&
+    search.mealMatch !== DEFAULT_FACET_MATCH_MODES.meal
+  ) {
+    params.set('mealMatch', search.mealMatch);
+  }
   for (const cuisine of search.cuisines ?? []) params.append('cuisine', cuisine);
+  if (
+    (search.cuisines?.length ?? 0) > 1 &&
+    search.cuisineMatch &&
+    search.cuisineMatch !== DEFAULT_FACET_MATCH_MODES.cuisine
+  ) {
+    params.set('cuisineMatch', search.cuisineMatch);
+  }
   if (search.difficulty) params.set('difficulty', search.difficulty);
   if (search.maxTime != null) params.set('maxTime', String(search.maxTime));
   for (const tag of search.tags ?? []) params.append('tag', tag);
+  if (
+    (search.tags?.length ?? 0) > 1 &&
+    search.tagMatch &&
+    search.tagMatch !== DEFAULT_FACET_MATCH_MODES.tag
+  ) {
+    params.set('tagMatch', search.tagMatch);
+  }
   for (const diet of search.diets ?? []) params.append('diet', diet);
+  if (
+    (search.diets?.length ?? 0) > 1 &&
+    search.dietMatch &&
+    search.dietMatch !== DEFAULT_FACET_MATCH_MODES.diet
+  ) {
+    params.set('dietMatch', search.dietMatch);
+  }
   if (search.safeFor) params.set('safeFor', search.safeFor);
   if (search.group) params.set('group', search.group);
   if (search.ingredient) params.set('ingredient', search.ingredient);

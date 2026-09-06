@@ -3740,8 +3740,22 @@
       "maxCalories": "≤ {amount} سعرة",
       "maxCarbs": "≤ {amount} غ كربوهيدرات"
     },
-    "facetSelected": "{count} محددة",
-    "facetAria": "مرشح {label}، {count} محددة",
+    "logicSummary": "يطابق: <summary>{summary}</summary>",
+    "advancedMatchRules": "قواعد المطابقة المتقدمة",
+    "matchRulesHelp": "اختر كيفية دمج عدة قيم داخل كل مرشح. يجب أن تتطابق جميع المرشحات المختلفة.",
+    "matchRulesEmpty": "حدد قيمتين على الأقل في مرشح لتغيير قاعدة المطابقة.",
+    "matchRuleAria": "قاعدة مطابقة {label}",
+    "matchAny": "أي منها",
+    "matchAll": "كلها",
+    "facetSelectedAny": "أي من {count}",
+    "facetSelectedAll": "كل {count}",
+    "facetAriaEmpty": "مرشح {label}، دون تحديد",
+    "facetAriaAny": "مرشح {label}، أي من {count} محددة",
+    "facetAriaAll": "مرشح {label}، كل {count} محددة",
+    "matchHint": {
+      "any": "يمكن أن تطابق الوصفات أي قيمة محددة.",
+      "all": "يجب أن تطابق الوصفات كل قيمة محددة."
+    },
     "anyAmount": "أي كمية",
     "macroOption": {
       "minProtein": "{amount} غ أو أكثر",

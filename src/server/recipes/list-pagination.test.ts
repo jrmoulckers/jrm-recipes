@@ -104,9 +104,13 @@ describe('listLibraryRecipeIds (#57)', () => {
 describe('searchRecipes pagination (#58)', () => {
   const baseSearch: RecipeSearch = {
     meals: [],
+    mealMatch: 'any',
     cuisines: [],
+    cuisineMatch: 'any',
     tags: [],
+    tagMatch: 'all',
     diets: [],
+    dietMatch: 'all',
     mine: false,
     showUncertain: false,
     sort: 'newest',

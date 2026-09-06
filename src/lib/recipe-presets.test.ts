@@ -65,9 +65,17 @@ describe('recipe presets', () => {
     });
 
     it('removes only its own tag when toggled off', () => {
-      const params = new URLSearchParams('tag=vegan&tag=kid-friendly');
+      const params = new URLSearchParams('tag=vegan&tag=kid-friendly&tagMatch=any');
       const next = togglePreset(params, preset('kid-friendly'));
       expect(next.getAll('tag')).toEqual(['vegan']);
+      expect(next.get('tagMatch')).toBeNull();
+    });
+
+    it('normalizes and removes a tag from comma-joined shared URLs', () => {
+      const params = new URLSearchParams('tag=vegan,kid-friendly&tagMatch=any');
+      const next = togglePreset(params, preset('kid-friendly'));
+      expect(next.getAll('tag')).toEqual(['vegan']);
+      expect(next.get('tagMatch')).toBeNull();
     });
   });
 });
