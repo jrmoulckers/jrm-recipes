@@ -31,7 +31,10 @@ const mockedCreate = vi.mocked(createRecipeAction);
 const context = { userId: 'user-1', mode: 'create' } as const;
 const storageKey = draftStorageKey(context);
 
-function draftValue(title: string): RecipeEditorValue {
+function draftValue(
+  title: string,
+  sourceImages: NonNullable<RecipeEditorValue['sourceImages']> = [],
+): RecipeEditorValue {
   return {
     title,
     description: '',
@@ -67,6 +70,7 @@ function draftValue(title: string): RecipeEditorValue {
     groupId: '',
     tags: '',
     dietaryFlags: [],
+    sourceImages,
     ingredients: [],
     steps: [],
   };
@@ -127,7 +131,19 @@ describe('RecipeEditor draft recovery and exit guard (#115)', () => {
   });
 
   it('offers a local draft without replacing server-loaded form state', async () => {
-    window.localStorage.setItem(storageKey, serializeDraft(draftValue('Recovered pie')));
+    window.localStorage.setItem(
+      storageKey,
+      serializeDraft(
+        draftValue('Recovered pie', [
+          {
+            id: '',
+            imageUrl: 'https://example.com/card.jpg',
+            caption: 'Front of the card',
+            altText: 'Blue handwriting on an index card',
+          },
+        ]),
+      ),
+    );
     renderEditor();
 
     expect(await screen.findByRole('region', { name: 'Unfinished recipe' })).toBeInTheDocument();
@@ -135,6 +151,21 @@ describe('RecipeEditor draft recovery and exit guard (#115)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Restore' }));
     expect(screen.getByLabelText(/^Title/)).toHaveValue('Recovered pie');
+    expect(screen.getByPlaceholderText("Front of Grandma's recipe card")).toHaveValue(
+      'Front of the card',
+    );
+  });
+
+  it('restores a pre-source-image draft without deleting it as incompatible', async () => {
+    const { sourceImages: _sourceImages, ...legacyDraft } = draftValue('Grandma pie');
+    window.localStorage.setItem(storageKey, serializeDraft(legacyDraft));
+
+    renderEditor();
+
+    expect(await screen.findByRole('region', { name: 'Unfinished recipe' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Restore' }));
+    expect(screen.getByLabelText(/^Title/)).toHaveValue('Grandma pie');
+    expect(screen.queryByText('Original image 1 of 1')).not.toBeInTheDocument();
   });
 
   it('discards only the current scoped draft', async () => {

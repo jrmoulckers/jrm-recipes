@@ -17,6 +17,13 @@ export type PrintRecipeStep = {
   techniques: string[] | null;
 };
 
+export type PrintRecipeSourceImage = {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  altText: string | null;
+};
+
 export type PrintRecipeTag = {
   tag: {
     name: string;
@@ -45,6 +52,8 @@ export type PrintRecipe = {
   sourceName: string | null;
   sourceUrl: string | null;
   notes: string | null;
+  /** Ordered source-document references; image bytes remain with their provider. */
+  sourceImages?: PrintRecipeSourceImage[];
   // Heritage fields (issues #377/#381). Optional so existing PrintRecipe
   // producers/fixtures stay valid. The backup export (#420) reads them so a
   // family's story and provenance are never lost when they take their data home.

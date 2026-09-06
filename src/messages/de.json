@@ -900,6 +900,22 @@
       "sugarGrams": "Zucker gesamt",
       "fiberGrams": "Ballaststoffe"
     },
+    "sourceImages": {
+      "legend": "Bilder des Originalrezepts",
+      "hint": "Bewahre handgeschriebene Karten oder Kochbuchseiten bei diesem Rezept auf ({count}/{max}).",
+      "add": "Originalbild hinzufügen",
+      "item": "Originalbild {position} von {total}",
+      "caption": "Bildunterschrift (optional)",
+      "captionPlaceholder": "Vorderseite von Omas Rezeptkarte",
+      "moveEarlier": "Originalbild {position} nach vorn verschieben",
+      "moveLater": "Originalbild {position} nach hinten verschieben",
+      "earlier": "Nach vorn",
+      "later": "Nach hinten",
+      "detach": "Vom Rezept entfernen",
+      "duplicate": "Dieses Bild ist bereits an dieses Rezept angehängt.",
+      "empty": "Noch keine Originalbilder angehängt.",
+      "detachHint": "Wenn du ein Bild hier entfernst, wird es nicht aus deiner Fotobibliothek gelöscht."
+    },
     "visibilityStatus": "Sichtbarkeit und Status",
     "visibilityAria": "Sichtbarkeitseinstellungen: {visibility}, {status}",
     "visibility": {
@@ -1009,6 +1025,12 @@
       "timeline": "Verlauf",
       "cooked": "Gekocht",
       "discussion": "Diskussion"
+    },
+    "originalImages": {
+      "title": "Original ansehen",
+      "count": "{count, plural, one {# Bild} other {# Bilder}}",
+      "fallbackAlt": "Originalrezeptbild {position} für {title}",
+      "openFullResolution": "Originalbild {position} in voller Auflösung öffnen"
     },
     "storyMemories": "Geschichte & Erinnerungen"
   },
@@ -3076,6 +3098,7 @@
         "separator": ", ",
         "surfaces": {
           "recipes": "{count, plural, one {# Rezeptbild} other {# Rezeptbilder}}",
+          "sourceImages": "{count, plural, one {# Originalrezeptbild} other {# Originalrezeptbilder}}",
           "steps": "{count, plural, one {# Rezeptschritt} other {# Rezeptschritte}}",
           "collections": "{count, plural, one {# Sammlungsbild} other {# Sammlungsbilder}}",
           "groups": "{count, plural, one {# Familiengruppe} other {# Familiengruppen}}",

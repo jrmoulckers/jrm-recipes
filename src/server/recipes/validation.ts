@@ -83,6 +83,19 @@ const captionUrl = mediaUrl.refine((value) => {
  */
 const imageAlt = optionalString(300);
 
+export const recipeSourceImageInput = z.object({
+  // Existing attachments round-trip their stable id. New draft rows omit it
+  // and receive a server-generated cuid2 when the recipe is saved.
+  id: z
+    .string()
+    .length(24)
+    .regex(/^[a-z0-9]+$/)
+    .optional(),
+  imageUrl: mediaUrl.refine((value) => value != null, 'Choose an original recipe photo'),
+  caption: optionalString(500),
+  altText: imageAlt,
+});
+
 const captionLanguage = optionalString(35).refine(
   (value) => value == null || /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(value),
   'Use a valid caption language, such as en or en-US',
@@ -213,6 +226,7 @@ export const recipeInput = z
     groupId: optionalString(24),
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
+    sourceImages: z.array(recipeSourceImageInput).max(12).default([]),
     tags: z.array(z.string().trim().min(1).max(80)).max(30).default([]),
     // Required tools/equipment (#410). Deduped, trimmed, order-preserving.
     equipment: z
@@ -229,6 +243,29 @@ export const recipeInput = z
       .transform((tags) => [...new Set(tags)]),
   })
   .superRefine((val, ctx) => {
+    const sourceImageIds = new Set<string>();
+    const sourceImageUrls = new Set<string>();
+    for (const [index, image] of val.sourceImages.entries()) {
+      if (image.id) {
+        if (sourceImageIds.has(image.id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['sourceImages', index, 'id'],
+            message: 'Each original recipe photo must be unique',
+          });
+        }
+        sourceImageIds.add(image.id);
+      }
+      if (sourceImageUrls.has(image.imageUrl)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['sourceImages', index, 'imageUrl'],
+          message: 'This original recipe photo is already attached',
+        });
+      }
+      sourceImageUrls.add(image.imageUrl);
+    }
+
     // "Group" visibility only makes sense with a group. Without one the recipe
     // is hidden from everyone but its author. Require a group so the form
     // surfaces a clear error instead of silently orphaning the recipe.

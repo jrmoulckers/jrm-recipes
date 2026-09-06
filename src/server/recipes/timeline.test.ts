@@ -4,6 +4,7 @@ import {
   adaptationTitle,
   assembleTimeline,
   buildAdaptationInput,
+  recipeToInput,
   type AdaptationSource,
   type TimelineEntry,
 } from './timeline';
@@ -23,6 +24,14 @@ function sourceRecipe(overrides: Partial<AdaptationSource> = {}): AdaptationSour
     sourceName: 'Nonna',
     sourceUrl: 'https://example.com/sauce',
     notes: 'Stir often.',
+    sourceImages: [
+      {
+        id: 'a'.repeat(24),
+        imageUrl: 'https://img.example/card.jpg',
+        caption: 'Original card',
+        altText: 'Handwritten card',
+      },
+    ],
     ingredients: [
       {
         section: 'Base',
@@ -121,6 +130,7 @@ describe('buildAdaptationInput', () => {
     expect(input.status).toBe('draft');
     expect(input.groupId).toBeUndefined();
     expect(input.title).toBe("Grandma's Sunday Sauce (Adaptation)");
+    expect(input.sourceImages[0]).not.toHaveProperty('id');
   });
 
   it('tolerates a source with no ingredients, steps, or tags', () => {
@@ -128,6 +138,17 @@ describe('buildAdaptationInput', () => {
     expect(input.ingredients).toEqual([]);
     expect(input.steps).toEqual([]);
     expect(input.tags).toEqual([]);
+  });
+
+  describe('recipeToInput', () => {
+    it('preserves stable source-image ids for current-version comparisons', () => {
+      const input = recipeToInput(sourceRecipe());
+
+      expect(input.sourceImages[0]).toMatchObject({
+        id: 'a'.repeat(24),
+        imageUrl: 'https://img.example/card.jpg',
+      });
+    });
   });
 
   it('does not copy a legacy uncaptioned video into a new adaptation', () => {

@@ -45,6 +45,8 @@ function readme(recipes: PrintRecipe[], date: Date): string {
     '  (or a future Heirloom) can read everything back in without loss.',
     '- `shared-recipe-contributions.json`. Version snapshots you authored in',
     '  recipes currently shared with you, plus references to media you uploaded.',
+    '- Original recipe images are included as provider URLs and metadata. Image',
+    '  bytes are not copied into this archive.',
     '',
     'Stories, who a recipe was handed down from, and where it came from are all',
     "included so nothing about your family's history is left behind.",

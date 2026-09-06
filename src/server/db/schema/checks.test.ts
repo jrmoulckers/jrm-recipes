@@ -5,7 +5,7 @@ import { getTableConfig, type PgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
 import { ratings } from './engagement';
-import { recipeIngredients, recipeSteps, recipes } from './recipes';
+import { recipeIngredients, recipeSourceImages, recipeSteps, recipes } from './recipes';
 import { shoppingListItems } from './shopping';
 
 /**
@@ -84,6 +84,12 @@ const expectations: Expectation[] = [
     contains: ['"timer_seconds"', '>= 0'],
   },
   {
+    label: 'source image position 0–11',
+    table: recipeSourceImages,
+    name: 'recipe_source_images_position_check',
+    contains: ['"position"', '>= 0', '< 12'],
+  },
+  {
     label: 'shopping quantity >= 0',
     table: shoppingListItems,
     name: 'shopping_list_items_quantity_check',
@@ -116,10 +122,12 @@ describe('schema declares CHECK constraints (issue #150)', () => {
 
 // Vitest runs with the repo root as cwd. The migrations live in ./drizzle.
 const drizzleDir = join(process.cwd(), 'drizzle');
-const migration = readdirSync(drizzleDir)
+const migrations = readdirSync(drizzleDir)
   .filter((f) => f.endsWith('.sql'))
-  .map((f) => ({ file: f, body: readFileSync(join(drizzleDir, f), 'utf8') }))
-  .find((m) => m.body.includes('ADD CONSTRAINT "ratings_value_range_check"'));
+  .map((f) => ({ file: f, body: readFileSync(join(drizzleDir, f), 'utf8') }));
+const migration = migrations.find((m) =>
+  m.body.includes('ADD CONSTRAINT "ratings_value_range_check"'),
+);
 
 describe('CHECK-constraint migration (issue #150)', () => {
   it('exists as a generated migration', () => {
@@ -127,10 +135,10 @@ describe('CHECK-constraint migration (issue #150)', () => {
   });
 
   it.each(expectations)('adds $name with the right predicate', ({ name, contains }) => {
-    const body = migration?.body ?? '';
-    const marker = `ADD CONSTRAINT "${name}" CHECK (`;
+    const marker = `CONSTRAINT "${name}" CHECK (`;
+    const body = migrations.find((candidate) => candidate.body.includes(marker))?.body ?? '';
     const start = body.indexOf(marker);
-    expect(start, `missing ADD CONSTRAINT for "${name}"`).toBeGreaterThan(-1);
+    expect(start, `missing constraint "${name}"`).toBeGreaterThan(-1);
     // Isolate this constraint's own CHECK(...) clause before asserting columns.
     const clause = body.slice(start, body.indexOf(');', start));
     for (const needle of contains) {

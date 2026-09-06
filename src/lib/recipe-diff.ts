@@ -43,6 +43,7 @@ export type RecipeDiff = {
   fields: FieldChange[];
   ingredients: SectionDiff;
   steps: SectionDiff;
+  sourceImages: SectionDiff;
   /** Whether the two snapshots are identical across every tracked surface. */
   identical: boolean;
   summary: { changed: number; added: number; removed: number };
@@ -82,6 +83,13 @@ export function formatStepLine(step: StepInput): string {
   const section = str(step.section);
   const instruction = str(step.instruction);
   return section ? `${section}: ${instruction}` : instruction;
+}
+
+type SourceImageInput = RecipeInput['sourceImages'][number];
+
+/** Human-readable one-line rendering of an original recipe image. */
+export function formatSourceImageLine(image: SourceImageInput): string {
+  return [str(image.caption), image.imageUrl, str(image.altText)].filter(Boolean).join(' · ');
 }
 
 /**
@@ -205,6 +213,7 @@ const EMPTY_RECIPE: Partial<RecipeInput> = {
   title: '',
   ingredients: [],
   steps: [],
+  sourceImages: [],
 };
 
 function fieldValue(recipe: Partial<RecipeInput>, key: keyof RecipeInput): string {
@@ -263,15 +272,22 @@ export function diffRecipeSnapshots(
     formatStepLine,
     true,
   );
+  const sourceImages = diffLines(
+    a.sourceImages ?? [],
+    b.sourceImages ?? [],
+    (image) => image.id ?? image.imageUrl,
+    formatSourceImageLine,
+  );
 
-  const added = ingredients.added + steps.added;
-  const removed = ingredients.removed + steps.removed;
-  const changed = fields.length + ingredients.changed + steps.changed;
+  const added = ingredients.added + steps.added + sourceImages.added;
+  const removed = ingredients.removed + steps.removed + sourceImages.removed;
+  const changed = fields.length + ingredients.changed + steps.changed + sourceImages.changed;
 
   return {
     fields,
     ingredients,
     steps,
+    sourceImages,
     identical: added === 0 && removed === 0 && changed === 0,
     summary: { changed, added, removed },
   };

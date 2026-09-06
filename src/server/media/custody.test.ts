@@ -120,4 +120,61 @@ describe('retained media custody planning', () => {
     expect(plan.transfers).toEqual([]);
     expect(plan.toUsers).toBe(0);
   });
+
+  it("transfers a departing uploader's asset to the owner of a surviving fork", () => {
+    const plan = buildRetainedMediaTransferPlan(
+      'departing-uploader',
+      [recipe('surviving-fork', 'fork-owner', '2025-01-01', false)],
+      [{ recipeId: 'surviving-fork', url: URL }],
+      [asset],
+    );
+
+    expect(plan.transfers).toEqual([
+      expect.objectContaining({
+        assetId: 'asset-1',
+        url: URL,
+        destination: { kind: 'user', userId: 'fork-owner' },
+      }),
+    ]);
+    expect(plan.toUsers).toBe(1);
+  });
+
+  it('materializes custody for a surviving fork of legacy unbookkept media', () => {
+    const plan = buildRetainedMediaTransferPlan(
+      'departing-uploader',
+      [recipe('surviving-fork', 'fork-owner', '2025-01-01', false)],
+      [{ recipeId: 'surviving-fork', url: URL }],
+      [],
+      [URL],
+    );
+
+    expect(plan.transfers).toEqual([
+      expect.objectContaining({
+        assetId: null,
+        url: URL,
+        destination: { kind: 'user', userId: 'fork-owner' },
+      }),
+    ]);
+  });
+
+  it('does not duplicate custody for a transformed URL of a foreign-owned asset', () => {
+    const transformedUrl =
+      'https://res.cloudinary.com/demo/image/upload/c_fill,w_800/heirloom/shared.jpg';
+    const plan = buildRetainedMediaTransferPlan(
+      'departing-uploader',
+      [recipe('surviving-fork', 'fork-owner', '2025-01-01', false)],
+      [{ recipeId: 'surviving-fork', url: URL }],
+      [],
+      [URL],
+      [
+        {
+          url: transformedUrl,
+          publicId: 'heirloom/shared',
+          resourceType: 'image',
+        },
+      ],
+    );
+
+    expect(plan.transfers).toEqual([]);
+  });
 });

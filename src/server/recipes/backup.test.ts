@@ -77,6 +77,7 @@ describe('buildCookbookArchive', () => {
                 status: 'published',
                 ingredients: [],
                 steps: [{ instruction: 'Simmer gently.', techniques: [] }],
+                sourceImages: [],
                 tags: [],
                 equipment: [],
                 dietaryFlags: [],
@@ -112,6 +113,34 @@ describe('buildCookbookArchive', () => {
     expect(text).toContain('Handed down from Great-Aunt Rosa');
     expect(text).toContain('Origin: Naples, 1946');
     expect(text).toContain('Baked every Sunday since the war.');
+  });
+
+  it('exports ordered original-image metadata and provider references without copying bytes', () => {
+    const text = decode(
+      buildCookbookArchive(
+        [
+          recipe({
+            sourceImages: [
+              {
+                id: 'source-1',
+                imageUrl: 'https://res.cloudinary.com/demo/image/upload/front.jpg',
+                caption: "Grandma's handwritten front",
+                altText: 'Index card with blue handwriting',
+              },
+            ],
+          }),
+        ],
+        date,
+      ).bytes,
+    );
+
+    expect(text).toContain('## Original recipe images');
+    expect(text).toContain(
+      "- Grandma's handwritten front: https://res.cloudinary.com/demo/image/upload/front.jpg",
+    );
+    expect(text).toContain('"altText": "Index card with blue handwriting"');
+    expect(text).toContain('Original recipe images are included as provider URLs and metadata.');
+    expect(text).toContain('bytes are not copied into this archive.');
   });
 
   it('de-duplicates archive paths when slugs collide', () => {

@@ -900,6 +900,22 @@
       "sugarGrams": "Azúcares",
       "fiberGrams": "Fibra"
     },
+    "sourceImages": {
+      "legend": "Imágenes de la receta original",
+      "hint": "Conserva las tarjetas manuscritas o las páginas del libro con esta receta ({count}/{max}).",
+      "add": "Añadir imagen original",
+      "item": "Imagen original {position} de {total}",
+      "caption": "Pie de foto (opcional)",
+      "captionPlaceholder": "Anverso de la tarjeta de recetas de la abuela",
+      "moveEarlier": "Mover la imagen original {position} hacia atrás",
+      "moveLater": "Mover la imagen original {position} hacia delante",
+      "earlier": "Anterior",
+      "later": "Posterior",
+      "detach": "Quitar de la receta",
+      "duplicate": "Esa imagen ya está adjunta a esta receta.",
+      "empty": "Todavía no hay imágenes originales adjuntas.",
+      "detachHint": "Quitar una imagen de aquí no la elimina de tu fototeca."
+    },
     "visibilityStatus": "Visibilidad y estado",
     "visibilityAria": "Ajustes de visibilidad: {visibility}, {status}",
     "visibility": {
@@ -1009,6 +1025,12 @@
       "timeline": "Historial",
       "cooked": "Cocinada",
       "discussion": "Comentarios"
+    },
+    "originalImages": {
+      "title": "Ver el original",
+      "count": "{count, plural, one {# imagen} other {# imágenes}}",
+      "fallbackAlt": "Imagen original {position} de la receta {title}",
+      "openFullResolution": "Abrir la imagen original {position} a resolución completa"
     },
     "storyMemories": "Historia y recuerdos"
   },
@@ -3076,6 +3098,7 @@
         "separator": ", ",
         "surfaces": {
           "recipes": "{count, plural, one {# portada de receta} other {# portadas de receta}}",
+          "sourceImages": "{count, plural, one {# imagen de receta original} other {# imágenes de recetas originales}}",
           "steps": "{count, plural, one {# paso de receta} other {# pasos de receta}}",
           "collections": "{count, plural, one {# portada de colección} other {# portadas de colección}}",
           "groups": "{count, plural, one {# grupo familiar} other {# grupos familiares}}",

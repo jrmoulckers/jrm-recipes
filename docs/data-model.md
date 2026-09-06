@@ -119,6 +119,7 @@ identifying from their content or family context. See
 | `recipes`                                | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Core recipe record, visibility, provenance, nutrition, sharing, rating aggregates, and soft delete.                           |
 | `recipe_ingredients`                     | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Ordered ingredient lines for a recipe.                                                                                        |
 | `recipe_steps`                           | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Ordered instruction steps, timers, media, temperatures, and techniques.                                                       |
+| `recipe_source_images`                   | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Up to twelve ordered photos of original cards or cookbook pages, with captions and alt text.                                  |
 | `recipe_versions`                        | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Immutable recipe snapshots with monotonically allocated version numbers.                                                      |
 | `recipe_events`                          | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Append-only recipe timeline events such as created, adapted, updated, and published.                                          |
 | `recipe_slug_aliases`                    | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Permanent history of released recipe slugs per namespace, plus the seeded legacy flat-URL slugs.                              |
@@ -212,6 +213,12 @@ erDiagram
     varchar id PK
     varchar recipeId FK
     int position
+  }
+  RECIPE_SOURCE_IMAGES {
+    varchar id PK
+    varchar recipeId FK
+    int position
+    varchar imageUrl
   }
   RECIPE_VERSIONS {
     varchar id PK
@@ -366,6 +373,7 @@ erDiagram
   RECIPES o|--o{ RECIPES : forkedFrom
   RECIPES ||--o{ RECIPE_INGREDIENTS : has
   RECIPES ||--o{ RECIPE_STEPS : has
+  RECIPES ||--o{ RECIPE_SOURCE_IMAGES : preserves
   RECIPES ||--o{ RECIPE_VERSIONS : snapshots
   USERS o|--o{ RECIPE_VERSIONS : authored
   RECIPES ||--o{ RECIPE_EVENTS : timeline

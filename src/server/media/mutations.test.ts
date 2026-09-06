@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MediaAsset, User } from '~/server/db/schema';
 
-const URL_A = 'https://res.cloudinary.com/demo/image/upload/a.jpg';
+const URL_A = 'https://res.cloudinary.com/demo/image/upload/heirloom/a1.jpg';
+const UPLOAD_PROOF = {
+  uploadSignature: 'a'.repeat(40),
+  version: 1,
+};
 
 const { state, db, cloudinary, usage } = vi.hoisted(() => {
   const state = {
@@ -46,6 +50,9 @@ const { state, db, cloudinary, usage } = vi.hoisted(() => {
 
   const cloudinary = {
     config: vi.fn(),
+    utils: {
+      api_sign_request: vi.fn(() => UPLOAD_PROOF.uploadSignature),
+    },
     uploader: {
       destroy: vi.fn(async (publicId: string) => {
         state.destroyCalls.push(publicId);
@@ -96,7 +103,10 @@ beforeEach(() => {
 
 describe('recordUpload', () => {
   it('inserts a cloudinary asset and meters its storage', async () => {
-    await recordUpload({ url: URL_A, publicId: 'heirloom/a1', bytes: 2 * 1024 * 1024 }, user);
+    await recordUpload(
+      { url: URL_A, publicId: 'heirloom/a1', bytes: 2 * 1024 * 1024, ...UPLOAD_PROOF },
+      user,
+    );
 
     expect(db.insert).toHaveBeenCalledOnce();
     expect(state.inserted).toMatchObject({
@@ -110,7 +120,10 @@ describe('recordUpload', () => {
   it('is idempotent for a replayed success callback and never double-bills', async () => {
     state.existing = { id: 'm1', bytes: 1024, altText: 'Pie' };
 
-    await recordUpload({ url: URL_A, publicId: 'heirloom/a1', bytes: 5 * 1024 * 1024 }, user);
+    await recordUpload(
+      { url: URL_A, publicId: 'heirloom/a1', bytes: 5 * 1024 * 1024, ...UPLOAD_PROOF },
+      user,
+    );
 
     expect(db.insert).not.toHaveBeenCalled();
     expect(db.update).toHaveBeenCalledOnce();
@@ -128,8 +141,23 @@ describe('recordUpload', () => {
   });
 
   it('rounds partial megabytes up so small uploads still count', async () => {
-    await recordUpload({ url: URL_A, publicId: 'heirloom/a1', bytes: 1 }, user);
+    await recordUpload({ url: URL_A, publicId: 'heirloom/a1', bytes: 1, ...UPLOAD_PROOF }, user);
     expect(usage.incrementUsage).toHaveBeenCalledWith(user, 'storage_mb', 1);
+  });
+
+  it('rejects a Cloudinary ownership row without signed upload proof', async () => {
+    await expect(
+      recordUpload(
+        {
+          url: URL_A,
+          publicId: 'heirloom/a1',
+          uploadSignature: 'b'.repeat(40),
+          version: 1,
+        },
+        user,
+      ),
+    ).rejects.toThrow('INVALID_UPLOAD_PROOF');
+    expect(db.insert).not.toHaveBeenCalled();
   });
 
   it('no-ops without a database', async () => {

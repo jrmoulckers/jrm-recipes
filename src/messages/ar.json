@@ -900,6 +900,22 @@
       "sugarGrams": "السكريات",
       "fiberGrams": "الألياف"
     },
+    "sourceImages": {
+      "legend": "صور الوصفة الأصلية",
+      "hint": "احتفظ ببطاقات الوصفات المكتوبة بخط اليد أو صفحات كتب الطهي مع هذه الوصفة ({count}/{max}).",
+      "add": "إضافة صورة أصلية",
+      "item": "الصورة الأصلية {position} من {total}",
+      "caption": "التعليق (اختياري)",
+      "captionPlaceholder": "الوجه الأمامي لبطاقة وصفة الجدة",
+      "moveEarlier": "نقل الصورة الأصلية {position} إلى موضع سابق",
+      "moveLater": "نقل الصورة الأصلية {position} إلى موضع لاحق",
+      "earlier": "إلى السابق",
+      "later": "إلى اللاحق",
+      "detach": "إزالة من الوصفة",
+      "duplicate": "هذه الصورة مرفقة بهذه الوصفة بالفعل.",
+      "empty": "لا توجد صور أصلية مرفقة بعد.",
+      "detachHint": "إزالة الصورة من هنا لا تحذفها من مكتبة الصور."
+    },
     "visibilityStatus": "الظهور والحالة",
     "visibilityAria": "إعدادات الظهور: {visibility}، {status}",
     "visibility": {
@@ -1009,6 +1025,12 @@
       "timeline": "السجل",
       "cooked": "طُبِخت",
       "discussion": "النقاش"
+    },
+    "originalImages": {
+      "title": "عرض الأصل",
+      "count": "{count, plural, zero {لا صور} one {صورة واحدة} two {صورتان} few {# صور} many {# صورة} other {# صورة}}",
+      "fallbackAlt": "صورة الوصفة الأصلية {position} لـ {title}",
+      "openFullResolution": "فتح الصورة الأصلية {position} بالدقة الكاملة"
     },
     "storyMemories": "الحكاية والذكريات"
   },
@@ -3076,6 +3098,7 @@
         "separator": "، ",
         "surfaces": {
           "recipes": "{count, plural, zero {غلاف وصفة} one {غلاف وصفة واحد} two {غلافا وصفة} few {# أغلفة وصفات} many {# غلاف وصفة} other {# غلاف وصفة}}",
+          "sourceImages": "{count, plural, zero {صورة وصفة أصلية} one {صورة وصفة أصلية واحدة} two {صورتا وصفة أصليتان} few {# صور وصفات أصلية} many {# صورة وصفة أصلية} other {# صورة وصفة أصلية}}",
           "steps": "{count, plural, zero {خطوة وصفة} one {خطوة وصفة واحدة} two {خطوتا وصفة} few {# خطوات وصفات} many {# خطوة وصفة} other {# خطوة وصفة}}",
           "collections": "{count, plural, zero {غلاف مجموعة} one {غلاف مجموعة واحد} two {غلافا مجموعة} few {# أغلفة مجموعات} many {# غلاف مجموعة} other {# غلاف مجموعة}}",
           "groups": "{count, plural, zero {مجموعة عائلية} one {مجموعة عائلية واحدة} two {مجموعتان عائليتان} few {# مجموعات عائلية} many {# مجموعة عائلية} other {# مجموعة عائلية}}",

@@ -171,7 +171,12 @@ export async function eraseUserAccount(
     // The recipe locks acquired by the retention planner stay held through
     // custody, remote purge, and deletion. Creator acceptance/removal takes the
     // same lock, so a destructive classification cannot become stale.
-    const mediaPlan = await planRetainedMediaTransfers(userId, retention.retainedRecipes, t);
+    const mediaPlan = await planRetainedMediaTransfers(
+      userId,
+      retention.retainedRecipes,
+      t,
+      retention.ownedRecipeIds,
+    );
     const mediaTransfers = await executeRetainedMediaTransfersInTransaction(tx, mediaPlan);
     transferredAssetCount =
       mediaTransfers.transferredToUsers +

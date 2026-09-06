@@ -84,6 +84,12 @@ async function EditRecipePage({ params }: { params: Promise<RecipeRouteParams> }
     dietaryFlags: (recipe.dietaryFlags ?? []).filter((t): t is DietaryTag =>
       (DIETARY_TAGS as readonly string[]).includes(t),
     ),
+    sourceImages: recipe.sourceImages.map((image) => ({
+      id: image.id,
+      imageUrl: image.imageUrl,
+      caption: image.caption ?? '',
+      altText: image.altText ?? '',
+    })),
     ingredients: recipe.ingredients.map((ing) => ({
       section: ing.section ?? '',
       quantity: ing.quantity != null ? String(ing.quantity) : '',

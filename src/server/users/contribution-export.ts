@@ -5,6 +5,7 @@ import { and, asc, eq, isNull, ne, or } from 'drizzle-orm';
 import { db, isDbConfigured } from '~/server/db';
 import { mediaAssets, recipeCreators, recipeVersions, recipes } from '~/server/db/schema';
 import type { RecipeInput } from '~/server/recipes/validation';
+import { recipeSnapshotMediaUrls } from '~/server/media/recipe-references';
 
 export type SharedRecipeContribution = {
   recipeId: string;
@@ -20,10 +21,7 @@ export type SharedRecipeContribution = {
 };
 
 function snapshotMediaUrls(snapshot: RecipeInput): string[] {
-  return [
-    snapshot.coverImageUrl,
-    ...snapshot.steps.flatMap((step) => [step.imageUrl, step.videoUrl, step.captionUrl]),
-  ].filter((url): url is string => Boolean(url));
+  return recipeSnapshotMediaUrls(snapshot);
 }
 
 /**

@@ -900,6 +900,22 @@
       "sugarGrams": "Sugars",
       "fiberGrams": "Fiber"
     },
+    "sourceImages": {
+      "legend": "Original recipe images",
+      "hint": "Keep handwritten cards or cookbook pages with this recipe ({count}/{max}).",
+      "add": "Add original image",
+      "item": "Original image {position} of {total}",
+      "caption": "Caption (optional)",
+      "captionPlaceholder": "Front of Grandma's recipe card",
+      "moveEarlier": "Move original image {position} earlier",
+      "moveLater": "Move original image {position} later",
+      "earlier": "Earlier",
+      "later": "Later",
+      "detach": "Remove from recipe",
+      "duplicate": "That image is already attached to this recipe.",
+      "empty": "No original images attached yet.",
+      "detachHint": "Removing an image here does not delete it from your photo library."
+    },
     "visibilityStatus": "Visibility & status",
     "visibilityAria": "Visibility settings: {visibility}, {status}",
     "visibility": {
@@ -1009,6 +1025,12 @@
       "timeline": "Timeline",
       "cooked": "Cooked it",
       "discussion": "Discussion"
+    },
+    "originalImages": {
+      "title": "See the original",
+      "count": "{count, plural, one {# image} other {# images}}",
+      "fallbackAlt": "Original recipe image {position} for {title}",
+      "openFullResolution": "Open original image {position} at full resolution"
     },
     "storyMemories": "Story & memories"
   },
@@ -3076,6 +3098,7 @@
         "separator": ", ",
         "surfaces": {
           "recipes": "{count, plural, one {# recipe cover} other {# recipe covers}}",
+          "sourceImages": "{count, plural, one {# original recipe image} other {# original recipe images}}",
           "steps": "{count, plural, one {# recipe step} other {# recipe steps}}",
           "collections": "{count, plural, one {# collection cover} other {# collection covers}}",
           "groups": "{count, plural, one {# family group} other {# family groups}}",

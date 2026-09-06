@@ -9,6 +9,7 @@
  */
 export const ASSET_USAGE_SURFACES = [
   'recipes',
+  'sourceImages',
   'steps',
   'collections',
   'groups',

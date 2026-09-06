@@ -350,6 +350,37 @@ export const recipeSteps = pgTable(
 );
 
 /**
+ * Ordered photos of the handwritten card, cookbook page, or other original
+ * source for a recipe (issue #376). These are distinct from the cover image:
+ * they preserve provenance rather than representing the finished dish.
+ *
+ * URLs remain authoritative, matching the additive media-library contract.
+ * `media_assets` owns upload custody and storage accounting separately.
+ */
+export const recipeSourceImages = pgTable(
+  'recipe_source_images',
+  {
+    id: pk(),
+    recipeId: fk()
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    position: integer().notNull(),
+    imageUrl: varchar({ length: 2048 }).notNull(),
+    caption: varchar({ length: 500 }),
+    altText: varchar({ length: 300 }),
+    ...timestamps(),
+  },
+  (t) => [
+    unique('recipe_source_images_recipe_position_uq').on(t.recipeId, t.position),
+    index('recipe_source_images_recipe_idx').on(t.recipeId, t.position),
+    index('recipe_source_images_url_idx').on(t.imageUrl),
+    // Positions 0..11 make the twelve-image product cap enforceable without a
+    // trigger: uniqueness means a recipe cannot occupy more than twelve slots.
+    check('recipe_source_images_position_check', sql`${t.position} >= 0 and ${t.position} < 12`),
+  ],
+);
+
+/**
  * Immutable snapshots capturing how a recipe evolved over time (Phase 2
  * timelines). Schema is present now so edits can be journaled from day one.
  *
@@ -654,6 +685,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   adaptations: many(recipes, { relationName: 'adaptations' }),
   ingredients: many(recipeIngredients),
   steps: many(recipeSteps),
+  sourceImages: many(recipeSourceImages),
   versions: many(recipeVersions),
   events: many(recipeEvents, { relationName: 'recipeEvents' }),
   eventsAbout: many(recipeEvents, { relationName: 'relatedRecipeEvents' }),
@@ -675,6 +707,13 @@ export const recipeIngredientsRelations = relations(recipeIngredients, ({ one })
 export const recipeStepsRelations = relations(recipeSteps, ({ one }) => ({
   recipe: one(recipes, {
     fields: [recipeSteps.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
+export const recipeSourceImagesRelations = relations(recipeSourceImages, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeSourceImages.recipeId],
     references: [recipes.id],
   }),
 }));
@@ -708,6 +747,7 @@ export const recipeEventsRelations = relations(recipeEvents, ({ one }) => ({
 }));
 
 export type Recipe = typeof recipes.$inferSelect;
+export type RecipeSourceImage = typeof recipeSourceImages.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type NewRecipeIngredient = typeof recipeIngredients.$inferInsert;

@@ -31,6 +31,8 @@ export function CaptionUploadField({
     void recordUploadAction({
       url: info.secure_url,
       publicId: typeof info.public_id === 'string' ? info.public_id : undefined,
+      uploadSignature: typeof info.signature === 'string' ? info.signature : undefined,
+      version: typeof info.version === 'number' ? info.version : undefined,
       bytes: typeof info.bytes === 'number' ? info.bytes : undefined,
       format: typeof info.format === 'string' ? info.format : undefined,
       folder: 'heirloom/captions',

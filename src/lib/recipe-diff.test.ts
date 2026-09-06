@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { diffRecipeSnapshots, formatIngredientLine, formatStepLine } from './recipe-diff';
+import {
+  diffRecipeSnapshots,
+  formatIngredientLine,
+  formatSourceImageLine,
+  formatStepLine,
+} from './recipe-diff';
 import type { RecipeInput } from '~/server/recipes/validation';
 
 function recipe(overrides: Partial<RecipeInput> = {}): RecipeInput {
@@ -8,6 +13,7 @@ function recipe(overrides: Partial<RecipeInput> = {}): RecipeInput {
     title: 'Test',
     ingredients: [],
     steps: [],
+    sourceImages: [],
     tags: [],
     cuisines: [],
     mealTypes: [],
@@ -63,6 +69,18 @@ describe('formatIngredientLine', () => {
 describe('formatStepLine', () => {
   it('prefixes the section when present', () => {
     expect(formatStepLine(step('Mix well', { section: 'Dough' }))).toBe('Dough: Mix well');
+  });
+
+  describe('formatSourceImageLine', () => {
+    it('includes visible and accessibility metadata', () => {
+      expect(
+        formatSourceImageLine({
+          imageUrl: 'https://example.com/card.jpg',
+          caption: "Grandma's card",
+          altText: 'Blue handwriting on an index card',
+        }),
+      ).toBe("Grandma's card · https://example.com/card.jpg · Blue handwriting on an index card");
+    });
   });
 });
 
@@ -144,6 +162,31 @@ describe('diffRecipeSnapshots', () => {
     const diff = diffRecipeSnapshots(before, after);
     expect(diff.steps.changed).toBe(1);
     expect(diff.steps.lines.filter((l) => l.kind === 'unchanged')).toHaveLength(1);
+  });
+
+  it('detects source-image additions, reordering, and metadata edits', () => {
+    const frontId = 'a'.repeat(24);
+    const backId = 'b'.repeat(24);
+    const before = recipe({
+      sourceImages: [
+        { id: frontId, imageUrl: 'https://example.com/front.jpg', caption: 'Front' },
+        { id: backId, imageUrl: 'https://example.com/back.jpg', caption: 'Back' },
+      ],
+    });
+    const after = recipe({
+      sourceImages: [
+        { id: backId, imageUrl: 'https://example.com/back.jpg', caption: 'Reverse' },
+        { id: frontId, imageUrl: 'https://example.com/front.jpg', caption: 'Front' },
+        { imageUrl: 'https://example.com/note.jpg', caption: 'Loose note' },
+      ],
+    });
+
+    const diff = diffRecipeSnapshots(before, after);
+
+    expect(diff.identical).toBe(false);
+    expect(diff.sourceImages.added).toBe(2);
+    expect(diff.sourceImages.removed).toBe(1);
+    expect(diff.sourceImages.changed).toBe(1);
   });
 
   it('treats a null (legacy/empty) snapshot as an empty recipe without crashing', () => {

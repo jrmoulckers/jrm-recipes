@@ -26,6 +26,12 @@ export type AdaptationSource = {
   sourceName?: string | null;
   sourceUrl?: string | null;
   notes?: string | null;
+  sourceImages?: {
+    id?: string;
+    imageUrl: string;
+    caption?: string | null;
+    altText?: string | null;
+  }[];
   dietaryFlags?: string[] | null;
   ingredients: {
     section?: string | null;
@@ -75,7 +81,11 @@ export function adaptationTitle(sourceTitle: string): string {
  * every ingredient, step (incl. media + techniques), and tag is copied. The
  * fork always starts as a private draft owned by whoever forks it.
  */
-function mapRecipeInput(source: AdaptationSource, preserveLegacyVideos: boolean): RecipeInput {
+function mapRecipeInput(
+  source: AdaptationSource,
+  preserveLegacyVideos: boolean,
+  preserveSourceImageIds: boolean,
+): RecipeInput {
   const cuisines = source.tags
     .filter(({ tag }) => tag.category === 'cuisine')
     .map(({ tag }) => tag.name);
@@ -107,6 +117,12 @@ function mapRecipeInput(source: AdaptationSource, preserveLegacyVideos: boolean)
     sourceName: source.sourceName ?? undefined,
     sourceUrl: source.sourceUrl ?? undefined,
     notes: source.notes ?? undefined,
+    sourceImages: (source.sourceImages ?? []).map((image) => ({
+      ...(preserveSourceImageIds && image.id ? { id: image.id } : {}),
+      imageUrl: image.imageUrl,
+      caption: image.caption ?? undefined,
+      altText: image.altText ?? undefined,
+    })),
     dietaryFlags: (source.dietaryFlags ?? []).filter((t): t is DietaryTag =>
       (DIETARY_TAGS as readonly string[]).includes(t),
     ),
@@ -144,7 +160,7 @@ function mapRecipeInput(source: AdaptationSource, preserveLegacyVideos: boolean)
 }
 
 export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
-  return mapRecipeInput(source, false);
+  return mapRecipeInput(source, false, false);
 }
 
 /**
@@ -154,7 +170,7 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
  * "(Adaptation)" marker) so a "current vs. version" diff reads truthfully.
  */
 export function recipeToInput(source: AdaptationSource): RecipeInput {
-  return { ...mapRecipeInput(source, true), title: source.title.trim() };
+  return { ...mapRecipeInput(source, true, true), title: source.title.trim() };
 }
 
 /** One rendered milestone in a recipe's timeline. */

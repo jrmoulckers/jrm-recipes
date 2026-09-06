@@ -37,6 +37,8 @@ export function draftStorageKey(context: DraftContext): string {
 export function useAutosaveDraft<T>({
   context,
   snapshot,
+  shape,
+  normalizeData,
   dirty,
   onIssue,
   debounceMs = 800,
@@ -44,6 +46,10 @@ export function useAutosaveDraft<T>({
 }: {
   context: DraftContext | null;
   snapshot: T;
+  /** Stable validation template when the live snapshot contains empty object arrays. */
+  shape?: T;
+  /** Narrow, caller-owned compatibility migration applied before exact shape validation. */
+  normalizeData?: (data: unknown) => unknown;
   dirty: boolean;
   onIssue?: (issue: DraftIssue) => void;
   debounceMs?: number;
@@ -58,11 +64,15 @@ export function useAutosaveDraft<T>({
   const reportedIssuesRef = React.useRef<Set<DraftIssue>>(new Set());
   const dirtyRef = React.useRef(dirty);
   const snapshotRef = React.useRef(snapshot);
+  const shapeRef = React.useRef(shape ?? snapshot);
+  const normalizeDataRef = React.useRef(normalizeData);
   const onIssueRef = React.useRef(onIssue);
   const nowRef = React.useRef(now);
 
   dirtyRef.current = dirty;
   snapshotRef.current = snapshot;
+  shapeRef.current = shape ?? snapshot;
+  normalizeDataRef.current = normalizeData;
   onIssueRef.current = onIssue;
   nowRef.current = now;
 
@@ -124,7 +134,13 @@ export function useAutosaveDraft<T>({
           return;
         }
 
-        const result = readDraft(raw, snapshotRef.current, nowRef.current(), DRAFT_SCHEMA_VERSION);
+        const result = readDraft(
+          raw,
+          shapeRef.current,
+          nowRef.current(),
+          DRAFT_SCHEMA_VERSION,
+          normalizeDataRef.current,
+        );
         if (result.status === 'valid') {
           setAvailableDraft(result.data);
         } else if (result.status === 'invalid') {
@@ -257,7 +273,7 @@ export function useAutosaveDraft<T>({
         ({ readDraft }) => {
           const result = readDraft(
             event.newValue,
-            snapshotRef.current,
+            shapeRef.current,
             nowRef.current(),
             DRAFT_SCHEMA_VERSION,
           );

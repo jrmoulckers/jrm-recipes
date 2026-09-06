@@ -35,7 +35,8 @@ function toSelection(value: string): CompareSelection {
 /**
  * Timeline "Compare" affordance (#358): pick two points in a recipe's history
  * (a saved version or the live recipe) and see an inline diff of scalar fields,
- * ingredient lines, and steps. Read-only. Restore lives in the version list.
+ * ingredient lines, steps, and original images. Read-only. Restore lives in
+ * the version list.
  */
 export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
   const t = useTranslations('versionCompare');
@@ -141,6 +142,7 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
           diff={diff}
           ingredientsTitle={td('ingredients.heading')}
           stepsTitle={td('method.heading')}
+          sourceImagesTitle={td('originalImages.title')}
         />
       )}
     </section>
@@ -151,10 +153,12 @@ function DiffResult({
   diff,
   ingredientsTitle,
   stepsTitle,
+  sourceImagesTitle,
 }: {
   diff: RecipeDiff;
   ingredientsTitle: string;
   stepsTitle: string;
+  sourceImagesTitle: string;
 }) {
   const t = useTranslations('versionCompare');
   const { changed, added, removed } = diff.summary;
@@ -199,6 +203,7 @@ function DiffResult({
 
           <DiffSection title={ingredientsTitle} section={diff.ingredients} />
           <DiffSection title={stepsTitle} section={diff.steps} />
+          <DiffSection title={sourceImagesTitle} section={diff.sourceImages} />
         </>
       )}
     </div>

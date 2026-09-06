@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 import { comments, ratings } from './engagement';
 import { follows } from './follows';
-import { recipeCreators, recipeEvents, recipeIngredients, recipeVersions } from './recipes';
+import {
+  recipeCreators,
+  recipeEvents,
+  recipeIngredients,
+  recipeSourceImages,
+  recipeVersions,
+} from './recipes';
 import {
   shoppingIngredientRouteAlternatives,
   shoppingIngredientRoutes,
@@ -110,6 +116,12 @@ const expectations: Expectation[] = [
     table: recipeIngredients,
     index: 'recipe_ingredients_food_idx',
     columns: ['foodId'],
+  },
+  {
+    label: 'recipeSourceImages.recipeId',
+    table: recipeSourceImages,
+    index: 'recipe_source_images_recipe_idx',
+    columns: ['recipeId', 'position'],
   },
   {
     label: 'follows.followerId',
