@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Lightbulb, Check, Sparkles, Loader2, Pencil } from 'lucide-react';
+import { Lightbulb, Check, Sparkles, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -175,7 +175,7 @@ export function AnchoredSuggestions({
         )}
       >
         {compactTrigger ? (
-          <Pencil className="size-3.5" aria-hidden />
+          <Lightbulb className="size-3.5" aria-hidden />
         ) : (
           <>
             <Lightbulb className="size-3.5" aria-hidden />
