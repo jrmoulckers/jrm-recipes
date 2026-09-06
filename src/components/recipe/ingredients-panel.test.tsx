@@ -20,6 +20,7 @@ vi.mock('~/components/engagement/anchored-suggestions-lazy', () => ({
     anchorLabel: string;
     canInteract: boolean;
     suggestions: unknown[];
+    compactTrigger?: boolean;
   }) => (
     <div
       data-testid="anchored-suggestions"
@@ -27,6 +28,7 @@ vi.mock('~/components/engagement/anchored-suggestions-lazy', () => ({
       data-anchor-label={props.anchorLabel}
       data-can-interact={String(props.canInteract)}
       data-suggestion-count={String(props.suggestions.length)}
+      data-compact-trigger={String(props.compactTrigger)}
     />
   ),
 }));
@@ -174,6 +176,7 @@ describe('IngredientsPanel anchored suggestions (RSC boundary regression)', () =
     expect(flour?.dataset.anchorLabel).toBe('flour');
     expect(flour?.dataset.canInteract).toBe('true');
     expect(flour?.dataset.suggestionCount).toBe('1');
+    expect(flour?.dataset.compactTrigger).toBe('true');
 
     // Ingredients with no anchored suggestions still render the slot with an
     // empty list (preserves the "suggest an edit" affordance).

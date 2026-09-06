@@ -852,13 +852,16 @@ export function IngredientsPanel({
                       .join(' · ')
                   : '';
                 return (
-                  <li key={ing.id} className="flex flex-col">
-                    <div className="flex items-center gap-1">
+                  <li
+                    key={ing.id}
+                    className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-1"
+                  >
+                    <div className="contents">
                       <button
                         type="button"
                         onClick={() => toggle(ing.id)}
                         aria-pressed={isChecked}
-                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
+                        className="col-start-1 row-start-1 flex items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
                       >
                         <span
                           className={cn(
@@ -964,15 +967,17 @@ export function IngredientsPanel({
                           ))}
                         </span>
                       </button>
-                      <IngredientSubstitutions
-                        item={ing.item}
-                        flagged={flagged}
-                        presetTags={conflict?.suggestedTags}
-                        avoidAllergens={memberNeeds?.allergens}
-                      />
+                      <div className="col-start-2 row-start-1 flex items-center">
+                        <IngredientSubstitutions
+                          item={ing.item}
+                          flagged={flagged}
+                          presetTags={conflict?.suggestedTags}
+                          avoidAllergens={memberNeeds?.allergens}
+                        />
+                      </div>
                     </div>
                     {flagged && (
-                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
+                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
                           <span className="sr-only">{t('dietaryWarningSr')}</span>
@@ -981,13 +986,13 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {nudge && (
-                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
                       </p>
                     )}
                     {breakdown && (
-                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         <span>
                           <span className="sr-only">{t('measureAsSr')}</span>≈ {breakdown}
@@ -995,17 +1000,16 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {ingredientSuggestions && (
-                      <div className="ms-9">
-                        <AnchoredSuggestions
-                          recipeId={ingredientSuggestions.recipeId}
-                          recipeSlug={ingredientSuggestions.recipeSlug}
-                          anchorType="ingredient"
-                          anchorId={ing.id}
-                          anchorLabel={ing.item}
-                          canInteract={ingredientSuggestions.canInteract}
-                          suggestions={ingredientSuggestions.byIngredientId[ing.id] ?? []}
-                        />
-                      </div>
+                      <AnchoredSuggestions
+                        recipeId={ingredientSuggestions.recipeId}
+                        recipeSlug={ingredientSuggestions.recipeSlug}
+                        anchorType="ingredient"
+                        anchorId={ing.id}
+                        anchorLabel={ing.item}
+                        canInteract={ingredientSuggestions.canInteract}
+                        suggestions={ingredientSuggestions.byIngredientId[ing.id] ?? []}
+                        compactTrigger
+                      />
                     )}
                   </li>
                 );
