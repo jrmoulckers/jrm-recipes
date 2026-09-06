@@ -40,7 +40,6 @@ import { useThemeBehavior } from '~/components/theme/theme-provider';
 
 import { cn, formatMinutes } from '~/lib/utils';
 import { recipeDetailPath } from '~/lib/recipe-path';
-import { scannedRecipeWouldReplaceRows } from '~/lib/recipe-import-replacement';
 import { type DraftContext, type DraftIssue, useAutosaveDraft } from '~/lib/use-autosave-draft';
 import { track } from '~/lib/analytics';
 import {
@@ -993,18 +992,6 @@ export function RecipeEditor({
       setSteps(hydrateStepGroups(v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() }))));
   }
 
-  function applyScanned(v: ImportedRecipe): boolean {
-    if (
-      scannedRecipeWouldReplaceRows(v, ingredients, steps) &&
-      !window.confirm(t('scanReplaceConfirm'))
-    ) {
-      return false;
-    }
-
-    applyImported(v);
-    return true;
-  }
-
   // Steps mirror the ingredient grouping handlers below: an explicit per-step
   // Section picker (not positional headings) drives grouping, arrows are
   // block-bounded, and each mutation keeps same-group steps contiguous so the
@@ -1685,7 +1672,9 @@ export function RecipeEditor({
             {mode === 'create' ? (
               <ImportRecipePanel
                 onImported={applyImported}
-                onPhotoImported={applyScanned}
+                existingIngredients={ingredients}
+                existingSteps={steps}
+                photoReplaceConfirm={t('scanReplaceConfirm')}
                 urlLabel={t('importUrl')}
                 initialUrl={initialImportUrl}
               />

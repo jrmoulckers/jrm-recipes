@@ -1,6 +1,6 @@
 import type { ImportedRecipe } from '~/server/recipes/import';
 
-type ExistingIngredient = {
+export type ExistingIngredient = {
   section: string;
   quantity: string;
   quantityMax: string;
@@ -12,7 +12,7 @@ type ExistingIngredient = {
   optional: boolean;
 };
 
-type ExistingStep = {
+export type ExistingStep = {
   section: string;
   title: string;
   instruction: string;

@@ -61,7 +61,7 @@ function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 export function ScanRecipeCardPanel({
   onImported,
 }: {
-  onImported: (recipe: ImportedRecipe) => boolean | void;
+  onImported: (recipe: ImportedRecipe) => boolean | void | Promise<boolean | void>;
 }) {
   const t = useTranslations('recipe.import.scan');
   const locale = useLocale();
@@ -217,7 +217,7 @@ export function ScanRecipeCardPanel({
     try {
       const recipe =
         transcript === parsedTranscript ? parsedRecipe : await parseTranscript(transcript);
-      if (onImported(recipe) !== false) {
+      if ((await onImported(recipe)) !== false) {
         discardPhoto();
         toast.success(t('applied'));
       }

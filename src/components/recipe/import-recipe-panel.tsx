@@ -6,6 +6,11 @@ import { Camera, Download, Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { friendlyError } from '~/lib/error-copy';
+import {
+  scannedRecipeWouldReplaceRows,
+  type ExistingIngredient,
+  type ExistingStep,
+} from '~/lib/recipe-import-replacement';
 import { importRecipeFromUrlAction } from '~/server/recipes/actions';
 import { type ImportedRecipe } from '~/server/recipes/import';
 import { Button } from '~/components/ui/button';
@@ -21,12 +26,16 @@ import { ScanRecipeCardPanel } from '~/components/recipe/scan-recipe-card-panel'
  */
 export function ImportRecipePanel({
   onImported,
-  onPhotoImported,
+  existingIngredients,
+  existingSteps,
+  photoReplaceConfirm,
   urlLabel,
   initialUrl,
 }: {
   onImported: (recipe: ImportedRecipe) => void;
-  onPhotoImported?: (recipe: ImportedRecipe) => boolean | void;
+  existingIngredients: ExistingIngredient[];
+  existingSteps: ExistingStep[];
+  photoReplaceConfirm: string;
   urlLabel: string;
   /** A URL shared into the PWA to pre-fill and auto-import on mount (#50/#55). */
   initialUrl?: string;
@@ -79,6 +88,18 @@ export function ImportRecipePanel({
     autoImportedRef.current = true;
     void runImport(url);
   }, [initialUrl, runImport]);
+
+  function applyPhotoImported(recipe: ImportedRecipe): boolean {
+    if (
+      scannedRecipeWouldReplaceRows(recipe, existingIngredients, existingSteps) &&
+      !window.confirm(photoReplaceConfirm)
+    ) {
+      return false;
+    }
+
+    onImported(recipe);
+    return true;
+  }
 
   return (
     <section className="rounded-xl border border-border bg-muted/40 p-4">
@@ -154,7 +175,7 @@ export function ImportRecipePanel({
         <PasteImportPanel onImported={onImported} />
       ) : (
         <div className="mt-3">
-          <ScanRecipeCardPanel onImported={onPhotoImported ?? onImported} />
+          <ScanRecipeCardPanel onImported={applyPhotoImported} />
         </div>
       )}
     </section>
