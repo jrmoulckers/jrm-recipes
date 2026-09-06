@@ -18,7 +18,13 @@ vi.mock('~/server/db', () => ({
   isDbConfigured: () => true,
 }));
 
-import { recipes, recipeSlugAliases, recipeVersions, type User } from '~/server/db/schema';
+import {
+  recipes,
+  recipeSlugAliases,
+  recipeSourceImages,
+  recipeVersions,
+  type User,
+} from '~/server/db/schema';
 import { isReservedRecipeSlug } from '~/lib/recipe-reserved-slugs';
 import { recipeInput } from './validation';
 import {
@@ -527,9 +533,13 @@ function rejecting(err: Error) {
 /** Fake tx that drives a full `createRecipe` transaction without a database. */
 function createTx(opts: { member: boolean }) {
   const recipeValues = vi.fn();
+  const sourceImageValues = vi.fn();
+  const versionValues = vi.fn();
   const insert = vi.fn((table: unknown) => ({
     values: (vals: unknown) => {
       if (table === recipes) recipeValues(vals);
+      if (table === recipeSourceImages) sourceImageValues(vals);
+      if (table === recipeVersions) versionValues(vals);
       return chainable(table === recipes ? [{ id: 'r1', slug: 'apple-pie' }] : undefined);
     },
   }));
@@ -555,7 +565,7 @@ function createTx(opts: { member: boolean }) {
   // journal() allocates the version number inside a SAVEPOINT (tx.transaction).
   // run the callback against the same fake surface so a create writes one version.
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
-  return { tx, insert, recipeValues };
+  return { tx, insert, recipeValues, sourceImageValues, versionValues };
 }
 
 describe('createRecipe group-membership enforcement', () => {
@@ -604,6 +614,61 @@ describe('createRecipe group-membership enforcement', () => {
       expect.objectContaining({ groupId: null, visibility: 'private' }),
     );
   });
+
+  it('persists original images in their submitted order', async () => {
+    const { tx, sourceImageValues } = createTx({ member: false });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: 'Apple Pie',
+      sourceImages: [
+        { imageUrl: 'https://example.com/front.jpg', caption: 'Front' },
+        { imageUrl: 'https://example.com/back.jpg', altText: 'Back of the card' },
+      ],
+    });
+
+    await createRecipe(parsed, author);
+
+    expect(sourceImageValues).toHaveBeenCalledWith([
+      {
+        id: expect.any(String),
+        recipeId: 'r1',
+        position: 0,
+        imageUrl: 'https://example.com/front.jpg',
+        caption: 'Front',
+        altText: null,
+      },
+      {
+        id: expect.any(String),
+        recipeId: 'r1',
+        position: 1,
+        imageUrl: 'https://example.com/back.jpg',
+        caption: null,
+        altText: 'Back of the card',
+      },
+    ]);
+  });
+
+  it('replaces client-supplied ids and journals the canonical attachment identity', async () => {
+    const injectedId = 'z'.repeat(24);
+    const { tx, sourceImageValues, versionValues } = createTx({ member: false });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await createRecipe(
+      recipeInput.parse({
+        title: 'Apple Pie',
+        sourceImages: [{ id: injectedId, imageUrl: 'https://example.com/card.jpg' }],
+      }),
+      author,
+    );
+
+    const inserted = sourceImageValues.mock.calls[0]?.[0] as Array<{ id: string }>;
+    const version = versionValues.mock.calls[0]?.[0] as {
+      snapshot: { sourceImages: Array<{ id: string }> };
+    };
+    expect(inserted[0]?.id).toHaveLength(24);
+    expect(inserted[0]?.id).not.toBe(injectedId);
+    expect(version.snapshot.sourceImages[0]?.id).toBe(inserted[0]?.id);
+  });
 });
 
 /**
@@ -619,6 +684,7 @@ function updateTx(opts: {
   creator?: boolean;
   visibility?: string;
   groupId?: string | null;
+  sourceImageIds?: string[];
 }) {
   const setValues = vi.fn();
   const update = vi.fn(() => ({
@@ -628,6 +694,8 @@ function updateTx(opts: {
     },
   }));
   const aliasValues = vi.fn();
+  const sourceImageValues = vi.fn();
+  const deletedTables: unknown[] = [];
   const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
@@ -662,6 +730,9 @@ function updateTx(opts: {
           .mockResolvedValueOnce(opts.creator ? { id: 'rc_1' } : undefined)
           .mockResolvedValue(undefined),
       },
+      recipeSourceImages: {
+        findMany: vi.fn().mockResolvedValue((opts.sourceImageIds ?? []).map((id) => ({ id }))),
+      },
     },
     // Slug allocation serializes on the namespace before probing (issue #668).
     execute: vi.fn().mockResolvedValue(undefined),
@@ -669,10 +740,14 @@ function updateTx(opts: {
     insert: vi.fn((table: unknown) => ({
       values: (vals: unknown) => {
         if (table === recipeSlugAliases) aliasValues(vals);
+        if (table === recipeSourceImages) sourceImageValues(vals);
         return chainable(undefined);
       },
     })),
-    delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
+    delete: vi.fn((table: unknown) => {
+      deletedTables.push(table);
+      return { where: vi.fn(() => Promise.resolve(undefined)) };
+    }),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => Promise.resolve([{ next: 1 }])),
@@ -682,7 +757,7 @@ function updateTx(opts: {
   // journal() allocates the version number inside a SAVEPOINT (tx.transaction).
   // run the callback against the same fake surface so an update writes one version.
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
-  return { tx, update, setValues, aliasValues };
+  return { tx, update, setValues, aliasValues, sourceImageValues, deletedTables };
 }
 
 describe('updateRecipe group-membership enforcement', () => {
@@ -717,6 +792,43 @@ describe('updateRecipe group-membership enforcement', () => {
 
     await expect(updateRecipe('r1', parsed, author)).rejects.toThrow('FORBIDDEN');
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('revertRecipe original-image history', () => {
+  it('restores a detached attachment from its trusted historical snapshot', async () => {
+    const historicalId = 'h'.repeat(24);
+    const { tx, sourceImageValues } = updateTx({ member: false });
+    (
+      tx.query as {
+        recipeVersions?: { findFirst: ReturnType<typeof vi.fn> };
+      }
+    ).recipeVersions = {
+      findFirst: vi.fn().mockResolvedValue({
+        snapshot: recipeInput.parse({
+          title: 'Apple Pie',
+          sourceImages: [
+            {
+              id: historicalId,
+              imageUrl: 'https://example.com/detached-card.jpg',
+              caption: 'Original card',
+            },
+          ],
+        }),
+      }),
+    };
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await revertRecipe('r1', 2, author);
+
+    expect(sourceImageValues).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: historicalId,
+        recipeId: 'r1',
+        position: 0,
+        imageUrl: 'https://example.com/detached-card.jpg',
+      }),
+    ]);
   });
 });
 
@@ -909,6 +1021,72 @@ describe('co-creator edit rights (i668)', () => {
       authorId: 'user_1',
     });
     expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ notes: 'Chill the dough.' }));
+  });
+
+  it('lets an accepted co-creator reorder original images while preserving attachment ids', async () => {
+    const frontId = 'a'.repeat(24);
+    const backId = 'b'.repeat(24);
+    const { tx, sourceImageValues } = updateTx({
+      member: false,
+      ownerId: 'user_1',
+      creator: true,
+      sourceImageIds: [frontId, backId],
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await updateRecipe(
+      'r1',
+      recipeInput.parse({
+        title: 'Apple Pie',
+        sourceImages: [
+          { id: backId, imageUrl: 'https://example.com/back.jpg' },
+          { id: frontId, imageUrl: 'https://example.com/front.jpg' },
+        ],
+      }),
+      coCreator,
+    );
+
+    expect(sourceImageValues).toHaveBeenCalledWith([
+      expect.objectContaining({ id: backId, position: 0 }),
+      expect.objectContaining({ id: frontId, position: 1 }),
+    ]);
+  });
+
+  it('rejects an attachment id that does not belong to the recipe', async () => {
+    const foreignId = 'f'.repeat(24);
+    const { tx, sourceImageValues, deletedTables } = updateTx({
+      member: false,
+      ownerId: 'user_1',
+      creator: true,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await expect(
+      updateRecipe(
+        'r1',
+        recipeInput.parse({
+          title: 'Apple Pie',
+          sourceImages: [{ id: foreignId, imageUrl: 'https://example.com/foreign.jpg' }],
+        }),
+        coCreator,
+      ),
+    ).rejects.toThrow('INVALID');
+    expect(sourceImageValues).not.toHaveBeenCalled();
+    expect(deletedTables).not.toContain(recipeSourceImages);
+  });
+
+  it('detaches all original images without deleting their media assets', async () => {
+    const { tx, sourceImageValues, deletedTables } = updateTx({
+      member: false,
+      ownerId: 'user_1',
+      creator: true,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await updateRecipe('r1', recipeInput.parse({ title: 'Apple Pie' }), coCreator);
+
+    expect(deletedTables).toContain(recipeSourceImages);
+    expect(sourceImageValues).not.toHaveBeenCalled();
   });
 
   it('journals the version against the co-creator, not the owner', async () => {

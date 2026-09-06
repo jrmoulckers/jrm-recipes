@@ -91,6 +91,12 @@ export function toPrintRecipe(recipe: FullRecipe): PrintRecipe {
     sourceName: recipe.sourceName,
     sourceUrl: recipe.sourceUrl,
     notes: recipe.notes,
+    sourceImages: recipe.sourceImages.map((image) => ({
+      id: image.id,
+      imageUrl: image.imageUrl,
+      caption: image.caption,
+      altText: image.altText,
+    })),
     story: recipe.story,
     handedDownFrom: recipe.handedDownFrom,
     originYear: recipe.originYear,

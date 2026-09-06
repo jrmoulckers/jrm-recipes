@@ -16,6 +16,7 @@ describe('recipeInput', () => {
       status: 'draft',
       ingredients: [],
       steps: [],
+      sourceImages: [],
       tags: [],
       cuisines: [],
       mealTypes: [],
@@ -121,6 +122,60 @@ describe('recipeInput', () => {
   it('rejects empty titles and out-of-range numbers', () => {
     expect(() => recipeInput.parse({ title: ' ' })).toThrow(/Give your recipe a title/);
     expect(() => recipeInput.parse({ title: 'Too Much', servings: '1001' })).toThrow();
+  });
+
+  it('accepts up to twelve ordered original recipe photos', () => {
+    const sourceImages = Array.from({ length: 12 }, (_, index) => ({
+      imageUrl: `https://example.com/card-${index}.jpg`,
+      caption: `Card ${index + 1}`,
+      altText: `Handwritten card ${index + 1}`,
+    }));
+
+    expect(recipeInput.parse({ title: 'Family pie', sourceImages }).sourceImages).toEqual(
+      sourceImages,
+    );
+  });
+
+  it('rejects a thirteenth or duplicate original recipe photo', () => {
+    const tooMany = Array.from({ length: 13 }, (_, index) => ({
+      imageUrl: `https://example.com/card-${index}.jpg`,
+    }));
+    expect(recipeInput.safeParse({ title: 'Family pie', sourceImages: tooMany }).success).toBe(
+      false,
+    );
+
+    const duplicate = recipeInput.safeParse({
+      title: 'Family pie',
+      sourceImages: [
+        { imageUrl: 'https://example.com/card.jpg' },
+        { imageUrl: 'https://example.com/card.jpg' },
+      ],
+    });
+    expect(duplicate.success).toBe(false);
+    if (!duplicate.success) {
+      expect(duplicate.error.issues[0]?.path).toEqual(['sourceImages', 1, 'imageUrl']);
+    }
+  });
+
+  it('trims source captions and alt text while preserving stable ids', () => {
+    expect(
+      recipeInput.parse({
+        title: 'Family pie',
+        sourceImages: [
+          {
+            id: 'a'.repeat(24),
+            imageUrl: 'https://example.com/card.jpg',
+            caption: '  Great-Grandma Rosa’s card  ',
+            altText: '  Blue-ink handwriting on a stained card  ',
+          },
+        ],
+      }).sourceImages[0],
+    ).toEqual({
+      id: 'a'.repeat(24),
+      imageUrl: 'https://example.com/card.jpg',
+      caption: 'Great-Grandma Rosa’s card',
+      altText: 'Blue-ink handwriting on a stained card',
+    });
   });
 
   it('surfaces human max-length messages for long text fields', () => {

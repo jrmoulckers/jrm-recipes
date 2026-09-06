@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { timingSafeEqual } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -45,9 +46,28 @@ export async function recordUpload(
   user: User,
 ): Promise<MediaAsset | null> {
   if (!isDbConfigured()) return null;
-  const resourceType = cloudinaryRefFromUrl(input.url)?.resourceType ?? 'image';
+  const parsedRef = cloudinaryRefFromUrl(input.url);
+  const resourceType = parsedRef?.resourceType ?? 'image';
 
   if (input.publicId) {
+    if (
+      parsedRef?.publicId !== input.publicId ||
+      !input.uploadSignature ||
+      !input.version ||
+      !env.CLOUDINARY_API_SECRET
+    ) {
+      throw new Error('INVALID_UPLOAD_PROOF');
+    }
+    const expectedSignature = cloudinary.utils.api_sign_request(
+      { public_id: input.publicId, version: input.version },
+      env.CLOUDINARY_API_SECRET,
+    );
+    const expected = Buffer.from(expectedSignature, 'utf8');
+    const received = Buffer.from(input.uploadSignature, 'utf8');
+    if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
+      throw new Error('INVALID_UPLOAD_PROOF');
+    }
+
     const existing = await db.query.mediaAssets.findFirst({
       where: and(
         eq(mediaAssets.userId, user.id),

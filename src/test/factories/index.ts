@@ -89,6 +89,7 @@ export function makeRecipeInput(overrides: Partial<RecipeInput> = {}): RecipeInp
     status: 'draft',
     ingredients: [],
     steps: [],
+    sourceImages: [],
     tags: [],
     cuisines: [],
     mealTypes: [],

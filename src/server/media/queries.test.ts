@@ -46,7 +46,7 @@ vi.mock('~/server/db', () => ({
 }));
 
 import type { User } from '~/server/db/schema';
-import { groupMembers, groups } from '~/server/db/schema';
+import { groupMembers, groups, recipeSourceImages } from '~/server/db/schema';
 import { getAssetUsage, listAssets } from './queries';
 
 const dialect = new PgDialect({ casing: 'snake_case' });
@@ -116,6 +116,23 @@ describe('getAssetUsage', () => {
     expect(query.sql).toContain('"groups"."id" in (select');
     expect(query.sql).toContain('"group_members"');
     expect(query.sql).toContain('"group_members"."user_id"');
+    expect(query.params).toContain(user.id);
+  });
+
+  it("counts an accepted co-creator's original-image use without exposing other recipes", async () => {
+    state.asset = { id: 'm1', url: assetUrl, userId: user.id };
+    state.counts.set(recipeSourceImages, 1);
+
+    const usage = await getAssetUsage('m1', user);
+
+    expect(usage.bySurface.sourceImages).toBe(1);
+    const sourceWhere = state.countWheres.find(({ table }) => table === recipeSourceImages)
+      ?.condition as SQL | undefined;
+    expect(sourceWhere).toBeDefined();
+
+    const query = dialect.sqlToQuery(sourceWhere!);
+    expect(query.sql).toContain('"recipe_creators"');
+    expect(query.sql).toContain('"recipe_creators"."status" = \'accepted\'');
     expect(query.params).toContain(user.id);
   });
 

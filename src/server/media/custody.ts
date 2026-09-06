@@ -1,10 +1,11 @@
 import 'server-only';
 
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 
 import { db } from '~/server/db';
 import {
   mediaAssets,
+  recipeSourceImages,
   recipeSteps,
   recipeVersions,
   recipes,
@@ -12,6 +13,7 @@ import {
   type MediaAsset,
 } from '~/server/db/schema';
 import { cloudinaryRefFromUrl, type CloudinaryRef } from './public-id';
+import { recipeSnapshotMediaUrls, type RecipeMediaSnapshot } from './recipe-references';
 
 const BYTES_PER_MB = 1024 * 1024;
 const LIFETIME_PERIOD = new Date(0);
@@ -66,6 +68,7 @@ type RecipeReference = {
 };
 
 type PlannableAsset = Pick<MediaAsset, 'id' | 'url' | 'publicId' | 'resourceType'>;
+type MediaIdentity = Pick<MediaAsset, 'url' | 'publicId' | 'resourceType'>;
 
 function referenceKey(url: string, publicId?: string | null, resourceType?: string): string {
   const parsed = cloudinaryRefFromUrl(url);
@@ -81,18 +84,8 @@ function referenceKey(url: string, publicId?: string | null, resourceType?: stri
   return ref ? `cloudinary:${ref.resourceType}:${ref.publicId}` : `url:${url}`;
 }
 
-function snapshotReferences(
-  recipeId: string,
-  snapshot: {
-    coverImageUrl?: string;
-    steps?: { imageUrl?: string; videoUrl?: string; captionUrl?: string }[];
-  },
-): RecipeReference[] {
-  const urls = [
-    snapshot.coverImageUrl,
-    ...(snapshot.steps ?? []).flatMap((step) => [step.imageUrl, step.videoUrl, step.captionUrl]),
-  ];
-  return urls.filter((url): url is string => Boolean(url)).map((url) => ({ recipeId, url }));
+function snapshotReferences(recipeId: string, snapshot: RecipeMediaSnapshot): RecipeReference[] {
+  return recipeSnapshotMediaUrls(snapshot).map((url) => ({ recipeId, url }));
 }
 
 function oldestFirst(
@@ -106,61 +99,225 @@ function oldestFirst(
  * Classify the departing user's media before erasure.
  *
  * The caller supplies the recipes known to survive and their post-erasure
- * owners. Current cover/step media always counts. Snapshots count only when
- * authored by the departing user, preserving their retained contribution.
+ * owners plus all recipes they own. Current media and user-authored snapshots
+ * establish the departing user's inventory. Every live recipe and historical
+ * version that references that inventory is then eligible to receive custody,
+ * including an independently owned fork.
  */
 export async function planRetainedMediaTransfers(
   departingUserId: string,
   retainedRecipes: readonly RetainedRecipeMediaClassification[],
   executor: typeof db = db,
+  departingOwnedRecipeIds: readonly string[] = [],
 ): Promise<RetainedMediaTransferPlan> {
-  if (retainedRecipes.length === 0) {
-    return { departingUserId, transfers: [], toUsers: 0, toRecipes: 0 };
-  }
-
-  const recipeIds = retainedRecipes.map(({ recipeId }) => recipeId);
-  const [currentRecipes, steps, versions, assets] = await Promise.all([
-    executor
-      .select({ id: recipes.id, coverImageUrl: recipes.coverImageUrl })
-      .from(recipes)
-      .where(inArray(recipes.id, recipeIds)),
-    executor
-      .select({
-        recipeId: recipeSteps.recipeId,
-        imageUrl: recipeSteps.imageUrl,
-        videoUrl: recipeSteps.videoUrl,
-        captionUrl: recipeSteps.captionUrl,
-      })
-      .from(recipeSteps)
-      .where(inArray(recipeSteps.recipeId, recipeIds)),
-    executor
-      .select({ recipeId: recipeVersions.recipeId, snapshot: recipeVersions.snapshot })
-      .from(recipeVersions)
-      .where(
-        and(
-          inArray(recipeVersions.recipeId, recipeIds),
-          eq(recipeVersions.authorId, departingUserId),
-        ),
-      ),
+  const retainedRecipeIds = retainedRecipes.map(({ recipeId }) => recipeId);
+  const inventoryRecipeIds = [...new Set([...retainedRecipeIds, ...departingOwnedRecipeIds])];
+  const ownedRecipeIds = new Set(departingOwnedRecipeIds);
+  const emptyRows = Promise.resolve([]);
+  const [currentRecipes, sourceImages, steps, versions, assets] = await Promise.all([
+    inventoryRecipeIds.length > 0
+      ? executor
+          .select({ id: recipes.id, coverImageUrl: recipes.coverImageUrl })
+          .from(recipes)
+          .where(inArray(recipes.id, inventoryRecipeIds))
+      : emptyRows,
+    inventoryRecipeIds.length > 0
+      ? executor
+          .select({
+            recipeId: recipeSourceImages.recipeId,
+            imageUrl: recipeSourceImages.imageUrl,
+          })
+          .from(recipeSourceImages)
+          .where(inArray(recipeSourceImages.recipeId, inventoryRecipeIds))
+      : emptyRows,
+    inventoryRecipeIds.length > 0
+      ? executor
+          .select({
+            recipeId: recipeSteps.recipeId,
+            imageUrl: recipeSteps.imageUrl,
+            videoUrl: recipeSteps.videoUrl,
+            captionUrl: recipeSteps.captionUrl,
+          })
+          .from(recipeSteps)
+          .where(inArray(recipeSteps.recipeId, inventoryRecipeIds))
+      : emptyRows,
+    inventoryRecipeIds.length > 0
+      ? executor
+          .select({ recipeId: recipeVersions.recipeId, snapshot: recipeVersions.snapshot })
+          .from(recipeVersions)
+          .where(
+            and(
+              inArray(recipeVersions.recipeId, inventoryRecipeIds),
+              ownedRecipeIds.size > 0
+                ? or(
+                    inArray(recipeVersions.recipeId, [...ownedRecipeIds]),
+                    eq(recipeVersions.authorId, departingUserId),
+                  )
+                : eq(recipeVersions.authorId, departingUserId),
+            ),
+          )
+      : emptyRows,
     executor.query.mediaAssets.findMany({
       where: and(eq(mediaAssets.userId, departingUserId), isNull(mediaAssets.deletedAt)),
     }),
   ]);
 
   const references: RecipeReference[] = [];
-  for (const recipe of currentRecipes) {
-    if (recipe.coverImageUrl) references.push({ recipeId: recipe.id, url: recipe.coverImageUrl });
-  }
+  const legacyOwnedUrls = new Set<string>();
+  const addReference = (recipeId: string, url: string | null | undefined) => {
+    if (!url) return;
+    references.push({ recipeId, url });
+    if (ownedRecipeIds.has(recipeId)) legacyOwnedUrls.add(url);
+  };
+  for (const recipe of currentRecipes) addReference(recipe.id, recipe.coverImageUrl);
+  for (const image of sourceImages) addReference(image.recipeId, image.imageUrl);
   for (const step of steps) {
     for (const url of [step.imageUrl, step.videoUrl, step.captionUrl]) {
-      if (url) references.push({ recipeId: step.recipeId, url });
+      addReference(step.recipeId, url);
     }
   }
   for (const version of versions) {
-    references.push(...snapshotReferences(version.recipeId, version.snapshot));
+    for (const reference of snapshotReferences(version.recipeId, version.snapshot)) {
+      addReference(reference.recipeId, reference.url);
+    }
   }
 
-  return buildRetainedMediaTransferPlan(departingUserId, retainedRecipes, references, assets);
+  const candidateUrls = [...new Set([...assets.map((asset) => asset.url), ...legacyOwnedUrls])];
+  const recipeClassifications = new Map(
+    retainedRecipes.map((recipe) => [recipe.recipeId, recipe] as const),
+  );
+  let foreignOwnedAssets: MediaIdentity[] = [];
+
+  if (candidateUrls.length > 0) {
+    const survivesDeparture = and(
+      isNull(recipes.deletedAt),
+      or(isNull(recipes.authorId), ne(recipes.authorId, departingUserId)),
+    );
+    const versionUrlPredicates = candidateUrls.map(
+      (url) =>
+        sql`${recipeVersions.snapshot}::text like ${`%${JSON.stringify(url).replace(/[\\%_]/g, '\\$&')}%`} escape '\'`,
+    );
+    const candidatePublicIds = [
+      ...new Set(
+        candidateUrls
+          .map((url) => cloudinaryRefFromUrl(url)?.publicId)
+          .filter((publicId): publicId is string => Boolean(publicId)),
+      ),
+    ];
+    const [coverRefs, sourceRefs, stepRefs, versionRefs, foreignAssets] = await Promise.all([
+      executor
+        .select({
+          recipeId: recipes.id,
+          ownerId: recipes.authorId,
+          createdAt: recipes.createdAt,
+          url: recipes.coverImageUrl,
+        })
+        .from(recipes)
+        .where(and(survivesDeparture, inArray(recipes.coverImageUrl, candidateUrls))),
+      executor
+        .select({
+          recipeId: recipes.id,
+          ownerId: recipes.authorId,
+          createdAt: recipes.createdAt,
+          url: recipeSourceImages.imageUrl,
+        })
+        .from(recipeSourceImages)
+        .innerJoin(recipes, eq(recipes.id, recipeSourceImages.recipeId))
+        .where(and(survivesDeparture, inArray(recipeSourceImages.imageUrl, candidateUrls))),
+      executor
+        .select({
+          recipeId: recipes.id,
+          ownerId: recipes.authorId,
+          createdAt: recipes.createdAt,
+          imageUrl: recipeSteps.imageUrl,
+          videoUrl: recipeSteps.videoUrl,
+          captionUrl: recipeSteps.captionUrl,
+        })
+        .from(recipeSteps)
+        .innerJoin(recipes, eq(recipes.id, recipeSteps.recipeId))
+        .where(
+          and(
+            survivesDeparture,
+            or(
+              inArray(recipeSteps.imageUrl, candidateUrls),
+              inArray(recipeSteps.videoUrl, candidateUrls),
+              inArray(recipeSteps.captionUrl, candidateUrls),
+            ),
+          ),
+        ),
+      executor
+        .select({
+          recipeId: recipes.id,
+          ownerId: recipes.authorId,
+          createdAt: recipes.createdAt,
+          snapshot: recipeVersions.snapshot,
+        })
+        .from(recipeVersions)
+        .innerJoin(recipes, eq(recipes.id, recipeVersions.recipeId))
+        .where(and(survivesDeparture, or(...versionUrlPredicates))),
+      executor.query.mediaAssets.findMany({
+        where: and(
+          eq(mediaAssets.provider, 'cloudinary'),
+          isNull(mediaAssets.deletedAt),
+          or(isNull(mediaAssets.userId), ne(mediaAssets.userId, departingUserId)),
+          or(
+            candidatePublicIds.length > 0
+              ? inArray(mediaAssets.publicId, candidatePublicIds)
+              : undefined,
+            inArray(mediaAssets.url, candidateUrls),
+          ),
+        ),
+        columns: { url: true, publicId: true, resourceType: true },
+      }),
+    ]);
+    foreignOwnedAssets = foreignAssets;
+
+    const classify = (row: { recipeId: string; ownerId: string | null; createdAt: Date }) => {
+      if (!recipeClassifications.has(row.recipeId)) {
+        recipeClassifications.set(row.recipeId, {
+          recipeId: row.recipeId,
+          ownerId: row.ownerId,
+          createdAt: row.createdAt,
+          wasOwnedByDepartingUser: false,
+        });
+      }
+    };
+    for (const row of coverRefs) {
+      classify(row);
+      addReference(row.recipeId, row.url);
+    }
+    for (const row of sourceRefs) {
+      classify(row);
+      addReference(row.recipeId, row.url);
+    }
+    for (const row of stepRefs) {
+      classify(row);
+      for (const url of [row.imageUrl, row.videoUrl, row.captionUrl]) {
+        if (url && candidateUrls.includes(url)) addReference(row.recipeId, url);
+      }
+    }
+    const candidateKeys = new Set(candidateUrls.map((url) => referenceKey(url)));
+    for (const row of versionRefs) {
+      classify(row);
+      for (const reference of snapshotReferences(row.recipeId, row.snapshot)) {
+        if (candidateKeys.has(referenceKey(reference.url))) references.push(reference);
+      }
+    }
+  }
+
+  const classifications = [...recipeClassifications.values()];
+  if (classifications.length === 0) {
+    return { departingUserId, transfers: [], toUsers: 0, toRecipes: 0 };
+  }
+
+  return buildRetainedMediaTransferPlan(
+    departingUserId,
+    classifications,
+    references,
+    assets,
+    [...legacyOwnedUrls],
+    foreignOwnedAssets,
+  );
 }
 
 /**
@@ -172,6 +329,8 @@ export function buildRetainedMediaTransferPlan(
   retainedRecipes: readonly RetainedRecipeMediaClassification[],
   references: readonly RecipeReference[],
   assets: readonly PlannableAsset[],
+  legacyOwnedUrls: readonly string[] = [],
+  foreignOwnedAssets: readonly MediaIdentity[] = [],
 ): RetainedMediaTransferPlan {
   const recipesById = new Map(retainedRecipes.map((recipe) => [recipe.recipeId, recipe]));
   const referencesByAsset = new Map<string, RecipeReference[]>();
@@ -184,6 +343,10 @@ export function buildRetainedMediaTransferPlan(
 
   const assetsByKey = new Map(
     assets.map((asset) => [referenceKey(asset.url, asset.publicId, asset.resourceType), asset]),
+  );
+  const legacyOwnedKeys = new Set(legacyOwnedUrls.map((url) => referenceKey(url)));
+  const foreignOwnedKeys = new Set(
+    foreignOwnedAssets.map((asset) => referenceKey(asset.url, asset.publicId, asset.resourceType)),
   );
   const transfers: MediaCustodyTransfer[] = [];
   for (const [key, matchingReferences] of referencesByAsset) {
@@ -202,8 +365,10 @@ export function buildRetainedMediaTransferPlan(
 
     const asset = assetsByKey.get(key);
     const parsedRef = cloudinaryRefFromUrl(asset?.url ?? matchingReferences[0]!.url);
+    if (!asset && foreignOwnedKeys.has(key)) continue;
     if (
       !asset &&
+      !legacyOwnedKeys.has(key) &&
       !matchingReferences.some(
         ({ recipeId }) => recipesById.get(recipeId)?.wasOwnedByDepartingUser === true,
       )

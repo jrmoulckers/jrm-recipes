@@ -48,26 +48,41 @@ export const mediaAltText = z
 
 const positiveInt = z.number().int().positive().max(2_000_000_000).optional();
 
-export const recordUploadInput = z.object({
-  url: mediaUrl,
-  publicId: mediaPublicId.optional(),
-  altText: mediaAltText,
-  width: positiveInt,
-  height: positiveInt,
-  bytes: positiveInt,
-  format: z
-    .string()
-    .trim()
-    .max(16)
-    .regex(/^[a-z0-9]+$/i)
-    .optional(),
-  folder: z
-    .string()
-    .trim()
-    .max(200)
-    .regex(/^heirloom(?:\/[a-zA-Z0-9_-]+)*$/, 'Unsupported upload folder.')
-    .optional(),
-});
+export const recordUploadInput = z
+  .object({
+    url: mediaUrl,
+    publicId: mediaPublicId.optional(),
+    uploadSignature: z
+      .string()
+      .trim()
+      .regex(/^[a-f0-9]{40}$/i)
+      .optional(),
+    version: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional(),
+    altText: mediaAltText,
+    width: positiveInt,
+    height: positiveInt,
+    bytes: positiveInt,
+    format: z
+      .string()
+      .trim()
+      .max(16)
+      .regex(/^[a-z0-9]+$/i)
+      .optional(),
+    folder: z
+      .string()
+      .trim()
+      .max(200)
+      .regex(/^heirloom(?:\/[a-zA-Z0-9_-]+)*$/, 'Unsupported upload folder.')
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.publicId && (value.uploadSignature === undefined || value.version === undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Cloudinary uploads require signed response proof.',
+      });
+    }
+  });
 
 export const updateAltTextInput = z.object({
   id: idInput,

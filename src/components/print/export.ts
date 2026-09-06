@@ -124,6 +124,13 @@ function sourceLine(recipe: PrintRecipe): string | null {
   return null;
 }
 
+function originalImageLines(recipe: PrintRecipe): string[] {
+  return (recipe.sourceImages ?? []).map((image, index) => {
+    const label = image.caption ? cleanLine(image.caption) : `Original image ${index + 1}`;
+    return `- ${label}: ${image.imageUrl}`;
+  });
+}
+
 /**
  * Human-readable provenance lines (issue #381): who a recipe was handed down
  * from and where/when it originated. Returns `[]` when a recipe carries no
@@ -192,6 +199,8 @@ export function serializeRecipePlainText(recipe: PrintRecipe): string {
     }
   }
   if (source) lines.push('', source);
+  const originalImages = originalImageLines(recipe);
+  if (originalImages.length > 0) lines.push('', 'Original recipe images', ...originalImages);
   lines.push('', recipeUrl(recipe));
 
   return `${lines.join('\n').trim()}\n`;
@@ -247,6 +256,8 @@ export function serializeRecipeMarkdown(recipe: PrintRecipe): string {
     }
   }
   if (source) lines.push('', source);
+  const originalImages = originalImageLines(recipe);
+  if (originalImages.length > 0) lines.push('', '## Original recipe images', ...originalImages);
   lines.push('', `[Open recipe](${recipeUrl(recipe)})`);
 
   return `${lines.join('\n').trim()}\n`;

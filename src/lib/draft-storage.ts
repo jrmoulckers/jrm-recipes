@@ -21,6 +21,7 @@ export function readDraft<T>(
   snapshotShape: T,
   now: number,
   version: number,
+  normalizeData: (data: unknown) => unknown = (data) => data,
 ): DraftReadResult<T> {
   if (raw === null) return { status: 'empty' };
 
@@ -48,8 +49,9 @@ export function readDraft<T>(
   if (now - envelope.savedAt > DRAFT_TTL_MS) {
     return { status: 'invalid', issue: 'expired' };
   }
-  return hasSameShape(envelope.data, snapshotShape)
-    ? { status: 'valid', data: envelope.data }
+  const normalizedData = normalizeData(envelope.data);
+  return hasSameShape(normalizedData, snapshotShape)
+    ? { status: 'valid', data: normalizedData }
     : { status: 'invalid', issue: 'incompatible' };
 }
 

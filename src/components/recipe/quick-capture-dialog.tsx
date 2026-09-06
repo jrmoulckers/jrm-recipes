@@ -76,6 +76,7 @@ export function QuickCaptureDialog() {
       status: 'draft',
       ingredients: [],
       steps: [],
+      sourceImages: [],
       tags: [],
       cuisines: [],
       mealTypes: [],

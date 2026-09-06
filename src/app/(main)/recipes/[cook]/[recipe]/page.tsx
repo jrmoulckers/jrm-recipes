@@ -878,6 +878,67 @@ async function RecipePage({
                   </>
                 )}
 
+                {recipe.sourceImages.length > 0 && (
+                  <>
+                    <Separator />
+                    <details className="group rounded-xl border border-border bg-surface">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-display text-lg font-semibold transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                        <span className="flex items-center gap-2">
+                          <BookOpen className="size-4 text-secondary" aria-hidden="true" />
+                          {t('originalImages.title')}
+                        </span>
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {t('originalImages.count', { count: recipe.sourceImages.length })}
+                        </span>
+                      </summary>
+                      <ol className="grid gap-4 border-t border-border p-4 sm:grid-cols-2">
+                        {recipe.sourceImages.map((image, index) => {
+                          const alt =
+                            image.altText ??
+                            t('originalImages.fallbackAlt', {
+                              title: recipe.title,
+                              position: index + 1,
+                            });
+                          return (
+                            <li key={image.id} className="min-w-0">
+                              <figure className="flex flex-col gap-2">
+                                <a
+                                  href={image.imageUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="group/image relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <RecipeImage
+                                    src={image.imageUrl}
+                                    fallbackKey={image.id}
+                                    fallbackMode="hide"
+                                    alt={alt}
+                                    fill
+                                    loading="lazy"
+                                    sizes="(min-width: 640px) 40vw, 90vw"
+                                    className="object-contain transition-transform group-hover/image:scale-[1.01]"
+                                  />
+                                  <span className="sr-only">
+                                    {t('originalImages.openFullResolution', {
+                                      position: index + 1,
+                                    })}{' '}
+                                    ({t('opensInNewTab')})
+                                  </span>
+                                </a>
+                                {image.caption && (
+                                  <figcaption className="text-sm text-muted-foreground">
+                                    {image.caption}
+                                  </figcaption>
+                                )}
+                              </figure>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </details>
+                  </>
+                )}
+
                 {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (
                   <>
                     <Separator />

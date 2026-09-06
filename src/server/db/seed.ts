@@ -573,6 +573,7 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
       timerSeconds: step.timerSeconds,
       techniques: step.techniques ?? [],
     })),
+    sourceImages: [],
     tags: r.tags,
     equipment: [],
     dietaryFlags: [],

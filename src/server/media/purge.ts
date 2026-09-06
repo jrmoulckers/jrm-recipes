@@ -9,6 +9,7 @@ import {
   collections,
   cookLogEntries,
   mediaAssets,
+  recipeSourceImages,
   recipeSteps,
   recipeVersions,
   recipes,
@@ -17,6 +18,7 @@ import {
 } from '~/server/db/schema';
 import { cloudinaryRefFromUrl, type CloudinaryRef } from './public-id';
 import { executeRetainedMediaTransfersInTransaction } from './custody';
+import { recipeSnapshotMediaUrls } from './recipe-references';
 
 /**
  * Bulk media purge for account erasure (issue #678).
@@ -83,6 +85,7 @@ export async function collectUserAssets(
   explicitlyProtected: readonly CloudinaryRef[] = [],
 ): Promise<{ refs: CloudinaryRef[]; skippedExternal: number }> {
   const byId = new Map<string, CloudinaryRef>();
+  const candidateUrls = new Set<string>();
   const protectedRefs = new Set<string>();
   let skippedExternal = 0;
   for (const ref of explicitlyProtected) {
@@ -115,6 +118,7 @@ export async function collectUserAssets(
       return;
     }
     if (!protectedRefs.has(`${ref.resourceType}:${ref.publicId}`)) {
+      candidateUrls.add(url);
       byId.set(`${ref.resourceType}:${ref.publicId}`, ref);
     }
   };
@@ -131,6 +135,7 @@ export async function collectUserAssets(
       skippedExternal += 1;
       continue;
     }
+    candidateUrls.add(asset.url);
     if (asset.publicId) {
       const parsed = cloudinaryRefFromUrl(asset.url);
       const resourceType =
@@ -158,6 +163,12 @@ export async function collectUserAssets(
 
   const recipeIds = owned.map((r) => r.id);
   if (recipeIds.length > 0) {
+    const sourceImages = await executor.query.recipeSourceImages.findMany({
+      where: inArray(recipeSourceImages.recipeId, recipeIds),
+      columns: { imageUrl: true },
+    });
+    for (const image of sourceImages) add(image.imageUrl);
+
     const steps = await executor.query.recipeSteps.findMany({
       where: inArray(recipeSteps.recipeId, recipeIds),
       columns: { imageUrl: true, videoUrl: true, captionUrl: true },
@@ -166,6 +177,14 @@ export async function collectUserAssets(
       add(step.imageUrl);
       add(step.videoUrl);
       add(step.captionUrl);
+    }
+
+    const versions = await executor.query.recipeVersions.findMany({
+      where: inArray(recipeVersions.recipeId, recipeIds),
+      columns: { snapshot: true },
+    });
+    for (const version of versions) {
+      for (const url of recipeSnapshotMediaUrls(version.snapshot)) add(url);
     }
   }
 
@@ -193,6 +212,39 @@ export async function collectUserAssets(
     .where(eq(users.id, userId))
     .limit(1);
   add(user?.avatarUrl);
+
+  // A recipe can reference media uploaded by someone else: accepted
+  // co-creators can attach images, and adaptations intentionally copy source
+  // URLs. Recipe ownership therefore cannot authorize destroying those bytes.
+  // Protect any candidate that still has a live asset row owned by another
+  // user before issuing Cloudinary deletes.
+  if (byId.size > 0) {
+    const publicIds = [...new Set([...byId.values()].map((ref) => ref.publicId))];
+    const urls = [...candidateUrls];
+    const foreignAssets = await executor.query.mediaAssets.findMany({
+      where: and(
+        isNull(mediaAssets.deletedAt),
+        eq(mediaAssets.provider, 'cloudinary'),
+        isNotNull(mediaAssets.userId),
+        ne(mediaAssets.userId, userId),
+        or(
+          inArray(mediaAssets.publicId, publicIds),
+          urls.length > 0 ? inArray(mediaAssets.url, urls) : undefined,
+        ),
+      ),
+      columns: { publicId: true, resourceType: true, url: true },
+    });
+    for (const asset of foreignAssets) {
+      const parsed = cloudinaryRefFromUrl(asset.url);
+      const publicId = asset.publicId ?? parsed?.publicId;
+      if (!publicId) continue;
+      const resourceType =
+        asset.resourceType === 'video' || asset.resourceType === 'raw'
+          ? asset.resourceType
+          : (parsed?.resourceType ?? 'image');
+      byId.delete(`${resourceType}:${publicId}`);
+    }
+  }
 
   return { refs: [...byId.values()], skippedExternal };
 }
@@ -274,6 +326,11 @@ async function replacementCustodian(
 ): Promise<{ kind: 'user'; userId: string } | { kind: 'recipe'; recipeId: string } | null> {
   const referencesUrl = or(
     eq(recipes.coverImageUrl, url),
+    sql`exists (
+      select 1 from ${recipeSourceImages}
+      where ${recipeSourceImages.recipeId} = ${recipes.id}
+        and ${recipeSourceImages.imageUrl} = ${url}
+    )`,
     sql`exists (
       select 1 from ${recipeSteps}
       where ${recipeSteps.recipeId} = ${recipes.id}

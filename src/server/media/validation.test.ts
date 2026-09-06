@@ -47,6 +47,8 @@ describe('recordUploadInput', () => {
     const parsed = recordUploadInput.safeParse({
       url,
       publicId: 'heirloom/a1',
+      uploadSignature: 'a'.repeat(40),
+      version: 1,
       width: 1200,
       height: 800,
       bytes: 240_000,
@@ -60,6 +62,8 @@ describe('recordUploadInput', () => {
     const parsed = recordUploadInput.safeParse({
       url: 'https://res.cloudinary.com/demo/raw/upload/v1/heirloom/captions/step.en.vtt',
       publicId: 'heirloom/captions/step.en.vtt',
+      uploadSignature: 'a'.repeat(40),
+      version: 1,
       bytes: 2_400,
       format: 'vtt',
       folder: 'heirloom/captions',
@@ -74,6 +78,10 @@ describe('recordUploadInput', () => {
       folder: 'someone-else',
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it('rejects a Cloudinary asset without signed response proof', () => {
+    expect(recordUploadInput.safeParse({ url, publicId: 'heirloom/a1' }).success).toBe(false);
   });
 
   it('collapses empty alt text to undefined so it clears the column', () => {

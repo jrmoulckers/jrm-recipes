@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createId } from '@paralleldrive/cuid2';
 import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 
 import { db } from '~/server/db';
@@ -9,6 +10,7 @@ import {
   recipeCreators,
   recipeEvents,
   recipeIngredients,
+  recipeSourceImages,
   recipeSlugAliases,
   recipeSteps,
   recipeTags,
@@ -538,6 +540,41 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
       })),
     );
   }
+  if (input.sourceImages.length > 0) {
+    await tx.insert(recipeSourceImages).values(
+      input.sourceImages.map((image, position) => ({
+        ...(image.id ? { id: image.id } : {}),
+        recipeId,
+        position,
+        imageUrl: image.imageUrl,
+        caption: image.caption ?? null,
+        altText: image.altText ?? null,
+      })),
+    );
+  }
+}
+
+function withCanonicalSourceImageIds(
+  input: RecipeInput,
+  preserveExistingIds: boolean,
+): RecipeInput {
+  return {
+    ...input,
+    sourceImages: input.sourceImages.map((image) => ({
+      ...image,
+      id: preserveExistingIds && image.id ? image.id : createId(),
+    })),
+  };
+}
+
+async function assertSourceImageIdsBelongToRecipe(tx: Tx, recipeId: string, input: RecipeInput) {
+  const ids = input.sourceImages.flatMap((image) => (image.id ? [image.id] : []));
+  if (ids.length === 0) return;
+  const existing = await tx.query.recipeSourceImages.findMany({
+    where: and(eq(recipeSourceImages.recipeId, recipeId), inArray(recipeSourceImages.id, ids)),
+    columns: { id: true },
+  });
+  if (existing.length !== ids.length) throw new DomainError('INVALID');
 }
 
 async function syncTags(tx: Tx, recipeId: string, input: RecipeInput) {
@@ -672,6 +709,7 @@ async function applyRecipeInput(
   current: { slug: string; title: string; publishedAt: Date | null },
   ownerId: string | null,
   groupId: string | null,
+  trustHistoricalSourceImageIds = false,
 ) {
   const nowPublished = input.status === 'published';
   const publishedAt = nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
@@ -684,9 +722,14 @@ async function applyRecipeInput(
     .set({ ...scalarFields(input, groupId), slug, publishedAt })
     .where(eq(recipes.id, id));
 
+  if (!trustHistoricalSourceImageIds) {
+    await assertSourceImageIdsBelongToRecipe(tx, id, input);
+  }
+  const canonicalInput = withCanonicalSourceImageIds(input, true);
   await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
-  await insertChildren(tx, id, input);
+  await tx.delete(recipeSourceImages).where(eq(recipeSourceImages.recipeId, id));
+  await insertChildren(tx, id, canonicalInput);
   // The derived nutrition cache is invalidated **in this transaction** (#1044),
   // right where the ingredient lines — and therefore the foods the recipe
   // resolves to — are rewritten. Committing the delete atomically with the edit
@@ -694,10 +737,10 @@ async function applyRecipeInput(
   // there is no instant at which the new lines and the old figures are both
   // visible. Repopulation happens after the commit, best-effort.
   await invalidateNutritionCache(tx, id);
-  await syncTags(tx, id, input);
+  await syncTags(tx, id, canonicalInput);
   // Journalled against the *actor*, so `recipe_versions.authorId` records which
   // creator made each save rather than always naming the owner (#668).
-  await journal(tx, id, actor.id, input, label);
+  await journal(tx, id, actor.id, canonicalInput, label);
   // Mint a share token the first time a recipe becomes unlisted (issue #204).
   // Guarded by `share_token IS NULL` so an existing token (and its enabled /
   // rotated state, #207) is preserved across edits and never regenerated here.
@@ -741,6 +784,7 @@ async function reslug(
 export async function createRecipe(input: RecipeInput, author: User) {
   const recipe = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      const canonicalInput = withCanonicalSourceImageIds(input, false);
       const groupId = await resolveGroupId(tx, input, author);
       const slug = await uniqueSlug(tx, author.id, recipeSlug(input.title));
       const [row] = await tx
@@ -756,9 +800,9 @@ export async function createRecipe(input: RecipeInput, author: User) {
         })
         .returning({ id: recipes.id, slug: recipes.slug });
       const recipe = row!;
-      await insertChildren(tx, recipe.id, input);
-      await syncTags(tx, recipe.id, input);
-      await journal(tx, recipe.id, author.id, input, 'Created');
+      await insertChildren(tx, recipe.id, canonicalInput);
+      await syncTags(tx, recipe.id, canonicalInput);
+      await journal(tx, recipe.id, author.id, canonicalInput, 'Created');
       await recordEvent(tx, {
         recipeId: recipe.id,
         actorId: author.id,
@@ -925,6 +969,7 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
         with: {
           ingredients: { orderBy: [recipeIngredients.position] },
           steps: { orderBy: [recipeSteps.position] },
+          sourceImages: { orderBy: [recipeSourceImages.position] },
           tags: { with: { tag: true } },
         },
       });
@@ -935,6 +980,7 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
       if (!canForkSource(source, author, groupIds)) throw new DomainError('NOT_FOUND');
 
       const input = buildAdaptationInput(source);
+      const canonicalInput = withCanonicalSourceImageIds(input, false);
 
       const slug = await uniqueSlug(tx, author.id, recipeSlug(input.title));
       const note = forkNote?.trim();
@@ -954,9 +1000,9 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
         .returning({ id: recipes.id, slug: recipes.slug });
 
       const recipe = row!;
-      await insertChildren(tx, recipe.id, input);
-      await syncTags(tx, recipe.id, input);
-      await journal(tx, recipe.id, author.id, input, `Adapted from "${source.title}"`);
+      await insertChildren(tx, recipe.id, canonicalInput);
+      await syncTags(tx, recipe.id, canonicalInput);
+      await journal(tx, recipe.id, author.id, canonicalInput, `Adapted from "${source.title}"`);
 
       // Record both halves of the fork so it shows on each recipe's timeline:
       // the adaptation's origin, and a new descendant on the source.
@@ -1037,6 +1083,7 @@ export async function revertRecipe(id: string, versionNumber: number, author: Us
         current,
         author.id,
         await resolveGroupId(tx, input, author),
+        true,
       );
       await recordEvent(tx, {
         recipeId: id,

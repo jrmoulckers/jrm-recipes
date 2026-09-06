@@ -37,6 +37,7 @@ export function toGuidedRecipeInput(draft: GuidedRecipeDraft): RecipeInput {
       .map((instruction) => instruction.trim())
       .filter(Boolean)
       .map((instruction) => ({ instruction, techniques: [] })),
+    sourceImages: [],
     tags: [],
     cuisines: [],
     mealTypes: [],

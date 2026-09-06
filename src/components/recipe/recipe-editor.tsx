@@ -128,6 +128,13 @@ type StepRow = {
   doneness: string;
   techniques: string;
 };
+type SourceImageRow = {
+  key: string;
+  id?: string;
+  imageUrl: string;
+  caption: string;
+  altText: string;
+};
 
 export type RecipeEditorValue = {
   title: string;
@@ -166,12 +173,19 @@ export type RecipeEditorValue = {
   groupId: string;
   tags: string;
   dietaryFlags: DietaryTag[];
+  sourceImages?: Omit<SourceImageRow, 'key'>[];
   ingredients: Omit<IngRow, 'key' | 'groupId'>[];
   steps: Omit<StepRow, 'key' | 'groupId'>[];
 };
 
 let idCounter = 0;
 const nextKey = () => `row-${idCounter++}`;
+
+function normalizeRecipeEditorDraft(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) return data;
+  if ('sourceImages' in data) return data;
+  return { ...data, sourceImages: [] };
+}
 
 const EMPTY_ING: Omit<IngRow, 'key'> = {
   groupId: '',
@@ -199,6 +213,11 @@ const EMPTY_STEP: Omit<StepRow, 'key'> = {
   targetTempC: '',
   doneness: '',
   techniques: '',
+};
+const EMPTY_SOURCE_IMAGE: Omit<SourceImageRow, 'key'> = {
+  imageUrl: '',
+  caption: '',
+  altText: '',
 };
 
 /** Stable empty field-error map. The initial/cleared useActionState value. */
@@ -694,6 +713,9 @@ export function RecipeEditor({
       })),
     ),
   );
+  const [sourceImages, setSourceImages] = React.useState<SourceImageRow[]>(() =>
+    (initial?.sourceImages ?? []).map((image) => ({ ...image, key: nextKey() })),
+  );
 
   // Row-level UI state for the redesigned lists (#425): step rows can reveal an
   // opt-in group-heading field, and ingredient rows expand advanced options.
@@ -751,10 +773,21 @@ export function RecipeEditor({
   const draftSnapshot: RecipeEditorValue = React.useMemo(
     () => ({
       ...form,
+      sourceImages: sourceImages.map(({ key: _key, ...image }) => ({
+        ...image,
+        id: image.id ?? '',
+      })),
       ingredients: ingredients.map(({ key: _key, groupId: _groupId, ...rest }) => rest),
       steps: steps.map(({ key: _key, groupId: _groupId, ...rest }) => rest),
     }),
-    [form, ingredients, steps],
+    [form, ingredients, sourceImages, steps],
+  );
+  const draftShape: RecipeEditorValue = React.useMemo(
+    () => ({
+      ...draftSnapshot,
+      sourceImages: [{ ...EMPTY_SOURCE_IMAGE, id: '' }],
+    }),
+    [draftSnapshot],
   );
   const draftJson = React.useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot]);
   const [initialDraftJson] = React.useState(() => draftJson);
@@ -776,13 +809,28 @@ export function RecipeEditor({
   const draft = useAutosaveDraft<RecipeEditorValue>({
     context: draftContext,
     snapshot: draftSnapshot,
+    shape: draftShape,
+    normalizeData: normalizeRecipeEditorDraft,
     dirty: draftDirty,
     onIssue: onDraftIssue,
   });
 
   function restoreDraft(value: RecipeEditorValue) {
-    const { ingredients: draftIngredients, steps: draftSteps, ...scalars } = value;
+    const {
+      ingredients: draftIngredients,
+      steps: draftSteps,
+      sourceImages: draftSourceImages,
+      ...scalars
+    } = value;
     setForm((f) => ({ ...f, ...scalars }));
+    setSourceImages(
+      (draftSourceImages ?? []).map((image) => ({
+        ...EMPTY_SOURCE_IMAGE,
+        ...image,
+        id: image.id || undefined,
+        key: nextKey(),
+      })),
+    );
     setIngredients(
       hydrateIngredientGroups(
         (draftIngredients ?? []).map((r) => ({
@@ -1253,6 +1301,14 @@ export function RecipeEditor({
       groupId: form.visibility === 'group' && form.groupId ? form.groupId : undefined,
       tags: commaList(form.tags),
       dietaryFlags: form.dietaryFlags,
+      sourceImages: sourceImages
+        .filter((image) => image.imageUrl.trim() !== '')
+        .map(({ key: _key, id, ...image }) => ({
+          ...(id ? { id } : {}),
+          imageUrl: image.imageUrl.trim(),
+          caption: image.caption.trim() || undefined,
+          altText: image.altText.trim() || undefined,
+        })),
       ingredients: ingredients
         .filter((r) => r.item.trim() !== '')
         .map((r) => ({
@@ -2598,6 +2654,163 @@ export function RecipeEditor({
               altText={form.coverImageAlt}
               onAltTextChange={(alt) => set('coverImageAlt', alt)}
             />
+
+            <div className="h-px bg-border" />
+
+            <section className="flex flex-col gap-4" aria-labelledby="recipe-source-images-heading">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3
+                    id="recipe-source-images-heading"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    {t('sourceImages.legend')}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t('sourceImages.hint', { count: sourceImages.length, max: 12 })}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={sourceImages.length >= 12}
+                  onClick={() =>
+                    setSourceImages((images) => [
+                      ...images,
+                      { ...EMPTY_SOURCE_IMAGE, key: nextKey() },
+                    ])
+                  }
+                >
+                  <Plus aria-hidden="true" />
+                  {t('sourceImages.add')}
+                </Button>
+              </div>
+
+              {sourceImages.length > 0 ? (
+                <ol className="flex flex-col gap-4">
+                  {sourceImages.map((image, index) => (
+                    <li key={image.key} className="rounded-xl border border-border bg-muted/20 p-4">
+                      <fieldset className="flex flex-col gap-4">
+                        <legend className="px-1 text-sm font-semibold">
+                          {t('sourceImages.item', {
+                            position: index + 1,
+                            total: sourceImages.length,
+                          })}
+                        </legend>
+                        <ImageUploadField
+                          folder="heirloom/recipe-sources"
+                          value={image.imageUrl}
+                          onChange={(imageUrl) => {
+                            if (
+                              imageUrl &&
+                              sourceImages.some(
+                                (candidate) =>
+                                  candidate.key !== image.key && candidate.imageUrl === imageUrl,
+                              )
+                            ) {
+                              toast.error(t('sourceImages.duplicate'));
+                              return;
+                            }
+                            setSourceImages((images) =>
+                              images.map((candidate) =>
+                                candidate.key === image.key
+                                  ? { ...candidate, imageUrl }
+                                  : candidate,
+                              ),
+                            );
+                          }}
+                          altText={image.altText}
+                          onAltTextChange={(altText) =>
+                            setSourceImages((images) =>
+                              images.map((candidate) =>
+                                candidate.key === image.key ? { ...candidate, altText } : candidate,
+                              ),
+                            )
+                          }
+                        />
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor={`source-caption-${image.key}`}>
+                            {t('sourceImages.caption')}
+                          </Label>
+                          <Input
+                            id={`source-caption-${image.key}`}
+                            value={image.caption}
+                            maxLength={500}
+                            placeholder={t('sourceImages.captionPlaceholder')}
+                            onChange={(event) =>
+                              setSourceImages((images) =>
+                                images.map((candidate) =>
+                                  candidate.key === image.key
+                                    ? { ...candidate, caption: event.target.value }
+                                    : candidate,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={index === 0}
+                            aria-label={t('sourceImages.moveEarlier', { position: index + 1 })}
+                            onClick={() =>
+                              setSourceImages((images) => {
+                                const next = [...images];
+                                [next[index - 1], next[index]] = [next[index]!, next[index - 1]!];
+                                return next;
+                              })
+                            }
+                          >
+                            <ChevronUp aria-hidden="true" />
+                            {t('sourceImages.earlier')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={index === sourceImages.length - 1}
+                            aria-label={t('sourceImages.moveLater', { position: index + 1 })}
+                            onClick={() =>
+                              setSourceImages((images) => {
+                                const next = [...images];
+                                [next[index], next[index + 1]] = [next[index + 1]!, next[index]!];
+                                return next;
+                              })
+                            }
+                          >
+                            <ChevronDown aria-hidden="true" />
+                            {t('sourceImages.later')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() =>
+                              setSourceImages((images) =>
+                                images.filter((candidate) => candidate.key !== image.key),
+                              )
+                            }
+                          >
+                            <Trash2 aria-hidden="true" />
+                            {t('sourceImages.detach')}
+                          </Button>
+                        </div>
+                      </fieldset>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  {t('sourceImages.empty')}
+                </p>
+              )}
+
+              <p className="text-xs text-muted-foreground">{t('sourceImages.detachHint')}</p>
+            </section>
 
             <div className="h-px bg-border" />
 

@@ -414,6 +414,14 @@ const fullRecipeRow = {
   sourceName: null,
   sourceUrl: null,
   notes: 'Simmer low.',
+  sourceImages: [
+    {
+      id: 'a'.repeat(24),
+      imageUrl: 'https://example.com/original-card.jpg',
+      caption: 'Original card',
+      altText: 'Handwritten card',
+    },
+  ],
   dietaryFlags: null,
   ingredients: [
     {
@@ -513,6 +521,14 @@ describe('applySuggestion folds a suggestion into the recipe (owner-only)', () =
     expect((version!.snapshot as { notes?: string }).notes).toBe(
       'Simmer low.\n\nAdd a bay leaf. Suggested by Cousin Rae',
     );
+    expect(
+      (version!.snapshot as { sourceImages: Array<{ id: string; imageUrl: string }> }).sourceImages,
+    ).toEqual([
+      expect.objectContaining({
+        id: 'a'.repeat(24),
+        imageUrl: 'https://example.com/original-card.jpg',
+      }),
+    ]);
   });
 
   it('rejects a non-owner even when they can view the recipe (FORBIDDEN)', async () => {

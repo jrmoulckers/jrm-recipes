@@ -12,6 +12,7 @@ import {
   ratings,
   recipeEvents,
   recipeIngredients,
+  recipeSourceImages,
   recipeSteps,
   recipes,
   reviews,
@@ -289,6 +290,7 @@ export async function applySuggestion(
       with: {
         ingredients: { orderBy: [recipeIngredients.position] },
         steps: { orderBy: [recipeSteps.position] },
+        sourceImages: { orderBy: [recipeSourceImages.position] },
         tags: { with: { tag: true } },
       },
     });

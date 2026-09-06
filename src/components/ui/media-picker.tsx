@@ -232,6 +232,8 @@ function UploadTab({
         void recordUploadAction({
           url: info.secure_url,
           publicId: typeof info.public_id === 'string' ? info.public_id : undefined,
+          uploadSignature: typeof info.signature === 'string' ? info.signature : undefined,
+          version: typeof info.version === 'number' ? info.version : undefined,
           width: typeof info.width === 'number' ? info.width : undefined,
           height: typeof info.height === 'number' ? info.height : undefined,
           bytes: typeof info.bytes === 'number' ? info.bytes : undefined,

@@ -155,7 +155,12 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
   if (!isDbConfigured()) return EMPTY;
 
   const retention = await planAccountRecipeRetention(userId);
-  const mediaPlan = await planRetainedMediaTransfers(userId, retention.retainedRecipes);
+  const mediaPlan = await planRetainedMediaTransfers(
+    userId,
+    retention.retainedRecipes,
+    db,
+    retention.ownedRecipeIds,
+  );
   const retainedRecipeIds = retention.retainedRecipes.map(({ recipeId }) => recipeId);
   const [
     pendingInviteCount,
