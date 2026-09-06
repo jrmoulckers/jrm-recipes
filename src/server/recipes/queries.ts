@@ -15,6 +15,7 @@ import {
   isNull,
   lt,
   lte,
+  notExists,
   or,
   sql,
   type SQL,
@@ -1085,22 +1086,22 @@ export function searchFilterConditions(
 
   if (opts.skip !== 'cuisine' && search.cuisines.length > 0) {
     const cuisineSlugs = search.cuisines.map(tagFilterSlug);
+    const cuisineClassificationQuery = (slug?: string) =>
+      qb
+        .select({ one: sql`1` })
+        .from(recipeTags)
+        .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+        .where(
+          and(
+            eq(recipeTags.recipeId, recipes.id),
+            eq(tags.category, 'cuisine'),
+            slug ? eq(tags.slug, slug) : undefined,
+          ),
+        );
     const cuisineConditions = search.cuisines.map((c, index) =>
       or(
-        ilike(recipes.cuisine, c),
-        exists(
-          qb
-            .select({ one: sql`1` })
-            .from(recipeTags)
-            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-            .where(
-              and(
-                eq(recipeTags.recipeId, recipes.id),
-                eq(tags.category, 'cuisine'),
-                eq(tags.slug, cuisineSlugs[index] ?? tagFilterSlug(c)),
-              ),
-            ),
-        ),
+        exists(cuisineClassificationQuery(cuisineSlugs[index] ?? tagFilterSlug(c))),
+        and(notExists(cuisineClassificationQuery()), ilike(recipes.cuisine, c)),
       ),
     );
     conditions.push(

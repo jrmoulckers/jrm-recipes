@@ -62,6 +62,20 @@ describe('searchFilterConditions (scoped facet counts, #274)', () => {
     expect((sql.match(/cuisine/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
+  it('uses the legacy cuisine scalar only when no typed cuisine exists', () => {
+    const sql = render(parseRecipeSearch({ cuisine: 'Italian' }));
+    expect(sql).toContain('not exists');
+    expect((sql.match(/category/g) ?? []).length).toBe(2);
+  });
+
+  it('ANDs meal and cuisine facets', () => {
+    const conditions = searchFilterConditions(
+      parseRecipeSearch({ meal: 'Dinner', cuisine: 'Italian' }),
+    );
+    expect(conditions).toHaveLength(2);
+    expect(render(parseRecipeSearch({ meal: 'Dinner', cuisine: 'Italian' }))).toContain(' and ');
+  });
+
   it('ANDs multiple cuisines when requested', () => {
     const conditions = searchFilterConditions(
       parseRecipeSearch({ cuisine: ['Italian', 'Thai'], cuisineMatch: 'all' }),
