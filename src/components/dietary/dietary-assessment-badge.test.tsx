@@ -176,6 +176,44 @@ describe('DietaryAssessmentBadge', () => {
     expect(attention).not.toHaveTextContent('olive oil');
   });
 
+  it('keeps dense localized details scrollable so the limitation and action remain reachable', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const attentionIngredients = Array.from({ length: 12 }, (_, index) => ({
+      name: `very long unresolved ingredient label ${index + 1}`,
+      kind: 'unresolved' as const,
+    }));
+
+    render(
+      <DietaryAssessmentBadge
+        {...BASE_PROPS}
+        status="review"
+        provenance={{ kind: 'ingredient-analyzed', confidence: 'needs-review' }}
+        attentionIngredients={attentionIngredients}
+        action={{ kind: 'review', onSelect }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+    const details = await screen.findByRole('dialog');
+    expect(details).toHaveClass(
+      'max-h-[calc(var(--radix-popover-content-available-height)-1rem)]',
+      'overflow-y-auto',
+      'overscroll-contain',
+    );
+    expect(details).toHaveTextContent('very long unresolved ingredient label 12');
+    expect(details).toHaveTextContent(
+      'Ingredient review cannot verify every brand or cross-contact.',
+    );
+
+    const action = within(details).getByRole('button', { name: 'Review details' });
+    expect(action).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(onSelect).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('allows long RTL labels to wrap instead of truncating critical text', () => {
     rtlRender(
       <IntlWrapper locale="ar" messages={arMessages}>

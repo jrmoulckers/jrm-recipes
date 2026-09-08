@@ -122,7 +122,7 @@ export function DietaryAssessmentBadge({
 
       <PopoverContent
         align="start"
-        className="w-80 space-y-3 break-words text-sm"
+        className="max-h-[calc(var(--radix-popover-content-available-height)-1rem)] w-80 space-y-3 overflow-y-auto overscroll-contain break-words text-sm"
         aria-labelledby={headingId}
         aria-describedby={limitationId}
       >
