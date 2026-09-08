@@ -348,6 +348,9 @@ describe('PostHog client. Privacy posture', () => {
           errorCode: 'worker_failed',
           ingredientText: 'CANARY shellfish ingredient',
           restrictionName: 'CANARY severe shellfish allergy',
+          householdId: 'household_canary',
+          subjectId: 'subject_canary',
+          relationshipType: 'managed_child',
           exceptionMessage: 'CANARY private exception',
         },
       }),
@@ -403,6 +406,7 @@ describe('PostHog client. Privacy posture', () => {
         },
         $groups: {
           dietaryProfile: 'CANARY private profile identifier',
+          household: 'CANARY private household identifier',
         },
         $exception_message: 'CANARY private exception',
         $arbitrary_reserved: 'CANARY private payload',
@@ -448,6 +452,7 @@ describe('PostHog client. Privacy posture', () => {
           enabled: true,
           groups: {
             dietaryProfile: 'CANARY private profile identifier',
+            household: 'CANARY private household identifier',
           },
         },
       }),

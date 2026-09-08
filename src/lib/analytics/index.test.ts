@@ -131,6 +131,9 @@ describe('analytics client. Dispatch to a registered backend', () => {
         ingredientText: 'CANARY shellfish ingredient',
         restrictionName: 'CANARY severe shellfish allergy',
         recipeId: 'recipe_canary',
+        groupId: 'group_canary',
+        subjectId: 'subject_canary',
+        relationshipType: 'managed_child',
         rawError: new Error('CANARY private exception'),
       },
     );

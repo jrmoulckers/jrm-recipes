@@ -123,6 +123,9 @@ describe('captureServer', () => {
       ingredientText: 'CANARY shellfish ingredient',
       restrictionName: 'CANARY severe shellfish allergy',
       recipeId: 'recipe_canary',
+      householdId: 'household_canary',
+      managerId: 'manager_canary',
+      profileGroupId: 'profile_group_canary',
       exceptionMessage: 'CANARY private exception',
     });
 

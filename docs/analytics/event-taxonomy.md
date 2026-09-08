@@ -75,9 +75,10 @@ dietary events from the validated properties plus only PostHog's required
 group associations, session/device fields, and arbitrary reserved properties.
 This prevents casts, untyped callers, or future adapter changes from sending
 ingredient or recipe text and identifiers; profile, restriction, or rule
-identifiers and names; severity, verdict, or conflict state; evidence or
-corrections; fingerprints; model input/output; or raw errors and exception
-text. Failure events use only fixed error codes.
+identifiers and names; group or household identifiers; subject, manager, or
+relationship fields; profile-to-household links; severity, verdict, or conflict
+state; evidence or corrections; fingerprints; model input/output; or raw errors
+and exception text. Failure events use only fixed error codes.
 
 For metric context, see `docs/analytics/activation.md` for activation and
 `docs/analytics/retention.md` for returning-cook retention.
