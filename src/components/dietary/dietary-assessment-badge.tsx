@@ -3,6 +3,7 @@
 import { useId, useRef } from 'react';
 import { AlertTriangle, HelpCircle, Info, Search, ShieldCheck, UserCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 import { badgeVariants } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -219,22 +220,29 @@ export function DietaryAssessmentBadge({
           <span className="min-w-0 break-words">{t(`limitation.${limitation}`)}</span>
         </p>
 
-        {action && (
-          <PopoverClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                const transfersFocus = action.onSelect() === true;
-                keepActionFocus.current = action.restoreFocus === false && transfersFocus;
-              }}
-            >
-              {t(`action.${action.kind}`)}
-            </Button>
-          </PopoverClose>
-        )}
+        {action &&
+          (action.kind === 'upgrade' ? (
+            <PopoverClose asChild>
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link href={action.href}>{t('action.upgrade')}</Link>
+              </Button>
+            </PopoverClose>
+          ) : (
+            <PopoverClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const transfersFocus = action.onSelect() === true;
+                  keepActionFocus.current = action.restoreFocus === false && transfersFocus;
+                }}
+              >
+                {t(`action.${action.kind}`)}
+              </Button>
+            </PopoverClose>
+          ))}
       </PopoverContent>
     </Popover>
   );

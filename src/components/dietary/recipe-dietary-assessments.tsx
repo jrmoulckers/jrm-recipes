@@ -212,7 +212,7 @@ export function RecipeDietaryAssessments({
                 : firstAttention && status === 'review' && signedIn && !canUseAdvancedAnalysis
                   ? {
                       kind: 'upgrade',
-                      onSelect: () => window.location.assign('/pricing'),
+                      href: '/pricing',
                     }
                   : undefined
             }

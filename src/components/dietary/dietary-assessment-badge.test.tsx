@@ -268,19 +268,20 @@ describe('DietaryAssessmentBadge', () => {
 
   it('supports a contextual Family upgrade action for unresolved evidence', async () => {
     const user = userEvent.setup();
-    const onSelect = vi.fn();
     render(
       <DietaryAssessmentBadge
         {...BASE_PROPS}
         status="review"
         provenance={{ kind: 'ingredient-analyzed', confidence: 'needs-review' }}
         attentionIngredients={[{ name: 'seasoning blend', kind: 'unresolved' }]}
-        action={{ kind: 'upgrade', onSelect }}
+        action={{ kind: 'upgrade', href: '/pricing' }}
       />,
     );
 
     await user.click(screen.getByRole('button'));
-    await user.click(await screen.findByRole('button', { name: 'Resolve with Family' }));
-    expect(onSelect).toHaveBeenCalledOnce();
+    expect(await screen.findByRole('link', { name: 'Resolve with Family' })).toHaveAttribute(
+      'href',
+      '/pricing',
+    );
   });
 });
