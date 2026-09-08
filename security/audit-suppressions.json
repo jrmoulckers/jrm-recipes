@@ -57,7 +57,7 @@
         "extract-zip publishes a patched release",
         "@lhci/cli or Lighthouse upgrades to a Puppeteer browser dependency that removes extract-zip",
         "CI starts installing browsers through Puppeteer",
-        "an untrusted input can control a browser archive, download base URL, or extraction path",
+        "an untrusted input can control a browser archive, symlink target, download base URL, or extraction path",
         "extract-zip enters a production dependency path or is imported directly"
       ],
       "reviewedAt": "2026-09-08",
