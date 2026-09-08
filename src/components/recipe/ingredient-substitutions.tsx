@@ -282,6 +282,9 @@ function SubstitutionDietaryImpact({
       candidateFinding(substitute, substituteTags, rule),
     ]),
   );
+  // An exact-term hit proves presence, but a miss cannot prove absence from an
+  // opaque substitute such as "broth." Custom rules therefore stay unresolved
+  // until a future evidence source can affirmatively establish absence.
   for (const restriction of customRestrictions) {
     currentFindings.set(
       `custom:${restriction.id}`,
@@ -289,7 +292,7 @@ function SubstitutionDietaryImpact({
         ? restriction.severity === 'preference'
           ? 'possible'
           : 'present'
-        : 'absent',
+        : 'unresolved',
     );
     candidateFindings.set(
       `custom:${restriction.id}`,
@@ -297,7 +300,7 @@ function SubstitutionDietaryImpact({
         ? restriction.severity === 'preference'
           ? 'possible'
           : 'present'
-        : 'absent',
+        : 'unresolved',
     );
   }
 

@@ -9,7 +9,8 @@ vi.mock('server-only', () => ({}));
  * Drizzle surface lets us assert the SQL `limit`/`offset` we pass and the
  * `nextOffset` we derive without a real database.
  */
-const { dbMock } = vi.hoisted(() => ({
+const { dbMock, resolveFoodIdsMock } = vi.hoisted(() => ({
+  resolveFoodIdsMock: vi.fn(),
   dbMock: {
     query: {
       recipes: { findMany: vi.fn() },
@@ -22,6 +23,10 @@ const { dbMock } = vi.hoisted(() => ({
 vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
+}));
+vi.mock('~/server/db/resolve-food', () => ({
+  resolveFoodId: vi.fn(),
+  resolveFoodIds: resolveFoodIdsMock,
 }));
 
 import type { User } from '~/server/db/schema';
@@ -45,6 +50,7 @@ function lastFindManyArg() {
 beforeEach(() => {
   vi.clearAllMocks();
   dbMock.query.groupMembers.findMany.mockResolvedValue([]);
+  resolveFoodIdsMock.mockResolvedValue(['food_mushroom']);
 });
 
 describe('listLibrary pagination (#57)', () => {
@@ -195,7 +201,7 @@ describe('searchRecipes pagination (#58)', () => {
     expect(page.possibleNextOffset).toBeNull();
   });
 
-  it('requires a non-empty ingredient set for a medical custom restriction', async () => {
+  it('admits a non-empty recipe through complete curated food coverage', async () => {
     dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
       id: 'profile_1',
       allergens: [],
@@ -218,13 +224,16 @@ describe('searchRecipes pagination (#58)', () => {
     expect(rendered.sql).toContain(
       'and (exists (select 1 from "recipe_ingredients" where "recipe_ingredients"."recipe_id" = "recipes"."id") and not exists',
     );
-    expect(rendered.sql).toContain('from "recipe_ingredients"');
+    expect(rendered.sql).toContain('"food_items"."source"');
+    expect(rendered.params).toContain('curated');
+    expect(rendered.params).toContain('food_mushroom');
     expect(rendered.params).toContain('profile_1');
     expect(rendered.params).toContain('meets');
     expect(rendered.params).toContain('high');
+    expect(resolveFoodIdsMock).toHaveBeenCalledWith(['mushroom']);
   });
 
-  it('rejects unresolved ingredients without affirmative absence evidence for medical restrictions', async () => {
+  it('rejects unresolved ingredients outside complete assessment or curated food coverage', async () => {
     dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
       id: 'profile_1',
       allergens: [],
@@ -248,6 +257,37 @@ describe('searchRecipes pagination (#58)', () => {
     expect(rendered.sql).toMatch(
       /not exists \(select .* from "recipe_ingredients".*not exists \(select .* from "dietary_evidence"/,
     );
+    expect(rendered.sql).toMatch(
+      /not exists \(select .* from "recipe_ingredients".*not exists \(select .* from "food_items"/,
+    );
     expect(rendered.params).toContain('absent');
+  });
+
+  it('excludes a matching medical restriction before accepting structured coverage', async () => {
+    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
+      id: 'profile_1',
+      allergens: [],
+      diets: [],
+      customRestrictions: [
+        {
+          id: 'restriction_1',
+          severity: 'allergy-intolerance',
+          terms: [{ term: 'mushroom', source: 'exact', approved: true }],
+        },
+      ],
+    });
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+
+    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
+
+    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
+      lastFindManyArg().where as SQL,
+    );
+    expect(rendered.sql).toContain(
+      `lower("recipe_ingredients"."item") like '%' || lower("custom_dietary_restriction_terms"."term") || '%'`,
+    );
+    expect(rendered.sql).toContain('"food_items"."parent_id"');
+    expect(rendered.params).toContain('food_mushroom');
+    expect(rendered.params).toContain('conflicts');
   });
 });

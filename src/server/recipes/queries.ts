@@ -60,7 +60,7 @@ import {
   foodRecipeLinks,
   type User,
 } from '~/server/db/schema';
-import { resolveFoodId } from '~/server/db/resolve-food';
+import { resolveFoodId, resolveFoodIds } from '~/server/db/resolve-food';
 import { recipeInput, type RecipeInput } from './validation';
 import {
   clampPageSize,
@@ -249,6 +249,7 @@ function customRestrictionAffirmativeCoverageCondition(
   restrictionId: string,
   profileId: string,
   restrictionTermsVersion: string,
+  restrictedFoodIds: readonly string[] | null,
 ): SQL {
   const hasIngredients = exists(
     qb
@@ -316,6 +317,72 @@ function customRestrictionAffirmativeCoverageCondition(
         ),
       ),
   );
+  // Exact custom restrictions can be decided without a persisted profile
+  // assessment only when every active term and every ingredient resolve to
+  // curated food identities. That gives affirmative identity-level coverage;
+  // an unlinked/mined ingredient or unresolvable term remains unknown rather
+  // than inheriting safety from a text non-match.
+  const hasCompleteStructuredCoverage =
+    restrictedFoodIds && restrictedFoodIds.length > 0
+      ? and(
+          ...restrictedFoodIds.map((foodId) =>
+            exists(
+              qb
+                .select({ one: sql`1` })
+                .from(foodItems)
+                .where(and(eq(foodItems.id, foodId), eq(foodItems.source, 'curated'))),
+            ),
+          ),
+          notExists(
+            qb
+              .select({ one: sql`1` })
+              .from(recipeIngredients)
+              .where(
+                and(
+                  eq(recipeIngredients.recipeId, recipes.id),
+                  notExists(
+                    qb
+                      .select({ one: sql`1` })
+                      .from(foodItems)
+                      .where(
+                        and(
+                          eq(foodItems.id, recipeIngredients.foodId),
+                          eq(foodItems.source, 'curated'),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+          ),
+        )
+      : undefined;
+  const hasStructuredConflict =
+    restrictedFoodIds && restrictedFoodIds.length > 0
+      ? exists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeIngredients)
+            .where(
+              and(
+                eq(recipeIngredients.recipeId, recipes.id),
+                exists(
+                  qb
+                    .select({ one: sql`1` })
+                    .from(foodItems)
+                    .where(
+                      and(
+                        eq(foodItems.id, recipeIngredients.foodId),
+                        or(
+                          inArray(foodItems.id, restrictedFoodIds),
+                          inArray(foodItems.parentId, restrictedFoodIds),
+                        ),
+                      ),
+                    ),
+                ),
+              ),
+            ),
+        )
+      : undefined;
   return and(
     hasIngredients,
     notExists(
@@ -330,7 +397,8 @@ function customRestrictionAffirmativeCoverageCondition(
         ),
     ),
     sql`not (${hasAssessmentConflict})`,
-    hasCompleteAssessment,
+    hasStructuredConflict ? sql`not (${hasStructuredConflict})` : undefined,
+    or(hasCompleteAssessment, hasCompleteStructuredCoverage),
   )!;
 }
 
@@ -1540,6 +1608,7 @@ export async function searchRecipes(
     severity: string;
     profileId: string;
     restrictionTermsVersion: string;
+    restrictedFoodIds: string[] | null;
   }[] = [];
   if (search.safeFor && viewer) {
     const profile = await db.query.memberDietaryProfiles.findFirst({
@@ -1562,14 +1631,39 @@ export async function searchRecipes(
     if (profile) {
       profileAllergens = (profile.allergens ?? []).filter(isAllergen);
       profileDiets = (profile.diets ?? []).filter(isDietaryTag);
-      profileRestrictions = profile.customRestrictions.map((restriction) => ({
-        id: restriction.id,
-        severity: restriction.severity,
-        profileId: profile.id,
-        restrictionTermsVersion: customRestrictionTermsFingerprint(
-          restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
-        ),
+      const parsedRestrictions = profile.customRestrictions.map((restriction) => ({
+        ...restriction,
+        terms: restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
       }));
+      const medicalTerms = parsedRestrictions.flatMap((restriction) =>
+        restriction.severity === 'allergy-intolerance'
+          ? restriction.terms.filter((term) => term.source === 'exact' || term.approved)
+          : [],
+      );
+      const resolvedMedicalFoodIds = await resolveFoodIds(medicalTerms.map((term) => term.term));
+      let medicalTermOffset = 0;
+      profileRestrictions = parsedRestrictions.map((restriction) => {
+        const activeTerms =
+          restriction.severity === 'allergy-intolerance'
+            ? restriction.terms.filter((term) => term.source === 'exact' || term.approved)
+            : [];
+        const resolvedTerms = resolvedMedicalFoodIds.slice(
+          medicalTermOffset,
+          medicalTermOffset + activeTerms.length,
+        );
+        medicalTermOffset += activeTerms.length;
+        return {
+          id: restriction.id,
+          severity: restriction.severity,
+          profileId: profile.id,
+          restrictionTermsVersion: customRestrictionTermsFingerprint(restriction.terms),
+          restrictedFoodIds:
+            activeTerms.length > 0 &&
+            resolvedTerms.every((foodId): foodId is string => foodId != null)
+              ? [...new Set(resolvedTerms)]
+              : null,
+        };
+      });
       conditions.push(profileDietaryCondition(profileDiets, profileAllergens, 'definite'));
       for (const restriction of profileRestrictions) {
         if (restriction.severity === 'allergy-intolerance') {
@@ -1578,6 +1672,7 @@ export async function searchRecipes(
               restriction.id,
               restriction.profileId,
               restriction.restrictionTermsVersion,
+              restriction.restrictedFoodIds,
             ),
           );
         } else if (restriction.severity === 'strict-avoidance') {
@@ -1725,6 +1820,7 @@ export async function searchRecipes(
           restriction.id,
           restriction.profileId,
           restriction.restrictionTermsVersion,
+          restriction.restrictedFoodIds,
         ),
       ),
     ...profileRestrictions

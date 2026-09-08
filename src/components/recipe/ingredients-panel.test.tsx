@@ -329,6 +329,106 @@ describe('IngredientsPanel display-time unit conversion', () => {
       const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
       expect(coconutOil).not.toBeNull();
       expect(within(coconutOil!).getByText('Adds a dietary conflict')).toBeInTheDocument();
+
+      const oliveOil = screen.getByText('Neutral or olive oil').closest('li');
+      expect(oliveOil).not.toBeNull();
+      expect(within(oliveOil!).getByText('Dietary impact still needs review')).toBeInTheDocument();
+    });
+
+    it('does not claim an opaque candidate removes a medical custom restriction', async () => {
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
+      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
+
+      render(
+        <IngredientsPanel
+          ingredients={[
+            {
+              id: 'milk',
+              section: null,
+              quantity: 1,
+              quantityMax: null,
+              unit: 'cup',
+              item: 'milk',
+              note: null,
+              optional: false,
+            },
+          ]}
+          baseServings={1}
+          servingsNoun={null}
+          members={[
+            {
+              id: 'member-1',
+              name: 'Ada',
+              calorieTarget: null,
+              allergens: [],
+              diets: [],
+              customRestrictions: [
+                {
+                  id: 'no-milk',
+                  name: 'No milk',
+                  severity: 'allergy-intolerance',
+                  terms: ['milk'],
+                },
+              ],
+            },
+          ]}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /safe swaps for milk/i }));
+      const broth = (await screen.findByText('Water or broth')).closest('li');
+      expect(broth).not.toBeNull();
+      expect(within(broth!).getByText('Dietary impact still needs review')).toBeInTheDocument();
+      expect(within(broth!).queryByText(/removes/i)).not.toBeInTheDocument();
+    });
+
+    it('keeps custom preference matches at review severity', async () => {
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
+      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
+
+      render(
+        <IngredientsPanel
+          ingredients={[
+            {
+              id: 'butter',
+              section: null,
+              quantity: 1,
+              quantityMax: null,
+              unit: 'tbsp',
+              item: 'butter',
+              note: null,
+              optional: false,
+            },
+          ]}
+          baseServings={1}
+          servingsNoun={null}
+          members={[
+            {
+              id: 'member-1',
+              name: 'Ada',
+              calorieTarget: null,
+              allergens: [],
+              diets: [],
+              customRestrictions: [
+                {
+                  id: 'prefer-no-coconut',
+                  name: 'Prefer no coconut',
+                  severity: 'preference',
+                  terms: ['coconut'],
+                },
+              ],
+            },
+          ]}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /substitutions for butter/i }));
+      const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
+      expect(coconutOil).not.toBeNull();
+      expect(
+        within(coconutOil!).getByText('Dietary impact still needs review'),
+      ).toBeInTheDocument();
+      expect(within(coconutOil!).queryByText('Adds a dietary conflict')).not.toBeInTheDocument();
     });
   });
 
