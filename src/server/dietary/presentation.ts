@@ -150,13 +150,23 @@ export async function attachCardDietaryData<
     if (!row.ruleId) continue;
     if (row.ingredientFingerprint !== ingredientFingerprintByRecipe.get(row.recipeId)) continue;
     const ingredients = ingredientsByRecipe.get(row.recipeId) ?? [];
+    const evidenceByIngredient = new Map<string, typeof row.evidence>();
+    for (const evidence of row.evidence) {
+      const entries = evidenceByIngredient.get(evidence.ingredientId) ?? [];
+      entries.push(evidence);
+      evidenceByIngredient.set(evidence.ingredientId, entries);
+    }
+    const effectiveEvidence = [...evidenceByIngredient.values()].flatMap((entries) => {
+      const corrections = entries.filter((evidence) => evidence.source === 'ingredient-correction');
+      return corrections.length > 0 ? corrections : entries;
+    });
     const recognizedIds = new Set(
-      row.evidence
+      effectiveEvidence
         .filter((evidence) => evidence.finding === 'present' || evidence.finding === 'absent')
         .map((evidence) => evidence.ingredientId),
     );
     const attentionByIngredient = new Map<string, DietaryAttentionView>();
-    for (const evidence of row.evidence) {
+    for (const evidence of effectiveEvidence) {
       const finding = dietaryEvidenceFindingSchema.parse(evidence.finding);
       if (finding !== 'present' && finding !== 'possible' && finding !== 'unresolved') continue;
       if (ingredientRecipe.get(evidence.ingredientId) !== row.recipeId) continue;

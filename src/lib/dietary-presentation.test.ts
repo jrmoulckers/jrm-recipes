@@ -183,6 +183,35 @@ describe('summarizeCardDietaryProfile', () => {
       status: 'conflict',
       preferenceMatches: 1,
       detailsCount: 2,
+      attentionIngredients: [{ ingredientId: 'ingredient_2', name: 'mushrooms', kind: 'conflict' }],
+    });
+  });
+
+  it('does not present a preference-only match as a conflict', () => {
+    const result = summarizeCardDietaryProfile(
+      {
+        ...profile,
+        allergens: [],
+        diets: [],
+        customRestrictions: [
+          {
+            id: 'restriction_1',
+            name: 'Prefer no olives',
+            severity: 'preference',
+            terms: ['olives'],
+          },
+        ],
+      },
+      {
+        ingredients: [{ id: 'ingredient_1', name: 'green olives' }],
+        assessments: [],
+      },
+    );
+
+    expect(result).toMatchObject({
+      status: 'suitability',
+      preferenceMatches: 1,
+      attentionIngredients: [],
     });
   });
 });

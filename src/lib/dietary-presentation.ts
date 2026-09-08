@@ -161,7 +161,7 @@ export function summarizeCardDietaryProfile(
       }
     }
   }
-  for (const { ingredients } of exactMatches) {
+  for (const { ingredients } of blockingCustom) {
     for (const ingredient of ingredients) {
       attention.set(ingredient.id, {
         ingredientId: ingredient.id,

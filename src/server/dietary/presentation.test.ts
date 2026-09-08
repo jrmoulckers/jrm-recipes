@@ -181,6 +181,36 @@ describe('attachCardDietaryData', () => {
     ]);
   });
 
+  it('uses ingredient corrections instead of superseded inferred evidence', async () => {
+    assessmentFindMany.mockResolvedValue([
+      {
+        recipeId: 'recipe_1',
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'meets',
+        confidence: 'high',
+        ingredientFingerprint: currentFingerprint,
+        evidence: [
+          { ingredientId: 'ingredient_1', finding: 'present', source: 'text-match' },
+          {
+            ingredientId: 'ingredient_1',
+            finding: 'absent',
+            source: 'ingredient-correction',
+          },
+          { ingredientId: 'ingredient_2', finding: 'absent', source: 'text-match' },
+        ],
+      },
+    ]);
+
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }]);
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        recognizedIngredients: 2,
+        attentionIngredients: [],
+      }),
+    ]);
+  });
+
   it('drops persisted assessments whose ingredient fingerprint is stale', async () => {
     assessmentFindMany.mockResolvedValue([
       {
