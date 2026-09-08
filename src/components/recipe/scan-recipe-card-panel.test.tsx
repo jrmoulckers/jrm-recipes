@@ -100,11 +100,10 @@ describe('ScanRecipeCardPanel', () => {
     });
     await user.click(screen.getByRole('button', { name: 'Read this card' }));
 
-    expect(
-      await screen.findByRole('heading', {
-        name: 'Reading the recipe card…',
-      }),
-    ).toHaveFocus();
+    const readingHeading = await screen.findByRole('heading', {
+      name: 'Reading the recipe card…',
+    });
+    await waitFor(() => expect(readingHeading).toHaveFocus());
     expect(screen.getByRole('status')).toHaveTextContent('Reading the recipe card…');
 
     finishRecognition({
@@ -112,11 +111,10 @@ describe('ScanRecipeCardPanel', () => {
       text: "Grandma's Biscuits\nIngredients\n2 cups flour\nSteps\nMix and bake.",
     });
 
-    expect(
-      await screen.findByRole('heading', {
-        name: 'Please check what I read',
-      }),
-    ).toHaveFocus();
+    const reviewHeading = await screen.findByRole('heading', {
+      name: 'Please check what I read',
+    });
+    await waitFor(() => expect(reviewHeading).toHaveFocus());
     expect(onImported).not.toHaveBeenCalled();
     expect(mockedRecognize).toHaveBeenCalledWith(
       file,
@@ -165,7 +163,9 @@ describe('ScanRecipeCardPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Reading stopped.');
-    expect(screen.getByRole('button', { name: 'Read this card' })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Read this card' })).toHaveFocus(),
+    );
     expect(
       screen.queryByRole('heading', { name: 'Please check what I read' }),
     ).not.toBeInTheDocument();
