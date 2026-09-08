@@ -13,8 +13,6 @@ import {
   customDietaryRestrictionTerms,
   dietaryAssessments,
   groupMembers,
-  customDietaryRestrictions,
-  customDietaryRestrictionTerms,
   memberDietaryProfiles,
   nutritionTargets,
   type User,
@@ -50,74 +48,6 @@ function profileFields(input: MemberProfileInput, groupId: string | null) {
     diets: input.diets.length > 0 ? input.diets : null,
     groupId,
   };
-}
-
-async function syncCustomRestrictions(
-  tx: Tx,
-  profileId: string,
-  restrictions: MemberProfileInput['customRestrictions'],
-) {
-  const existing = await tx.query.customDietaryRestrictions.findMany({
-    where: eq(customDietaryRestrictions.profileId, profileId),
-    columns: { id: true },
-  });
-  const existingIds = new Set(existing.map((restriction) => restriction.id));
-  const retainedIds = new Set(
-    restrictions.flatMap((restriction) =>
-      restriction.id && existingIds.has(restriction.id) ? [restriction.id] : [],
-    ),
-  );
-  const removedIds = existing
-    .map((restriction) => restriction.id)
-    .filter((id) => !retainedIds.has(id));
-  if (removedIds.length > 0) {
-    await tx
-      .delete(customDietaryRestrictions)
-      .where(
-        and(
-          eq(customDietaryRestrictions.profileId, profileId),
-          inArray(customDietaryRestrictions.id, removedIds),
-        ),
-      );
-  }
-
-  for (const restriction of restrictions) {
-    const id = restriction.id && existingIds.has(restriction.id) ? restriction.id : createId();
-    if (existingIds.has(id)) {
-      await tx
-        .update(customDietaryRestrictions)
-        .set({
-          name: restriction.name,
-          severity: restriction.severity,
-          archivedAt: null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(customDietaryRestrictions.id, id),
-            eq(customDietaryRestrictions.profileId, profileId),
-          ),
-        );
-      await tx
-        .delete(customDietaryRestrictionTerms)
-        .where(eq(customDietaryRestrictionTerms.restrictionId, id));
-    } else {
-      await tx.insert(customDietaryRestrictions).values({
-        id,
-        profileId,
-        name: restriction.name,
-        severity: restriction.severity,
-      });
-    }
-    await tx.insert(customDietaryRestrictionTerms).values(
-      restriction.terms.map((term) => ({
-        restrictionId: id,
-        term,
-        source: 'exact',
-        approved: true,
-      })),
-    );
-  }
 }
 
 /** Load a profile the user owns, or throw NOT_FOUND. */
@@ -290,7 +220,6 @@ export async function createMemberProfile(input: MemberProfileInput, user: User)
         targets: { calories: input.calorieGoal },
       });
     }
-    await syncCustomRestrictions(tx, row.id, input.customRestrictions);
     return row;
   });
 }
@@ -306,7 +235,6 @@ export async function updateMemberProfile(id: string, input: MemberProfileInput,
       .where(and(eq(memberDietaryProfiles.id, id), eq(memberDietaryProfiles.userId, user.id)))
       .returning({ id: memberDietaryProfiles.id });
     if (!row) throw new Error('NOT_FOUND');
-    await syncCustomRestrictions(tx, id, input.customRestrictions);
     return row;
   });
 }

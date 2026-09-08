@@ -134,23 +134,6 @@ describe('searchFilterConditions. Dietary filter (#273)', () => {
     expect((sql.match(/dietary_flags/g) ?? []).length).toBe(2);
   });
 
-  it('isolates medium-confidence assessments for Possible matches', () => {
-    const search = parseRecipeSearch({ diet: 'gluten-free' });
-    const query = renderQuery(search, { dietaryMode: 'possible' });
-    expect(query.params).toContain('medium');
-    expect(query.sql.toLowerCase()).toContain('not');
-    expect(query.sql.toLowerCase()).not.toContain('dietary_tags');
-  });
-
-  it('allows definite or medium evidence when composing combined Possible matches', () => {
-    const query = renderQuery(parseRecipeSearch({ diet: 'gluten-free' }), {
-      dietaryMode: 'eligible',
-    });
-    expect(query.params).toContain('high');
-    expect(query.params).toContain('medium');
-    expect(query.sql.toLowerCase()).not.toContain('dietary_tags');
-  });
-
   it('OR-combines multiple selected diets when requested', () => {
     const search = parseRecipeSearch({
       diet: ['vegan', 'gluten-free'],

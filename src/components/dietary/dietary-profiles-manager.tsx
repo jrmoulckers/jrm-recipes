@@ -31,10 +31,6 @@ import {
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
 import { formatNutrient } from '~/lib/nutrition';
 import {
-  CUSTOM_RESTRICTION_SEVERITIES,
-  type CustomRestrictionSeverity,
-} from '~/lib/dietary-contracts';
-import {
   selectEffectiveTarget,
   targetRows,
   todayIso,
@@ -95,8 +91,6 @@ type Draft = {
   allergens: Allergen[];
   diets: DietaryTag[];
   groupId: string;
-  subjectScope: 'self' | undefined;
-  customRestrictions: MemberProfileView['customRestrictions'];
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -104,8 +98,6 @@ const EMPTY_DRAFT: Draft = {
   allergens: [],
   diets: [],
   groupId: '',
-  subjectScope: undefined,
-  customRestrictions: [],
 };
 
 type RestrictionDraft = {
@@ -139,8 +131,6 @@ function toDraft(profile: MemberProfileView): Draft {
     allergens: profile.allergens,
     diets: profile.diets,
     groupId: profile.groupId ?? '',
-    subjectScope: undefined,
-    customRestrictions: profile.customRestrictions,
   };
 }
 
@@ -240,8 +230,6 @@ export function DietaryProfilesManager({
       allergens: draft.allergens,
       diets: draft.diets,
       groupId: draft.groupId || undefined,
-      subjectScope: draft.subjectScope,
-      customRestrictions: draft.customRestrictions,
     };
     setFieldErrors({});
 
@@ -628,164 +616,6 @@ export function DietaryProfilesManager({
                   );
                 })}
               </div>
-            </fieldset>
-
-            <fieldset className="grid gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <legend className="text-sm font-medium text-foreground">
-                    {t('customRestrictions.title')}
-                  </legend>
-                  <p className="text-xs text-muted-foreground">
-                    {t('customRestrictions.description')}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setDraft((current) => ({
-                      ...current,
-                      customRestrictions: [
-                        ...current.customRestrictions,
-                        {
-                          id: '',
-                          name: '',
-                          severity: 'strict-avoidance',
-                          terms: [],
-                        },
-                      ],
-                    }))
-                  }
-                >
-                  <Plus className="size-4" aria-hidden="true" />
-                  {t('customRestrictions.add')}
-                </Button>
-              </div>
-              {draft.customRestrictions.map((restriction, index) => {
-                const restrictionNameId = `${nameId}-restriction-${index}`;
-                const severityId = `${nameId}-restriction-severity-${index}`;
-                const termsId = `${nameId}-restriction-terms-${index}`;
-                const updateRestriction = (
-                  update: Partial<(typeof draft.customRestrictions)[number]>,
-                ) =>
-                  setDraft((current) => ({
-                    ...current,
-                    customRestrictions: current.customRestrictions.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, ...update } : item,
-                    ),
-                  }));
-                return (
-                  <div
-                    key={restriction.id || `new-${index}`}
-                    className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="grid flex-1 gap-2">
-                        <Label htmlFor={restrictionNameId}>{t('customRestrictions.name')}</Label>
-                        <Input
-                          id={restrictionNameId}
-                          value={restriction.name}
-                          onChange={(event) => updateRestriction({ name: event.target.value })}
-                          placeholder={t('customRestrictions.namePlaceholder')}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="mt-6"
-                        aria-label={t('customRestrictions.remove', {
-                          name: restriction.name || t('customRestrictions.unnamed'),
-                        })}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            customRestrictions: current.customRestrictions.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
-                          }))
-                        }
-                      >
-                        <Trash2 className="size-4" aria-hidden="true" />
-                      </Button>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={severityId}>{t('customRestrictions.effect')}</Label>
-                      <NativeSelect
-                        id={severityId}
-                        value={restriction.severity}
-                        onChange={(event) =>
-                          updateRestriction({
-                            severity: event.target.value as CustomRestrictionSeverity,
-                          })
-                        }
-                      >
-                        {CUSTOM_RESTRICTION_SEVERITIES.map((severity) => (
-                          <option key={severity} value={severity}>
-                            {t(`customRestrictions.severity.${severity}`)}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                      <p className="text-xs text-muted-foreground">
-                        {t(`customRestrictions.help.${restriction.severity}`)}
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={termsId}>{t('customRestrictions.ingredients')}</Label>
-                      <Input
-                        id={termsId}
-                        value={restriction.terms.join(', ')}
-                        onChange={(event) =>
-                          updateRestriction({
-                            terms: event.target.value
-                              .split(',')
-                              .map((term) => term.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        placeholder={t('customRestrictions.ingredientsPlaceholder')}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t('customRestrictions.ingredientsHelp')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {fieldErrors.customRestrictions?.[0] ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {fieldErrors.customRestrictions[0]}
-                </p>
-              ) : null}
-              {draft.customRestrictions.length > 0 ? (
-                <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-4">
-                  <label className="flex items-start gap-3">
-                    <Checkbox
-                      checked={draft.subjectScope === 'self'}
-                      onCheckedChange={(checked) =>
-                        setDraft((current) => ({
-                          ...current,
-                          subjectScope: checked === true ? 'self' : undefined,
-                        }))
-                      }
-                      aria-invalid={Boolean(fieldErrors.subjectScope)}
-                    />
-                    <span className="text-sm font-medium">
-                      {t('customRestrictions.subjectScope')}
-                    </span>
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    {t('customRestrictions.subjectScopeHelp')}
-                  </p>
-                  {fieldErrors.subjectScope?.[0] ? (
-                    <p className="text-sm text-destructive" role="alert">
-                      {t('customRestrictions.subjectScopeRequired')}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
             </fieldset>
 
             <fieldset className="grid gap-2">

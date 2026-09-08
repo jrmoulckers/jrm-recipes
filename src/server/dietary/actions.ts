@@ -326,30 +326,6 @@ export async function deleteMemberProfileAction(id: string): Promise<ActionResul
   }
 }
 
-export async function saveDietaryIngredientCorrectionAction(input: {
-  ingredientId: string;
-  ruleId: string;
-  finding: 'present' | 'absent' | 'possible' | 'unresolved';
-}): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
-  const parsed = dietaryIngredientCorrectionSchema.safeParse({
-    ...input,
-    customRestrictionId: null,
-    correctedFoodId: null,
-  });
-  if (!parsed.success) {
-    return { ok: false, error: 'Choose a valid dietary finding.' };
-  }
-  try {
-    const user = await requireUser();
-    await saveDietaryIngredientCorrection(user.id, parsed.data);
-    revalidatePath('/recipes', 'layout');
-    return { ok: true, id: input.ingredientId };
-  } catch (error) {
-    return { ok: false, error: messageFor(error) };
-  }
-}
-
 /**
  * Record a member's macro targets from a date onward (#1046). Clearing every
  * field removes that dated entry; earlier entries are never rewritten, so a

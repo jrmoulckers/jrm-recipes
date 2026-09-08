@@ -30,7 +30,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const ALLERGEN_SET = new Set<string>(ALLERGENS);
 const DIET_SET = new Set<string>(DIETARY_TAGS);
-const RESTRICTION_SEVERITY_SET = new Set<string>(CUSTOM_RESTRICTION_SEVERITIES);
 
 async function DietaryProfilesPage() {
   const user = await getCurrentUser();

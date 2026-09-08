@@ -29,7 +29,6 @@ export function SearchResultsFeed({
   initialItems,
   initialPossibleItems = [],
   initialNextOffset,
-  initialPossibleItems = [],
   initialPossibleNextOffset = null,
   showDietaryBands = false,
   queryString,
@@ -47,7 +46,6 @@ export function SearchResultsFeed({
   initialItems: RecipeSearchResult[];
   initialPossibleItems?: RecipeSearchResult[];
   initialNextOffset: number | null;
-  initialPossibleItems?: RecipeSearchResult[];
   initialPossibleNextOffset?: number | null;
   showDietaryBands?: boolean;
   /** Canonical query string of the effective search, re-parsed server-side. */
@@ -236,48 +234,6 @@ export function SearchResultsFeed({
           />
         ))}
       </div>
-      {possibleItems.length > 0 ? (
-        <section className="mt-3 grid gap-4" aria-labelledby="possible-dietary-matches">
-          <div>
-            <h3
-              id="possible-dietary-matches"
-              className="font-display text-xl font-semibold text-foreground"
-            >
-              {t('searchResults.possible.title')}
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              {t('searchResults.possible.description')}
-            </p>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {possibleItems.map((recipe) => (
-              <RecipeCard
-                key={`possible:${recipe.id}`}
-                recipe={recipe}
-                canFavorite={canFavorite}
-                favorited={favoritedSet.has(recipe.id)}
-                quickPlan={quickPlan}
-                matchReason={recipe.matchReason}
-                members={members}
-                signedIn={signedIn}
-              />
-            ))}
-          </div>
-          {possibleNextOffset != null && (
-            <div className="flex justify-center pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={onLoadMorePossible}
-                disabled={possiblePending}
-              >
-                {possiblePending ? t('common.loading') : t('common.loadMoreRecipes')}
-              </Button>
-            </div>
-          )}
-        </section>
-      ) : null}
       {hasMore && (
         <div className="flex justify-center pt-2">
           <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>

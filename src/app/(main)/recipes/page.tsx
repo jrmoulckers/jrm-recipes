@@ -280,7 +280,6 @@ async function SearchResults({
             canFavorite={canFavorite}
             members={members}
             quickPlan={quickPlan}
-            viewerId={user?.id ?? null}
             correction={{ from: search.q!, to: suggestion }}
           />
         );
@@ -297,7 +296,6 @@ async function SearchResults({
       canFavorite={canFavorite}
       members={members}
       quickPlan={quickPlan}
-      viewerId={user?.id ?? null}
     />
   );
 }
@@ -315,13 +313,11 @@ async function ResultsView({
   members,
   quickPlan,
   correction,
-  viewerId,
 }: {
   page: {
     items: RecipeSearchResult[];
     possibleItems: RecipeSearchResult[];
     nextOffset: number | null;
-    possibleItems: RecipeSearchResult[];
     possibleNextOffset: number | null;
     unrankable?: { lowConfidence: number; unknown: number };
   };
@@ -331,7 +327,6 @@ async function ResultsView({
   members: CardDietaryMember[];
   quickPlan: QuickPlanContext | null;
   correction?: { from: string; to: string };
-  viewerId: string | null;
 }) {
   const [cards, possibleCards] = await Promise.all([
     attachCardDietaryData(page.items),
@@ -342,7 +337,6 @@ async function ResultsView({
       initialItems={cards}
       initialPossibleItems={possibleCards}
       initialNextOffset={page.nextOffset}
-      initialPossibleItems={possibleCards}
       initialPossibleNextOffset={page.possibleNextOffset}
       showDietaryBands={search.diets.length > 0}
       queryString={recipeSearchToQueryString(search)}

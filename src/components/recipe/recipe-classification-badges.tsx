@@ -6,13 +6,6 @@ import { useTranslations } from 'next-intl';
 import { cn } from '~/lib/utils';
 import { type CanonicalTag, type TagCategory } from '~/lib/tag-taxonomy';
 import { recipeClassificationHref } from '~/lib/recipe-classifications';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-
-const RecipeDietaryAssessments = dynamic(() =>
-  import('~/components/dietary/recipe-dietary-assessments').then(
-    (module) => module.RecipeDietaryAssessments,
-  ),
-);
 
 type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'>;
 
@@ -47,7 +40,7 @@ export function RecipeClassificationBadges({
     deduped.set(`${item.category}:${item.slug}`, item);
   }
   const visible = [...deduped.values()].slice(0, limit);
-  if (visible.length === 0 && dietary.length === 0 && dietaryAssessments.length === 0) return null;
+  if (visible.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -79,13 +72,6 @@ export function RecipeClassificationBadges({
           </span>
         );
       })}
-      <RecipeDietaryAssessments
-        assessments={dietaryAssessments}
-        declared={dietary}
-        signedIn={signedIn}
-        canReview={canReviewDietary}
-        canUseAdvancedAnalysis={canUseAdvancedDietaryAnalysis}
-      />
     </div>
   );
 }

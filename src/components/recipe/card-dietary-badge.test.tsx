@@ -5,7 +5,6 @@ import type * as React from 'react';
 import { CardDietaryBadge, type CardDietaryMember } from './card-dietary-badge';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import { IntlWrapper } from '~/test/intl';
-import type { DietaryAssessmentView } from '~/lib/dietary-presentation';
 
 function render(ui: React.ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -34,21 +33,6 @@ const DIETARY = {
     },
   ],
 };
-
-function assessment(overrides: Partial<DietaryAssessmentView> = {}): DietaryAssessmentView {
-  return {
-    ruleId: 'allergen:dairy',
-    scope: 'canonical',
-    profileId: null,
-    source: 'deterministic',
-    verdict: 'meets',
-    confidence: 'high',
-    recognizedIngredients: 2,
-    totalIngredients: 2,
-    evidence: [],
-    ...overrides,
-  };
-}
 
 describe('CardDietaryBadge', () => {
   beforeEach(() => {

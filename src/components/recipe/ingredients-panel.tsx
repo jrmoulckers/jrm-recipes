@@ -314,99 +314,6 @@ function effectivePrefs(prefs: UnitPrefs, system: 'us' | 'metric'): UnitPrefs {
   };
 }
 
-function DietaryIngredientReview({
-  ingredientId,
-  ingredient,
-  findings,
-}: {
-  ingredientId: string;
-  ingredient: string;
-  findings: { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[];
-}) {
-  const t = useTranslations('ingredientsPanel.dietaryReview');
-  return (
-    <details
-      id={`dietary-correction-${ingredientId}`}
-      className="col-span-3 mb-2 ms-9 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2"
-    >
-      <summary className="cursor-pointer text-xs font-medium text-foreground">
-        {t('summary', { ingredient })}
-      </summary>
-      <div className="mt-3 grid gap-3">
-        {findings.map((finding) => (
-          <DietaryFindingEditor
-            key={finding.ruleId}
-            ingredientId={ingredientId}
-            ruleId={finding.ruleId}
-            initialFinding={finding.finding}
-          />
-        ))}
-      </div>
-    </details>
-  );
-}
-
-function DietaryFindingEditor({
-  ingredientId,
-  ruleId,
-  initialFinding,
-}: {
-  ingredientId: string;
-  ruleId: string;
-  initialFinding: 'present' | 'possible' | 'unresolved';
-}) {
-  const t = useTranslations('ingredientsPanel.dietaryReview');
-  const router = useRouter();
-  const selectId = React.useId();
-  const [finding, setFinding] = React.useState<DietaryEvidenceFinding>(initialFinding);
-  const [pending, startTransition] = React.useTransition();
-  const ruleKey = ruleId.replace(':', '.');
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-      <div className="grid gap-1">
-        <label htmlFor={selectId} className="text-xs font-medium text-muted-foreground">
-          {t('rule', { rule: t(`rules.${ruleKey}`) })}
-        </label>
-        <NativeSelect
-          id={selectId}
-          data-dietary-rule={ruleId}
-          value={finding}
-          onChange={(event) => setFinding(event.target.value as DietaryEvidenceFinding)}
-        >
-          {DIETARY_EVIDENCE_FINDINGS.map((value) => (
-            <option key={value} value={value}>
-              {t(`finding.${value}`)}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
-      <Button
-        type="button"
-        size="sm"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            const result = await saveDietaryIngredientCorrectionAction({
-              ingredientId,
-              ruleId,
-              finding,
-            });
-            if (!result.ok) {
-              toast.error(result.error);
-              return;
-            }
-            toast.success(t('saved'));
-            router.refresh();
-          })
-        }
-      >
-        {pending ? t('saving') : t('save')}
-      </Button>
-    </div>
-  );
-}
-
 function measure(
   q: number | null,
   unit: string | null,
@@ -544,8 +451,6 @@ export function IngredientsPanel({
   nutritionView: nutritionViewProp,
   members,
   ingredientSuggestions,
-  dietaryAssessments = [],
-  canReviewDietary = false,
   unitPrefs,
   customUnits,
   dietaryEvidence = [],
@@ -573,8 +478,6 @@ export function IngredientsPanel({
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
   ingredientSuggestions?: IngredientSuggestions;
-  dietaryAssessments?: DietaryAssessmentView[];
-  canReviewDietary?: boolean;
   /** Viewer's saved unit preferences: seeds the initial system + per-dimension conversion. */
   unitPrefs?: UnitPrefs;
   /** Viewer's custom units (e.g. "pinch"), consulted during live conversion. */
@@ -619,44 +522,6 @@ export function IngredientsPanel({
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
-  const tNames = useTranslations('classificationNames');
-  const dietaryEvidenceByIngredient = React.useMemo(() => {
-    const map = new Map<
-      string,
-      { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[]
-    >();
-    for (const assessment of dietaryAssessments) {
-      for (const evidence of assessment.evidence) {
-        if (evidence.finding === 'absent') continue;
-        const rows = map.get(evidence.ingredientId) ?? [];
-        if (!rows.some((row) => row.ruleId === assessment.ruleId)) {
-          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
-        }
-        map.set(evidence.ingredientId, rows);
-      }
-    }
-    return map;
-  }, [dietaryAssessments]);
-  const canonicalEvidenceByIngredient = React.useMemo(() => {
-    const map = new Map<string, { ruleId: string; finding: DietaryEvidenceFinding }[]>();
-    for (const assessment of dietaryAssessments) {
-      if (assessment.scope !== 'canonical') continue;
-      for (const evidence of assessment.evidence) {
-        const rows = map.get(evidence.ingredientId) ?? [];
-        const existing = rows.find((row) => row.ruleId === assessment.ruleId);
-        if (!existing) {
-          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
-        } else if (
-          ['absent', 'unresolved', 'possible', 'present'].indexOf(evidence.finding) >
-          ['absent', 'unresolved', 'possible', 'present'].indexOf(existing.finding)
-        ) {
-          existing.finding = evidence.finding;
-        }
-        map.set(evidence.ingredientId, rows);
-      }
-    }
-    return map;
-  }, [dietaryAssessments]);
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
@@ -1428,13 +1293,6 @@ export function IngredientsPanel({
                         </span>
                       </p>
                     )}
-                    {canReviewDietary && reviewFindings.length > 0 ? (
-                      <DietaryIngredientReview
-                        ingredientId={ing.id}
-                        ingredient={ing.item}
-                        findings={reviewFindings}
-                      />
-                    ) : null}
                     {nudge && (
                       <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />

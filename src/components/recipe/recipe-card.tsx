@@ -16,8 +16,6 @@ import { CardDietaryBadge, type CardDietaryMember } from '~/components/recipe/ca
 import { CardMacroLine } from '~/components/recipe/card-macro-line';
 import { type MacroNutrientKey } from '~/server/recipes/search';
 import { type MacroCardSummary } from '~/server/recipes/macro-search';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-import { isDietaryTag } from '~/lib/substitutions';
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied

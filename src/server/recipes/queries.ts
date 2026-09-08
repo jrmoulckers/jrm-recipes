@@ -38,8 +38,6 @@ import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { COMPOSITION_COVERED_CATEGORIES, dietaryRulesetVersion } from '~/lib/dietary-rules';
 import {
   dietaryAssessments,
-  dietaryEvidence,
-  customDietaryRestrictions,
   groupMembers,
   memberDietaryProfiles,
   recipeCreators,

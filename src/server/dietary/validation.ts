@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { ALLERGENS } from '~/lib/allergens';
 import {
+  CUSTOM_RESTRICTION_SEVERITIES,
   customDietaryRestrictionInputSchema,
   customDietaryRestrictionTermSchema,
   type CustomDietaryRestrictionInput,
