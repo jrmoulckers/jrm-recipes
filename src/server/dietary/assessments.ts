@@ -49,6 +49,7 @@ import {
   recipes,
 } from '~/server/db/schema';
 import { DomainError } from '~/server/errors';
+import { viewerHoldsRecipeShareLink } from '~/server/recipes/share-token';
 
 type DbExecutor = typeof db;
 type MemberRole = 'owner' | 'admin' | 'member' | 'kid';
@@ -539,6 +540,10 @@ export type DietaryAssessmentReadBatch = {
   assessmentsByRecipeId: Map<string, DietaryAssessmentReadRow[]>;
 };
 
+export type DietaryAssessmentReadAuthorization = {
+  shareToken?: string | null;
+};
+
 /**
  * Load all dietary presentation inputs for a set of already-selected recipes.
  * Authorization, freshness, and profile ownership are applied once to the
@@ -548,6 +553,7 @@ export type DietaryAssessmentReadBatch = {
 export async function loadDietaryAssessmentReadBatch(
   recipeIds: readonly string[],
   actorId: string | null,
+  authorization: DietaryAssessmentReadAuthorization = {},
 ): Promise<DietaryAssessmentReadBatch> {
   const ids = [...new Set(recipeIds)];
   const empty = {
@@ -558,7 +564,14 @@ export async function loadDietaryAssessmentReadBatch(
 
   const recipeRows = await db.query.recipes.findMany({
     where: and(inArray(recipes.id, ids), isNull(recipes.deletedAt)),
-    columns: { id: true, authorId: true, visibility: true, groupId: true },
+    columns: {
+      id: true,
+      authorId: true,
+      visibility: true,
+      groupId: true,
+      shareToken: true,
+      shareLinkEnabled: true,
+    },
   });
   const recipesById = new Map(recipeRows.map((recipe) => [recipe.id, recipe]));
   if (ids.some((recipeId) => !recipesById.has(recipeId))) throw new DomainError('NOT_FOUND');
@@ -592,7 +605,12 @@ export async function loadDietaryAssessmentReadBatch(
         acceptedCreator: creatorRecipeIds.has(recipeId),
         groupRole: recipe.groupId ? (membershipByGroupId.get(recipe.groupId) ?? null) : null,
       };
-      if (!canReadCanonicalDietaryAssessment(access)) throw new DomainError('NOT_FOUND');
+      if (
+        !canReadCanonicalDietaryAssessment(access) &&
+        !viewerHoldsRecipeShareLink(recipe, authorization.shareToken)
+      ) {
+        throw new DomainError('NOT_FOUND');
+      }
     }
     const profiles = await db.query.memberDietaryProfiles.findMany({
       where: eq(memberDietaryProfiles.userId, actorId),
@@ -602,15 +620,14 @@ export async function loadDietaryAssessmentReadBatch(
   } else {
     for (const recipeId of ids) {
       const recipe = recipesById.get(recipeId)!;
-      if (
-        !canReadCanonicalDietaryAssessment({
-          actorId: null,
-          authorId: recipe.authorId,
-          visibility: recipe.visibility,
-          acceptedCreator: false,
-          groupRole: null,
-        })
-      ) {
+      const canReadWithoutToken = canReadCanonicalDietaryAssessment({
+        actorId: null,
+        authorId: recipe.authorId,
+        visibility: recipe.visibility,
+        acceptedCreator: false,
+        groupRole: null,
+      });
+      if (!canReadWithoutToken && !viewerHoldsRecipeShareLink(recipe, authorization.shareToken)) {
         throw new DomainError('NOT_FOUND');
       }
     }

@@ -58,13 +58,46 @@ describe('CardDietaryBadge', () => {
     render(
       <CardDietaryBadge
         members={MEMBERS}
-        assessments={[assessment(), assessment({ ruleId: 'allergen:soy', verdict: 'conflicts' })]}
+        assessments={[assessment(), assessment({ ruleId: 'allergen:soy' })]}
         declared={[]}
         signedIn
       />,
     );
     expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /contains soy/i })).not.toBeInTheDocument();
+  });
+
+  it('preserves unrelated canonical conflicts so they suppress contradictory declarations', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <CardDietaryBadge
+        members={MEMBERS}
+        assessments={[
+          assessment({
+            ruleId: 'allergen:wheat',
+            verdict: 'conflicts',
+            evidence: [
+              {
+                ingredientId: 'flour',
+                ingredient: 'wheat flour',
+                finding: 'present',
+              },
+            ],
+          }),
+        ]}
+        declared={['gluten-free']}
+        signedIn
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /contains gluten.*status: conflict/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /gluten-free.*confirmed by recipe author/i,
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('never reassures from missing assessment coverage', () => {

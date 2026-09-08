@@ -345,7 +345,9 @@ async function RecipePage({
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
-    dbEnabled ? listDietaryAssessmentViews(recipe.id, user?.id ?? null) : Promise.resolve([]),
+    dbEnabled
+      ? listDietaryAssessmentViews(recipe.id, user?.id ?? null, { shareToken })
+      : Promise.resolve([]),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -687,7 +689,7 @@ async function RecipePage({
 
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
           <TabsList className="self-start">
-            <TabsTrigger value="recipe">
+            <TabsTrigger id="recipe-tab-trigger" value="recipe">
               <BookOpen className="size-4" /> {t('tabs.recipe')}
             </TabsTrigger>
             <TabsTrigger value="timeline">

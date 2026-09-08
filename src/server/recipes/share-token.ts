@@ -18,3 +18,21 @@ export function generateShareToken(): string {
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+
+/** True only when the presented token is the recipe's current enabled unlisted link. */
+export function viewerHoldsRecipeShareLink(
+  recipe: {
+    visibility: string;
+    shareToken: string | null;
+    shareLinkEnabled: boolean;
+  },
+  shareToken: string | null | undefined,
+): boolean {
+  return (
+    recipe.visibility === 'unlisted' &&
+    recipe.shareLinkEnabled &&
+    !!recipe.shareToken &&
+    !!shareToken &&
+    recipe.shareToken === shareToken
+  );
+}

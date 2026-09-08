@@ -39,7 +39,7 @@ export async function loadMoreSearchAction(
   const start = Number.isInteger(offset) && offset > 0 ? offset : 0;
   const user = await getCurrentUser();
   const search = parseRecipeSearch(paramsFromQueryString(queryString));
-  const page = await searchRecipes(user, search, { offset: start });
+  const page = await searchRecipes(user, search, { offset: start, lane: 'definite' });
 
   const members = user ? await listMemberProfiles(user.id) : [];
   const showBadges = members.some((m) => (m.allergens ?? []).some(isAllergen));
@@ -59,7 +59,10 @@ export async function loadMorePossibleSearchAction(
   const start = Number.isInteger(offset) && offset > 0 ? offset : 0;
   const user = await getCurrentUser();
   const search = parseRecipeSearch(paramsFromQueryString(queryString));
-  const page = await searchRecipes(user, search, { possibleOffset: start });
+  const page = await searchRecipes(user, search, {
+    possibleOffset: start,
+    lane: 'possible',
+  });
 
   const members = user ? await listMemberProfiles(user.id) : [];
   const showBadges = members.some((member) => (member.allergens ?? []).some(isAllergen));

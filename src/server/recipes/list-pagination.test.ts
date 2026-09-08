@@ -159,6 +159,40 @@ describe('searchRecipes pagination (#58)', () => {
     expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a', 'possible-b']);
     expect(page.possibleNextOffset).toBe(6);
     expect(page.nextOffset).toBeNull();
+    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not execute the Possible lane for a definite-only page', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([{ id: 'definite-a', tags: [] }]);
+
+    const page = await searchRecipes(
+      viewer,
+      { ...baseSearch, diets: ['vegan'] },
+      { limit: 2, offset: 6, lane: 'definite' },
+    );
+
+    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(1);
+    expect(lastFindManyArg().offset).toBe(6);
+    expect(page.items.map((recipe) => recipe.id)).toEqual(['definite-a']);
+    expect(page.possibleItems).toEqual([]);
+    expect(page.possibleNextOffset).toBeNull();
+  });
+
+  it('does not execute the definite lane for a Possible-only page', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([{ id: 'possible-a', tags: [] }]);
+
+    const page = await searchRecipes(
+      viewer,
+      { ...baseSearch, diets: ['vegan'] },
+      { limit: 2, possibleOffset: 8, lane: 'possible' },
+    );
+
+    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(1);
+    expect(lastFindManyArg().offset).toBe(8);
+    expect(page.items).toEqual([]);
+    expect(page.nextOffset).toBeNull();
+    expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a']);
+    expect(page.possibleNextOffset).toBeNull();
   });
 
   it('requires a non-empty ingredient set for a medical custom restriction', async () => {

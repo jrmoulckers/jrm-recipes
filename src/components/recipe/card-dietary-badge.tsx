@@ -40,7 +40,9 @@ export function CardDietaryBadge({
   const relevant = member
     ? assessments.filter(
         (assessment) =>
-          assessment.profileId === member.id || relevantRuleIds.has(assessment.ruleId),
+          (assessment.scope === 'canonical' && assessment.verdict === 'conflicts') ||
+          assessment.profileId === member.id ||
+          relevantRuleIds.has(assessment.ruleId),
       )
     : assessments.filter((assessment) => assessment.scope === 'canonical');
   if (relevant.length === 0 && declared.length === 0) return null;

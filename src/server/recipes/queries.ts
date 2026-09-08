@@ -94,6 +94,7 @@ import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
 import { todayParam } from '~/server/planner/week';
 import { customRestrictionTermsFingerprint } from '~/lib/dietary-fingerprint';
 import { customDietaryRestrictionTermSchema } from '~/lib/dietary-assessment';
+import { viewerHoldsRecipeShareLink } from './share-token';
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -877,35 +878,13 @@ export async function getRecipe(idOrSlug: string, viewer: User | null, shareToke
   // presents the matching, still-enabled share token (the `/r/<token>` route)
   // is granted access here (issues #204/#207). Checked before the co-creator
   // ground because it is synchronous, so the share-link path costs no query.
-  if (viewerHoldsShareLink(recipe, shareToken)) return recipe;
+  if (viewerHoldsRecipeShareLink(recipe, shareToken)) return recipe;
   // A co-creator sees the recipe under their own namespace too (issue #668).
   // Last, so it only costs a round trip for a signed-in viewer every cheaper
   // ground has already rejected, and only `accepted` rows count — a pending
   // invitation grants nothing.
   if (viewer && (await isRecipeCreator(recipe.id, viewer.id))) return recipe;
   return null;
-}
-
-/**
- * True when `shareToken` is the live share secret for an `unlisted` recipe:
- * a non-empty token that matches the stored one while the link is enabled.
- * Disabling or rotating the link (#207) makes any stale token fail this check.
- */
-function viewerHoldsShareLink(
-  recipe: {
-    visibility: string;
-    shareToken: string | null;
-    shareLinkEnabled: boolean;
-  },
-  shareToken: string | null | undefined,
-): boolean {
-  return (
-    recipe.visibility === 'unlisted' &&
-    recipe.shareLinkEnabled &&
-    !!recipe.shareToken &&
-    !!shareToken &&
-    recipe.shareToken === shareToken
-  );
 }
 
 /**
@@ -1509,7 +1488,13 @@ export async function searchRecipes(
     limit = RECIPE_SEARCH_LIMIT,
     offset = 0,
     possibleOffset = 0,
-  }: { limit?: number; offset?: number; possibleOffset?: number } = {},
+    lane = 'both',
+  }: {
+    limit?: number;
+    offset?: number;
+    possibleOffset?: number;
+    lane?: 'both' | 'definite' | 'possible';
+  } = {},
 ) {
   if (!isDbConfigured()) {
     return {
@@ -1650,30 +1635,35 @@ export async function searchRecipes(
   // What the confidence gate withheld, over the same base conditions, so the
   // results can disclose it rather than just being shorter. Runs alongside the
   // page and only when the search actually ranks on nutrition.
-  const unrankablePromise: Promise<UnrankableCounts> = usesMacroNutrition(search)
-    ? countUnrankableByMacro(db, baseConditions, search)
-    : Promise.resolve(NO_UNRANKABLE);
+  const includeDefinite = lane !== 'possible';
+  const includePossible = lane !== 'definite';
+  const unrankablePromise: Promise<UnrankableCounts> =
+    includeDefinite && usesMacroNutrition(search)
+      ? countUnrankableByMacro(db, baseConditions, search)
+      : Promise.resolve(NO_UNRANKABLE);
 
-  const rows = await db.query.recipes.findMany({
-    where: and(...conditions),
-    orderBy,
-    limit,
-    offset,
-    with: {
-      author: true,
-      tags: { with: { tag: true } },
-      ratings: true,
-      // Ingredient item text is only needed to explain *why* a text query
-      // matched, so it's loaded (and shipped) only when there is a query.
-      ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
-    },
-  });
+  const rows = includeDefinite
+    ? await db.query.recipes.findMany({
+        where: and(...conditions),
+        orderBy,
+        limit,
+        offset,
+        with: {
+          author: true,
+          tags: { with: { tag: true } },
+          ratings: true,
+          // Ingredient item text is only needed to explain *why* a text query
+          // matched, so it's loaded (and shipped) only when there is a query.
+          ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
+        },
+      })
+    : [];
 
   // Whether another page exists is decided by the *raw* SQL page length. A full
   // page implies more rows to fetch. The allergen pass below only drops rows
   // within a page (like the discover feed's library filter), so it must not
   // shorten a full page into a false "end of results".
-  const nextOffset = nextPageOffset(offset, rows.length, limit);
+  const nextOffset = includeDefinite ? nextPageOffset(offset, rows.length, limit) : null;
 
   // Allergen safety is best-effort text detection, so it runs in JS: pull the
   // candidate rows' ingredients in one query and drop any recipe that carries
@@ -1766,23 +1756,24 @@ export async function searchRecipes(
     profileAllergens,
     'definite',
   );
-  const possibleRows = hasPossibleFilter
-    ? await db.query.recipes.findMany({
-        where: and(
-          ...possibleConditions.filter((condition): condition is SQL => condition != null),
-          sql`not (${and(definiteSearchDietary, definiteProfileDietary)!})`,
-        ),
-        orderBy,
-        limit,
-        offset: possibleOffset,
-        with: {
-          author: true,
-          tags: { with: { tag: true } },
-          ratings: true,
-          ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
-        },
-      })
-    : [];
+  const possibleRows =
+    includePossible && hasPossibleFilter
+      ? await db.query.recipes.findMany({
+          where: and(
+            ...possibleConditions.filter((condition): condition is SQL => condition != null),
+            sql`not (${and(definiteSearchDietary, definiteProfileDietary)!})`,
+          ),
+          orderBy,
+          limit,
+          offset: possibleOffset,
+          with: {
+            author: true,
+            tags: { with: { tag: true } },
+            ratings: true,
+            ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
+          },
+        })
+      : [];
   const possibleItems = possibleRows
     .filter((row) => !items.some((item) => item.id === row.id))
     .map((row) => {
@@ -1806,9 +1797,10 @@ export async function searchRecipes(
         macro: null,
       };
     });
-  const possibleNextOffset = hasPossibleFilter
-    ? nextPageOffset(possibleOffset, possibleRows.length, limit)
-    : null;
+  const possibleNextOffset =
+    includePossible && hasPossibleFilter
+      ? nextPageOffset(possibleOffset, possibleRows.length, limit)
+      : null;
   return {
     items,
     possibleItems,

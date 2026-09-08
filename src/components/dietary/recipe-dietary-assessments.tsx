@@ -171,25 +171,38 @@ export function RecipeDietaryAssessments({
                     kind: status === 'conflict' ? 'correct' : 'review',
                     restoreFocus: false,
                     onSelect: () => {
-                      const target = document.getElementById(
-                        `dietary-correction-${firstAttention.ingredientId}`,
-                      );
-                      if (!(target instanceof HTMLDetailsElement)) return;
-                      target.open = true;
-                      target.scrollIntoView({
-                        block: 'center',
-                        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                          ? 'auto'
-                          : 'smooth',
-                      });
-                      window.setTimeout(() => {
+                      const openAndFocusCorrection = () => {
+                        const target = document.getElementById(
+                          `dietary-correction-${firstAttention.ingredientId}`,
+                        );
+                        if (!(target instanceof HTMLDetailsElement)) return false;
+                        target.open = true;
+                        target.scrollIntoView({
+                          block: 'center',
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                            ? 'auto'
+                            : 'smooth',
+                        });
                         const ruleControl = Array.from(
                           target.querySelectorAll<HTMLElement>('[data-dietary-rule]'),
                         ).find((control) => control.dataset.dietaryRule === assessment.ruleId);
-                        (ruleControl ?? target.querySelector<HTMLElement>('summary'))?.focus({
-                          preventScroll: true,
-                        });
+                        window.setTimeout(() =>
+                          (ruleControl ?? target.querySelector<HTMLElement>('summary'))?.focus({
+                            preventScroll: true,
+                          }),
+                        );
+                        return true;
+                      };
+
+                      if (openAndFocusCorrection()) return true;
+
+                      const recipeTab = document.getElementById('recipe-tab-trigger');
+                      if (!(recipeTab instanceof HTMLButtonElement)) return false;
+                      recipeTab.click();
+                      window.setTimeout(() => {
+                        if (!openAndFocusCorrection()) recipeTab.focus();
                       });
+                      return true;
                     },
                   }
                 : undefined

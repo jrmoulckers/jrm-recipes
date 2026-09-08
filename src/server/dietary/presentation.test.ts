@@ -10,7 +10,7 @@ vi.mock('./assessments', () => ({
   loadDietaryAssessmentReadBatch: loadDietaryAssessmentReadBatchMock,
 }));
 
-import { attachCardDietaryAssessmentViews } from './presentation';
+import { attachCardDietaryAssessmentViews, listDietaryAssessmentViews } from './presentation';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -65,6 +65,7 @@ describe('attachCardDietaryAssessmentViews', () => {
     expect(loadDietaryAssessmentReadBatchMock).toHaveBeenCalledWith(
       recipes.map((recipe) => recipe.id),
       'viewer_1',
+      {},
     );
     expect(result[0]?.dietaryAssessments).toEqual([
       expect.objectContaining({
@@ -81,5 +82,20 @@ describe('attachCardDietaryAssessmentViews', () => {
       }),
     ]);
     expect(result[119]?.dietaryAssessments).toEqual([]);
+  });
+
+  it('forwards share-link authorization for a single recipe view', async () => {
+    loadDietaryAssessmentReadBatchMock.mockResolvedValue({
+      ingredientsByRecipeId: new Map([['shared_recipe', []]]),
+      assessmentsByRecipeId: new Map([['shared_recipe', []]]),
+    });
+
+    await listDietaryAssessmentViews('shared_recipe', null, {
+      shareToken: 'live_token',
+    });
+
+    expect(loadDietaryAssessmentReadBatchMock).toHaveBeenCalledWith(['shared_recipe'], null, {
+      shareToken: 'live_token',
+    });
   });
 });

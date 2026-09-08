@@ -1,7 +1,7 @@
 import { cleanup, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 
 import { RecipeDietaryAssessments } from './recipe-dietary-assessments';
 import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
@@ -43,6 +43,34 @@ const GLUTEN_CONFLICT: DietaryAssessmentView = {
   totalIngredients: 1,
   evidence: [{ ingredientId: 'flour', ingredient: 'wheat flour', finding: 'present' }],
 };
+
+function TabbedCorrectionFixture() {
+  const [recipeTabOpen, setRecipeTabOpen] = useState(false);
+  return (
+    <>
+      <RecipeDietaryAssessments assessments={[GLUTEN_CONFLICT]} signedIn canReview />
+      <button
+        id="recipe-tab-trigger"
+        type="button"
+        role="tab"
+        aria-selected={recipeTabOpen}
+        onClick={() => setRecipeTabOpen(true)}
+      >
+        Recipe
+      </button>
+      {!recipeTabOpen ? (
+        <p>Timeline content</p>
+      ) : (
+        <details id="dietary-correction-flour">
+          <summary>Review dietary evidence for wheat flour</summary>
+          <select aria-label="Finding for gluten" data-dietary-rule="allergen:wheat">
+            <option>Conflict</option>
+          </select>
+        </details>
+      )}
+    </>
+  );
+}
 
 describe('RecipeDietaryAssessments', () => {
   it('lets a deterministic conflict replace a declaration for the same underlying rule', () => {
@@ -101,4 +129,42 @@ describe('RecipeDietaryAssessments', () => {
       expect(screen.getByRole('combobox', { name: /finding for gluten/i })).toHaveFocus(),
     );
   }, 10_000);
+
+  it('activates the Recipe tab before opening and focusing an unmounted correction', async () => {
+    const user = userEvent.setup();
+    render(<TabbedCorrectionFixture />);
+
+    const recipeTab = screen.getByRole('tab', { name: 'Recipe' });
+    expect(recipeTab).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('combobox', { name: /finding for gluten/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /contains gluten.*status: conflict/i }));
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: /correct assessment/i,
+      }),
+    );
+
+    expect(recipeTab).toHaveAttribute('aria-selected', 'true');
+    const correction = await screen.findByRole('combobox', { name: /finding for gluten/i });
+    await waitFor(() => expect(correction).toHaveFocus());
+  });
+
+  it('restores focus to the badge when no correction target or Recipe tab exists', async () => {
+    const user = userEvent.setup();
+    render(<RecipeDietaryAssessments assessments={[GLUTEN_CONFLICT]} signedIn canReview />);
+
+    const trigger = screen.getByRole('button', {
+      name: /contains gluten.*status: conflict/i,
+    });
+    await user.click(trigger);
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: /correct assessment/i,
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(trigger).toHaveFocus();
+  });
 });

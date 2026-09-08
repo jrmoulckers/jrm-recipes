@@ -12,7 +12,11 @@ import {
   type DietaryAssessmentView,
 } from '~/lib/dietary-presentation';
 
-import { loadDietaryAssessmentReadBatch, type DietaryAssessmentReadRow } from './assessments';
+import {
+  loadDietaryAssessmentReadBatch,
+  type DietaryAssessmentReadAuthorization,
+  type DietaryAssessmentReadRow,
+} from './assessments';
 
 function toView(
   row: DietaryAssessmentReadRow,
@@ -43,8 +47,9 @@ function toView(
 export async function listDietaryAssessmentViewsBatch(
   recipeIds: readonly string[],
   actorId: string | null,
+  authorization: DietaryAssessmentReadAuthorization = {},
 ): Promise<Map<string, DietaryAssessmentView[]>> {
-  const batch = await loadDietaryAssessmentReadBatch(recipeIds, actorId);
+  const batch = await loadDietaryAssessmentReadBatch(recipeIds, actorId, authorization);
   return new Map(
     [...new Set(recipeIds)].map((recipeId) => {
       const ingredients = batch.ingredientsByRecipeId.get(recipeId) ?? [];
@@ -63,8 +68,9 @@ export async function listDietaryAssessmentViewsBatch(
 export async function listDietaryAssessmentViews(
   recipeId: string,
   actorId: string | null,
+  authorization: DietaryAssessmentReadAuthorization = {},
 ): Promise<DietaryAssessmentView[]> {
-  const viewsByRecipeId = await listDietaryAssessmentViewsBatch([recipeId], actorId);
+  const viewsByRecipeId = await listDietaryAssessmentViewsBatch([recipeId], actorId, authorization);
   return viewsByRecipeId.get(recipeId) ?? [];
 }
 

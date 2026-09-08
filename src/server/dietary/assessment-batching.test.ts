@@ -84,6 +84,48 @@ describe('loadDietaryAssessmentReadBatch', () => {
     expect(dbMock.query.customDietaryRestrictions.findMany).not.toHaveBeenCalled();
   });
 
+  it('loads canonical dietary data for an anonymous unlisted share-link reader', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([
+      {
+        id: 'shared_recipe',
+        authorId: 'author_1',
+        visibility: 'unlisted',
+        groupId: null,
+        shareToken: 'live_token',
+        shareLinkEnabled: true,
+      },
+    ]);
+
+    const batch = await loadDietaryAssessmentReadBatch(['shared_recipe'], null, {
+      shareToken: 'live_token',
+    });
+
+    expect(batch.ingredientsByRecipeId.has('shared_recipe')).toBe(true);
+    expect(dbMock.query.dietaryAssessments.findMany).toHaveBeenCalledTimes(1);
+    expect(dbMock.query.memberDietaryProfiles.findMany).not.toHaveBeenCalled();
+  });
+
+  it('does not widen unlisted access for a stale share token', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([
+      {
+        id: 'shared_recipe',
+        authorId: 'author_1',
+        visibility: 'unlisted',
+        groupId: null,
+        shareToken: 'rotated_token',
+        shareLinkEnabled: true,
+      },
+    ]);
+
+    await expect(
+      loadDietaryAssessmentReadBatch(['shared_recipe'], null, {
+        shareToken: 'stale_token',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(dbMock.query.dietaryAssessments.findMany).not.toHaveBeenCalled();
+  });
+
   it('fails before loading dietary data when any requested recipe is unauthorized', async () => {
     dbMock.query.recipes.findMany.mockResolvedValue([
       {

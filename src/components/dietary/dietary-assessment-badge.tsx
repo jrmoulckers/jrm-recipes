@@ -25,7 +25,8 @@ export type DietaryAssessmentProvenance =
 
 export type DietaryAssessmentAction = {
   kind: 'review' | 'correct';
-  onSelect: () => void;
+  /** Return true only when focus is transferred to an action destination. */
+  onSelect: () => boolean | void;
   /** Set false when the action deliberately transfers focus outside the popover. */
   restoreFocus?: boolean;
 };
@@ -221,8 +222,8 @@ export function DietaryAssessmentBadge({
               size="sm"
               className="w-full"
               onClick={() => {
-                keepActionFocus.current = action.restoreFocus === false;
-                action.onSelect();
+                const transfersFocus = action.onSelect() === true;
+                keepActionFocus.current = action.restoreFocus === false && transfersFocus;
               }}
             >
               {t(`action.${action.kind}`)}
