@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { state, db, purge, custody, retentionApi, envMock } = vi.hoisted(() => {
+const { state, db, dietaryFindMany, purge, custody, retentionApi, envMock } = vi.hoisted(() => {
   const emptyRetention = () => ({
     ownedRecipeIds: [] as string[],
     ownedToDeleteIds: [] as string[],
@@ -62,8 +62,17 @@ const { state, db, purge, custody, retentionApi, envMock } = vi.hoisted(() => {
     };
     return chain;
   };
+  const emptyFindMany = vi.fn(async (): Promise<Record<string, unknown>[]> => []);
   const db = {
-    query: { users: { findFirst: vi.fn(async () => state.user) } },
+    query: {
+      users: { findFirst: vi.fn(async () => state.user) },
+      memberDietaryProfiles: { findMany: emptyFindMany },
+      customDietaryRestrictions: { findMany: emptyFindMany },
+      dietaryAssessments: { findMany: emptyFindMany },
+      dietaryEvidence: { findMany: emptyFindMany },
+      customDietaryRestrictionTerms: { findMany: emptyFindMany },
+      dietaryIngredientCorrections: { findMany: emptyFindMany },
+    },
     select: vi.fn(() => selectChain()),
     insert: vi.fn((value: unknown) => makeChain('insert', value)),
     update: vi.fn((value: unknown) => makeChain('update', value)),
@@ -108,6 +117,7 @@ const { state, db, purge, custody, retentionApi, envMock } = vi.hoisted(() => {
   return {
     state,
     db,
+    dietaryFindMany: emptyFindMany,
     purge,
     custody,
     retentionApi,
@@ -130,6 +140,9 @@ function queueCoreSelects(retainedVersionCount?: number) {
     [], // comments by the user
     [], // post-transaction user assertion
     [], // post-transaction recipe assertion
+    [], // post-transaction dietary-assessment assertion
+    [], // post-transaction dietary-profile assertion
+    [], // post-transaction dietary-correction assertion
   ];
 }
 
@@ -156,6 +169,7 @@ beforeEach(() => {
     meteredMb: 0,
   };
   vi.clearAllMocks();
+  dietaryFindMany.mockResolvedValue([]);
 });
 
 describe('eraseUserAccount', () => {
@@ -259,10 +273,40 @@ describe('eraseUserAccount', () => {
       purgedAssetCount: 3,
       noticeVersion: 'profile-delete-v2',
     });
+
     const serialized = JSON.stringify(state.inserted);
     expect(serialized).not.toContain('u1');
     expect(serialized).not.toContain('clerk_1');
     expect(serialized).not.toContain('nonna@example.com');
+  });
+
+  it('counts and removes personal dietary data without recording its content', async () => {
+    dietaryFindMany
+      .mockResolvedValueOnce([{ id: 'profile_1' }])
+      .mockResolvedValueOnce([{ id: 'restriction_1' }])
+      .mockResolvedValueOnce([
+        { id: 'personal_1', scope: 'personal' },
+        { id: 'profile_assessment_1', scope: 'profile' },
+      ])
+      .mockResolvedValueOnce([{ id: 'evidence_1' }])
+      .mockResolvedValueOnce([{ id: 'term_1' }])
+      .mockResolvedValueOnce([{ id: 'correction_1' }])
+      .mockResolvedValueOnce([{ id: 'correction_other_profile' }]);
+    queueCoreSelects();
+
+    await eraseUserAccount('u1', { trigger: 'in_app' });
+
+    expect(state.inserted?.deletedCounts).toMatchObject({
+      dietary_evidence: 1,
+      dietary_assessments_personal: 1,
+      dietary_assessments_profile: 1,
+      custom_dietary_restrictions: 1,
+      custom_dietary_restriction_terms: 1,
+      dietary_ingredient_corrections: 2,
+      dietary_ingredient_corrections_personal_deleted: 1,
+    });
+    expect(JSON.stringify(state.inserted?.deletedCounts)).not.toContain('restriction_1');
+    expect(JSON.stringify(state.inserted?.deletedCounts)).not.toContain('evidence_1');
   });
 
   it('keeps recipe event and version attribution set-null', () => {

@@ -54,6 +54,7 @@ describe('buildCookbookArchive', () => {
     expect(text).toContain('recipes/banana-bread.md');
     expect(text).toContain('recipes.json');
     expect(text).toContain('shared-recipe-contributions.json');
+    expect(text).toContain('dietary-data.json');
     // Markdown body is stored verbatim.
     expect(text).toContain('# Banana Bread');
   });
@@ -93,6 +94,33 @@ describe('buildCookbookArchive', () => {
     expect(text).toContain('shared-recipe-contributions.json');
     expect(text).toContain('"recipeTitle": "Sunday Sauce"');
     expect(text).toContain('"mediaUrls"');
+  });
+
+  it('exports owned dietary data in a distinct machine-readable manifest', () => {
+    const text = decode(
+      buildCookbookArchive([recipe()], date, [], {
+        profiles: [
+          {
+            id: 'profile-1',
+            userId: 'user-1',
+            groupId: null,
+            name: 'Alex',
+            allergens: ['wheat'],
+            diets: [],
+            createdAt: date,
+            updatedAt: date,
+            customRestrictions: [],
+          },
+        ],
+        assessments: [],
+        corrections: [],
+      }).bytes,
+    );
+
+    expect(text).toContain('dietary-data.json');
+    expect(text).toContain('"name": "Alex"');
+    expect(text).toContain('"allergens": [');
+    expect(text).toContain('"wheat"');
   });
 
   it('carries story and provenance into the exported Markdown (#377/#381)', () => {

@@ -22,6 +22,10 @@ vi.mock('~/server/db', () => ({
   isDbConfigured: () => true,
 }));
 
+vi.mock('~/server/dietary/assessments', () => ({
+  refreshDeterministicDietaryAssessmentsForAuthorizedWrite: vi.fn(),
+}));
+
 import {
   recipes,
   recipeEvents,
@@ -96,6 +100,7 @@ function recordingTx() {
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
       tags: {
         findMany: vi.fn(() =>
           Promise.resolve(

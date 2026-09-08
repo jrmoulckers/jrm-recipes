@@ -2,6 +2,7 @@ import { recipeDownloadFilename, serializeRecipeMarkdown } from '~/components/pr
 import type { PrintRecipe } from '~/components/print/types';
 import { createZip, type ZipEntry } from '~/lib/zip';
 import type { SharedRecipeContribution } from '~/server/users/contribution-export';
+import type { DietaryDataExport } from '~/server/users/dietary-export';
 
 export type CookbookArchive = {
   filename: string;
@@ -45,6 +46,8 @@ function readme(recipes: PrintRecipe[], date: Date): string {
     '  (or a future Heirloom) can read everything back in without loss.',
     '- `shared-recipe-contributions.json`. Version snapshots you authored in',
     '  recipes currently shared with you, plus references to media you uploaded.',
+    '- `dietary-data.json`. Your dietary profiles, custom restrictions, personal',
+    '  assessments, and recipe evidence or corrections you authored.',
     '- Original recipe images are included as provider URLs and metadata. Image',
     '  bytes are not copied into this archive.',
     '',
@@ -67,6 +70,7 @@ export function buildCookbookArchive(
   recipes: PrintRecipe[],
   now: Date = new Date(),
   contributions: SharedRecipeContribution[] = [],
+  dietaryData: DietaryDataExport = { profiles: [], assessments: [], corrections: [] },
 ): CookbookArchive {
   const taken = new Set<string>();
   const entries: ZipEntry[] = [{ name: 'README.md', data: readme(recipes, now) }];
@@ -86,6 +90,14 @@ export function buildCookbookArchive(
     name: 'shared-recipe-contributions.json',
     data: `${JSON.stringify(
       { exportedAt: now.toISOString(), version: 1, contributions },
+      null,
+      2,
+    )}\n`,
+  });
+  entries.push({
+    name: 'dietary-data.json',
+    data: `${JSON.stringify(
+      { exportedAt: now.toISOString(), version: 1, ...dietaryData },
       null,
       2,
     )}\n`,

@@ -109,20 +109,28 @@ describe('searchFilterConditions (scoped facet counts, #274)', () => {
 });
 
 describe('searchFilterConditions. Dietary filter (#273)', () => {
-  it('matches a selected diet against BOTH derived and declared columns', () => {
-    const sql = render(parseRecipeSearch({ diet: 'vegan' }));
+  it('matches a derivable diet against current evidence and declarations', () => {
+    const sql = render(parseRecipeSearch({ diet: 'gluten-free' }));
     expect(sql).toContain('dietary_tags');
     expect(sql).toContain('dietary_flags');
-    // The single diet is satisfied by either column → an OR over the two.
+    expect(sql).toContain('ruleset_version');
+    expect(sql).toContain('dietary_assessments');
     expect(sql).toContain(' or ');
+  });
+
+  it('uses declarations only for diets with no compatibility projection', () => {
+    const sql = render(parseRecipeSearch({ diet: 'vegan' }));
+    expect(sql).toContain('dietary_flags');
+    expect(sql).not.toContain('dietary_tags');
+    expect(sql).toContain('not exists');
   });
 
   it('AND-combines multiple selected diets (one predicate each)', () => {
     const search = parseRecipeSearch({ diet: ['vegan', 'gluten-free'] });
-    // One condition per diet, each an (dietary_tags OR dietary_flags) clause.
+    // One condition per diet; only derivable compatibility tags query dietary_tags.
     expect(searchFilterConditions(search)).toHaveLength(2);
     const sql = render(search);
-    expect((sql.match(/dietary_tags/g) ?? []).length).toBe(2);
+    expect((sql.match(/dietary_tags/g) ?? []).length).toBe(1);
     expect((sql.match(/dietary_flags/g) ?? []).length).toBe(2);
   });
 

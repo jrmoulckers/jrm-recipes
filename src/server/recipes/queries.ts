@@ -34,7 +34,10 @@ import {
 import { summarizeAllergensForSafety, isAllergen, type Allergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { hasAllergenConflict } from '~/lib/dietary-match';
+import { dietaryRuleIdsForTag, legacyDietaryRuleIdForTag } from '~/lib/dietary-projection';
+import { dietaryRulesetVersion } from '~/lib/dietary-rules';
 import {
+  dietaryAssessments,
   groupMembers,
   memberDietaryProfiles,
   recipeCreators,
@@ -105,6 +108,58 @@ const notDeleted = isNull(recipes.deletedAt);
  * root `recipes` alias and crashes the query (`column recipes.tag_id ...`).
  */
 const qb = new QueryBuilder();
+const currentDietaryRulesetVersion = dietaryRulesetVersion();
+
+function dietaryFilterCondition(diet: Parameters<typeof legacyDietaryRuleIdForTag>[0]): SQL {
+  const declared = arrayContains(recipes.dietaryFlags, [diet]);
+  const ruleIds = dietaryRuleIdsForTag(diet);
+  const legacyRuleId = legacyDietaryRuleIdForTag(diet);
+  const positive =
+    legacyRuleId == null
+      ? declared
+      : or(
+          declared,
+          and(
+            arrayContains(recipes.dietaryTags, [diet]),
+            exists(
+              qb
+                .select({ one: sql`1` })
+                .from(dietaryAssessments)
+                .where(
+                  and(
+                    eq(dietaryAssessments.recipeId, recipes.id),
+                    eq(dietaryAssessments.ruleId, legacyRuleId),
+                    eq(dietaryAssessments.scope, 'canonical'),
+                    eq(dietaryAssessments.source, 'deterministic'),
+                    eq(dietaryAssessments.verdict, 'meets'),
+                    eq(dietaryAssessments.confidence, 'high'),
+                    eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+                    isNull(dietaryAssessments.invalidatedAt),
+                  ),
+                ),
+            ),
+          ),
+        )!;
+
+  return and(
+    positive,
+    notExists(
+      qb
+        .select({ one: sql`1` })
+        .from(dietaryAssessments)
+        .where(
+          and(
+            eq(dietaryAssessments.recipeId, recipes.id),
+            inArray(dietaryAssessments.ruleId, ruleIds),
+            eq(dietaryAssessments.scope, 'canonical'),
+            eq(dietaryAssessments.verdict, 'conflicts'),
+            eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+            isNull(dietaryAssessments.invalidatedAt),
+          ),
+        ),
+    ),
+  )!;
+}
 
 /**
  * Deterministic ordering for a bare "id or slug" lookup.
@@ -1191,24 +1246,14 @@ export function searchFilterConditions(
     }
   }
 
-  // Dietary tags (#273) default to conjunctive matching, but each is satisfied
-  // by the union of derived `dietaryTags` (auto "-free" from ingredients) and
-  // author-declared `dietaryFlags` (#404). The all-match path therefore keeps
-  // one condition per diet so mixed sources still satisfy the full selection.
+  // Dietary tags (#273) default to conjunctive matching. Derived compatibility
+  // tags count only while backed by a current, complete deterministic
+  // assessment; author declarations remain independent.
   if (search.dietMatch === 'any' && search.diets.length > 0) {
-    conditions.push(
-      or(
-        ...search.diets.flatMap((diet) => [
-          arrayContains(recipes.dietaryTags, [diet]),
-          arrayContains(recipes.dietaryFlags, [diet]),
-        ]),
-      ),
-    );
+    conditions.push(or(...search.diets.map(dietaryFilterCondition))!);
   } else {
     for (const diet of search.diets) {
-      conditions.push(
-        or(arrayContains(recipes.dietaryTags, [diet]), arrayContains(recipes.dietaryFlags, [diet])),
-      );
+      conditions.push(dietaryFilterCondition(diet));
     }
   }
 
