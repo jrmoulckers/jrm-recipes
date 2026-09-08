@@ -24,10 +24,12 @@ export function CardDietaryBadge({
   members,
   assessments,
   declared,
+  signedIn,
 }: {
   members: CardDietaryMember[];
   assessments: DietaryAssessmentView[];
   declared: DietaryTag[];
+  signedIn: boolean;
 }) {
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const member = members.find((m) => m.id === activeMemberId);
@@ -36,18 +38,19 @@ export function CardDietaryBadge({
     ...(member?.diets.flatMap((diet) => dietaryRuleIdsForTag(diet)) ?? []),
   ]);
   const relevant = member
-    ? assessments.filter(
-        (assessment) =>
-          assessment.profileId === member.id || relevantRuleIds.has(assessment.ruleId),
-      )
-    : [];
+    ? assessments.filter((assessment) => {
+        if (assessment.scope === 'profile') return assessment.profileId === member.id;
+        if (assessment.scope !== 'canonical') return false;
+        return assessment.verdict === 'conflicts' || relevantRuleIds.has(assessment.ruleId);
+      })
+    : assessments.filter((assessment) => assessment.scope === 'canonical');
   if (relevant.length === 0 && declared.length === 0) return null;
 
   return (
     <RecipeDietaryAssessments
       assessments={relevant}
       declared={declared.slice(0, 1)}
-      signedIn
+      signedIn={signedIn}
       className="w-fit"
     />
   );

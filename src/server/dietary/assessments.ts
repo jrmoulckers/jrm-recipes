@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createId } from '@paralleldrive/cuid2';
-import { and, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, ne, or, type SQL } from 'drizzle-orm';
 
 import {
   dietaryAssessmentScopeSchema,
@@ -49,6 +49,7 @@ import {
   recipes,
 } from '~/server/db/schema';
 import { DomainError } from '~/server/errors';
+import { viewerHoldsRecipeShareLink } from '~/server/recipes/share-token';
 
 type DbExecutor = typeof db;
 type MemberRole = 'owner' | 'admin' | 'member' | 'kid';
@@ -161,26 +162,41 @@ async function dietaryInputs(
     .leftJoin(foodItems, eq(recipeIngredients.foodId, foodItems.id))
     .where(eq(recipeIngredients.recipeId, recipeId));
 
-  return rows.map((row) => {
-    const linkedFood = dietaryLinkedFoodInputSchema.safeParse(
-      row.foodId && row.foodSlug && row.foodCategory
-        ? {
-            id: row.foodId,
-            slug: row.foodSlug,
-            category: row.foodCategory,
-            allergens: row.foodAllergens,
-          }
-        : null,
-    );
-    return dietaryIngredientInputSchema.parse({
-      ingredientId: row.ingredientId,
-      item: row.item,
-      amount: row.amount,
-      amountMax: row.amountMax,
-      unit: row.unit,
-      prep: row.prep,
-      linkedFood: linkedFood.success ? linkedFood.data : null,
-    });
+  return rows.map(toDietaryIngredientInput);
+}
+
+type DietaryInputRow = {
+  ingredientId: string;
+  item: string;
+  amount: number | null;
+  amountMax: number | null;
+  unit: string | null;
+  prep: string | null;
+  foodId: string | null;
+  foodSlug: string | null;
+  foodCategory: string | null;
+  foodAllergens: string[] | null;
+};
+
+function toDietaryIngredientInput(row: DietaryInputRow): DietaryIngredientInput {
+  const linkedFood = dietaryLinkedFoodInputSchema.safeParse(
+    row.foodId && row.foodSlug && row.foodCategory
+      ? {
+          id: row.foodId,
+          slug: row.foodSlug,
+          category: row.foodCategory,
+          allergens: row.foodAllergens,
+        }
+      : null,
+  );
+  return dietaryIngredientInputSchema.parse({
+    ingredientId: row.ingredientId,
+    item: row.item,
+    amount: row.amount,
+    amountMax: row.amountMax,
+    unit: row.unit,
+    prep: row.prep,
+    linkedFood: linkedFood.success ? linkedFood.data : null,
   });
 }
 
@@ -473,6 +489,221 @@ export type PublicDietaryAssessment = {
   confidence: 'high' | 'medium' | 'needs-review' | null;
 };
 
+async function dietaryInputsForRecipes(
+  recipeIds: readonly string[],
+): Promise<Map<string, DietaryIngredientInput[]>> {
+  const inputsByRecipeId = new Map(
+    recipeIds.map((recipeId) => [recipeId, [] as DietaryIngredientInput[]]),
+  );
+  if (recipeIds.length === 0) return inputsByRecipeId;
+
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      ingredientId: recipeIngredients.id,
+      item: recipeIngredients.item,
+      amount: recipeIngredients.quantity,
+      amountMax: recipeIngredients.quantityMax,
+      unit: recipeIngredients.unit,
+      prep: recipeIngredients.prep,
+      foodId: foodItems.id,
+      foodSlug: foodItems.slug,
+      foodCategory: foodItems.category,
+      foodAllergens: foodItems.allergens,
+    })
+    .from(recipeIngredients)
+    .leftJoin(foodItems, eq(recipeIngredients.foodId, foodItems.id))
+    .where(inArray(recipeIngredients.recipeId, recipeIds));
+
+  for (const row of rows) {
+    inputsByRecipeId.get(row.recipeId)?.push(toDietaryIngredientInput(row));
+  }
+  return inputsByRecipeId;
+}
+
+async function findAssessmentRows(recipeIds: readonly string[], readableScopes: SQL) {
+  if (recipeIds.length === 0) return [];
+  return db.query.dietaryAssessments.findMany({
+    where: and(
+      inArray(dietaryAssessments.recipeId, recipeIds),
+      isNull(dietaryAssessments.invalidatedAt),
+      readableScopes,
+    ),
+    with: { evidence: true },
+  });
+}
+
+export type DietaryAssessmentReadRow = Awaited<ReturnType<typeof findAssessmentRows>>[number];
+
+export type DietaryAssessmentReadBatch = {
+  ingredientsByRecipeId: Map<string, DietaryIngredientInput[]>;
+  assessmentsByRecipeId: Map<string, DietaryAssessmentReadRow[]>;
+};
+
+export type DietaryAssessmentReadAuthorization = {
+  shareToken?: string | null;
+};
+
+/**
+ * Load all dietary presentation inputs for a set of already-selected recipes.
+ * Authorization, freshness, and profile ownership are applied once to the
+ * complete set so card feeds use a fixed number of queries rather than one
+ * authorization/profile/assessment sequence per card.
+ */
+export async function loadDietaryAssessmentReadBatch(
+  recipeIds: readonly string[],
+  actorId: string | null,
+  authorization: DietaryAssessmentReadAuthorization = {},
+): Promise<DietaryAssessmentReadBatch> {
+  const ids = [...new Set(recipeIds)];
+  const empty = {
+    ingredientsByRecipeId: new Map<string, DietaryIngredientInput[]>(),
+    assessmentsByRecipeId: new Map<string, DietaryAssessmentReadRow[]>(),
+  };
+  if (ids.length === 0) return empty;
+
+  const recipeRows = await db.query.recipes.findMany({
+    where: and(inArray(recipes.id, ids), isNull(recipes.deletedAt)),
+    columns: {
+      id: true,
+      authorId: true,
+      visibility: true,
+      groupId: true,
+      shareToken: true,
+      shareLinkEnabled: true,
+    },
+  });
+  const recipesById = new Map(recipeRows.map((recipe) => [recipe.id, recipe]));
+  if (ids.some((recipeId) => !recipesById.has(recipeId))) throw new DomainError('NOT_FOUND');
+
+  let profileIds: string[] = [];
+  if (actorId) {
+    const [creators, memberships] = await Promise.all([
+      db.query.recipeCreators.findMany({
+        where: and(
+          inArray(recipeCreators.recipeId, ids),
+          eq(recipeCreators.userId, actorId),
+          eq(recipeCreators.status, 'accepted'),
+        ),
+        columns: { recipeId: true },
+      }),
+      db.query.groupMembers.findMany({
+        where: eq(groupMembers.userId, actorId),
+        columns: { groupId: true, role: true },
+      }),
+    ]);
+    const creatorRecipeIds = new Set(creators.map((creator) => creator.recipeId));
+    const membershipByGroupId = new Map(
+      memberships.map((membership) => [membership.groupId, membership.role]),
+    );
+    for (const recipeId of ids) {
+      const recipe = recipesById.get(recipeId)!;
+      const access: DietaryRecipeAccess = {
+        actorId,
+        authorId: recipe.authorId,
+        visibility: recipe.visibility,
+        acceptedCreator: creatorRecipeIds.has(recipeId),
+        groupRole: recipe.groupId ? (membershipByGroupId.get(recipe.groupId) ?? null) : null,
+      };
+      if (
+        !canReadCanonicalDietaryAssessment(access) &&
+        !viewerHoldsRecipeShareLink(recipe, authorization.shareToken)
+      ) {
+        throw new DomainError('NOT_FOUND');
+      }
+    }
+    const profiles = await db.query.memberDietaryProfiles.findMany({
+      where: eq(memberDietaryProfiles.userId, actorId),
+      columns: { id: true },
+    });
+    profileIds = profiles.map((profile) => profile.id);
+  } else {
+    for (const recipeId of ids) {
+      const recipe = recipesById.get(recipeId)!;
+      const canReadWithoutToken = canReadCanonicalDietaryAssessment({
+        actorId: null,
+        authorId: recipe.authorId,
+        visibility: recipe.visibility,
+        acceptedCreator: false,
+        groupRole: null,
+      });
+      if (!canReadWithoutToken && !viewerHoldsRecipeShareLink(recipe, authorization.shareToken)) {
+        throw new DomainError('NOT_FOUND');
+      }
+    }
+  }
+
+  const restrictionsPromise =
+    actorId && profileIds.length > 0
+      ? db.query.customDietaryRestrictions.findMany({
+          where: inArray(customDietaryRestrictions.profileId, profileIds),
+          columns: { id: true },
+          with: {
+            terms: {
+              columns: { term: true, source: true, approved: true },
+            },
+          },
+        })
+      : Promise.resolve([]);
+  const ownedScopes = actorId
+    ? profileIds.length === 0
+      ? and(eq(dietaryAssessments.scope, 'personal'), eq(dietaryAssessments.ownerUserId, actorId))
+      : or(
+          and(
+            eq(dietaryAssessments.scope, 'personal'),
+            eq(dietaryAssessments.ownerUserId, actorId),
+          ),
+          and(
+            eq(dietaryAssessments.scope, 'profile'),
+            inArray(dietaryAssessments.profileId, profileIds),
+          ),
+        )
+    : undefined;
+  const readableScopes = actorId
+    ? or(eq(dietaryAssessments.scope, 'canonical'), ownedScopes)!
+    : and(
+        eq(dietaryAssessments.scope, 'canonical'),
+        isNull(dietaryAssessments.ownerUserId),
+        isNull(dietaryAssessments.profileId),
+        isNull(dietaryAssessments.customRestrictionId),
+      )!;
+  const [ingredientsByRecipeId, restrictions, rows] = await Promise.all([
+    dietaryInputsForRecipes(ids),
+    restrictionsPromise,
+    findAssessmentRows(ids, readableScopes),
+  ]);
+  const restrictionVersions = new Map(
+    restrictions.map((restriction) => [
+      restriction.id,
+      customRestrictionTermsFingerprint(
+        restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
+      ),
+    ]),
+  );
+  const rulesetVersion = dietaryRulesetVersion();
+  const ingredientFingerprints = new Map(
+    ids.map((recipeId) => [
+      recipeId,
+      dietaryIngredientFingerprint(ingredientsByRecipeId.get(recipeId) ?? []),
+    ]),
+  );
+  const assessmentsByRecipeId = new Map(
+    ids.map((recipeId) => [recipeId, [] as DietaryAssessmentReadRow[]]),
+  );
+  for (const row of rows) {
+    if (
+      row.ingredientFingerprint !== ingredientFingerprints.get(row.recipeId) ||
+      row.rulesetVersion !== rulesetVersion ||
+      (row.customRestrictionId != null &&
+        restrictionVersions.get(row.customRestrictionId) !== row.restrictionTermsVersion)
+    ) {
+      continue;
+    }
+    assessmentsByRecipeId.get(row.recipeId)?.push(row);
+  }
+  return { ingredientsByRecipeId, assessmentsByRecipeId };
+}
+
 /**
  * Public projection is structurally canonical-only and omits owner/profile,
  * creator, ingredient, and correction identifiers.
@@ -480,37 +711,11 @@ export type PublicDietaryAssessment = {
 export async function listPublicDietaryAssessments(
   recipeId: string,
 ): Promise<PublicDietaryAssessment[]> {
-  const access = await recipeAccess(db, recipeId, null);
-  if (!canReadCanonicalDietaryAssessment(access)) throw new DomainError('NOT_FOUND');
-  const rows = await db.query.dietaryAssessments.findMany({
-    where: and(
-      eq(dietaryAssessments.recipeId, recipeId),
-      eq(dietaryAssessments.scope, 'canonical'),
-      isNull(dietaryAssessments.ownerUserId),
-      isNull(dietaryAssessments.profileId),
-      isNull(dietaryAssessments.customRestrictionId),
-      isNull(dietaryAssessments.invalidatedAt),
-    ),
-    columns: {
-      ruleId: true,
-      customRestrictionId: true,
-      scope: true,
-      source: true,
-      verdict: true,
-      confidence: true,
-      ingredientFingerprint: true,
-      rulesetVersion: true,
-      invalidatedAt: true,
-    },
-  });
-  const inputs = await dietaryInputs(db, recipeId);
-  const fingerprint = dietaryIngredientFingerprint(inputs);
-  const rulesetVersion = dietaryRulesetVersion();
+  const batch = await loadDietaryAssessmentReadBatch([recipeId], null);
+  const rows = batch.assessmentsByRecipeId.get(recipeId) ?? [];
   const fresh = rows.flatMap((row) => {
     if (
       row.ruleId == null ||
-      row.ingredientFingerprint !== fingerprint ||
-      row.rulesetVersion !== rulesetVersion ||
       (row.source !== 'deterministic' &&
         row.source !== 'on-device' &&
         row.source !== 'author-confirmed')
@@ -554,66 +759,8 @@ export async function listPublicDietaryAssessments(
  * recipe facts, never another member's personal/profile assessment.
  */
 export async function listDietaryAssessmentsForViewer(recipeId: string, actorId: string) {
-  const access = await recipeAccess(db, recipeId, actorId);
-  if (!canReadCanonicalDietaryAssessment(access)) throw new DomainError('NOT_FOUND');
-  const [profiles, inputs] = await Promise.all([
-    db.query.memberDietaryProfiles.findMany({
-      where: eq(memberDietaryProfiles.userId, actorId),
-      columns: { id: true },
-    }),
-    dietaryInputs(db, recipeId),
-  ]);
-  const profileIds = profiles.map((profile) => profile.id);
-  const restrictions =
-    profileIds.length === 0
-      ? []
-      : await db.query.customDietaryRestrictions.findMany({
-          where: inArray(customDietaryRestrictions.profileId, profileIds),
-          columns: { id: true },
-          with: {
-            terms: {
-              columns: { term: true, source: true, approved: true },
-            },
-          },
-        });
-  const restrictionVersions = new Map(
-    restrictions.map((restriction) => [
-      restriction.id,
-      customRestrictionTermsFingerprint(
-        restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
-      ),
-    ]),
-  );
-  const ownedScopes =
-    profileIds.length === 0
-      ? and(eq(dietaryAssessments.scope, 'personal'), eq(dietaryAssessments.ownerUserId, actorId))
-      : or(
-          and(
-            eq(dietaryAssessments.scope, 'personal'),
-            eq(dietaryAssessments.ownerUserId, actorId),
-          ),
-          and(
-            eq(dietaryAssessments.scope, 'profile'),
-            inArray(dietaryAssessments.profileId, profileIds),
-          ),
-        );
-  const rows = await db.query.dietaryAssessments.findMany({
-    where: and(
-      eq(dietaryAssessments.recipeId, recipeId),
-      isNull(dietaryAssessments.invalidatedAt),
-      or(eq(dietaryAssessments.scope, 'canonical'), ownedScopes),
-    ),
-    with: { evidence: true },
-  });
-  const fingerprint = dietaryIngredientFingerprint(inputs);
-  const rulesetVersion = dietaryRulesetVersion();
-  return rows.filter(
-    (row) =>
-      row.ingredientFingerprint === fingerprint &&
-      row.rulesetVersion === rulesetVersion &&
-      (row.customRestrictionId == null ||
-        restrictionVersions.get(row.customRestrictionId) === row.restrictionTermsVersion),
-  );
+  const batch = await loadDietaryAssessmentReadBatch([recipeId], actorId);
+  return batch.assessmentsByRecipeId.get(recipeId) ?? [];
 }
 
 /**

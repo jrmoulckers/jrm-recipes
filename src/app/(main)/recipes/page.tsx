@@ -204,6 +204,7 @@ async function BrowseSections({
                 canFavorite={canFavorite}
                 favorited={favoriteIds.has(recipe.id)}
                 quickPlan={quickPlan ?? undefined}
+                signedIn={Boolean(user)}
               />
             ))}
           </div>
@@ -219,6 +220,7 @@ async function BrowseSections({
             favoritedIds={[...favoriteIds]}
             priorityCount={LCP_PRIORITY_COUNT}
             members={members}
+            signedIn={Boolean(user)}
             quickPlan={quickPlan ?? undefined}
           />
         </section>
@@ -241,6 +243,8 @@ async function BrowseSections({
             canFavorite={canFavorite}
             favoritedIds={[...favoriteIds]}
             priorityCount={hasLibrary ? 0 : LCP_PRIORITY_COUNT}
+            members={members}
+            signedIn={Boolean(user)}
           />
         </section>
       )}
@@ -324,6 +328,7 @@ async function ResultsView({
     items: RecipeSearchResult[];
     possibleItems: RecipeSearchResult[];
     nextOffset: number | null;
+    possibleNextOffset: number | null;
     unrankable?: { lowConfidence: number; unknown: number };
   };
   search: RecipeSearch;
@@ -349,11 +354,13 @@ async function ResultsView({
       initialItems={cards}
       initialPossibleItems={possibleCards}
       initialNextOffset={page.nextOffset}
+      initialPossibleNextOffset={page.possibleNextOffset}
       queryString={recipeSearchToQueryString(search)}
       canFavorite={canFavorite}
       favoritedIds={[...favoriteIds]}
       priorityCount={LCP_PRIORITY_COUNT}
       members={members}
+      signedIn={viewerId != null}
       quickPlan={quickPlan ?? undefined}
       correction={correction}
       unrankable={page.unrankable}

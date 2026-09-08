@@ -12,6 +12,14 @@ import {
   type DietaryTag,
 } from '~/lib/substitutions';
 import { safeSubstitutions } from '~/lib/dietary-match';
+import { deterministicEvidenceForIngredient } from '~/lib/dietary-evidence';
+import {
+  type CustomRestrictionSeverity,
+  type DietaryEvidenceFinding,
+  type DietaryIngredientInput,
+} from '~/lib/dietary-assessment';
+import { type BuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
 import { type Allergen } from '~/lib/allergens';
 import { Badge, type BadgeProps } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -46,6 +54,41 @@ const FILTER_LABEL_KEY: Record<(typeof FILTER_TAGS)[number], string> = {
   'egg-free': 'eggFree',
 };
 
+export type SubstitutionDietaryRule = {
+  ruleId: BuiltInDietaryRuleId;
+  dietaryTag: DietaryTag;
+  currentFinding: DietaryEvidenceFinding;
+};
+
+export type SubstitutionCustomRestriction = {
+  id: string;
+  name: string;
+  severity: CustomRestrictionSeverity;
+  terms: readonly string[];
+};
+
+function candidateFinding(
+  item: string,
+  dietaryTags: readonly DietaryTag[],
+  rule: SubstitutionDietaryRule,
+): DietaryEvidenceFinding {
+  const input: DietaryIngredientInput = {
+    ingredientId: 'substitution-preview',
+    item,
+    amount: null,
+    amountMax: null,
+    unit: null,
+    prep: null,
+    linkedFood: null,
+  };
+  const evidence = deterministicEvidenceForIngredient(input, rule.ruleId);
+  if (evidence.some((item) => item.finding === 'present')) return 'present';
+  if (dietaryTags.includes(rule.dietaryTag)) return 'absent';
+  if (evidence.some((item) => item.finding === 'possible')) return 'possible';
+  if (evidence.some((item) => item.finding === 'unresolved')) return 'unresolved';
+  return 'absent';
+}
+
 /**
  * Subtle "swap" affordance shown only when an ingredient has known
  * substitutions. Opens a popover listing options with dietary tags. Renders
@@ -62,7 +105,8 @@ export function IngredientSubstitutions({
   flagged = false,
   presetTags,
   avoidAllergens,
-  currentConflictTags = [],
+  dietaryRules = [],
+  customRestrictions = [],
 }: {
   item: string;
   className?: string;
@@ -76,7 +120,8 @@ export function IngredientSubstitutions({
    * for a member who is also allergic to tree nuts).
    */
   avoidAllergens?: Allergen[];
-  currentConflictTags?: DietaryTag[];
+  dietaryRules?: readonly SubstitutionDietaryRule[];
+  customRestrictions?: readonly SubstitutionCustomRestriction[];
 }) {
   const t = useTranslations('ingredientSubstitutions');
   const presetKey = (presetTags ?? []).join('|');
@@ -164,9 +209,11 @@ export function IngredientSubstitutions({
                   {sub.ratioOrNotes}
                 </span>
                 <SubstitutionDietaryImpact
-                  currentConflictTags={currentConflictTags}
+                  currentItem={item}
+                  dietaryRules={dietaryRules}
+                  customRestrictions={customRestrictions}
                   substituteTags={sub.dietaryTags ?? []}
-                  substitute={sub.substitute}
+                  substitute={`${sub.substitute} ${sub.ratioOrNotes}`}
                   avoidAllergens={avoidAllergens ?? []}
                 />
                 {sub.dietaryTags && sub.dietaryTags.length > 0 && (
@@ -196,32 +243,85 @@ export function IngredientSubstitutions({
 }
 
 function SubstitutionDietaryImpact({
-  currentConflictTags,
+  currentItem,
+  dietaryRules,
+  customRestrictions,
   substituteTags,
   substitute,
   avoidAllergens,
 }: {
-  currentConflictTags: DietaryTag[];
-  substituteTags: DietaryTag[];
+  currentItem: string;
+  dietaryRules: readonly SubstitutionDietaryRule[];
+  customRestrictions: readonly SubstitutionCustomRestriction[];
+  substituteTags: readonly DietaryTag[];
   substitute: string;
-  avoidAllergens: Allergen[];
+  avoidAllergens: readonly Allergen[];
 }) {
   const t = useTranslations('ingredientSubstitutions.impact');
+  const tNames = useTranslations('classificationNames');
   const introducedAllergens = safeSubstitutions(
-    [{ substitute, ratioOrNotes: '', dietaryTags: substituteTags }],
+    [{ substitute, ratioOrNotes: '', dietaryTags: [...substituteTags] }],
     avoidAllergens,
   ).length
     ? []
     : avoidAllergens;
-  const removed = currentConflictTags.filter((tag) => substituteTags.includes(tag));
-  const message =
-    introducedAllergens.length > 0
-      ? t('addsConflict')
-      : removed.length > 0
-        ? t('removes', { need: removed[0]! })
-        : currentConflictTags.length > 0
-          ? t('review')
-          : null;
+  const currentFindings = new Map(
+    dietaryRules.map((rule) => [`rule:${rule.ruleId}`, rule.currentFinding]),
+  );
+  const candidateFindings = new Map(
+    dietaryRules.map((rule) => [
+      `rule:${rule.ruleId}`,
+      candidateFinding(substitute, substituteTags, rule),
+    ]),
+  );
+  // An exact-term hit proves presence, but a miss cannot prove absence from an
+  // opaque substitute such as "broth." Custom rules therefore stay unresolved
+  // until a future evidence source can affirmatively establish absence.
+  for (const restriction of customRestrictions) {
+    currentFindings.set(
+      `custom:${restriction.id}`,
+      matchesCustomRestriction(currentItem, restriction.terms)
+        ? restriction.severity === 'preference'
+          ? 'possible'
+          : 'present'
+        : 'unresolved',
+    );
+    candidateFindings.set(
+      `custom:${restriction.id}`,
+      matchesCustomRestriction(substitute, restriction.terms)
+        ? restriction.severity === 'preference'
+          ? 'possible'
+          : 'present'
+        : 'unresolved',
+    );
+  }
+
+  const currentConflicts = [...currentFindings].filter(([, finding]) => finding === 'present');
+  const candidateConflicts = [...candidateFindings].filter(([, finding]) => finding === 'present');
+  const addedConflict =
+    introducedAllergens.length > 0 ||
+    candidateConflicts.some(([key]) => currentFindings.get(key) !== 'present');
+  const removedConflict = currentConflicts.find(([key]) => candidateFindings.get(key) === 'absent');
+  const needsReview =
+    [...candidateFindings.values()].some(
+      (finding) => finding === 'possible' || finding === 'unresolved',
+    ) || currentConflicts.some(([key]) => candidateFindings.get(key) !== 'absent');
+
+  const removedLabel = removedConflict
+    ? removedConflict[0].startsWith('custom:')
+      ? customRestrictions.find((restriction) => `custom:${restriction.id}` === removedConflict[0])
+          ?.name
+      : tNames(
+          dietaryRules.find((rule) => `rule:${rule.ruleId}` === removedConflict[0])!.dietaryTag,
+        )
+    : null;
+  const message = addedConflict
+    ? t('addsConflict')
+    : removedLabel && candidateConflicts.length === 0 && !needsReview
+      ? t('removes', { need: removedLabel })
+      : needsReview
+        ? t('review')
+        : null;
   return message ? (
     <p className="text-xs font-medium text-foreground" role="status">
       {message}

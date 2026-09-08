@@ -4,7 +4,10 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
-import { loadMoreSearchAction } from '~/server/recipes/search-actions';
+import {
+  loadMorePossibleSearchAction,
+  loadMoreSearchAction,
+} from '~/server/recipes/search-actions';
 import { pathnameWithQuery } from '~/lib/routes';
 import { type RecipeSearchResult } from '~/server/recipes/queries';
 import { type UnrankableCounts } from '~/server/recipes/macro-search';
@@ -26,11 +29,13 @@ export function SearchResultsFeed({
   initialItems,
   initialPossibleItems = [],
   initialNextOffset,
+  initialPossibleNextOffset = null,
   queryString,
   canFavorite = false,
   favoritedIds = [],
   priorityCount = 0,
   members,
+  signedIn = false,
   quickPlan,
   correction,
   unrankable,
@@ -40,12 +45,14 @@ export function SearchResultsFeed({
   initialItems: RecipeSearchResult[];
   initialPossibleItems?: RecipeSearchResult[];
   initialNextOffset: number | null;
+  initialPossibleNextOffset?: number | null;
   /** Canonical query string of the effective search, re-parsed server-side. */
   queryString: string;
   canFavorite?: boolean;
   favoritedIds?: string[];
   priorityCount?: number;
   members?: CardDietaryMember[];
+  signedIn?: boolean;
   quickPlan?: QuickPlanContext;
   correction?: { from: string; to: string };
   /**
@@ -65,7 +72,13 @@ export function SearchResultsFeed({
     items: initialItems,
     nextOffset: initialNextOffset,
   }));
+  const [possiblePage, setPossiblePage] = React.useState(() => ({
+    queryString,
+    items: initialPossibleItems,
+    nextOffset: initialPossibleNextOffset,
+  }));
   const [pending, startTransition] = React.useTransition();
+  const [possiblePending, startPossibleTransition] = React.useTransition();
   const favoritedSet = React.useMemo(() => new Set(favoritedIds), [favoritedIds]);
   const currentQuery = React.useRef(queryString);
   currentQuery.current = queryString;
@@ -78,6 +91,15 @@ export function SearchResultsFeed({
       ? page
       : { queryString, items: initialItems, nextOffset: initialNextOffset };
   const { items, nextOffset } = currentPage;
+  const currentPossiblePage =
+    possiblePage.queryString === queryString
+      ? possiblePage
+      : {
+          queryString,
+          items: initialPossibleItems,
+          nextOffset: initialPossibleNextOffset,
+        };
+  const { items: possibleItems, nextOffset: possibleNextOffset } = currentPossiblePage;
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
@@ -91,6 +113,27 @@ export function SearchResultsFeed({
           previousPage.queryString === requestedQuery ? previousPage.items : requestedItems;
         const seen = new Set(previousItems.map((r) => r.id));
         const fresh = result.items.filter((r) => !seen.has(r.id));
+        return {
+          queryString: requestedQuery,
+          items: fresh.length > 0 ? [...previousItems, ...fresh] : previousItems,
+          nextOffset: result.nextOffset,
+        };
+      });
+    });
+  }
+
+  function onLoadMorePossible() {
+    if (possibleNextOffset == null || possiblePending) return;
+    const requestedQuery = queryString;
+    const requestedItems = possibleItems;
+    startPossibleTransition(async () => {
+      const result = await loadMorePossibleSearchAction(requestedQuery, possibleNextOffset);
+      if (currentQuery.current !== requestedQuery) return;
+      setPossiblePage((previousPage) => {
+        const previousItems =
+          previousPage.queryString === requestedQuery ? previousPage.items : requestedItems;
+        const seen = new Set(previousItems.map((recipe) => recipe.id));
+        const fresh = result.items.filter((recipe) => !seen.has(recipe.id));
         return {
           queryString: requestedQuery,
           items: fresh.length > 0 ? [...previousItems, ...fresh] : previousItems,
@@ -184,10 +227,11 @@ export function SearchResultsFeed({
             macro={recipe.macro}
             macroNutrients={macroNutrients}
             members={members}
+            signedIn={signedIn}
           />
         ))}
       </div>
-      {initialPossibleItems.length > 0 ? (
+      {possibleItems.length > 0 ? (
         <section className="mt-3 grid gap-4" aria-labelledby="possible-dietary-matches">
           <div>
             <h3
@@ -201,7 +245,7 @@ export function SearchResultsFeed({
             </p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {initialPossibleItems.map((recipe) => (
+            {possibleItems.map((recipe) => (
               <RecipeCard
                 key={`possible:${recipe.id}`}
                 recipe={recipe}
@@ -210,9 +254,23 @@ export function SearchResultsFeed({
                 quickPlan={quickPlan}
                 matchReason={recipe.matchReason}
                 members={members}
+                signedIn={signedIn}
               />
             ))}
           </div>
+          {possibleNextOffset != null && (
+            <div className="flex justify-center pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={onLoadMorePossible}
+                disabled={possiblePending}
+              >
+                {possiblePending ? t('common.loading') : t('common.loadMoreRecipes')}
+              </Button>
+            </div>
+          )}
         </section>
       ) : null}
       {hasMore && (

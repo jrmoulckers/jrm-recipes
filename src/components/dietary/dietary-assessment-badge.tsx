@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import { AlertTriangle, HelpCircle, Info, Search, ShieldCheck, UserCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -25,7 +25,10 @@ export type DietaryAssessmentProvenance =
 
 export type DietaryAssessmentAction = {
   kind: 'review' | 'correct';
-  onSelect: () => void;
+  /** Return true only when focus is transferred to an action destination. */
+  onSelect: () => boolean | void;
+  /** Set false when the action deliberately transfers focus outside the popover. */
+  restoreFocus?: boolean;
 };
 
 export type DietaryAttentionIngredient = {
@@ -81,6 +84,7 @@ export function DietaryAssessmentBadge({
   const t = useTranslations('dietary.assessmentBadge');
   const headingId = useId();
   const limitationId = useId();
+  const keepActionFocus = useRef(false);
   const { Icon: StatusIcon, variant } = STATUS_DETAILS[status];
   const ProvenanceIcon = PROVENANCE_ICONS[provenance.kind];
   const statusLabel = t(`status.${status}`);
@@ -125,6 +129,12 @@ export function DietaryAssessmentBadge({
         className="max-h-[calc(var(--radix-popover-content-available-height)-1rem)] w-80 space-y-3 overflow-y-auto overscroll-contain break-words text-sm"
         aria-labelledby={headingId}
         aria-describedby={limitationId}
+        onCloseAutoFocus={(event) => {
+          if (keepActionFocus.current) {
+            event.preventDefault();
+            keepActionFocus.current = false;
+          }
+        }}
       >
         <div className="flex items-start gap-2">
           <StatusIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -211,7 +221,10 @@ export function DietaryAssessmentBadge({
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={action.onSelect}
+              onClick={() => {
+                const transfersFocus = action.onSelect() === true;
+                keepActionFocus.current = action.restoreFocus === false && transfersFocus;
+              }}
             >
               {t(`action.${action.kind}`)}
             </Button>

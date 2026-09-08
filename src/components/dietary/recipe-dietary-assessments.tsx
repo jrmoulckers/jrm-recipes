@@ -8,7 +8,12 @@ import {
   DietaryAssessmentBadge,
   type DietaryAttentionIngredient,
 } from './dietary-assessment-badge';
-import { dietaryAssessmentStatus, type DietaryAssessmentView } from '~/lib/dietary-presentation';
+import {
+  dietaryAssessmentStatus,
+  effectiveDietaryAssessmentViews,
+  type DietaryAssessmentView,
+} from '~/lib/dietary-presentation';
+import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import { type DietaryTag } from '~/lib/substitutions';
 import { Button } from '~/components/ui/button';
@@ -36,31 +41,78 @@ export function RecipeDietaryAssessments({
   const activeProfileId = useActiveMemberStore((state) => state.activeMemberId);
   const [expanded, setExpanded] = React.useState(false);
 
-  const inferred = React.useMemo(
-    () =>
-      assessments
-        .filter(
-          (assessment) =>
-            signedIn ||
-            (assessment.scope === 'canonical' &&
-              assessment.confidence === 'high' &&
-              assessment.verdict !== 'unknown'),
-        )
-        .sort((left, right) => {
-          const leftPriority = left.profileId === activeProfileId ? 0 : 1;
-          const rightPriority = right.profileId === activeProfileId ? 0 : 1;
-          return leftPriority - rightPriority || left.ruleId.localeCompare(right.ruleId);
-        }),
-    [activeProfileId, assessments, signedIn],
-  );
+  const inferred = React.useMemo(() => {
+    const activeAssessments = assessments.filter((assessment) =>
+      activeProfileId
+        ? assessment.scope === 'canonical' ||
+          (assessment.scope === 'profile' && assessment.profileId === activeProfileId)
+        : assessment.scope === 'canonical',
+    );
+    return effectiveDietaryAssessmentViews(activeAssessments)
+      .filter(
+        (assessment) =>
+          signedIn ||
+          (assessment.scope === 'canonical' &&
+            assessment.confidence === 'high' &&
+            assessment.verdict !== 'unknown'),
+      )
+      .sort((left, right) => {
+        const verdictPriority =
+          Number(right.verdict === 'conflicts') - Number(left.verdict === 'conflicts');
+        const leftPriority = left.profileId === activeProfileId ? 0 : 1;
+        const rightPriority = right.profileId === activeProfileId ? 0 : 1;
+        return (
+          verdictPriority || leftPriority - rightPriority || left.ruleId.localeCompare(right.ruleId)
+        );
+      });
+  }, [activeProfileId, assessments, signedIn]);
 
-  const visibleInferred = expanded ? inferred : inferred.slice(0, 3);
-  const hiddenCount = inferred.length - visibleInferred.length;
-  if (declared.length === 0 && inferred.length === 0) return null;
+  const conflictingRuleIds = React.useMemo(
+    () =>
+      new Set(
+        inferred
+          .filter((assessment) => assessment.verdict === 'conflicts')
+          .map((assessment) => assessment.ruleId),
+      ),
+    [inferred],
+  );
+  const visibleDeclarations = React.useMemo(
+    () =>
+      declared.filter((tag) =>
+        dietaryRuleIdsForTag(tag).every((ruleId) => !conflictingRuleIds.has(ruleId)),
+      ),
+    [conflictingRuleIds, declared],
+  );
+  const declaredConflictingRuleIds = React.useMemo(
+    () =>
+      new Set(
+        declared.flatMap((tag) =>
+          dietaryRuleIdsForTag(tag).filter((ruleId) => conflictingRuleIds.has(ruleId)),
+        ),
+      ),
+    [conflictingRuleIds, declared],
+  );
+  const declaredRuleIds = React.useMemo(
+    () => new Set(visibleDeclarations.flatMap((tag) => [...dietaryRuleIdsForTag(tag)])),
+    [visibleDeclarations],
+  );
+  const mergedAssessments = React.useMemo(
+    () =>
+      inferred.filter(
+        (assessment) =>
+          !declaredRuleIds.has(assessment.ruleId) &&
+          (!declaredConflictingRuleIds.has(assessment.ruleId) ||
+            assessment.verdict === 'conflicts'),
+      ),
+    [declaredConflictingRuleIds, declaredRuleIds, inferred],
+  );
+  const visibleInferred = expanded ? mergedAssessments : mergedAssessments.slice(0, 3);
+  const hiddenCount = mergedAssessments.length - visibleInferred.length;
+  if (visibleDeclarations.length === 0 && mergedAssessments.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-      {declared.map((tag) => (
+      {visibleDeclarations.map((tag) => (
         <DietaryAssessmentBadge
           key={`declared:${tag}`}
           label={tNames(tag)}
@@ -119,12 +171,40 @@ export function RecipeDietaryAssessments({
               canReview && firstAttention
                 ? {
                     kind: status === 'conflict' ? 'correct' : 'review',
+                    restoreFocus: false,
                     onSelect: () => {
-                      const target = document.getElementById(
-                        `ingredient-${firstAttention.ingredientId}`,
-                      );
-                      target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                      target?.focus({ preventScroll: true });
+                      const openAndFocusCorrection = () => {
+                        const target = document.getElementById(
+                          `dietary-correction-${firstAttention.ingredientId}`,
+                        );
+                        if (!(target instanceof HTMLDetailsElement)) return false;
+                        target.open = true;
+                        target.scrollIntoView({
+                          block: 'center',
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                            ? 'auto'
+                            : 'smooth',
+                        });
+                        const ruleControl = Array.from(
+                          target.querySelectorAll<HTMLElement>('[data-dietary-rule]'),
+                        ).find((control) => control.dataset.dietaryRule === assessment.ruleId);
+                        window.setTimeout(() =>
+                          (ruleControl ?? target.querySelector<HTMLElement>('summary'))?.focus({
+                            preventScroll: true,
+                          }),
+                        );
+                        return true;
+                      };
+
+                      if (openAndFocusCorrection()) return true;
+
+                      const recipeTab = document.getElementById('recipe-tab-trigger');
+                      if (!(recipeTab instanceof HTMLButtonElement)) return false;
+                      recipeTab.click();
+                      window.setTimeout(() => {
+                        if (!openAndFocusCorrection()) recipeTab.focus();
+                      });
+                      return true;
                     },
                   }
                 : undefined
@@ -143,7 +223,7 @@ export function RecipeDietaryAssessments({
           <Plus className="size-3.5" aria-hidden="true" />
           {t('more', { count: hiddenCount })}
         </Button>
-      ) : expanded && inferred.length > 3 ? (
+      ) : expanded && mergedAssessments.length > 3 ? (
         <Button
           type="button"
           variant="ghost"

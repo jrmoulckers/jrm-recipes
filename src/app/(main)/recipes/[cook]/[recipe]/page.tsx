@@ -44,6 +44,10 @@ import { pickNutrition } from '~/lib/nutrition';
 import { todayIso } from '~/lib/nutrition-targets';
 import { isAllergen, type Allergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
+import {
+  CUSTOM_RESTRICTION_SEVERITIES,
+  type CustomRestrictionSeverity,
+} from '~/lib/dietary-assessment';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { listMemberProfiles } from '~/server/dietary/queries';
 import { listDietaryAssessmentViews } from '~/server/dietary/presentation';
@@ -341,7 +345,9 @@ async function RecipePage({
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
-    dbEnabled ? listDietaryAssessmentViews(recipe.id, user?.id ?? null) : Promise.resolve([]),
+    dbEnabled
+      ? listDietaryAssessmentViews(recipe.id, user?.id ?? null, { shareToken })
+      : Promise.resolve([]),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -363,6 +369,21 @@ async function RecipePage({
     calorieTarget: calorieTargets[index]?.targets.calories ?? null,
     allergens: (m.allergens ?? []).filter(isAllergen),
     diets: (m.diets ?? []).filter(isDietaryTag),
+    customRestrictions: m.customRestrictions.flatMap((restriction) =>
+      CUSTOM_RESTRICTION_SEVERITIES.includes(restriction.severity as CustomRestrictionSeverity)
+        ? [
+            {
+              id: restriction.id,
+              name: restriction.name,
+              severity: restriction.severity as CustomRestrictionSeverity,
+              terms: restriction.terms
+                .filter((term) => term.approved)
+                .map((term) => term.term)
+                .filter(Boolean),
+            },
+          ]
+        : [],
+    ),
   }));
 
   // Attach the structured food-graph allergens to each ingredient line so the
@@ -668,7 +689,7 @@ async function RecipePage({
 
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
           <TabsList className="self-start">
-            <TabsTrigger value="recipe">
+            <TabsTrigger id="recipe-tab-trigger" value="recipe">
               <BookOpen className="size-4" /> {t('tabs.recipe')}
             </TabsTrigger>
             <TabsTrigger value="timeline">

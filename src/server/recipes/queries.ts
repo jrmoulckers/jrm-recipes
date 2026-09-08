@@ -12,6 +12,7 @@ import {
   gt,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lt,
   lte,
@@ -31,14 +32,19 @@ import {
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from '~/lib/ratings';
-import { summarizeAllergensForSafety, isAllergen, type Allergen } from '~/lib/allergens';
+import {
+  detectAllergensForSafety,
+  summarizeAllergensForSafety,
+  isAllergen,
+  type Allergen,
+} from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
-import { dietaryRulesetVersion } from '~/lib/dietary-rules';
+import { COMPOSITION_COVERED_CATEGORIES, dietaryRulesetVersion } from '~/lib/dietary-rules';
 import {
   dietaryAssessments,
+  dietaryEvidence,
   customDietaryRestrictions,
-  customDietaryRestrictionTerms,
   groupMembers,
   memberDietaryProfiles,
   recipeCreators,
@@ -59,7 +65,7 @@ import {
   foodRecipeLinks,
   type User,
 } from '~/server/db/schema';
-import { resolveFoodId } from '~/server/db/resolve-food';
+import { resolveFoodId, resolveFoodIds } from '~/server/db/resolve-food';
 import { recipeInput, type RecipeInput } from './validation';
 import {
   clampPageSize,
@@ -91,6 +97,10 @@ import { getRecipeNutritionViews } from './nutrition';
 import { assembleTimeline, type TimelineEntry } from './timeline';
 import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
 import { todayParam } from '~/server/planner/week';
+import { customRestrictionTermsFingerprint } from '~/lib/dietary-fingerprint';
+import { customDietaryRestrictionTermSchema } from '~/lib/dietary-assessment';
+import { viewerHoldsRecipeShareLink } from './share-token';
+import { normalizeFoodText } from '~/lib/food-db';
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -110,6 +120,12 @@ const notDeleted = isNull(recipes.deletedAt);
  */
 const qb = new QueryBuilder();
 const currentDietaryRulesetVersion = dietaryRulesetVersion();
+// PostgreSQL's core normalize(..., NFD) needs no extension. Removing the same
+// combining-mark range as normalizeFoodText keeps custom-term boundaries
+// consistent without depending on unaccent being installed.
+const COMBINING_DIACRITICAL_MARKS = Array.from({ length: 0x036f - 0x0300 + 1 }, (_, offset) =>
+  String.fromCodePoint(0x0300 + offset),
+).join('');
 
 type DietaryMatchMode = 'definite' | 'possible';
 
@@ -213,7 +229,35 @@ function profileDietaryCondition(
     : and(...eligible);
 }
 
-function customRestrictionConflictCondition(restrictionId: string): SQL {
+function customRestrictionConflictCondition(normalizedTerms: readonly string[]): SQL {
+  const activeTerms = normalizedTerms.filter(Boolean);
+  if (activeTerms.length === 0) return sql`false`;
+  const normalizedIngredient = sql`trim(
+    regexp_replace(
+      regexp_replace(
+        split_part(
+          regexp_replace(
+            translate(
+              normalize(lower(${recipeIngredients.item}), NFD),
+              ${COMBINING_DIACRITICAL_MARKS},
+              ''
+            ),
+            ${'\\([^)]*\\)'},
+            ' ',
+            'g'
+          ),
+          ',',
+          1
+        ),
+        ${'[^a-z0-9]+'},
+        ' ',
+        'g'
+      ),
+      ${'\\s+'},
+      ' ',
+      'g'
+    )
+  )`;
   return exists(
     qb
       .select({ one: sql`1` })
@@ -221,24 +265,189 @@ function customRestrictionConflictCondition(restrictionId: string): SQL {
       .where(
         and(
           eq(recipeIngredients.recipeId, recipes.id),
-          exists(
+          or(
+            ...activeTerms.map(
+              (term) =>
+                sql`position(${` ${term} `} in (' ' || ${normalizedIngredient} || ' ')) > 0`,
+            ),
+          ),
+        ),
+      ),
+  );
+}
+
+function customRestrictionAffirmativeCoverageCondition(
+  restrictionId: string,
+  profileId: string,
+  restrictionTermsVersion: string,
+  restrictedFoodIds: readonly string[],
+  restrictedAllergens: readonly Allergen[],
+  normalizedTerms: readonly string[],
+  hasCompleteTermCoverage: boolean,
+  hasCompleteAllergenTermCoverage: boolean,
+): SQL {
+  const hasIngredients = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, recipes.id)),
+  );
+  const hasCompleteAssessment = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(dietaryAssessments)
+      .where(
+        and(
+          eq(dietaryAssessments.recipeId, recipes.id),
+          eq(dietaryAssessments.customRestrictionId, restrictionId),
+          eq(dietaryAssessments.scope, 'profile'),
+          eq(dietaryAssessments.profileId, profileId),
+          eq(dietaryAssessments.verdict, 'meets'),
+          or(
+            eq(dietaryAssessments.source, 'author-confirmed'),
+            eq(dietaryAssessments.confidence, 'high'),
+          ),
+          eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+          eq(dietaryAssessments.restrictionTermsVersion, restrictionTermsVersion),
+          isNull(dietaryAssessments.invalidatedAt),
+          notExists(
             qb
               .select({ one: sql`1` })
-              .from(customDietaryRestrictionTerms)
+              .from(recipeIngredients)
               .where(
                 and(
-                  eq(customDietaryRestrictionTerms.restrictionId, restrictionId),
-                  or(
-                    eq(customDietaryRestrictionTerms.source, 'exact'),
-                    eq(customDietaryRestrictionTerms.approved, true),
+                  eq(recipeIngredients.recipeId, recipes.id),
+                  notExists(
+                    qb
+                      .select({ one: sql`1` })
+                      .from(dietaryEvidence)
+                      .where(
+                        and(
+                          eq(dietaryEvidence.assessmentId, dietaryAssessments.id),
+                          eq(dietaryEvidence.ingredientId, recipeIngredients.id),
+                          eq(dietaryEvidence.finding, 'absent'),
+                        ),
+                      ),
                   ),
-                  sql`lower(${recipeIngredients.item}) like '%' || lower(${customDietaryRestrictionTerms.term}) || '%'`,
                 ),
               ),
           ),
         ),
       ),
   );
+  const hasAssessmentConflict = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(dietaryAssessments)
+      .where(
+        and(
+          eq(dietaryAssessments.recipeId, recipes.id),
+          eq(dietaryAssessments.customRestrictionId, restrictionId),
+          eq(dietaryAssessments.scope, 'profile'),
+          eq(dietaryAssessments.profileId, profileId),
+          eq(dietaryAssessments.verdict, 'conflicts'),
+          eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+          eq(dietaryAssessments.restrictionTermsVersion, restrictionTermsVersion),
+          isNull(dietaryAssessments.invalidatedAt),
+        ),
+      ),
+  );
+  // Exact custom restrictions can be decided without a persisted profile
+  // assessment only when every active term resolves to a curated food identity
+  // or built-in allergen fact, and every ingredient has facts complete enough
+  // for that target. Simple composition-covered foods establish identity
+  // absence; opaque compounds require an explicit allergen vector. Unlinked,
+  // mined, or opaque fact-less nodes remain unknown.
+  const hasCompleteStructuredCoverage = hasCompleteTermCoverage
+    ? and(
+        ...restrictedFoodIds.map((foodId) =>
+          exists(
+            qb
+              .select({ one: sql`1` })
+              .from(foodItems)
+              .where(and(eq(foodItems.id, foodId), eq(foodItems.source, 'curated'))),
+          ),
+        ),
+        notExists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeIngredients)
+            .where(
+              and(
+                eq(recipeIngredients.recipeId, recipes.id),
+                notExists(
+                  qb
+                    .select({ one: sql`1` })
+                    .from(foodItems)
+                    .where(
+                      and(
+                        eq(foodItems.id, recipeIngredients.foodId),
+                        eq(foodItems.source, 'curated'),
+                        or(
+                          inArray(foodItems.category, COMPOSITION_COVERED_CATEGORIES),
+                          hasCompleteAllergenTermCoverage
+                            ? isNotNull(foodItems.allergens)
+                            : undefined,
+                        ),
+                      ),
+                    ),
+                ),
+              ),
+            ),
+        ),
+      )
+    : undefined;
+  const hasStructuredConflict =
+    hasCompleteTermCoverage && (restrictedFoodIds.length > 0 || restrictedAllergens.length > 0)
+      ? exists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeIngredients)
+            .where(
+              and(
+                eq(recipeIngredients.recipeId, recipes.id),
+                exists(
+                  qb
+                    .select({ one: sql`1` })
+                    .from(foodItems)
+                    .where(
+                      and(
+                        eq(foodItems.id, recipeIngredients.foodId),
+                        or(
+                          restrictedFoodIds.length > 0
+                            ? or(
+                                inArray(foodItems.id, restrictedFoodIds),
+                                inArray(foodItems.parentId, restrictedFoodIds),
+                              )
+                            : undefined,
+                          ...restrictedAllergens.map((allergen) =>
+                            arrayContains(foodItems.allergens, [allergen]),
+                          ),
+                        ),
+                      ),
+                    ),
+                ),
+              ),
+            ),
+        )
+      : undefined;
+  return and(
+    hasIngredients,
+    notExists(
+      qb
+        .select({ one: sql`1` })
+        .from(customDietaryRestrictions)
+        .where(
+          and(
+            eq(customDietaryRestrictions.id, restrictionId),
+            customRestrictionConflictCondition(normalizedTerms),
+          ),
+        ),
+    ),
+    sql`not (${hasAssessmentConflict})`,
+    hasStructuredConflict ? sql`not (${hasStructuredConflict})` : undefined,
+    or(hasCompleteAssessment, hasCompleteStructuredCoverage),
+  )!;
 }
 
 /**
@@ -785,35 +994,13 @@ export async function getRecipe(idOrSlug: string, viewer: User | null, shareToke
   // presents the matching, still-enabled share token (the `/r/<token>` route)
   // is granted access here (issues #204/#207). Checked before the co-creator
   // ground because it is synchronous, so the share-link path costs no query.
-  if (viewerHoldsShareLink(recipe, shareToken)) return recipe;
+  if (viewerHoldsRecipeShareLink(recipe, shareToken)) return recipe;
   // A co-creator sees the recipe under their own namespace too (issue #668).
   // Last, so it only costs a round trip for a signed-in viewer every cheaper
   // ground has already rejected, and only `accepted` rows count — a pending
   // invitation grants nothing.
   if (viewer && (await isRecipeCreator(recipe.id, viewer.id))) return recipe;
   return null;
-}
-
-/**
- * True when `shareToken` is the live share secret for an `unlisted` recipe:
- * a non-empty token that matches the stored one while the link is enabled.
- * Disabling or rotating the link (#207) makes any stale token fail this check.
- */
-function viewerHoldsShareLink(
-  recipe: {
-    visibility: string;
-    shareToken: string | null;
-    shareLinkEnabled: boolean;
-  },
-  shareToken: string | null | undefined,
-): boolean {
-  return (
-    recipe.visibility === 'unlisted' &&
-    recipe.shareLinkEnabled &&
-    !!recipe.shareToken &&
-    !!shareToken &&
-    recipe.shareToken === shareToken
-  );
 }
 
 /**
@@ -1413,10 +1600,26 @@ async function resolveIngredientFilter(search: RecipeSearch): Promise<string | n
 export async function searchRecipes(
   viewer: User | null,
   search: RecipeSearch,
-  { limit = RECIPE_SEARCH_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
+  {
+    limit = RECIPE_SEARCH_LIMIT,
+    offset = 0,
+    possibleOffset = 0,
+    lane = 'both',
+  }: {
+    limit?: number;
+    offset?: number;
+    possibleOffset?: number;
+    lane?: 'both' | 'definite' | 'possible';
+  } = {},
 ) {
   if (!isDbConfigured()) {
-    return { items: [], possibleItems: [], nextOffset: null, unrankable: NO_UNRANKABLE };
+    return {
+      items: [],
+      possibleItems: [],
+      nextOffset: null,
+      possibleNextOffset: null,
+      unrankable: NO_UNRANKABLE,
+    };
   }
   const groupIds = await viewerGroupIds(viewer);
   const ingredientFoodId = await resolveIngredientFilter(search);
@@ -1451,6 +1654,13 @@ export async function searchRecipes(
   let profileRestrictions: {
     id: string;
     severity: string;
+    profileId: string;
+    restrictionTermsVersion: string;
+    restrictedFoodIds: string[];
+    restrictedAllergens: Allergen[];
+    normalizedTerms: string[];
+    hasCompleteTermCoverage: boolean;
+    hasCompleteAllergenTermCoverage: boolean;
   }[] = [];
   if (search.safeFor && viewer) {
     const profile = await db.query.memberDietaryProfiles.findFirst({
@@ -1458,23 +1668,84 @@ export async function searchRecipes(
         eq(memberDietaryProfiles.id, search.safeFor),
         eq(memberDietaryProfiles.userId, viewer.id),
       ),
-      columns: { allergens: true, diets: true },
+      columns: { id: true, allergens: true, diets: true },
       with: {
         customRestrictions: {
           columns: { id: true, severity: true },
+          with: {
+            terms: {
+              columns: { term: true, source: true, approved: true },
+            },
+          },
         },
       },
     });
     if (profile) {
       profileAllergens = (profile.allergens ?? []).filter(isAllergen);
       profileDiets = (profile.diets ?? []).filter(isDietaryTag);
-      profileRestrictions = profile.customRestrictions;
+      const parsedRestrictions = profile.customRestrictions.map((restriction) => ({
+        ...restriction,
+        terms: restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
+      }));
+      const medicalTerms = parsedRestrictions.flatMap((restriction) =>
+        restriction.severity === 'allergy-intolerance'
+          ? restriction.terms.filter((term) => term.source === 'exact' || term.approved)
+          : [],
+      );
+      const resolvedMedicalFoodIds = await resolveFoodIds(medicalTerms.map((term) => term.term));
+      let medicalTermOffset = 0;
+      profileRestrictions = parsedRestrictions.map((restriction) => {
+        const activeTerms =
+          restriction.severity === 'allergy-intolerance'
+            ? restriction.terms.filter((term) => term.source === 'exact' || term.approved)
+            : [];
+        const resolvedTerms = resolvedMedicalFoodIds.slice(
+          medicalTermOffset,
+          medicalTermOffset + activeTerms.length,
+        );
+        medicalTermOffset += activeTerms.length;
+        const termFacts = activeTerms.map((term, index) => ({
+          foodId: resolvedTerms[index] ?? null,
+          allergens: detectAllergensForSafety(term.term),
+        }));
+        return {
+          id: restriction.id,
+          severity: restriction.severity,
+          profileId: profile.id,
+          restrictionTermsVersion: customRestrictionTermsFingerprint(restriction.terms),
+          restrictedFoodIds: [
+            ...new Set(termFacts.flatMap((fact) => (fact.foodId ? [fact.foodId] : []))),
+          ],
+          restrictedAllergens: [
+            ...new Set(termFacts.flatMap((fact) => fact.allergens).filter(isAllergen)),
+          ],
+          normalizedTerms: restriction.terms
+            .filter((term) => term.source === 'exact' || term.approved)
+            .map((term) => normalizeFoodText(term.term))
+            .filter(Boolean),
+          hasCompleteTermCoverage:
+            activeTerms.length > 0 &&
+            termFacts.every((fact) => fact.foodId != null || fact.allergens.length > 0),
+          hasCompleteAllergenTermCoverage:
+            activeTerms.length > 0 && termFacts.every((fact) => fact.allergens.length > 0),
+        };
+      });
       conditions.push(profileDietaryCondition(profileDiets, profileAllergens, 'definite'));
       for (const restriction of profileRestrictions) {
-        if (
-          restriction.severity === 'allergy-intolerance' ||
-          restriction.severity === 'strict-avoidance'
-        ) {
+        if (restriction.severity === 'allergy-intolerance') {
+          conditions.push(
+            customRestrictionAffirmativeCoverageCondition(
+              restriction.id,
+              restriction.profileId,
+              restriction.restrictionTermsVersion,
+              restriction.restrictedFoodIds,
+              restriction.restrictedAllergens,
+              restriction.normalizedTerms,
+              restriction.hasCompleteTermCoverage,
+              restriction.hasCompleteAllergenTermCoverage,
+            ),
+          );
+        } else if (restriction.severity === 'strict-avoidance') {
           conditions.push(
             notExists(
               qb
@@ -1483,7 +1754,7 @@ export async function searchRecipes(
                 .where(
                   and(
                     eq(customDietaryRestrictions.id, restriction.id),
-                    customRestrictionConflictCondition(restriction.id),
+                    customRestrictionConflictCondition(restriction.normalizedTerms),
                   ),
                 ),
             ),
@@ -1513,7 +1784,7 @@ export async function searchRecipes(
         sql`case when ${or(
           ...profileRestrictions
             .filter((restriction) => restriction.severity === 'preference')
-            .map((restriction) => customRestrictionConflictCondition(restriction.id)),
+            .map((restriction) => customRestrictionConflictCondition(restriction.normalizedTerms)),
         )} then 1 else 0 end`,
         ...(macroOrdering ?? recipeOrderBy(search.sort)),
       ]
@@ -1529,30 +1800,35 @@ export async function searchRecipes(
   // What the confidence gate withheld, over the same base conditions, so the
   // results can disclose it rather than just being shorter. Runs alongside the
   // page and only when the search actually ranks on nutrition.
-  const unrankablePromise: Promise<UnrankableCounts> = usesMacroNutrition(search)
-    ? countUnrankableByMacro(db, baseConditions, search)
-    : Promise.resolve(NO_UNRANKABLE);
+  const includeDefinite = lane !== 'possible';
+  const includePossible = lane !== 'definite';
+  const unrankablePromise: Promise<UnrankableCounts> =
+    includeDefinite && usesMacroNutrition(search)
+      ? countUnrankableByMacro(db, baseConditions, search)
+      : Promise.resolve(NO_UNRANKABLE);
 
-  const rows = await db.query.recipes.findMany({
-    where: and(...conditions),
-    orderBy,
-    limit,
-    offset,
-    with: {
-      author: true,
-      tags: { with: { tag: true } },
-      ratings: true,
-      // Ingredient item text is only needed to explain *why* a text query
-      // matched, so it's loaded (and shipped) only when there is a query.
-      ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
-    },
-  });
+  const rows = includeDefinite
+    ? await db.query.recipes.findMany({
+        where: and(...conditions),
+        orderBy,
+        limit,
+        offset,
+        with: {
+          author: true,
+          tags: { with: { tag: true } },
+          ratings: true,
+          // Ingredient item text is only needed to explain *why* a text query
+          // matched, so it's loaded (and shipped) only when there is a query.
+          ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
+        },
+      })
+    : [];
 
   // Whether another page exists is decided by the *raw* SQL page length. A full
   // page implies more rows to fetch. The allergen pass below only drops rows
   // within a page (like the discover feed's library filter), so it must not
   // shorten a full page into a false "end of results".
-  const nextOffset = nextPageOffset(offset, rows.length, limit);
+  const nextOffset = includeDefinite ? nextPageOffset(offset, rows.length, limit) : null;
 
   // Allergen safety is best-effort text detection, so it runs in JS: pull the
   // candidate rows' ingredients in one query and drop any recipe that carries
@@ -1608,11 +1884,21 @@ export async function searchRecipes(
     search.group && groupIds.includes(search.group) ? eq(recipes.groupId, search.group) : undefined,
     profileDietaryCondition(profileDiets, profileAllergens, 'eligible'),
     ...profileRestrictions
-      .filter(
-        (restriction) =>
-          restriction.severity === 'allergy-intolerance' ||
-          restriction.severity === 'strict-avoidance',
-      )
+      .filter((restriction) => restriction.severity === 'allergy-intolerance')
+      .map((restriction) =>
+        customRestrictionAffirmativeCoverageCondition(
+          restriction.id,
+          restriction.profileId,
+          restriction.restrictionTermsVersion,
+          restriction.restrictedFoodIds,
+          restriction.restrictedAllergens,
+          restriction.normalizedTerms,
+          restriction.hasCompleteTermCoverage,
+          restriction.hasCompleteAllergenTermCoverage,
+        ),
+      ),
+    ...profileRestrictions
+      .filter((restriction) => restriction.severity === 'strict-avoidance')
       .map((restriction) =>
         notExists(
           qb
@@ -1621,7 +1907,7 @@ export async function searchRecipes(
             .where(
               and(
                 eq(customDietaryRestrictions.id, restriction.id),
-                customRestrictionConflictCondition(restriction.id),
+                customRestrictionConflictCondition(restriction.normalizedTerms),
               ),
             ),
         )!,
@@ -1640,22 +1926,24 @@ export async function searchRecipes(
     profileAllergens,
     'definite',
   );
-  const possibleRows = hasPossibleFilter
-    ? await db.query.recipes.findMany({
-        where: and(
-          ...possibleConditions.filter((condition): condition is SQL => condition != null),
-          sql`not (${and(definiteSearchDietary, definiteProfileDietary)!})`,
-        ),
-        orderBy,
-        limit,
-        with: {
-          author: true,
-          tags: { with: { tag: true } },
-          ratings: true,
-          ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
-        },
-      })
-    : [];
+  const possibleRows =
+    includePossible && hasPossibleFilter
+      ? await db.query.recipes.findMany({
+          where: and(
+            ...possibleConditions.filter((condition): condition is SQL => condition != null),
+            sql`not (${and(definiteSearchDietary, definiteProfileDietary)!})`,
+          ),
+          orderBy,
+          limit,
+          offset: possibleOffset,
+          with: {
+            author: true,
+            tags: { with: { tag: true } },
+            ratings: true,
+            ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
+          },
+        })
+      : [];
   const possibleItems = possibleRows
     .filter((row) => !items.some((item) => item.id === row.id))
     .map((row) => {
@@ -1679,10 +1967,15 @@ export async function searchRecipes(
         macro: null,
       };
     });
+  const possibleNextOffset =
+    includePossible && hasPossibleFilter
+      ? nextPageOffset(possibleOffset, possibleRows.length, limit)
+      : null;
   return {
     items,
     possibleItems,
     nextOffset,
+    possibleNextOffset,
     unrankable: await unrankablePromise,
   };
 }

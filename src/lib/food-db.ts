@@ -19,6 +19,10 @@
  * so its suggestions stay synchronous and client-safe.
  */
 
+import { normalizeFoodText } from './food-text';
+
+export { normalizeFoodText } from './food-text';
+
 /**
  * The food taxonomy. Categories are chosen for how a cook *measures* the food,
  * not botanical accuracy: `produce-whole` (measured by count/weight) is distinct
@@ -915,16 +919,6 @@ export const FOOD_ITEMS: FoodItem[] = [
  * `substitutions.ts` / `units.ts` normalizers but is kept local so this module
  * stays dependency-free.
  */
-export function normalizeFoodText(item: string | null | undefined): string {
-  if (!item) return '';
-  let s = item.toLowerCase();
-  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
-  s = s.replace(/\([^)]*\)/g, ' '); // drop parentheticals
-  s = s.split(',')[0] ?? s; // keep the part before the first comma
-  s = s.replace(/[^a-z0-9]+/g, ' '); // punctuation & hyphens -> space
-  return s.replace(/\s+/g, ' ').trim();
-}
-
 function tokenize(value: string): string[] {
   return value.split(' ').filter(Boolean);
 }
