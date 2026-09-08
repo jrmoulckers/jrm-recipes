@@ -200,6 +200,7 @@ describe('workflow integrity policy', () => {
     );
     expect(prConflicts).toContain('group: pull-request-conflict-report');
     expect(prConflicts).toContain('cancel-in-progress: false');
+    expect(prConflicts).toContain('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020');
     expect(prConflicts).toContain('run: node scripts/report-pr-conflicts.mjs');
     expect(prConflicts).not.toContain('issues: write');
     expect(prConflicts).not.toContain('checks: write');
