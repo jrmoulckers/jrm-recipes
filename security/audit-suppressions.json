@@ -62,7 +62,10 @@
       ],
       "reviewedAt": "2026-09-08",
       "expiresAt": "2026-10-08",
-      "sources": ["https://github.com/advisories/GHSA-7pqw-9j4j-h8q3"]
+      "sources": [
+        "https://github.com/advisories/GHSA-7pqw-9j4j-h8q3",
+        "https://github.com/max-mapper/extract-zip/pull/160"
+      ]
     }
   ]
 }
