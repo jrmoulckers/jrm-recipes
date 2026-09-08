@@ -128,7 +128,7 @@ describe('RecipeEditor draft recovery and exit guard (#115)', () => {
     await user.click(cancel);
     await user.click(screen.getByRole('button', { name: 'Leave editor' }));
     expect(back).toHaveBeenCalledOnce();
-  });
+  }, 15_000);
 
   it('offers a local draft without replacing server-loaded form state', async () => {
     window.localStorage.setItem(

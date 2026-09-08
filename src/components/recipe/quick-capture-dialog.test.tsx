@@ -52,6 +52,7 @@ async function openDialog() {
   const user = userEvent.setup();
   render(<QuickCaptureDialog />);
   await user.click(screen.getByRole('button', { name: /quick add/i }));
+  await screen.findByRole('button', { name: /save draft/i });
   return user;
 }
 
