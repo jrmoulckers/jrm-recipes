@@ -287,12 +287,26 @@ Three corollaries, all learned the expensive way:
 Closed by removing the branch filter. A non-`main`-based PR now runs the same
 jobs as any other.
 
-### 2. Conflicting PR — no run at all
+### 2. Conflicting PR — reported outside the PR gate
 
 When a PR conflicts with its base, GitHub cannot build `refs/pull/N/merge`, so
 **no runs are created**. The PR shows no failures because it shows nothing.
 
-No workflow can fix this, because no workflow runs. Two things do:
+The scheduled `Pull request conflict report` workflow observes this outside the
+`pull_request` event every 15 minutes and can also be run manually. It scans every
+open PR, including drafts and PRs whose base is not `main`. Only the conclusive
+combination `mergeable == CONFLICTING` and `mergeStateStatus == DIRTY` adds the
+non-gating `needs-rebase` label. Conclusive recovery removes that label. Unknown
+or inconsistent results are retried once and then reported in the workflow
+summary without changing labels.
+
+The reporter re-reads a PR immediately before changing its label, does not touch
+`blocked` or any other label, and does not comment or publish a status/check.
+Its Actions summary is the report; API and configuration failures fail the run
+rather than presenting as a successful scan.
+
+The label makes the missing run visible, but does not block a merge. Two controls
+remain important:
 
 - Read the mergeability, not just the check list:
   `gh pr view <n> --json mergeable,mergeStateStatus`.
