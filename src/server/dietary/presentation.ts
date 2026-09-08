@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { and, eq, isNull } from 'drizzle-orm';
-
 import {
   dietaryAssessmentScopeSchema,
   dietaryAssessmentSourceSchema,
@@ -13,15 +11,11 @@ import {
   effectiveDietaryAssessmentViews,
   type DietaryAssessmentView,
 } from '~/lib/dietary-presentation';
-import { db } from '~/server/db';
-import { dietaryAssessments, recipeIngredients } from '~/server/db/schema';
 
-import { listDietaryAssessmentsForViewer, listPublicDietaryAssessments } from './assessments';
-
-type AssessmentRow = Awaited<ReturnType<typeof listDietaryAssessmentsForViewer>>[number];
+import { loadDietaryAssessmentReadBatch, type DietaryAssessmentReadRow } from './assessments';
 
 function toView(
-  row: AssessmentRow,
+  row: DietaryAssessmentReadRow,
   ingredientNames: ReadonlyMap<string, string>,
   totalIngredients: number,
 ): DietaryAssessmentView | null {
@@ -46,63 +40,44 @@ function toView(
   };
 }
 
+export async function listDietaryAssessmentViewsBatch(
+  recipeIds: readonly string[],
+  actorId: string | null,
+): Promise<Map<string, DietaryAssessmentView[]>> {
+  const batch = await loadDietaryAssessmentReadBatch(recipeIds, actorId);
+  return new Map(
+    [...new Set(recipeIds)].map((recipeId) => {
+      const ingredients = batch.ingredientsByRecipeId.get(recipeId) ?? [];
+      const ingredientNames = new Map(
+        ingredients.map((ingredient) => [ingredient.ingredientId, ingredient.item]),
+      );
+      const views = (batch.assessmentsByRecipeId.get(recipeId) ?? []).flatMap((row) => {
+        const view = toView(row, ingredientNames, ingredients.length);
+        return view ? [view] : [];
+      });
+      return [recipeId, effectiveDietaryAssessmentViews(views)];
+    }),
+  );
+}
+
 export async function listDietaryAssessmentViews(
   recipeId: string,
   actorId: string | null,
 ): Promise<DietaryAssessmentView[]> {
-  const ingredients = await db.query.recipeIngredients.findMany({
-    where: eq(recipeIngredients.recipeId, recipeId),
-    columns: { id: true, item: true },
-  });
-  const ingredientNames = new Map(
-    ingredients.map((ingredient) => [ingredient.id, ingredient.item]),
-  );
-
-  if (actorId) {
-    const rows = await listDietaryAssessmentsForViewer(recipeId, actorId);
-    return effectiveDietaryAssessmentViews(
-      rows.flatMap((row) => {
-        const view = toView(row, ingredientNames, ingredients.length);
-        return view ? [view] : [];
-      }),
-    );
-  }
-
-  const publicAssessments = await listPublicDietaryAssessments(recipeId);
-  if (publicAssessments.length === 0) return [];
-  const rows = await db.query.dietaryAssessments.findMany({
-    where: and(
-      eq(dietaryAssessments.recipeId, recipeId),
-      eq(dietaryAssessments.scope, 'canonical'),
-      isNull(dietaryAssessments.ownerUserId),
-      isNull(dietaryAssessments.profileId),
-      isNull(dietaryAssessments.customRestrictionId),
-      isNull(dietaryAssessments.invalidatedAt),
-    ),
-    with: { evidence: true },
-  });
-  return publicAssessments.flatMap((assessment) => {
-    const row = rows.find(
-      (candidate) =>
-        candidate.ruleId === assessment.ruleId &&
-        candidate.source === assessment.source &&
-        candidate.verdict === assessment.verdict &&
-        candidate.confidence === assessment.confidence,
-    );
-    const view = row ? toView(row, ingredientNames, ingredients.length) : null;
-    return view ? [view] : [];
-  });
+  const viewsByRecipeId = await listDietaryAssessmentViewsBatch([recipeId], actorId);
+  return viewsByRecipeId.get(recipeId) ?? [];
 }
 
 export async function attachCardDietaryAssessmentViews<T extends { id: string }>(
   recipes: T[],
   actorId: string | null,
 ): Promise<(T & { dietaryAssessments: DietaryAssessmentView[] })[]> {
-  const assessments = await Promise.all(
-    recipes.map((recipe) => listDietaryAssessmentViews(recipe.id, actorId)),
+  const assessmentsByRecipeId = await listDietaryAssessmentViewsBatch(
+    recipes.map((recipe) => recipe.id),
+    actorId,
   );
-  return recipes.map((recipe, index) => ({
+  return recipes.map((recipe) => ({
     ...recipe,
-    dietaryAssessments: assessments[index] ?? [],
+    dietaryAssessments: assessmentsByRecipeId.get(recipe.id) ?? [],
   }));
 }

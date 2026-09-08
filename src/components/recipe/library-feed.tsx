@@ -28,6 +28,7 @@ export function LibraryFeed({
   favoritedIds = [],
   priorityCount = 0,
   members,
+  signedIn = false,
   quickPlan,
 }: {
   initialItems: CardRecipe[];
@@ -40,6 +41,7 @@ export function LibraryFeed({
    */
   priorityCount?: number;
   members?: CardDietaryMember[];
+  signedIn?: boolean;
   quickPlan?: QuickPlanContext;
 }) {
   const t = useTranslations('recipe');
@@ -73,6 +75,7 @@ export function LibraryFeed({
             quickPlan={quickPlan}
             priority={i < priorityCount}
             members={members}
+            signedIn={signedIn}
           />
         ))}
       </div>

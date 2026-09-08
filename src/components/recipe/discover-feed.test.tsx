@@ -1,4 +1,4 @@
-import { cleanup, render as rtlRender } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DiscoverFeed } from './discover-feed';
@@ -66,6 +66,57 @@ describe('DiscoverFeed LCP priority', () => {
     // Exactly the first three images get a preload hint.
     const preloads = document.head.querySelectorAll('link[rel="preload"][as="image"]');
     expect(preloads).toHaveLength(3);
+  });
+
+  describe('DiscoverFeed dietary assessment context', () => {
+    it('renders assessment-only cards and passes the signed-in state through', () => {
+      const [item] = makeItems(1);
+      const reviewItem: CardRecipe = {
+        ...item!,
+        dietaryAssessments: [
+          {
+            ruleId: 'allergen:wheat',
+            scope: 'canonical',
+            profileId: null,
+            source: 'deterministic',
+            verdict: 'unknown',
+            confidence: 'needs-review',
+            recognizedIngredients: 0,
+            totalIngredients: 1,
+            evidence: [
+              {
+                ingredientId: 'seasoning',
+                ingredient: 'seasoning blend',
+                finding: 'unresolved',
+              },
+            ],
+          },
+        ],
+      };
+      const { rerender } = render(
+        <DiscoverFeed
+          initialItems={[reviewItem]}
+          initialNextOffset={null}
+          members={[]}
+          signedIn={false}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: /gluten needs review/i }),
+      ).not.toBeInTheDocument();
+
+      rerender(
+        <IntlWrapper>
+          <DiscoverFeed
+            initialItems={[reviewItem]}
+            initialNextOffset={null}
+            members={[]}
+            signedIn
+          />
+        </IntlWrapper>,
+      );
+      expect(screen.getByRole('button', { name: /gluten needs review/i })).toBeInTheDocument();
+    });
   });
 
   it('keeps every card lazy when priorityCount is 0 (below-the-fold feed)', () => {

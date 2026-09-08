@@ -1,8 +1,10 @@
-import { cleanup, render as rtlRender } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 
 import { IntlWrapper } from '~/test/intl';
+import { useActiveMemberStore } from '~/lib/active-member-store';
 import {
   IngredientsPanel,
   type IngredientsPanelControls,
@@ -36,6 +38,10 @@ vi.mock('~/components/engagement/anchored-suggestions-lazy', () => ({
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
 }
+
+beforeEach(() => {
+  useActiveMemberStore.setState({ activeMemberId: null });
+});
 
 afterEach(cleanup);
 
@@ -225,6 +231,105 @@ describe('IngredientsPanel display-time unit conversion', () => {
     // 240 ml ≈ 1 cup: the panel should open already in US units.
     expect(container.textContent).toMatch(/cup/i);
     expect(container.textContent).not.toMatch(/\bml\b/i);
+  });
+
+  describe('IngredientsPanel dietary substitution previews', () => {
+    it('uses canonical composition evidence to show that a swap removes a vegan conflict', async () => {
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
+      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
+
+      render(
+        <IngredientsPanel
+          ingredients={[
+            {
+              id: 'honey',
+              section: null,
+              quantity: 1,
+              quantityMax: null,
+              unit: 'tbsp',
+              item: 'honey',
+              note: null,
+              optional: false,
+            },
+          ]}
+          baseServings={1}
+          servingsNoun={null}
+          members={[
+            {
+              id: 'member-1',
+              name: 'Ada',
+              calorieTarget: null,
+              allergens: [],
+              diets: ['vegan'],
+            },
+          ]}
+          dietaryAssessments={[
+            {
+              ruleId: 'composition:vegan',
+              scope: 'canonical',
+              profileId: null,
+              source: 'deterministic',
+              verdict: 'conflicts',
+              confidence: 'high',
+              recognizedIngredients: 1,
+              totalIngredients: 1,
+              evidence: [{ ingredientId: 'honey', ingredient: 'honey', finding: 'present' }],
+            },
+          ]}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /safe swaps for honey/i }));
+      const mapleSyrup = (await screen.findByText('Maple syrup')).closest('li');
+      expect(mapleSyrup).not.toBeNull();
+      expect(within(mapleSyrup!).getByText('Removes the Vegan conflict')).toBeInTheDocument();
+    });
+
+    it('flags a candidate that matches an active custom restriction', async () => {
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
+      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
+
+      render(
+        <IngredientsPanel
+          ingredients={[
+            {
+              id: 'butter',
+              section: null,
+              quantity: 1,
+              quantityMax: null,
+              unit: 'tbsp',
+              item: 'butter',
+              note: null,
+              optional: false,
+            },
+          ]}
+          baseServings={1}
+          servingsNoun={null}
+          members={[
+            {
+              id: 'member-1',
+              name: 'Ada',
+              calorieTarget: null,
+              allergens: [],
+              diets: [],
+              customRestrictions: [
+                {
+                  id: 'no-coconut',
+                  name: 'No coconut',
+                  severity: 'strict-avoidance',
+                  terms: ['coconut'],
+                },
+              ],
+            },
+          ]}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /substitutions for butter/i }));
+      const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
+      expect(coconutOil).not.toBeNull();
+      expect(within(coconutOil!).getByText('Adds a dietary conflict')).toBeInTheDocument();
+    });
   });
 
   it("keeps the author's original units when auto-convert is off", () => {

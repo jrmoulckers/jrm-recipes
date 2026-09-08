@@ -71,6 +71,7 @@ export function RecipeCard({
   priority = false,
   matchReason,
   members,
+  signedIn = false,
   macro,
   macroNutrients,
 }: {
@@ -102,6 +103,7 @@ export function RecipeCard({
    * default) and no badge renders.
    */
   members?: CardDietaryMember[];
+  signedIn?: boolean;
   /**
    * Per-serving figures behind a macro-filtered result, with the provenance and
    * confidence that make them honest (#1047). Only supplied by search when the
@@ -264,12 +266,15 @@ export function RecipeCard({
           </div>
         </div>
       </Link>
-      {((members && members.length > 0) || (recipe.dietaryFlags?.length ?? 0) > 0) && (
+      {((members && members.length > 0) ||
+        (recipe.dietaryFlags?.length ?? 0) > 0 ||
+        (recipe.dietaryAssessments?.length ?? 0) > 0) && (
         <div className="mt-2">
           <CardDietaryBadge
             members={members ?? []}
             assessments={recipe.dietaryAssessments ?? []}
             declared={(recipe.dietaryFlags ?? []).filter(isDietaryTag)}
+            signedIn={signedIn}
           />
         </div>
       )}

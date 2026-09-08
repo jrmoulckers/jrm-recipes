@@ -45,7 +45,9 @@ describe('CardDietaryBadge', () => {
   });
 
   it('renders author-confirmed declarations without an active profile', () => {
-    render(<CardDietaryBadge members={MEMBERS} assessments={[]} declared={['vegetarian']} />);
+    render(
+      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={['vegetarian']} signedIn />,
+    );
     expect(
       screen.getByRole('button', { name: /vegetarian.*confirmed by recipe author/i }),
     ).toBeInTheDocument();
@@ -58,6 +60,7 @@ describe('CardDietaryBadge', () => {
         members={MEMBERS}
         assessments={[assessment(), assessment({ ruleId: 'allergen:soy', verdict: 'conflicts' })]}
         declared={[]}
+        signedIn
       />,
     );
     expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
@@ -67,8 +70,41 @@ describe('CardDietaryBadge', () => {
   it('never reassures from missing assessment coverage', () => {
     useActiveMemberStore.setState({ activeMemberId: 'm1' });
     const { container } = render(
-      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={[]} />,
+      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={[]} signedIn />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('uses canonical assessments when no member profile is active', () => {
+    render(
+      <CardDietaryBadge members={MEMBERS} assessments={[assessment()]} declared={[]} signedIn />,
+    );
+
+    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
+  });
+
+  it('uses real auth context when deciding whether a review assessment is visible', () => {
+    const review = assessment({
+      verdict: 'unknown',
+      confidence: 'needs-review',
+      evidence: [
+        {
+          ingredientId: 'seasoning',
+          ingredient: 'seasoning blend',
+          finding: 'unresolved',
+        },
+      ],
+    });
+    const { rerender } = render(
+      <CardDietaryBadge members={[]} assessments={[review]} declared={[]} signedIn={false} />,
+    );
+    expect(screen.queryByRole('button', { name: /needs review/i })).not.toBeInTheDocument();
+
+    rerender(
+      <IntlWrapper>
+        <CardDietaryBadge members={[]} assessments={[review]} declared={[]} signedIn />
+      </IntlWrapper>,
+    );
+    expect(screen.getByRole('button', { name: /needs review/i })).toBeInTheDocument();
   });
 });

@@ -50,3 +50,23 @@ export async function loadMoreSearchAction(
 
   return { items, nextOffset: page.nextOffset };
 }
+
+/** Fetch another page from the separately ranked Possible matches lane. */
+export async function loadMorePossibleSearchAction(
+  queryString: string,
+  offset: number,
+): Promise<Paginated<RecipeSearchResult>> {
+  const start = Number.isInteger(offset) && offset > 0 ? offset : 0;
+  const user = await getCurrentUser();
+  const search = parseRecipeSearch(paramsFromQueryString(queryString));
+  const page = await searchRecipes(user, search, { possibleOffset: start });
+
+  const members = user ? await listMemberProfiles(user.id) : [];
+  const showBadges = members.some((member) => (member.allergens ?? []).some(isAllergen));
+  const itemsWithAllergens: RecipeSearchResult[] = showBadges
+    ? await attachCardAllergens(page.possibleItems)
+    : page.possibleItems;
+  const items = await attachCardDietaryAssessmentViews(itemsWithAllergens, user?.id ?? null);
+
+  return { items, nextOffset: page.possibleNextOffset };
+}

@@ -37,6 +37,7 @@ import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { dietaryRulesetVersion } from '~/lib/dietary-rules';
 import {
   dietaryAssessments,
+  dietaryEvidence,
   customDietaryRestrictions,
   customDietaryRestrictionTerms,
   groupMembers,
@@ -91,6 +92,8 @@ import { getRecipeNutritionViews } from './nutrition';
 import { assembleTimeline, type TimelineEntry } from './timeline';
 import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
 import { todayParam } from '~/server/planner/week';
+import { customRestrictionTermsFingerprint } from '~/lib/dietary-fingerprint';
+import { customDietaryRestrictionTermSchema } from '~/lib/dietary-assessment';
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -239,6 +242,95 @@ function customRestrictionConflictCondition(restrictionId: string): SQL {
         ),
       ),
   );
+}
+
+function customRestrictionAffirmativeCoverageCondition(
+  restrictionId: string,
+  profileId: string,
+  restrictionTermsVersion: string,
+): SQL {
+  const hasIngredients = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, recipes.id)),
+  );
+  const hasCompleteAssessment = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(dietaryAssessments)
+      .where(
+        and(
+          eq(dietaryAssessments.recipeId, recipes.id),
+          eq(dietaryAssessments.customRestrictionId, restrictionId),
+          eq(dietaryAssessments.scope, 'profile'),
+          eq(dietaryAssessments.profileId, profileId),
+          eq(dietaryAssessments.verdict, 'meets'),
+          or(
+            eq(dietaryAssessments.source, 'author-confirmed'),
+            eq(dietaryAssessments.confidence, 'high'),
+          ),
+          eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+          eq(dietaryAssessments.restrictionTermsVersion, restrictionTermsVersion),
+          isNull(dietaryAssessments.invalidatedAt),
+          notExists(
+            qb
+              .select({ one: sql`1` })
+              .from(recipeIngredients)
+              .where(
+                and(
+                  eq(recipeIngredients.recipeId, recipes.id),
+                  notExists(
+                    qb
+                      .select({ one: sql`1` })
+                      .from(dietaryEvidence)
+                      .where(
+                        and(
+                          eq(dietaryEvidence.assessmentId, dietaryAssessments.id),
+                          eq(dietaryEvidence.ingredientId, recipeIngredients.id),
+                          eq(dietaryEvidence.finding, 'absent'),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+          ),
+        ),
+      ),
+  );
+  const hasAssessmentConflict = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(dietaryAssessments)
+      .where(
+        and(
+          eq(dietaryAssessments.recipeId, recipes.id),
+          eq(dietaryAssessments.customRestrictionId, restrictionId),
+          eq(dietaryAssessments.scope, 'profile'),
+          eq(dietaryAssessments.profileId, profileId),
+          eq(dietaryAssessments.verdict, 'conflicts'),
+          eq(dietaryAssessments.rulesetVersion, currentDietaryRulesetVersion),
+          eq(dietaryAssessments.restrictionTermsVersion, restrictionTermsVersion),
+          isNull(dietaryAssessments.invalidatedAt),
+        ),
+      ),
+  );
+  return and(
+    hasIngredients,
+    notExists(
+      qb
+        .select({ one: sql`1` })
+        .from(customDietaryRestrictions)
+        .where(
+          and(
+            eq(customDietaryRestrictions.id, restrictionId),
+            customRestrictionConflictCondition(restrictionId),
+          ),
+        ),
+    ),
+    sql`not (${hasAssessmentConflict})`,
+    hasCompleteAssessment,
+  )!;
 }
 
 /**
@@ -1413,10 +1505,20 @@ async function resolveIngredientFilter(search: RecipeSearch): Promise<string | n
 export async function searchRecipes(
   viewer: User | null,
   search: RecipeSearch,
-  { limit = RECIPE_SEARCH_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
+  {
+    limit = RECIPE_SEARCH_LIMIT,
+    offset = 0,
+    possibleOffset = 0,
+  }: { limit?: number; offset?: number; possibleOffset?: number } = {},
 ) {
   if (!isDbConfigured()) {
-    return { items: [], possibleItems: [], nextOffset: null, unrankable: NO_UNRANKABLE };
+    return {
+      items: [],
+      possibleItems: [],
+      nextOffset: null,
+      possibleNextOffset: null,
+      unrankable: NO_UNRANKABLE,
+    };
   }
   const groupIds = await viewerGroupIds(viewer);
   const ingredientFoodId = await resolveIngredientFilter(search);
@@ -1451,6 +1553,8 @@ export async function searchRecipes(
   let profileRestrictions: {
     id: string;
     severity: string;
+    profileId: string;
+    restrictionTermsVersion: string;
   }[] = [];
   if (search.safeFor && viewer) {
     const profile = await db.query.memberDietaryProfiles.findFirst({
@@ -1458,23 +1562,40 @@ export async function searchRecipes(
         eq(memberDietaryProfiles.id, search.safeFor),
         eq(memberDietaryProfiles.userId, viewer.id),
       ),
-      columns: { allergens: true, diets: true },
+      columns: { id: true, allergens: true, diets: true },
       with: {
         customRestrictions: {
           columns: { id: true, severity: true },
+          with: {
+            terms: {
+              columns: { term: true, source: true, approved: true },
+            },
+          },
         },
       },
     });
     if (profile) {
       profileAllergens = (profile.allergens ?? []).filter(isAllergen);
       profileDiets = (profile.diets ?? []).filter(isDietaryTag);
-      profileRestrictions = profile.customRestrictions;
+      profileRestrictions = profile.customRestrictions.map((restriction) => ({
+        id: restriction.id,
+        severity: restriction.severity,
+        profileId: profile.id,
+        restrictionTermsVersion: customRestrictionTermsFingerprint(
+          restriction.terms.map((term) => customDietaryRestrictionTermSchema.parse(term)),
+        ),
+      }));
       conditions.push(profileDietaryCondition(profileDiets, profileAllergens, 'definite'));
       for (const restriction of profileRestrictions) {
-        if (
-          restriction.severity === 'allergy-intolerance' ||
-          restriction.severity === 'strict-avoidance'
-        ) {
+        if (restriction.severity === 'allergy-intolerance') {
+          conditions.push(
+            customRestrictionAffirmativeCoverageCondition(
+              restriction.id,
+              restriction.profileId,
+              restriction.restrictionTermsVersion,
+            ),
+          );
+        } else if (restriction.severity === 'strict-avoidance') {
           conditions.push(
             notExists(
               qb
@@ -1608,11 +1729,16 @@ export async function searchRecipes(
     search.group && groupIds.includes(search.group) ? eq(recipes.groupId, search.group) : undefined,
     profileDietaryCondition(profileDiets, profileAllergens, 'eligible'),
     ...profileRestrictions
-      .filter(
-        (restriction) =>
-          restriction.severity === 'allergy-intolerance' ||
-          restriction.severity === 'strict-avoidance',
-      )
+      .filter((restriction) => restriction.severity === 'allergy-intolerance')
+      .map((restriction) =>
+        customRestrictionAffirmativeCoverageCondition(
+          restriction.id,
+          restriction.profileId,
+          restriction.restrictionTermsVersion,
+        ),
+      ),
+    ...profileRestrictions
+      .filter((restriction) => restriction.severity === 'strict-avoidance')
       .map((restriction) =>
         notExists(
           qb
@@ -1648,6 +1774,7 @@ export async function searchRecipes(
         ),
         orderBy,
         limit,
+        offset: possibleOffset,
         with: {
           author: true,
           tags: { with: { tag: true } },
@@ -1679,10 +1806,14 @@ export async function searchRecipes(
         macro: null,
       };
     });
+  const possibleNextOffset = hasPossibleFilter
+    ? nextPageOffset(possibleOffset, possibleRows.length, limit)
+    : null;
   return {
     items,
     possibleItems,
     nextOffset,
+    possibleNextOffset,
     unrankable: await unrankablePromise,
   };
 }

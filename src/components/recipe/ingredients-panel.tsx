@@ -28,7 +28,12 @@ import { computeBakersFormula, computeBatchYield } from '~/lib/bakers-math';
 import { volumeClassForItem } from '~/lib/food-units';
 import { type UnitSystem } from '~/lib/cook-state';
 import { formatList } from '~/lib/i18n-format';
-import { scalingNudge, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import {
+  scalingNudge,
+  DIETARY_TAG_LABELS,
+  DIETARY_TAGS,
+  type DietaryTag,
+} from '~/lib/substitutions';
 import { detectAllergensForSafety, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
 import {
   detectIngredientConflict,
@@ -42,10 +47,21 @@ import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { NativeSelect } from '~/components/ui/native-select';
-import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions';
+import {
+  IngredientSubstitutions,
+  matchesCustomRestriction,
+  type SubstitutionCustomRestriction,
+  type SubstitutionDietaryRule,
+} from '~/components/recipe/ingredient-substitutions';
 import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
-import { DIETARY_EVIDENCE_FINDINGS, type DietaryEvidenceFinding } from '~/lib/dietary-assessment';
+import {
+  DIETARY_EVIDENCE_FINDINGS,
+  type CustomRestrictionSeverity,
+  type DietaryEvidenceFinding,
+} from '~/lib/dietary-assessment';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
+import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
+import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
@@ -95,6 +111,12 @@ type PanelIngredient = {
 export type DietaryMember = CalorieMember & {
   allergens: Allergen[];
   diets: DietaryTag[];
+  customRestrictions?: {
+    id: string;
+    name: string;
+    severity: CustomRestrictionSeverity;
+    terms: string[];
+  }[];
 };
 
 type System = UnitSystem;
@@ -144,7 +166,10 @@ function DietaryIngredientReview({
 }) {
   const t = useTranslations('ingredientsPanel.dietaryReview');
   return (
-    <details className="col-span-3 mb-2 ms-9 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2">
+    <details
+      id={`dietary-correction-${ingredientId}`}
+      className="col-span-3 mb-2 ms-9 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2"
+    >
       <summary className="cursor-pointer text-xs font-medium text-foreground">
         {t('summary', { ingredient })}
       </summary>
@@ -186,6 +211,7 @@ function DietaryFindingEditor({
         </label>
         <NativeSelect
           id={selectId}
+          data-dietary-rule={ruleId}
           value={finding}
           onChange={(event) => setFinding(event.target.value as DietaryEvidenceFinding)}
         >
@@ -428,6 +454,7 @@ export function IngredientsPanel({
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
+  const tNames = useTranslations('classificationNames');
   const dietaryEvidenceByIngredient = React.useMemo(() => {
     const map = new Map<
       string,
@@ -435,16 +462,30 @@ export function IngredientsPanel({
     >();
     for (const assessment of dietaryAssessments) {
       for (const evidence of assessment.evidence) {
-        if (
-          evidence.finding !== 'present' &&
-          evidence.finding !== 'possible' &&
-          evidence.finding !== 'unresolved'
-        ) {
-          continue;
-        }
+        if (evidence.finding === 'absent') continue;
         const rows = map.get(evidence.ingredientId) ?? [];
         if (!rows.some((row) => row.ruleId === assessment.ruleId)) {
           rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
+        }
+        map.set(evidence.ingredientId, rows);
+      }
+    }
+    return map;
+  }, [dietaryAssessments]);
+  const canonicalEvidenceByIngredient = React.useMemo(() => {
+    const map = new Map<string, { ruleId: string; finding: DietaryEvidenceFinding }[]>();
+    for (const assessment of dietaryAssessments) {
+      if (assessment.scope !== 'canonical') continue;
+      for (const evidence of assessment.evidence) {
+        const rows = map.get(evidence.ingredientId) ?? [];
+        const existing = rows.find((row) => row.ruleId === assessment.ruleId);
+        if (!existing) {
+          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
+        } else if (
+          ['absent', 'unresolved', 'possible', 'present'].indexOf(evidence.finding) >
+          ['absent', 'unresolved', 'possible', 'present'].indexOf(existing.finding)
+        ) {
+          existing.finding = evidence.finding;
         }
         map.set(evidence.ingredientId, rows);
       }
@@ -462,6 +503,44 @@ export function IngredientsPanel({
     activeMember && (activeMember.allergens.length > 0 || activeMember.diets.length > 0)
       ? { allergens: activeMember.allergens, diets: activeMember.diets }
       : null;
+  const activeDietaryRules = React.useMemo<SubstitutionDietaryRule[]>(() => {
+    if (!activeMember) return [];
+    const rules = new Map<string, Omit<SubstitutionDietaryRule, 'currentFinding'>>();
+    for (const dietaryTag of activeMember.diets) {
+      for (const ruleId of dietaryRuleIdsForTag(dietaryTag)) {
+        if (isBuiltInDietaryRuleId(ruleId)) {
+          rules.set(ruleId, { ruleId, dietaryTag });
+        }
+      }
+    }
+    for (const allergen of activeMember.allergens) {
+      const ruleId = `allergen:${allergen}`;
+      const dietaryTag = DIETARY_TAGS.find((tag) => dietaryRuleIdsForTag(tag).includes(ruleId));
+      if (dietaryTag && isBuiltInDietaryRuleId(ruleId)) {
+        rules.set(ruleId, { ruleId, dietaryTag });
+      }
+    }
+    return [...rules.values()].map((rule) => ({ ...rule, currentFinding: 'unresolved' }));
+  }, [activeMember]);
+  const activeCustomRestrictions = React.useMemo<SubstitutionCustomRestriction[]>(
+    () =>
+      (activeMember?.customRestrictions ?? []).flatMap((restriction) => {
+        const terms = restriction.terms.filter((term) => term.trim().length > 0);
+        return terms.length > 0
+          ? [
+              {
+                id: restriction.id,
+                name: restriction.name,
+                severity: restriction.severity,
+                terms,
+              },
+            ]
+          : [];
+      }),
+    [activeMember],
+  );
+  const hasActiveRestrictions =
+    memberNeeds != null || (activeMember?.customRestrictions?.length ?? 0) > 0;
   const cookingForId = React.useId();
 
   const servings = controls ? controls.servings : servingsInternal;
@@ -896,7 +975,7 @@ export function IngredientsPanel({
             ))}
           </select>
           {activeMember &&
-            (memberNeeds ? (
+            (hasActiveRestrictions ? (
               <span className="text-xs text-muted-foreground">
                 {t('flagging', { name: activeMember.name })}
               </span>
@@ -947,32 +1026,77 @@ export function IngredientsPanel({
                   ? decomposeMeasure(displayed.q, displayed.unit, locale)
                   : null;
                 const ingredientAllergens = ing.allergens ?? detectAllergensForSafety(ing.item);
-                const conflict = memberNeeds
-                  ? detectIngredientConflict(ingredientAllergens, memberNeeds)
-                  : null;
-                const flagged = conflict != null && isIngredientConflict(conflict);
-                const reason = flagged
-                  ? [
-                      conflict.allergens.length > 0
-                        ? t('reasonContains', {
-                            list: formatList(
-                              conflict.allergens.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
-                              locale,
+                const assessmentRules = activeDietaryRules.flatMap((rule) => {
+                  const finding = canonicalEvidenceByIngredient
+                    .get(ing.id)
+                    ?.find((item) => item.ruleId === rule.ruleId)?.finding;
+                  return finding ? [{ ...rule, currentFinding: finding }] : [];
+                });
+                const customConflicts = activeCustomRestrictions.filter(
+                  (restriction) =>
+                    restriction.severity !== 'preference' &&
+                    matchesCustomRestriction(ing.item, restriction.terms),
+                );
+                const useLegacyConflict = assessmentRules.length === 0;
+                const conflict =
+                  memberNeeds && useLegacyConflict
+                    ? detectIngredientConflict(ingredientAllergens, memberNeeds)
+                    : null;
+                const assessmentConcerns = assessmentRules.filter(
+                  (rule) => rule.currentFinding !== 'absent',
+                );
+                const flagged =
+                  (conflict != null && isIngredientConflict(conflict)) ||
+                  assessmentConcerns.length > 0 ||
+                  customConflicts.length > 0;
+                const assessmentReason =
+                  assessmentConcerns.length > 0 || customConflicts.length > 0
+                    ? t('reasonNot', {
+                        list: formatList(
+                          [
+                            ...assessmentConcerns.map(
+                              (rule) =>
+                                `${tNames(rule.dietaryTag).toLowerCase()}: ${t(
+                                  `dietaryReview.finding.${rule.currentFinding}`,
+                                ).toLowerCase()}`,
                             ),
-                          })
-                        : null,
-                      conflict.diets.length > 0
-                        ? t('reasonNot', {
-                            list: formatList(
-                              conflict.diets.map((d) => DIETARY_TAG_LABELS[d].toLowerCase()),
-                              locale,
-                            ),
-                          })
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')
-                  : '';
+                            ...customConflicts.map((restriction) => restriction.name),
+                          ],
+                          locale,
+                        ),
+                      })
+                    : null;
+                const legacyReason =
+                  conflict && isIngredientConflict(conflict)
+                    ? [
+                        conflict.allergens.length > 0
+                          ? t('reasonContains', {
+                              list: formatList(
+                                conflict.allergens.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+                                locale,
+                              ),
+                            })
+                          : null,
+                        conflict.diets.length > 0
+                          ? t('reasonNot', {
+                              list: formatList(
+                                conflict.diets.map((d) => DIETARY_TAG_LABELS[d].toLowerCase()),
+                                locale,
+                              ),
+                            })
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : null;
+                const reason = assessmentReason ?? legacyReason ?? '';
+                const presetTags = [
+                  ...(conflict?.suggestedTags ?? []),
+                  ...assessmentRules
+                    .filter((rule) => rule.currentFinding === 'present')
+                    .map((rule) => rule.dietaryTag),
+                ].filter((tag, index, tags) => tags.indexOf(tag) === index);
+                const reviewFindings = dietaryEvidenceByIngredient.get(ing.id) ?? [];
                 return (
                   <li
                     key={ing.id}
@@ -1094,9 +1218,10 @@ export function IngredientsPanel({
                         <IngredientSubstitutions
                           item={ing.item}
                           flagged={flagged}
-                          presetTags={conflict?.suggestedTags}
+                          presetTags={presetTags}
                           avoidAllergens={memberNeeds?.allergens}
-                          currentConflictTags={conflict?.suggestedTags}
+                          dietaryRules={assessmentRules}
+                          customRestrictions={activeCustomRestrictions}
                         />
                       </div>
                     </div>
@@ -1109,12 +1234,11 @@ export function IngredientsPanel({
                         </span>
                       </p>
                     )}
-                    {canReviewDietary &&
-                    (dietaryEvidenceByIngredient.get(ing.id)?.length ?? 0) > 0 ? (
+                    {canReviewDietary && reviewFindings.length > 0 ? (
                       <DietaryIngredientReview
                         ingredientId={ing.id}
                         ingredient={ing.item}
-                        findings={dietaryEvidenceByIngredient.get(ing.id) ?? []}
+                        findings={reviewFindings}
                       />
                     ) : null}
                     {nudge && (

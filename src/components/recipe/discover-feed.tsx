@@ -7,6 +7,7 @@ import { loadMorePublicRecipesAction } from '~/server/recipes/discover-actions';
 import { type RatingSort } from '~/lib/ratings';
 import { Button } from '~/components/ui/button';
 import { RecipeCard, type CardRecipe } from '~/components/recipe/recipe-card';
+import { type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
 
 /**
  * Client-side discover list with a "Load more" button.
@@ -23,6 +24,8 @@ export function DiscoverFeed({
   canFavorite = false,
   favoritedIds = [],
   priorityCount = 0,
+  members,
+  signedIn = false,
 }: {
   initialItems: CardRecipe[];
   initialNextOffset: number | null;
@@ -35,6 +38,8 @@ export function DiscoverFeed({
    * stay lazy since they are appended after these indices.
    */
   priorityCount?: number;
+  members?: CardDietaryMember[];
+  signedIn?: boolean;
 }) {
   const t = useTranslations('recipe');
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
@@ -65,6 +70,8 @@ export function DiscoverFeed({
             canFavorite={canFavorite}
             favorited={favoritedSet.has(recipe.id)}
             priority={i < priorityCount}
+            members={members}
+            signedIn={signedIn}
           />
         ))}
       </div>

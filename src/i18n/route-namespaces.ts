@@ -136,6 +136,7 @@ export const ROUTE_NAMESPACES: Readonly<Record<string, readonly string[]>> = {
     'versionCompare',
   ],
   '/recipes/:/:/cook': [
+    'classificationNames',
     'engagement',
     'ingredientSubstitutions',
     'ingredientsDrawer',

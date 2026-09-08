@@ -7,9 +7,18 @@ import { getCurrentUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import { listPublicRecipes } from '~/server/recipes/queries';
 import { getFavoriteRecipeIds } from '~/server/collections/queries';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
 import { brand } from '~/config/brand';
 import { absoluteUrl } from '~/lib/utils';
+import { isAllergen } from '~/lib/allergens';
+import { isDietaryTag } from '~/lib/substitutions';
+import {
+  CUSTOM_RESTRICTION_SEVERITIES,
+  type CustomRestrictionSeverity,
+} from '~/lib/dietary-assessment';
 import { DiscoverFeed } from '~/components/recipe/discover-feed';
+import { type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
 import { Button } from '~/components/ui/button';
 import { withRouteMessages } from '~/components/i18n/route-messages';
 
@@ -43,10 +52,30 @@ const LCP_PRIORITY_COUNT = 3;
 async function DiscoverPage() {
   const dbReady = isDbConfigured();
   const user = await getCurrentUser();
-  const [discover, favoriteIds] = await Promise.all([
+  const [discover, favoriteIds, memberProfiles] = await Promise.all([
     listPublicRecipes(),
     getFavoriteRecipeIds(user?.id),
+    dbReady && user ? listMemberProfiles(user.id) : Promise.resolve([]),
   ]);
+  const members: CardDietaryMember[] = memberProfiles.map((member) => ({
+    id: member.id,
+    name: member.name,
+    allergens: (member.allergens ?? []).filter(isAllergen),
+    diets: (member.diets ?? []).filter(isDietaryTag),
+    customRestrictions: member.customRestrictions.flatMap((restriction) =>
+      CUSTOM_RESTRICTION_SEVERITIES.includes(restriction.severity as CustomRestrictionSeverity)
+        ? [
+            {
+              id: restriction.id,
+              severity: restriction.severity as CustomRestrictionSeverity,
+            },
+          ]
+        : [],
+    ),
+  }));
+  const discoverCards = dbReady
+    ? await attachCardDietaryAssessmentViews(discover.items, user?.id ?? null)
+    : discover.items;
   const t = await getTranslations('recipe.discover');
   const tMeta = await getTranslations('metadata');
 
@@ -65,7 +94,7 @@ async function DiscoverPage() {
         </p>
       </header>
 
-      {!dbReady || discover.items.length === 0 ? (
+      {!dbReady || discoverCards.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
           <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <SearchX className="size-7" />
@@ -80,11 +109,13 @@ async function DiscoverPage() {
         </div>
       ) : (
         <DiscoverFeed
-          initialItems={discover.items}
+          initialItems={discoverCards}
           initialNextOffset={discover.nextOffset}
           canFavorite={Boolean(user)}
           favoritedIds={[...favoriteIds]}
           priorityCount={LCP_PRIORITY_COUNT}
+          members={members}
+          signedIn={Boolean(user)}
         />
       )}
     </div>
