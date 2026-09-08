@@ -2091,6 +2091,43 @@
       "diets": "Diets",
       "familyGroup": "Family group (optional)",
       "justMe": "Just me"
+    },
+    "assessmentBadge": {
+      "detailsTitle": "{label} dietary assessment",
+      "triggerLabel": "{label}. Status: {status}. {provenance}",
+      "status": {
+        "suitability": "Suitable",
+        "conflict": "Conflict",
+        "review": "Needs review"
+      },
+      "provenance": {
+        "label": "Assessment source",
+        "authorConfirmed": "Confirmed by {source}",
+        "ingredientAnalyzed": "Ingredient analysis",
+        "ingredientAnalyzedWithConfidence": "Ingredient-analyzed, {confidence} confidence"
+      },
+      "confidence": {
+        "high": "High",
+        "medium": "Medium",
+        "needs-review": "Needs review"
+      },
+      "confidenceLine": "Confidence: {confidence}",
+      "coverageLabel": "Ingredient recognition",
+      "recognized": "{recognized} of {total} {total, plural, one {ingredient} other {ingredients}} recognized",
+      "attentionTitle": "Needs attention",
+      "finding": {
+        "conflict": "Conflict",
+        "unresolved": "Needs review"
+      },
+      "ingredientFinding": "{ingredient}: {finding}",
+      "limitation": {
+        "brands-and-cross-contact": "Ingredient review cannot verify every brand or cross-contact.",
+        "cross-contact": "This assessment cannot verify cross-contact."
+      },
+      "action": {
+        "review": "Review details",
+        "correct": "Correct assessment"
+      }
     }
   },
   "moderation": {
