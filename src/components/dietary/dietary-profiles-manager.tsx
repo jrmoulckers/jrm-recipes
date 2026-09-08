@@ -70,6 +70,7 @@ type Draft = {
   allergens: Allergen[];
   diets: DietaryTag[];
   groupId: string;
+  subjectScope: 'self' | undefined;
   customRestrictions: MemberProfileView['customRestrictions'];
 };
 
@@ -78,6 +79,7 @@ const EMPTY_DRAFT: Draft = {
   allergens: [],
   diets: [],
   groupId: '',
+  subjectScope: undefined,
   customRestrictions: [],
 };
 
@@ -87,6 +89,7 @@ function toDraft(profile: MemberProfileView): Draft {
     allergens: profile.allergens,
     diets: profile.diets,
     groupId: profile.groupId ?? '',
+    subjectScope: undefined,
     customRestrictions: profile.customRestrictions,
   };
 }
@@ -139,6 +142,7 @@ export function DietaryProfilesManager({
       allergens: draft.allergens,
       diets: draft.diets,
       groupId: draft.groupId || undefined,
+      subjectScope: draft.subjectScope,
       customRestrictions: draft.customRestrictions,
     };
     setFieldErrors({});
@@ -491,6 +495,33 @@ export function DietaryProfilesManager({
                 <p className="text-sm text-destructive" role="alert">
                   {fieldErrors.customRestrictions[0]}
                 </p>
+              ) : null}
+              {draft.customRestrictions.length > 0 ? (
+                <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-4">
+                  <label className="flex items-start gap-3">
+                    <Checkbox
+                      checked={draft.subjectScope === 'self'}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({
+                          ...current,
+                          subjectScope: checked === true ? 'self' : undefined,
+                        }))
+                      }
+                      aria-invalid={Boolean(fieldErrors.subjectScope)}
+                    />
+                    <span className="text-sm font-medium">
+                      {t('customRestrictions.subjectScope')}
+                    </span>
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('customRestrictions.subjectScopeHelp')}
+                  </p>
+                  {fieldErrors.subjectScope?.[0] ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {t('customRestrictions.subjectScopeRequired')}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </fieldset>
 

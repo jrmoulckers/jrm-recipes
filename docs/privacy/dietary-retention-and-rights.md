@@ -221,20 +221,20 @@ Source copy must receive product and qualified legal review before translation. 
 be semantic, use whole ICU messages, preserve named placeholders, and be added to all supported
 catalogs:
 
-| Proposed semantic area                          | Required message                                                                                                                                           |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dietary.privacy.profileScope`                  | The profile is private to its creator; choosing a family group organizes it but does not share it                                                          |
-| `dietary.privacy.subjectScope`                  | Model-assisted/custom processing is self-only until an approved child/non-user rights process exists                                                       |
-| `dietary.privacy.subjectScopeRequired`          | A complete-sentence validation error when subject scope is missing, non-self, or disputed                                                                  |
-| `dietary.smartAnalysis.setup`                   | Optional on-device processing, model download size/storage, no cloud inference, and a clear enable action                                                  |
-| `dietary.smartAnalysis.unsupported`             | Deterministic checks remain available; unsupported hardware does not imply reduced safety or failure                                                       |
-| `dietary.smartAnalysis.disable`                 | Disabling stops work and removes account-bound model/analysis caches while preserving server-held rights                                                   |
-| `dietary.smartAnalysis.downgrade`               | New premium analysis stops; existing restrictions, corrections, results, export, and deletion stay available                                               |
-| `dietary.export.description`                    | Which creator-owned profiles, restrictions, assessments, and corrections are included                                                                      |
-| `dietary.profileDelete.description`             | Profile-personal data and local artifacts are deleted; recipe-level built-in facts are not                                                                 |
-| `settings.dataPage.delete.consequences.dietary` | Account deletion removes profile-personal dietary data but current built-in facts may remain with a retained shared recipe without account/profile linkage |
-| `settings.dataPage.delete.consequences.backups` | Deleted database data remains beyond use only for the approved backup horizon and is re-erased on restore                                                  |
-| `dietary.limitations`                           | Results do not prove brand, cross-contact, preparation, certification, or medical suitability                                                              |
+| Semantic area (implemented or required)                          | Required message                                                                                                                                           |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dietary.fields.familyGroupPrivacy`                              | The profile is private to its creator; choosing a family group organizes it but does not share it                                                          |
+| `dietary.customRestrictions.subjectScope` and `subjectScopeHelp` | Model-assisted/custom processing is self-only until an approved child/non-user rights process exists                                                       |
+| `dietary.customRestrictions.subjectScopeRequired`                | A complete-sentence validation error when subject scope is missing, non-self, or disputed                                                                  |
+| `dietary.smartAnalysis.setup`                                    | Optional on-device processing, model download size/storage, no cloud inference, and a clear enable action                                                  |
+| `dietary.smartAnalysis.unsupported`                              | Deterministic checks remain available; unsupported hardware does not imply reduced safety or failure                                                       |
+| `dietary.smartAnalysis.disable`                                  | Disabling stops work and removes account-bound model/analysis caches while preserving server-held rights                                                   |
+| `dietary.smartAnalysis.downgrade`                                | New premium analysis stops; existing restrictions, corrections, results, export, and deletion stay available                                               |
+| `dietary.export.description`                                     | Which creator-owned profiles, restrictions, assessments, and corrections are included                                                                      |
+| `dietary.profileDelete.description`                              | Profile-personal data and local artifacts are deleted; recipe-level built-in facts are not                                                                 |
+| `settings.dataPage.delete.consequences.dietary`                  | Account deletion removes profile-personal dietary data but current built-in facts may remain with a retained shared recipe without account/profile linkage |
+| `settings.dataPage.delete.consequences.backups`                  | Deleted database data remains beyond use only for the approved backup horizon and is re-erased on restore                                                  |
+| `dietary.limitations`                                            | Results do not prove brand, cross-contact, preparation, certification, or medical suitability                                                              |
 
 Implementation must:
 
@@ -248,7 +248,7 @@ Implementation must:
 
 ## Release evidence
 
-After prerequisites land, release evidence must link:
+Release evidence must link:
 
 - #1101 schema/authorization/export/erasure and public-projection tests;
 - projection and erasure tests proving retained correction values are schema-constrained and that

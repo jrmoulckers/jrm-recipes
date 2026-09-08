@@ -31,29 +31,40 @@ const customRestrictionInput = z.object({
     .transform((terms) => dedupe(terms.map((term) => term.toLowerCase()))),
 });
 
-export const memberProfileInput = z.object({
-  name: z.string().trim().min(1, 'Add a name').max(80),
-  allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).default([]).transform(dedupe),
-  diets: z.array(z.enum(DIETARY_TAGS)).max(DIETARY_TAGS.length).default([]).transform(dedupe),
-  customRestrictions: z.array(customRestrictionInput).max(25).default([]),
-  // A sensible daily-energy range: high enough for athletes, low enough to
-  // reject typos. Optional. Many members won't track calories.
-  calorieGoal: z
-    .union([z.string(), z.number()])
-    .optional()
-    .transform((v) => {
-      if (v === undefined || v === '' || v === null) return undefined;
-      const n = typeof v === 'number' ? v : Number(v);
-      return Number.isFinite(n) ? n : NaN;
-    })
-    .pipe(z.number().int().min(0).max(20000).optional()),
-  groupId: z
-    .string()
-    .trim()
-    .max(24)
-    .optional()
-    .transform((v) => (v == null || v.length === 0 ? undefined : v)),
-});
+export const memberProfileInput = z
+  .object({
+    name: z.string().trim().min(1, 'Add a name').max(80),
+    allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).default([]).transform(dedupe),
+    diets: z.array(z.enum(DIETARY_TAGS)).max(DIETARY_TAGS.length).default([]).transform(dedupe),
+    customRestrictions: z.array(customRestrictionInput).max(25).default([]),
+    subjectScope: z.literal('self').optional(),
+    // A sensible daily-energy range: high enough for athletes, low enough to
+    // reject typos. Optional. Many members won't track calories.
+    calorieGoal: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((v) => {
+        if (v === undefined || v === '' || v === null) return undefined;
+        const n = typeof v === 'number' ? v : Number(v);
+        return Number.isFinite(n) ? n : NaN;
+      })
+      .pipe(z.number().int().min(0).max(20000).optional()),
+    groupId: z
+      .string()
+      .trim()
+      .max(24)
+      .optional()
+      .transform((v) => (v == null || v.length === 0 ? undefined : v)),
+  })
+  .superRefine((input, context) => {
+    if (input.customRestrictions.length > 0 && input.subjectScope !== 'self') {
+      context.addIssue({
+        code: 'custom',
+        path: ['subjectScope'],
+        message: 'Confirm that this profile describes you before saving custom restrictions.',
+      });
+    }
+  });
 
 export type MemberProfileInput = z.infer<typeof memberProfileInput>;
 /** Pre-transform shape accepted by the schema. What the client/UI sends. */
