@@ -117,9 +117,10 @@ shape rather than claiming the pending implementation exists.
   not an authorization or sharing edge.
 - Profile/custom rows and their personalized assessments/corrections cascade with the
   profile/restriction/account. They cannot be public.
-- A current built-in recipe fact may follow a recipe retained under ADR-0009, but every actor,
-  profile, custom-restriction, severity, personalized verdict, and hidden subject/manager link is
-  removed.
+- A current built-in recipe fact may follow a recipe retained under ADR-0009 only when every value
+  is schema-constrained and allowlisted with no personal text/context. Every actor, profile,
+  custom-restriction, severity, personalized verdict, and hidden subject/manager link is removed;
+  private, free-text, or identifying correction content is deleted.
 - Authenticated export includes requester-owned profiles/restrictions and requester-owned or
   actor-attributed facts without crossing into another profile.
 - Deletion tombstones contain aggregate dietary counts only, and post-erasure assertions cover

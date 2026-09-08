@@ -262,7 +262,9 @@ contract for those pending tables is defined in
 
 - profiles, custom restrictions, personalized assessments, and private corrections are deleted;
 - only current built-in facts may remain with an ADR-0009 retained recipe;
-- retained facts lose actor/profile/custom-restriction linkage;
+- retained facts are limited to schema-constrained allowlisted values with no personal text or
+  context and lose actor/profile/custom-restriction linkage; private, free-text, or identifying
+  correction content is deleted rather than merely de-attributed;
 - export is offered before deletion without exposing another person's profile;
 - the tombstone receives aggregate counts only and post-erasure assertions cover every personal
   and actor-attributed dietary table.

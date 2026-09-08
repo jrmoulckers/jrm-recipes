@@ -125,7 +125,9 @@ it. The implementation requirements are recorded in
 
 - a current recipe assessment against a built-in rule may remain as recipe metadata when the recipe
   survives, provided it contains no profile or custom-restriction linkage;
-- actor attribution on retained dietary evidence or corrections is removed with the account;
+- only schema-constrained, allowlisted correction facts with no personal text/context may survive;
+  their actor attribution is removed, while private, free-text, or identifying correction content
+  is deleted;
 - profile names, custom restrictions, severities, personalized assessments, private corrections,
   and manager/subject linkage are personal profile data and do not survive as recipe facts;
 - deletion evidence adds aggregate counts only, never dietary ids, names, verdicts, evidence,

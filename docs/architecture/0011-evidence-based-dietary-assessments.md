@@ -158,8 +158,15 @@ synonyms, and aliases, but the user must approve them before they affect results
 infers whether a custom restriction is medical.
 
 Custom restrictions attach to an individual dietary profile and can be copied deliberately to
-another profile. Authorization and collaboration follow Heirloom's existing recipe, profile,
-family, and co-creator rules; this feature does not create a parallel permission system.
+another profile by its creator. In v1 the profile and its custom restrictions remain private to
+that creator. Family-group membership, the profile's optional `groupId`, recipe access, and
+co-creator status do not authorize reading or changing profile-personal data.
+
+Model-assisted/custom-restriction processing is self-only in v1. Before either capability runs, a
+minimal non-identifying subject-scope declaration must state that the profile describes its
+creator. Missing, non-self, or disputed status is rejected at the server mutation/persistence
+boundary until the qualified-human-approved child/non-user rights process in the dietary DPIA is
+implemented.
 
 ## Provenance and correction
 
@@ -231,9 +238,11 @@ After enablement:
 5. Unsupported devices fall back to deterministic results without implying failure or reduced
    safety.
 
-Only the structured assessment syncs. Once synced, family members and other authorized viewers can
-reuse it without independently downloading or running the model. A newer valid assessment replaces
-an older one deterministically.
+Only a structured recipe-level assessment against a built-in rule may sync for reuse by other
+recipe-authorized viewers without independently downloading or running the model. Profile-linked
+or custom-restriction assessments remain creator-private in v1 and never become reusable because a
+viewer is a family member or co-creator. A newer valid recipe-level assessment replaces an older one
+deterministically.
 
 Synced model output is untrusted input. The server re-evaluates deterministic evidence and rejects
 any submitted assessment that contradicts it. The server also applies the existing recipe and
@@ -276,8 +285,9 @@ Those documents make explicit several boundaries that this architecture depends 
   corrections must cascade with their profile and never survive as recipe facts;
 - authenticated export includes requester-owned or requester-attributed dietary data without
   exposing another person's profile;
-- account erasure removes actor/profile linkage from any retained built-in recipe fact and records
-  aggregate counts only;
+- account erasure may retain only schema-constrained, allowlisted built-in recipe facts with no
+  personal text or context; it removes actor/profile linkage, deletes free-text/private correction
+  content, and records aggregate counts only;
 - one account-bound cleanup coordinator must stop work and purge model, analysis, IndexedDB, and
   personalized recipe caches on disable, sign-out, account switch, and deletion completion;
 - smart-analysis enablement is separate from analytics consent and from any legal consent record.

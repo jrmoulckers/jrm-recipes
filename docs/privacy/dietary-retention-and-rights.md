@@ -12,10 +12,10 @@ production-enable gate in
 
 Dietary data has two structurally separate scopes:
 
-| Scope                       | Includes                                                                                                                                                                                     | Owner and authorization                                                    | May be public or retained with a shared recipe?                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Recipe-level built-in facts | Evidence and current assessment for a registry-defined built-in rule, freshness metadata, and a recipe-specific correction authorized under recipe rules                                     | The recipe authorization boundary. Actor attribution remains personal data | A dedicated allowlisted projection may expose current facts. Current facts may follow a recipe retained under ADR-0009 after actor de-attribution |
-| Profile-personal data       | Profile name, built-in selections, custom restriction names/terms/severity, personalized assessment, private correction, profile linkage, manager/subject relationship, and enablement state | The profile creator only in v1                                             | Never. It cascades with the profile/restriction/account and cannot be transformed into a recipe fact by removing a name                           |
+| Scope                       | Includes                                                                                                                                                                                     | Owner and authorization                                                    | May be public or retained with a shared recipe?                                                                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recipe-level built-in facts | Evidence and current assessment for a registry-defined built-in rule, freshness metadata, and a schema-constrained recipe correction authorized under recipe rules                           | The recipe authorization boundary. Actor attribution remains personal data | A dedicated allowlisted projection may expose current facts. Only facts/corrections with no personal text/context may follow a retained recipe after actor de-attribution |
+| Profile-personal data       | Profile name, built-in selections, custom restriction names/terms/severity, personalized assessment, private correction, profile linkage, manager/subject relationship, and enablement state | The profile creator only in v1                                             | Never. It cascades with the profile/restriction/account and cannot be transformed into a recipe fact by removing a name                                                   |
 
 An optional profile `groupId` is context for organizing a creator's own data. It does not:
 
@@ -28,6 +28,11 @@ An optional profile `groupId` is context for organizing a creator's own data. It
 Every profile operation must authorize the creator directly. Recipe and profile authorization are
 checked independently when a personalized assessment touches both.
 
+Model-assisted/custom-restriction processing is self-only in v1. A minimal non-identifying
+subject-scope declaration is required before either capability runs. Missing, non-self, or disputed
+status must be rejected at the server mutation/persistence boundary until the qualified-human
+rights process in the dietary DPIA is approved and implemented.
+
 ## Purpose-bound retention schedule
 
 The periods below are proposed engineering limits. Legal, product, privacy, and operations owners
@@ -37,7 +42,8 @@ must approve them before production enablement.
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Current recipe-level built-in fact                                      | While the recipe exists and the fact is current for its ingredient fingerprint/ruleset            | Delete with the recipe. If the recipe survives account deletion under ADR-0009, retain the current fact but remove actor/profile/custom-restriction linkage |
 | Invalidated or superseded recipe-level assessment/evidence              | No more than 30 days after invalidation or supersession, solely for rollback and explainability   | Hard-delete structured rows or compact them to non-personal aggregate operational evidence; never serve them as current                                     |
-| Current recipe-specific correction                                      | While the corrected ingredient/fact remains in the recipe and the correction is current           | Delete when the ingredient/recipe is deleted; de-attribute on actor erasure if the recipe survives                                                          |
+| Current schema-constrained recipe correction                            | While the corrected ingredient/fact remains in the recipe and the correction is current           | Retain after actor erasure only if every value belongs to an allowlisted non-personal schema; otherwise delete the correction content                       |
+| Free-text, private, or identifying correction content                   | Only while its authorized correction purpose remains                                              | Delete on profile/account erasure even when the recipe survives; actor nulling alone is insufficient                                                        |
 | Superseded correction version                                           | No more than 30 days after supersession                                                           | Hard-delete content and actor linkage                                                                                                                       |
 | Profile and custom restriction                                          | Until explicit removal, profile deletion, or account erasure                                      | Cascade-delete from the live store and purge account-bound local copies                                                                                     |
 | Current personalized assessment/correction                              | While the profile/restriction exists, recipe access remains authorized, and the result is current | Delete on profile/restriction/account deletion or lost recipe access; never retain with a shared recipe                                                     |
@@ -89,6 +95,9 @@ contract includes them. A data-access request is not a new grant to someone else
 - Authorized recipe editors correct recipe ingredient evidence under the recipe boundary.
 - A profile creator who is not authorized to edit the recipe cannot turn a private correction into
   a shared recipe fact.
+- A correction may survive account erasure only when its persisted representation is an allowlisted,
+  schema-constrained recipe fact with no free text, health narrative, private context, or indirect
+  identifier. Nulling the actor on arbitrary content is not de-identification.
 - Deterministic conflicts cannot be overridden by model output or a confirmation. The underlying
   ingredient/evidence must be corrected.
 - Rights access, correction, and deletion cannot be paywalled.
@@ -109,8 +118,9 @@ Account erasure must additionally:
 
 1. include dietary rows in the deletion plan and aggregate preview counts;
 2. remove all profile-personal rows and enablement state;
-3. remove creator linkage from retained current recipe-level built-in facts/corrections when the
-   recipe survives under ADR-0009;
+3. retain only schema-constrained current recipe-level built-in facts/corrections with no personal
+   text or context when the recipe survives under ADR-0009; delete all free-text, private, or
+   identifying correction content before removing creator linkage;
 4. ensure no retained fact carries a profile id, custom restriction id/name, severity, personalized
    verdict, or hidden subject/manager linkage;
 5. write aggregate deletion/retention counts only to the tombstone;
@@ -139,7 +149,8 @@ When account deletion retains a recipe under ADR-0009:
 | Data associated with that recipe                               | Result                                                          |
 | -------------------------------------------------------------- | --------------------------------------------------------------- |
 | Current built-in rule fact with no profile/custom linkage      | Retain with the recipe if still current                         |
-| Actor attribution on retained evidence/correction              | Set to `NULL` or otherwise remove the live user reference       |
+| Actor attribution on a schema-constrained non-personal fact    | Set to `NULL` or otherwise remove the live user reference       |
+| Free-text, private, or identifying correction content          | Delete; actor nulling alone is insufficient                     |
 | Personalized profile assessment                                | Delete                                                          |
 | Custom restriction assessment/evidence                         | Delete                                                          |
 | Profile/custom restriction id, name, severity, or manager link | Delete; it must never have entered the shared projection        |
@@ -194,13 +205,14 @@ Issue #1107 owns the runtime boundary. After it lands, issue #1106 must verify r
   `before_send`;
 - rejection of unknown `dietary_*` events, extra keys, nested objects, and unbounded values;
 - canary tests proving ingredient/restriction content and identifiers, profile/recipe/rule ids,
-  severity, verdict/conflict, evidence, corrections, fingerprints, model input/output, and raw
-  errors never reach transport;
+  `groupId`, household/group identifiers, subject/manager relationship fields, severity,
+  verdict/conflict, evidence, corrections, fingerprints, model input/output, and raw errors never
+  reach transport;
 - analytics consent and GPC/DNT remain independent from smart-analysis enablement.
 
 Application logs follow the same forbidden-content list. A failure is represented by a fixed code
 and, where needed, a count. It never interpolates an exception, request body, model result, recipe,
-profile, ingredient, or restriction.
+profile, ingredient, restriction, `groupId`, household/group identifier, or subject/manager field.
 
 ## Localized notice and copy requirements
 
@@ -211,6 +223,8 @@ catalogs:
 | Proposed semantic area                          | Required message                                                                                                                                           |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dietary.privacy.profileScope`                  | The profile is private to its creator; choosing a family group organizes it but does not share it                                                          |
+| `dietary.privacy.subjectScope`                  | Model-assisted/custom processing is self-only until an approved child/non-user rights process exists                                                       |
+| `dietary.privacy.subjectScopeRequired`          | A complete-sentence validation error when subject scope is missing, non-self, or disputed                                                                  |
 | `dietary.smartAnalysis.setup`                   | Optional on-device processing, model download size/storage, no cloud inference, and a clear enable action                                                  |
 | `dietary.smartAnalysis.unsupported`             | Deterministic checks remain available; unsupported hardware does not imply reduced safety or failure                                                       |
 | `dietary.smartAnalysis.disable`                 | Disabling stops work and removes account-bound model/analysis caches while preserving server-held rights                                                   |
@@ -236,6 +250,10 @@ Implementation must:
 After prerequisites land, release evidence must link:
 
 - #1101 schema/authorization/export/erasure and public-projection tests;
+- projection and erasure tests proving retained correction values are schema-constrained and that
+  free-text/private/identifying content is deleted rather than merely de-attributed;
+- server-boundary tests proving missing, non-self, and disputed subject scope cannot run or persist
+  custom/model-assisted processing;
 - #1107 analytics allowlist and canary tests;
 - #1109 account-transition cleanup and cache-isolation tests;
 - retention enforcement for every persisted stale/rejected category;

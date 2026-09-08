@@ -345,8 +345,9 @@ After #1101 lands, restore verification and `assertUserErased` coverage must inc
 profile-personal and actor-attributed dietary table. Re-applying an erasure must:
 
 - delete profiles, custom restrictions, personalized assessments, and private corrections;
-- remove erased-user attribution from current built-in recipe facts/corrections retained with an
-  ADR-0009 recipe;
+- retain only schema-constrained current built-in recipe facts/corrections with no personal text or
+  context, remove their erased-user attribution, and delete any private, free-text, or identifying
+  correction content even when the ADR-0009 recipe survives;
 - confirm no retained row contains a profile id, custom-restriction id/name, severity, personalized
   verdict, or hidden subject/manager linkage;
 - preserve only aggregate dietary deletion/retention counts in `deletion_records`.
