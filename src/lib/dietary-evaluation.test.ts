@@ -5,12 +5,12 @@ import { DIETARY_EVALUATION_CORPUS_V1 } from './dietary-evaluation-corpus.v1';
 import { foodNodeId } from './food-db';
 import {
   DIETARY_EVALUATION_CATEGORIES,
+  DIETARY_EVALUATION_RULE_IDS,
   assertDietaryEvaluationCorpus,
   assertDietaryEvaluationReleaseGate,
   evaluateDietaryResolver,
   resolveWithDeterministicAllergens,
   type DietaryCandidateResolver,
-  type DietaryEvaluationCorpus,
 } from './dietary-evaluation';
 
 describe('dietary evaluation corpus v1', () => {
@@ -18,15 +18,22 @@ describe('dietary evaluation corpus v1', () => {
     expect(() => assertDietaryEvaluationCorpus(DIETARY_EVALUATION_CORPUS_V1)).not.toThrow();
   });
 
-  it('covers every supported locale, category, and expected finding', () => {
+  it('covers every supported locale, category, finding, and unsafe rule', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const localeCases = DIETARY_EVALUATION_CORPUS_V1.cases.filter(
         (testCase) => testCase.locale === locale,
       );
-      expect(localeCases.length).toBeGreaterThanOrEqual(10);
+      expect(localeCases.length).toBeGreaterThanOrEqual(14);
       expect(new Set(localeCases.map((testCase) => testCase.expected.finding))).toEqual(
         new Set(['present', 'absent', 'possible', 'unresolved']),
       );
+      expect(
+        new Set(
+          localeCases
+            .filter((testCase) => testCase.expected.finding !== 'absent')
+            .map((testCase) => testCase.ruleId),
+        ),
+      ).toEqual(new Set(DIETARY_EVALUATION_RULE_IDS));
     }
 
     expect(
@@ -55,6 +62,27 @@ describe('dietary evaluation corpus v1', () => {
     };
     expect(() => assertDietaryEvaluationCorpus(duplicate)).toThrow(
       /duplicates another locale, rule, and input/,
+    );
+  });
+
+  it('rejects a locale that loses non-absent coverage for a supported rule', () => {
+    const incomplete = {
+      ...DIETARY_EVALUATION_CORPUS_V1,
+      cases: DIETARY_EVALUATION_CORPUS_V1.cases.map((testCase) =>
+        testCase.locale === 'en' && testCase.ruleId === 'allergen:tree-nut'
+          ? {
+              ...testCase,
+              expected: {
+                finding: 'absent',
+                evidenceSource: 'food-link',
+                foodIds: [foodNodeId('Almond flour')],
+              },
+            }
+          : testCase,
+      ),
+    };
+    expect(() => assertDietaryEvaluationCorpus(incomplete)).toThrow(
+      /locale "en" is missing non-absent coverage for "allergen:tree-nut"/,
     );
   });
 
@@ -94,114 +122,122 @@ describe('dietary evaluation corpus v1', () => {
 
 describe('evaluateDietaryResolver', () => {
   it('distinguishes accepted, false-safe, false-conflict, and unresolved outcomes', async () => {
-    const cases = DIETARY_EVALUATION_CORPUS_V1.cases;
-    const corpus = {
-      schemaVersion: 1,
-      corpusVersion: '1.0.0',
-      cases: [
-        cases.find((testCase) => testCase.id === 'en-direct-dairy'),
-        cases.find((testCase) => testCase.id === 'en-safe-rice'),
-        cases.find((testCase) => testCase.id === 'en-certified-oats'),
-        cases.find((testCase) => testCase.id === 'en-ocr-peanut'),
-        ...cases.filter(
-          (testCase) =>
-            testCase.locale !== 'en' ||
-            !['en-direct-dairy', 'en-safe-rice', 'en-certified-oats', 'en-ocr-peanut'].includes(
-              testCase.id,
-            ),
-        ),
-      ],
-    } as DietaryEvaluationCorpus;
-
-    const resolver: DietaryCandidateResolver = (testCase) => {
-      if (testCase.id === 'en-direct-dairy') return testCase.expected;
-      if (testCase.id === 'en-safe-rice') {
+    const resolver: DietaryCandidateResolver = (input) => {
+      if (input.input === '2 cups whole milk') {
+        return {
+          finding: 'present',
+          evidenceSource: 'food-link',
+          foodIds: [foodNodeId('Milk')],
+        };
+      }
+      if (input.input === '1 cup plain white rice') {
         return { finding: 'present', evidenceSource: 'text-match' };
       }
-      if (testCase.id === 'en-certified-oats') {
+      if (input.input === 'certified gluten-free rolled oats') {
         return {
           finding: 'absent',
           evidenceSource: 'food-link',
           foodIds: [foodNodeId('Oats')],
         };
       }
-      if (testCase.id === 'en-ocr-peanut') return { finding: 'unresolved' };
-      return testCase.expected;
+      return { finding: 'unresolved' };
     };
 
-    const report = await evaluateDietaryResolver(corpus, resolver);
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, resolver);
 
     expect(report.outcomes).toEqual({
-      accepted: corpus.cases.length - 3,
+      accepted: 5,
       'false-safe': 1,
       'false-conflict': 1,
-      unresolved: 1,
+      unresolved: 49,
     });
     expect(report.releaseGate).toEqual({
       passed: false,
       falseSafeCaseIds: ['en-certified-oats'],
+      errorCaseIds: [],
     });
-    expect(report.coverage.total).toBe(corpus.cases.length);
+    expect(report.coverage.total).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
     expect(report.coverage.resolved).toBeGreaterThan(0);
   });
 
-  it('treats an absent claim without the expected canonical food id as false-safe', async () => {
-    const unsafeReport = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (testCase) =>
-      testCase.id === 'en-safe-rice'
+  it('passes only production-shaped input to a resolver', async () => {
+    const receivedKeys = new Set<string>();
+    await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) => {
+      for (const key of Object.keys(input)) receivedKeys.add(key);
+      return { finding: 'unresolved' };
+    });
+
+    expect(receivedKeys).toEqual(new Set(['locale', 'input', 'ruleId']));
+    expect(receivedKeys.has('expected')).toBe(false);
+    expect(receivedKeys.has('id')).toBe(false);
+    expect(receivedKeys.has('category')).toBe(false);
+  });
+
+  it('treats an absent claim with the wrong canonical food id as false-safe', async () => {
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) =>
+      input.input === '1 cup plain white rice'
         ? {
             finding: 'absent',
             evidenceSource: 'food-link',
             foodIds: [foodNodeId('Oats')],
           }
-        : testCase.expected,
+        : { finding: 'unresolved' },
     );
 
-    expect(unsafeReport.outcomes['false-safe']).toBe(1);
-    expect(unsafeReport.releaseGate.falseSafeCaseIds).toEqual(['en-safe-rice']);
+    expect(report.outcomes['false-safe']).toBe(1);
+    expect(report.releaseGate.falseSafeCaseIds).toEqual(['en-safe-rice']);
   });
 
-  it('throws the release gate only for false-safe results', async () => {
+  it('requires an exact canonical food identity without contradictory extras', async () => {
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) =>
+      input.input === '2 cups whole milk'
+        ? {
+            finding: 'present',
+            evidenceSource: 'food-link',
+            foodIds: [foodNodeId('Milk'), foodNodeId('Rice')],
+          }
+        : { finding: 'unresolved' },
+    );
+
+    expect(report.results.find((result) => result.caseId === 'en-direct-dairy')).toMatchObject({
+      classification: 'unresolved',
+      foodIdsMatch: false,
+    });
+  });
+
+  it('fails the release gate for false-safe results but allows explicit abstention', async () => {
     const conservativeReport = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, () => ({
       finding: 'unresolved',
     }));
     expect(conservativeReport.outcomes.unresolved).toBeGreaterThan(0);
     expect(() => assertDietaryEvaluationReleaseGate(conservativeReport)).not.toThrow();
 
-    const unsafeReport = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (testCase) =>
-      testCase.expected.finding === 'present'
-        ? {
-            finding: 'absent',
-            evidenceSource: 'food-link',
-            foodIds: [foodNodeId('Rice')],
-          }
-        : { finding: 'unresolved' },
-    );
+    const unsafeReport = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, () => ({
+      finding: 'absent',
+      evidenceSource: 'food-link',
+      foodIds: [foodNodeId('Rice')],
+    }));
     expect(() => assertDietaryEvaluationReleaseGate(unsafeReport)).toThrow(/false-safe cases/);
   });
 
   it('reports coverage separately from correctness', async () => {
-    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (testCase) => {
-      if (testCase.expected.finding === 'present') {
-        return {
-          finding: 'absent',
-          evidenceSource: 'food-link',
-          foodIds: [foodNodeId('Rice')],
-        };
-      }
-      return { finding: 'unresolved' };
-    });
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, () => ({
+      finding: 'absent',
+      evidenceSource: 'food-link',
+      foodIds: [foodNodeId('Rice')],
+    }));
 
-    expect(report.coverage.resolved).toBeGreaterThan(0);
+    expect(report.coverage.resolved).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
     expect(report.outcomes.accepted).toBeGreaterThan(0);
     expect(report.releaseGate.passed).toBe(false);
   });
 
   it('accepts asynchronous resolvers', async () => {
-    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, async (testCase) =>
-      Promise.resolve(testCase.expected),
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, async () =>
+      Promise.resolve({ finding: 'unresolved' }),
     );
 
-    expect(report.outcomes.accepted).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
+    expect(report.outcomes.accepted).toBe(4);
     expect(report.errors).toEqual([]);
   });
 
@@ -222,21 +258,25 @@ describe('evaluateDietaryResolver', () => {
         evidenceSource: 'text-match',
       }),
     ],
-  ])('fails closed and continues after malformed resolver output: %s', async (_label, resolver) => {
-    const report = await evaluateDietaryResolver(
-      DIETARY_EVALUATION_CORPUS_V1,
-      resolver as unknown as DietaryCandidateResolver,
-    );
+  ])(
+    'fails the gate and continues after malformed resolver output: %s',
+    async (_label, resolver) => {
+      const report = await evaluateDietaryResolver(
+        DIETARY_EVALUATION_CORPUS_V1,
+        resolver as unknown as DietaryCandidateResolver,
+      );
 
-    expect(report.outcomes.unresolved).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
-    expect(report.errors).toHaveLength(DIETARY_EVALUATION_CORPUS_V1.cases.length);
-    expect(new Set(report.errors.map((error) => error.code))).toEqual(
-      new Set(['malformed-result']),
-    );
-    expect(report.releaseGate.passed).toBe(true);
-  });
+      expect(report.outcomes.unresolved).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
+      expect(report.errors).toHaveLength(DIETARY_EVALUATION_CORPUS_V1.cases.length);
+      expect(new Set(report.errors.map((error) => error.code))).toEqual(
+        new Set(['malformed-result']),
+      );
+      expect(report.releaseGate.passed).toBe(false);
+      expect(() => assertDietaryEvaluationReleaseGate(report)).toThrow(/resolver errors/);
+    },
+  );
 
-  it('fails closed and continues when the resolver throws', async () => {
+  it('fails the gate and continues when the resolver throws', async () => {
     const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, () =>
       Promise.reject(new Error('adapter unavailable')),
     );
@@ -244,33 +284,34 @@ describe('evaluateDietaryResolver', () => {
     expect(report.outcomes.unresolved).toBe(DIETARY_EVALUATION_CORPUS_V1.cases.length);
     expect(report.errors).toHaveLength(DIETARY_EVALUATION_CORPUS_V1.cases.length);
     expect(new Set(report.errors.map((error) => error.code))).toEqual(new Set(['resolver-threw']));
-    expect(report.releaseGate.passed).toBe(true);
+    expect(report.releaseGate.passed).toBe(false);
+    expect(() => assertDietaryEvaluationReleaseGate(report)).toThrow(/resolver errors/);
   });
 });
 
 describe('current deterministic allergen behavior', () => {
-  it('can be measured without a model dependency and never claims unmatched text is safe', async () => {
+  it('pins the model-free baseline and never claims unmatched text is safe', async () => {
     const report = await evaluateDietaryResolver(
       DIETARY_EVALUATION_CORPUS_V1,
       resolveWithDeterministicAllergens,
     );
 
     expect(report.outcomes).toEqual({
-      accepted: 8,
+      accepted: 12,
       'false-safe': 0,
       'false-conflict': 1,
-      unresolved: 35,
+      unresolved: 43,
     });
     expect(report.coverage).toMatchObject({
-      total: 44,
-      resolved: 5,
+      total: 56,
+      resolved: 9,
       possible: 0,
-      unresolved: 39,
+      unresolved: 47,
       byLocale: {
-        en: { total: 11, resolved: 4, possible: 0, unresolved: 7 },
-        es: { total: 11, resolved: 1, possible: 0, unresolved: 10 },
-        de: { total: 11, resolved: 0, possible: 0, unresolved: 11 },
-        ar: { total: 11, resolved: 0, possible: 0, unresolved: 11 },
+        en: { total: 14, resolved: 7, possible: 0, unresolved: 7 },
+        es: { total: 14, resolved: 1, possible: 0, unresolved: 13 },
+        de: { total: 14, resolved: 1, possible: 0, unresolved: 13 },
+        ar: { total: 14, resolved: 0, possible: 0, unresolved: 14 },
       },
     });
     expect(report.results.every((result) => result.actual !== 'absent')).toBe(true);

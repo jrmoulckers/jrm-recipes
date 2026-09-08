@@ -56,6 +56,8 @@ export type DietaryEvaluationCorpus = {
   cases: readonly DietaryEvaluationCase[];
 };
 
+export type DietaryResolverInput = Pick<DietaryEvaluationCase, 'locale' | 'input' | 'ruleId'>;
+
 export type DietaryCandidateResolution =
   | {
       finding: 'present' | 'absent';
@@ -67,7 +69,7 @@ export type DietaryCandidateResolution =
     };
 
 export type DietaryCandidateResolver = (
-  testCase: DietaryEvaluationCase,
+  input: DietaryResolverInput,
 ) => DietaryCandidateResolution | Promise<DietaryCandidateResolution>;
 
 export type DietaryEvaluationClassification =
@@ -109,6 +111,7 @@ export type DietaryEvaluationReport = {
   releaseGate: {
     passed: boolean;
     falseSafeCaseIds: string[];
+    errorCaseIds: string[];
   };
   errors: {
     caseId: string;
@@ -118,7 +121,9 @@ export type DietaryEvaluationReport = {
 
 const FINDINGS = ['present', 'absent', 'possible', 'unresolved'] as const;
 const CLASSIFICATIONS = ['accepted', 'false-safe', 'false-conflict', 'unresolved'] as const;
-const RULE_IDS = ALLERGENS.map((allergen) => `allergen:${allergen}` as const);
+export const DIETARY_EVALUATION_RULE_IDS = ALLERGENS.map(
+  (allergen) => `allergen:${allergen}` as const,
+);
 const KNOWN_FOOD_IDS = new Set(FOOD_ITEMS.map((food) => foodNodeId(food.name)));
 const CASE_ID_PATTERN = /^[a-z]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+$/;
@@ -216,6 +221,7 @@ export function assertDietaryEvaluationCorpus(
   const locales = new Set<Locale>();
   const categories = new Set<DietaryEvaluationCategory>();
   const findingsByLocale = new Map<Locale, Set<DietaryEvaluationFinding>>();
+  const nonAbsentRulesByLocale = new Map<Locale, Set<DietaryEvaluationRuleId>>();
 
   for (const [index, testCase] of value.cases.entries()) {
     const context = `Dietary evaluation case at index ${index}`;
@@ -262,7 +268,7 @@ export function assertDietaryEvaluationCorpus(
       );
     }
 
-    if (!isOneOf(testCase.ruleId, RULE_IDS)) {
+    if (!isOneOf(testCase.ruleId, DIETARY_EVALUATION_RULE_IDS)) {
       throw new Error(`${context} has malformed rule id "${String(testCase.ruleId)}".`);
     }
 
@@ -280,6 +286,11 @@ export function assertDietaryEvaluationCorpus(
     const localeFindings = findingsByLocale.get(testCase.locale) ?? new Set();
     localeFindings.add(testCase.expected.finding);
     findingsByLocale.set(testCase.locale, localeFindings);
+    if (testCase.expected.finding !== 'absent') {
+      const localeRules = nonAbsentRulesByLocale.get(testCase.locale) ?? new Set();
+      localeRules.add(testCase.ruleId);
+      nonAbsentRulesByLocale.set(testCase.locale, localeRules);
+    }
   }
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -289,6 +300,13 @@ export function assertDietaryEvaluationCorpus(
     for (const finding of FINDINGS) {
       if (!findingsByLocale.get(locale)?.has(finding)) {
         throw new Error(`Dietary evaluation locale "${locale}" is missing "${finding}" coverage.`);
+      }
+    }
+    for (const ruleId of DIETARY_EVALUATION_RULE_IDS) {
+      if (!nonAbsentRulesByLocale.get(locale)?.has(ruleId)) {
+        throw new Error(
+          `Dietary evaluation locale "${locale}" is missing non-absent coverage for "${ruleId}".`,
+        );
       }
     }
   }
@@ -338,7 +356,7 @@ function assertCandidateResolution(
 }
 
 function sameFoodIds(expected: readonly string[], actual: readonly string[] | undefined): boolean {
-  if (!actual) return false;
+  if (!actual || expected.length !== actual.length) return false;
   const actualSet = new Set(actual);
   return expected.every((foodId) => actualSet.has(foodId));
 }
@@ -422,7 +440,11 @@ export async function evaluateDietaryResolver(
     let actual: DietaryCandidateResolution;
     let resolverFailed = false;
     try {
-      actual = await resolver(testCase);
+      actual = await resolver({
+        locale: testCase.locale,
+        input: testCase.input,
+        ruleId: testCase.ruleId,
+      });
     } catch {
       actual = { finding: 'unresolved' };
       resolverFailed = true;
@@ -467,6 +489,7 @@ export async function evaluateDietaryResolver(
   const falseSafeCaseIds = results
     .filter((result) => result.classification === 'false-safe')
     .map((result) => result.caseId);
+  const errorCaseIds = errors.map((error) => error.caseId);
 
   return {
     corpusVersion: corpus.corpusVersion,
@@ -482,8 +505,9 @@ export async function evaluateDietaryResolver(
       byCategory,
     },
     releaseGate: {
-      passed: falseSafeCaseIds.length === 0,
+      passed: falseSafeCaseIds.length === 0 && errorCaseIds.length === 0,
       falseSafeCaseIds,
+      errorCaseIds,
     },
     errors,
   };
@@ -491,9 +515,15 @@ export async function evaluateDietaryResolver(
 
 export function assertDietaryEvaluationReleaseGate(report: DietaryEvaluationReport): void {
   if (!report.releaseGate.passed) {
-    throw new Error(
-      `Dietary evaluation release gate failed: false-safe cases ${report.releaseGate.falseSafeCaseIds.join(', ')}.`,
-    );
+    const failures = [
+      report.releaseGate.falseSafeCaseIds.length > 0
+        ? `false-safe cases ${report.releaseGate.falseSafeCaseIds.join(', ')}`
+        : null,
+      report.releaseGate.errorCaseIds.length > 0
+        ? `resolver errors ${report.releaseGate.errorCaseIds.join(', ')}`
+        : null,
+    ].filter(Boolean);
+    throw new Error(`Dietary evaluation release gate failed: ${failures.join('; ')}.`);
   }
 }
 
@@ -506,14 +536,14 @@ function allergenFromRuleId(ruleId: DietaryEvaluationRuleId): Allergen {
  * the detector has positive rules but no complete negative-fact coverage.
  */
 export function resolveWithDeterministicAllergens(
-  testCase: DietaryEvaluationCase,
+  input: DietaryResolverInput,
 ): DietaryCandidateResolution {
-  const target = allergenFromRuleId(testCase.ruleId);
-  if (!detectAllergensForSafety(testCase.input).includes(target)) {
+  const target = allergenFromRuleId(input.ruleId);
+  if (!detectAllergensForSafety(input.input).includes(target)) {
     return { finding: 'unresolved' };
   }
 
-  const food = canonicalFood(testCase.input);
+  const food = canonicalFood(input.input);
   const linkedAllergens = food ? foodAllergensForSlug(food.slug) : null;
   return food && linkedAllergens?.includes(target)
     ? { finding: 'present', evidenceSource: 'food-link', foodIds: [food.id] }

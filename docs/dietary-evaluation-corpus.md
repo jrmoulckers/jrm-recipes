@@ -22,7 +22,9 @@ explanation or model output.
 
 The model-agnostic harness in
 [`src/lib/dietary-evaluation.ts`](../src/lib/dietary-evaluation.ts) accepts a synchronous or
-asynchronous resolver function. It reports:
+asynchronous resolver function. The resolver receives only the production-shaped `locale`, `input`,
+and `ruleId`; case ids, categories, and expected outcomes remain private to the evaluator. It
+reports:
 
 - `accepted` when the finding and required canonical food identity match;
 - `false-safe` when a resolver claims absence without the expected evidence, or claims absence for
@@ -32,9 +34,10 @@ asynchronous resolver function. It reports:
 
 Coverage is reported separately as resolved, possible, and unresolved case counts, including
 per-locale and per-category breakdowns. Resolver errors and malformed results fail closed as
-`unresolved` and remain visible in the report. High coverage does not offset unsafe results.
-`assertDietaryEvaluationReleaseGate` fails on any false-safe case and does not convert coverage
-into a confidence score.
+`unresolved`, remain visible in the report, and fail the release gate. Well-formed explicit
+`unresolved` abstentions are allowed. High coverage does not offset unsafe results.
+`assertDietaryEvaluationReleaseGate` fails on any false-safe case or evaluation error and does not
+convert coverage into a confidence score.
 
 The exported `resolveWithDeterministicAllergens` adapter measures the existing static matcher
 without importing an on-device model. Because the current matcher records positive rules rather
@@ -43,12 +46,13 @@ safe result.
 
 ## Coverage and review
 
-Version 1 covers English, Spanish, German, and Arabic. Every locale includes resolved positives,
-known negatives, possible products, unresolved products, and prompt-like input. The full corpus
-covers direct allergens, hidden or compound products, safe negatives, negation and certification
-wording, OCR errors, fictional brands, ambiguous products, compound lines, overlong lines, and
-adversarial instructions. Adversarial cases include both real conflicts hidden behind instructions
-to answer "safe" and safe ingredients paired with instructions to invent a conflict.
+Version 1 contains 56 cases across English, Spanish, German, and Arabic. Every locale includes
+resolved positives, known negatives, possible products, unresolved products, prompt-like input, and
+a non-absent case for every supported allergen rule. The full corpus covers direct allergens,
+hidden or compound products, safe negatives, negation and certification wording, OCR errors,
+fictional brands, ambiguous products, compound lines, overlong lines, and adversarial instructions.
+Adversarial cases include both real conflicts hidden behind instructions to answer "safe" and safe
+ingredients paired with instructions to invent a conflict.
 
 Corpus changes require review of:
 
