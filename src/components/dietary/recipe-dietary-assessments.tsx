@@ -41,29 +41,31 @@ export function RecipeDietaryAssessments({
   const activeProfileId = useActiveMemberStore((state) => state.activeMemberId);
   const [expanded, setExpanded] = React.useState(false);
 
-  const inferred = React.useMemo(
-    () =>
-      effectiveDietaryAssessmentViews(assessments)
-        .filter(
-          (assessment) =>
-            signedIn ||
-            (assessment.scope === 'canonical' &&
-              assessment.confidence === 'high' &&
-              assessment.verdict !== 'unknown'),
-        )
-        .sort((left, right) => {
-          const verdictPriority =
-            Number(right.verdict === 'conflicts') - Number(left.verdict === 'conflicts');
-          const leftPriority = left.profileId === activeProfileId ? 0 : 1;
-          const rightPriority = right.profileId === activeProfileId ? 0 : 1;
-          return (
-            verdictPriority ||
-            leftPriority - rightPriority ||
-            left.ruleId.localeCompare(right.ruleId)
-          );
-        }),
-    [activeProfileId, assessments, signedIn],
-  );
+  const inferred = React.useMemo(() => {
+    const activeAssessments = assessments.filter((assessment) =>
+      activeProfileId
+        ? assessment.scope === 'canonical' ||
+          (assessment.scope === 'profile' && assessment.profileId === activeProfileId)
+        : assessment.scope === 'canonical',
+    );
+    return effectiveDietaryAssessmentViews(activeAssessments)
+      .filter(
+        (assessment) =>
+          signedIn ||
+          (assessment.scope === 'canonical' &&
+            assessment.confidence === 'high' &&
+            assessment.verdict !== 'unknown'),
+      )
+      .sort((left, right) => {
+        const verdictPriority =
+          Number(right.verdict === 'conflicts') - Number(left.verdict === 'conflicts');
+        const leftPriority = left.profileId === activeProfileId ? 0 : 1;
+        const rightPriority = right.profileId === activeProfileId ? 0 : 1;
+        return (
+          verdictPriority || leftPriority - rightPriority || left.ruleId.localeCompare(right.ruleId)
+        );
+      });
+  }, [activeProfileId, assessments, signedIn]);
 
   const conflictingRuleIds = React.useMemo(
     () =>

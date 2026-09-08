@@ -1,10 +1,11 @@
 import { cleanup, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
 
 import { RecipeDietaryAssessments } from './recipe-dietary-assessments';
 import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
+import { useActiveMemberStore } from '~/lib/active-member-store';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { IntlWrapper } from '~/test/intl';
 
@@ -28,6 +29,10 @@ beforeAll(() => {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }) as unknown as MediaQueryList;
+});
+
+beforeEach(() => {
+  useActiveMemberStore.setState({ activeMemberId: null });
 });
 
 afterEach(cleanup);
@@ -89,6 +94,81 @@ describe('RecipeDietaryAssessments', () => {
       screen.queryByRole('button', {
         name: /gluten-free.*confirmed by recipe author/i,
       }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not let an inactive profile conflict suppress the active profile declaration', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <RecipeDietaryAssessments
+        assessments={[
+          {
+            ...GLUTEN_CONFLICT,
+            scope: 'profile',
+            profileId: 'm1',
+            verdict: 'meets',
+            evidence: [
+              {
+                ingredientId: 'flour',
+                ingredient: 'gluten-free flour',
+                finding: 'absent',
+              },
+            ],
+          },
+          {
+            ...GLUTEN_CONFLICT,
+            scope: 'profile',
+            profileId: 'm2',
+          },
+        ]}
+        declared={['gluten-free']}
+        signedIn
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', {
+        name: /gluten-free.*confirmed by recipe author/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /contains gluten.*status: conflict/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('falls back to canonical rows when no profile is active', () => {
+    render(
+      <RecipeDietaryAssessments
+        assessments={[
+          {
+            ...GLUTEN_CONFLICT,
+            verdict: 'meets',
+            evidence: [
+              {
+                ingredientId: 'flour',
+                ingredient: 'gluten-free flour',
+                finding: 'absent',
+              },
+            ],
+          },
+          {
+            ...GLUTEN_CONFLICT,
+            scope: 'profile',
+            profileId: 'm2',
+          },
+        ]}
+        declared={['gluten-free']}
+        signedIn
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', {
+        name: /gluten-free.*confirmed by recipe author/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /contains gluten.*status: conflict/i }),
     ).not.toBeInTheDocument();
   });
 

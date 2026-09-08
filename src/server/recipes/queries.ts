@@ -120,6 +120,12 @@ const notDeleted = isNull(recipes.deletedAt);
  */
 const qb = new QueryBuilder();
 const currentDietaryRulesetVersion = dietaryRulesetVersion();
+// PostgreSQL's core normalize(..., NFD) needs no extension. Removing the same
+// combining-mark range as normalizeFoodText keeps custom-term boundaries
+// consistent without depending on unaccent being installed.
+const COMBINING_DIACRITICAL_MARKS = Array.from({ length: 0x036f - 0x0300 + 1 }, (_, offset) =>
+  String.fromCodePoint(0x0300 + offset),
+).join('');
 
 type DietaryMatchMode = 'definite' | 'possible';
 
@@ -231,7 +237,11 @@ function customRestrictionConflictCondition(normalizedTerms: readonly string[]):
       regexp_replace(
         split_part(
           regexp_replace(
-            lower(${recipeIngredients.item}),
+            translate(
+              normalize(lower(${recipeIngredients.item}), NFD),
+              ${COMBINING_DIACRITICAL_MARKS},
+              ''
+            ),
             ${'\\([^)]*\\)'},
             ' ',
             'g'

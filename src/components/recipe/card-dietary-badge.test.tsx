@@ -67,6 +67,41 @@ describe('CardDietaryBadge', () => {
     expect(screen.queryByRole('button', { name: /contains soy/i })).not.toBeInTheDocument();
   });
 
+  it('excludes an inactive profile conflict for a rule shared with the active profile', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <CardDietaryBadge
+        members={MEMBERS}
+        assessments={[
+          assessment({
+            scope: 'profile',
+            profileId: 'm1',
+            verdict: 'meets',
+          }),
+          assessment({
+            scope: 'profile',
+            profileId: 'm2',
+            verdict: 'conflicts',
+            evidence: [
+              {
+                ingredientId: 'milk',
+                ingredient: 'milk',
+                finding: 'present',
+              },
+            ],
+          }),
+        ]}
+        declared={[]}
+        signedIn
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /contains dairy.*status: conflict/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('preserves unrelated canonical conflicts so they suppress contradictory declarations', () => {
     useActiveMemberStore.setState({ activeMemberId: 'm1' });
     render(

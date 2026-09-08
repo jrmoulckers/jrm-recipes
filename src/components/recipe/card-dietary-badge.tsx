@@ -38,12 +38,11 @@ export function CardDietaryBadge({
     ...(member?.diets.flatMap((diet) => dietaryRuleIdsForTag(diet)) ?? []),
   ]);
   const relevant = member
-    ? assessments.filter(
-        (assessment) =>
-          (assessment.scope === 'canonical' && assessment.verdict === 'conflicts') ||
-          assessment.profileId === member.id ||
-          relevantRuleIds.has(assessment.ruleId),
-      )
+    ? assessments.filter((assessment) => {
+        if (assessment.scope === 'profile') return assessment.profileId === member.id;
+        if (assessment.scope !== 'canonical') return false;
+        return assessment.verdict === 'conflicts' || relevantRuleIds.has(assessment.ruleId);
+      })
     : assessments.filter((assessment) => assessment.scope === 'canonical');
   if (relevant.length === 0 && declared.length === 0) return null;
 

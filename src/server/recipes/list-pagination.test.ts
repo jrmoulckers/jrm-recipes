@@ -47,6 +47,7 @@ function lastFindManyArg() {
     columns?: Record<string, boolean>;
     with?: unknown;
     where?: unknown;
+    orderBy?: SQL[];
   };
 }
 
@@ -294,6 +295,63 @@ describe('searchRecipes pagination (#58)', () => {
     expect(rendered.sql).toContain('"food_items"."parent_id"');
     expect(rendered.params).toContain('food_mushroom');
     expect(rendered.params).toContain('conflicts');
+  });
+
+  it('normalizes accented strict-avoidance terms and ingredients equivalently', async () => {
+    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
+      id: 'profile_1',
+      allergens: [],
+      diets: [],
+      customRestrictions: [
+        {
+          id: 'restriction_1',
+          severity: 'strict-avoidance',
+          terms: [{ term: 'jalapeño', source: 'exact', approved: true }],
+        },
+      ],
+    });
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+
+    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
+
+    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
+      lastFindManyArg().where as SQL,
+    );
+    expect(rendered.sql).toContain('normalize(lower("recipe_ingredients"."item"), NFD)');
+    expect(rendered.sql).toContain('translate(');
+    expect(rendered.sql).toContain('position(');
+    expect(rendered.sql).not.toContain(' like ');
+    expect(rendered.params).toContain(' jalapeno ');
+    expect(rendered.params).not.toContain(' jalapeño ');
+  });
+
+  it('normalizes accented preference terms before applying conflict demotion', async () => {
+    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
+      id: 'profile_1',
+      allergens: [],
+      diets: [],
+      customRestrictions: [
+        {
+          id: 'restriction_1',
+          severity: 'preference',
+          terms: [{ term: 'crème fraîche', source: 'exact', approved: true }],
+        },
+      ],
+    });
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+
+    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
+
+    const preferenceOrder = lastFindManyArg().orderBy?.[0];
+    expect(preferenceOrder).toBeDefined();
+    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(preferenceOrder!);
+    expect(rendered.sql).toContain('case when exists');
+    expect(rendered.sql).toContain('normalize(lower("recipe_ingredients"."item"), NFD)');
+    expect(rendered.sql).toContain('translate(');
+    expect(rendered.sql).toContain('position(');
+    expect(rendered.sql).not.toContain(' like ');
+    expect(rendered.params).toContain(' creme fraiche ');
+    expect(rendered.params).not.toContain(' crème fraîche ');
   });
 
   it('vetoes opaque compounds carrying the restricted built-in allergen', async () => {
