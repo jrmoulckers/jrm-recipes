@@ -42,9 +42,9 @@
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
-        "kb": 248,
+        "kb": 247,
         "platform": "linux",
-        "runId": "34270183989",
+        "runId": "34281054835",
         "issue": 1095
       }
     ]
