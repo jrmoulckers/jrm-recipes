@@ -14,30 +14,31 @@
   "//posthog-before-send": "Issue #705 makes structural PII scrubbing synchronous at PostHog's final before_send boundary, so the shared analytics client now carries the URL and reserved-property scrubber on every configured route. Linux CI run 33928210364 measures 255/281/334/248 kB, compared with current main run 33982323696 at 253/280/334/247 kB. The route budgets are unchanged and retain 2/2/3/2 kB headroom; only the machine-checked measurements move.",
   "//route-headroom-restoration": "Issue #821 restores durable headroom without changing any budget. Against main Linux CI run 34069629549 at 256/284/331/250 kB, run 34202664291 measures 254/281/331/246 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit: 3/5/6/4 kB free. The home route defers its below-fold interactive theme picker; /recipes keeps the Quick add trigger in first-load but loads its dialog, form, image field, and server-action client only when opened; the editor keeps the generic unit picker immediately available but loads curated food-specific ranking after first paint. The reader route was already healthy and is unchanged. A provenance-only rerun, 34203805371, measured /recipes at 280 kB with identical product client code, the established whole-kB display variance; its strict claim advances to that latest value while retaining 6 kB of budget headroom. No budget or measurement tolerance is raised.",
   "//dietary-analytics-contract": "Issue #1107 adds a synchronous runtime allowlist and final PostHog reconstruction boundary to the shared analytics client, without adding any dietary feature emission or runtime. Linux baseline run 34212920694 for latest main after merged #1108 measures 254/280/331/246 kB; rebased Linux run 34215825794 on this branch measures 255/281/332/247 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit. Route-chunk attribution finds dietary_analysis_enablement_changed in the same shared first-load chunk on all four routes, so the coordinated +1 kB movement on every route is attributed to this contract rather than treated as unrelated drift. All budgets remain unchanged and retain 2/5/5/3 kB headroom.",
+  "//dietary-assessment-ux": "Issue #1102 replaces card text-derived allergen reassurance with the shared interactive assessment badge and adds evidence review to the recipe reader. Linux CI run 34253095702 on the rebased integration measures 246/282/337/247 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit. The card badge reaches home recipe rails and /recipes; the evidence and correction controls reach the reader. The editor is unchanged. These measurements also include the route-headroom work that landed on main after the prior #1107 claims, so they record the integrated tree rather than attributing every net change to #1102. Existing budgets and tolerance remain unchanged.",
   "//measured": {
     "//": "Machine-checked measurement claims (#858). check-bundle-budget.mjs verifies each of these against the same build that enforces the budgets below, and FAILS when one no longer matches. The prose notes above explain reasoning; these entries are what CI holds to reality. Four claims in this file have been corrected after the fact -- #674/#690, #763, #820 and #857 -- each found by a person who happened to look, because nothing compared them to a build. A claim is only about the platform that produced it: Linux CI reads ~1 kB above a local Windows build, so entries for other platforms are skipped rather than failed, and an entry with no platform fails as malformed. Update the number and the runId together; a value you cannot re-derive is a value you cannot audit. This guard closes DECAY only -- it compares a claim's kb to a build and never reads the prose around it, so it would have caught #820 and could not have caught #674, #763 or #857, where the number was already right. Attributing a regression to a module is a human obligation: see docs/performance-budgets.md.",
     "claims": [
       {
         "route": "/",
-        "kb": 255,
+        "kb": 246,
         "platform": "linux",
-        "runId": "34215825794",
-        "issue": 1107
+        "runId": "34253095702",
+        "issue": 1102
       },
       {
         "route": "/recipes",
-        "kb": 281,
+        "kb": 282,
         "platform": "linux",
-        "runId": "34215825794",
-        "issue": 1107
+        "runId": "34253095702",
+        "issue": 1102
       },
       {
         "route": "/recipes/[cook]/[recipe]",
-        "kb": 332,
+        "kb": 337,
         "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34215825794",
-        "issue": 1107
+        "runId": "34253095702",
+        "issue": 1102
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
