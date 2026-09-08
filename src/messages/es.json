@@ -2091,6 +2091,43 @@
       "diets": "Dietas",
       "familyGroup": "Grupo familiar (opcional)",
       "justMe": "Solo yo"
+    },
+    "assessmentBadge": {
+      "detailsTitle": "Evaluación alimentaria: {label}",
+      "triggerLabel": "{label}. Estado: {status}. {provenance}",
+      "status": {
+        "suitability": "Apto",
+        "conflict": "Conflicto",
+        "review": "Requiere revisión"
+      },
+      "provenance": {
+        "label": "Fuente de la evaluación",
+        "authorConfirmed": "Confirmado por {source}",
+        "ingredientAnalyzed": "Análisis de ingredientes",
+        "ingredientAnalyzedWithConfidence": "Analizado por ingredientes, confianza {confidence}"
+      },
+      "confidence": {
+        "high": "Alta",
+        "medium": "Media",
+        "needs-review": "Requiere revisión"
+      },
+      "confidenceLine": "Confianza: {confidence}",
+      "coverageLabel": "Reconocimiento de ingredientes",
+      "recognized": "{recognized} de {total} {total, plural, one {ingrediente reconocido} other {ingredientes reconocidos}}",
+      "attentionTitle": "Requiere atención",
+      "finding": {
+        "conflict": "Conflicto",
+        "unresolved": "Requiere revisión"
+      },
+      "ingredientFinding": "Estado de {ingredient}: {finding}",
+      "limitation": {
+        "brands-and-cross-contact": "La revisión no puede verificar todas las marcas ni el contacto cruzado.",
+        "cross-contact": "Esta evaluación no puede verificar el contacto cruzado."
+      },
+      "action": {
+        "review": "Revisar detalles",
+        "correct": "Corregir evaluación"
+      }
     }
   },
   "moderation": {

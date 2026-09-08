@@ -2091,6 +2091,43 @@
       "diets": "الأنظمة الغذائية",
       "familyGroup": "مجموعة العائلة (اختياري)",
       "justMe": "أنا فقط"
+    },
+    "assessmentBadge": {
+      "detailsTitle": "تقييم النظام الغذائي: {label}",
+      "triggerLabel": "{label}. الحالة: {status}. {provenance}",
+      "status": {
+        "suitability": "مناسب",
+        "conflict": "تعارض",
+        "review": "يحتاج إلى مراجعة"
+      },
+      "provenance": {
+        "label": "مصدر التقييم",
+        "authorConfirmed": "أكده {source}",
+        "ingredientAnalyzed": "تحليل المكونات",
+        "ingredientAnalyzedWithConfidence": "حُلِّل من المكونات، مستوى الثقة {confidence}"
+      },
+      "confidence": {
+        "high": "مرتفع",
+        "medium": "متوسط",
+        "needs-review": "يحتاج إلى مراجعة"
+      },
+      "confidenceLine": "مستوى الثقة: {confidence}",
+      "coverageLabel": "التعرف على المكونات",
+      "recognized": "تم التعرف على {recognized} من أصل {total} {total, plural, one {مكوّن} two {مكوّنين} few {مكونات} many {مكوّنًا} other {مكوّن}}",
+      "attentionTitle": "يحتاج إلى انتباه",
+      "finding": {
+        "conflict": "تعارض",
+        "unresolved": "يحتاج إلى مراجعة"
+      },
+      "ingredientFinding": "حالة {ingredient}: {finding}",
+      "limitation": {
+        "brands-and-cross-contact": "لا يمكن لمراجعة المكونات التحقق من كل علامة تجارية أو انتقال المكونات بين الأطعمة.",
+        "cross-contact": "لا يمكن لهذا التقييم التحقق من انتقال المكونات بين الأطعمة."
+      },
+      "action": {
+        "review": "مراجعة التفاصيل",
+        "correct": "تصحيح التقييم"
+      }
     }
   },
   "moderation": {

@@ -2091,6 +2091,43 @@
       "diets": "Ernährungsweisen",
       "familyGroup": "Familiengruppe (optional)",
       "justMe": "Nur ich"
+    },
+    "assessmentBadge": {
+      "detailsTitle": "Ernährungsbewertung: {label}",
+      "triggerLabel": "{label}. Ergebnis: {status}. {provenance}",
+      "status": {
+        "suitability": "Geeignet",
+        "conflict": "Konflikt",
+        "review": "Prüfung erforderlich"
+      },
+      "provenance": {
+        "label": "Quelle der Bewertung",
+        "authorConfirmed": "Bestätigt von {source}",
+        "ingredientAnalyzed": "Zutatenanalyse",
+        "ingredientAnalyzedWithConfidence": "Anhand der Zutaten analysiert, Konfidenz {confidence}"
+      },
+      "confidence": {
+        "high": "Hoch",
+        "medium": "Mittel",
+        "needs-review": "Prüfung erforderlich"
+      },
+      "confidenceLine": "Konfidenz: {confidence}",
+      "coverageLabel": "Zutatenerkennung",
+      "recognized": "{recognized} von {total} {total, plural, one {Zutat erkannt} other {Zutaten erkannt}}",
+      "attentionTitle": "Zu beachten",
+      "finding": {
+        "conflict": "Konflikt",
+        "unresolved": "Prüfung erforderlich"
+      },
+      "ingredientFinding": "Bewertung für {ingredient}: {finding}",
+      "limitation": {
+        "brands-and-cross-contact": "Die Zutatenprüfung kann nicht jede Marke oder Kreuzkontamination verifizieren.",
+        "cross-contact": "Diese Bewertung kann Kreuzkontamination nicht verifizieren."
+      },
+      "action": {
+        "review": "Details prüfen",
+        "correct": "Bewertung korrigieren"
+      }
     }
   },
   "moderation": {
