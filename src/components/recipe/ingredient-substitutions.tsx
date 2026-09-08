@@ -19,7 +19,7 @@ import {
   type DietaryIngredientInput,
 } from '~/lib/dietary-assessment';
 import { type BuiltInDietaryRuleId } from '~/lib/dietary-rules';
-import { normalizeFoodText } from '~/lib/food-db';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
 import { type Allergen } from '~/lib/allergens';
 import { Badge, type BadgeProps } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -66,14 +66,6 @@ export type SubstitutionCustomRestriction = {
   severity: CustomRestrictionSeverity;
   terms: readonly string[];
 };
-
-export function matchesCustomRestriction(value: string, terms: readonly string[]): boolean {
-  const normalizedValue = ` ${normalizeFoodText(value)} `;
-  return terms.some((term) => {
-    const normalizedTerm = normalizeFoodText(term);
-    return normalizedTerm.length > 0 && normalizedValue.includes(` ${normalizedTerm} `);
-  });
-}
 
 function candidateFinding(
   item: string,

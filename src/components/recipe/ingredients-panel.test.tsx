@@ -279,7 +279,9 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /safe swaps for honey/i }));
+      await user.click(
+        await screen.findByRole('button', { name: /safe swaps for honey/i }, { timeout: 10_000 }),
+      );
       const mapleSyrup = (await screen.findByText('Maple syrup')).closest('li');
       expect(mapleSyrup).not.toBeNull();
       expect(within(mapleSyrup!).getByText('Removes the Vegan conflict')).toBeInTheDocument();
@@ -325,7 +327,7 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /substitutions for butter/i }));
+      await user.click(await screen.findByRole('button', { name: /substitutions for butter/i }));
       const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
       expect(coconutOil).not.toBeNull();
       expect(within(coconutOil!).getByText('Adds a dietary conflict')).toBeInTheDocument();
@@ -375,7 +377,7 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /safe swaps for milk/i }));
+      await user.click(await screen.findByRole('button', { name: /safe swaps for milk/i }));
       const broth = (await screen.findByText('Water or broth')).closest('li');
       expect(broth).not.toBeNull();
       expect(within(broth!).getByText('Dietary impact still needs review')).toBeInTheDocument();
@@ -422,7 +424,7 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /substitutions for butter/i }));
+      await user.click(await screen.findByRole('button', { name: /substitutions for butter/i }));
       const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
       expect(coconutOil).not.toBeNull();
       expect(

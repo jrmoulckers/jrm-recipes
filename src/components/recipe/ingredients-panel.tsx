@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -47,12 +48,11 @@ import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { NativeSelect } from '~/components/ui/native-select';
-import {
-  IngredientSubstitutions,
-  matchesCustomRestriction,
-  type SubstitutionCustomRestriction,
-  type SubstitutionDietaryRule,
+import type {
+  SubstitutionCustomRestriction,
+  SubstitutionDietaryRule,
 } from '~/components/recipe/ingredient-substitutions';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
 import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
 import {
   DIETARY_EVIDENCE_FINDINGS,
@@ -68,6 +68,12 @@ import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestion
 import { type Nutrition } from '~/lib/nutrition';
 import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
+
+const IngredientSubstitutions = dynamic(() =>
+  import('~/components/recipe/ingredient-substitutions').then(
+    (module) => module.IngredientSubstitutions,
+  ),
+);
 
 /**
  * Serializable payload for the per-ingredient anchored-suggestion slot (#346).

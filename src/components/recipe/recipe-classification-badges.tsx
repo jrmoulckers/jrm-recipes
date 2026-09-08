@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Globe2, Leaf, Utensils } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -7,7 +8,12 @@ import { type CanonicalTag, type TagCategory } from '~/lib/tag-taxonomy';
 import { type DietaryTag } from '~/lib/substitutions';
 import { recipeClassificationHref } from '~/lib/recipe-classifications';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
+
+const RecipeDietaryAssessments = dynamic(() =>
+  import('~/components/dietary/recipe-dietary-assessments').then(
+    (module) => module.RecipeDietaryAssessments,
+  ),
+);
 
 type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
   trustedDietary?: boolean;
