@@ -10,7 +10,7 @@ The PWA behavior is implemented in:
 - [`next.config.js`](../next.config.js) for `@serwist/next` wiring and explicit precache entries.
 - [`src/app/manifest.ts`](../src/app/manifest.ts) for the web app manifest and share target.
 - [`src/app/~offline/page.tsx`](../src/app/~offline/page.tsx) for the offline navigation fallback.
-- [`src/lib/offline-fallback.ts`](../src/lib/offline-fallback.ts), [`src/lib/recipe-image-cache.ts`](../src/lib/recipe-image-cache.ts), [`src/lib/recipe-page-cache.ts`](../src/lib/recipe-page-cache.ts), [`src/lib/cook-warm.ts`](../src/lib/cook-warm.ts), and [`src/lib/cook-notify.ts`](../src/lib/cook-notify.ts) for the unit-tested cache and notification helpers imported by the service worker.
+- [`src/lib/offline-fallback.ts`](../src/lib/offline-fallback.ts), [`src/lib/recipe-image-cache.ts`](../src/lib/recipe-image-cache.ts), [`src/lib/recipe-page-cache.ts`](../src/lib/recipe-page-cache.ts), [`src/lib/account-bound-cleanup.ts`](../src/lib/account-bound-cleanup.ts), [`src/lib/cook-warm.ts`](../src/lib/cook-warm.ts), and [`src/lib/cook-notify.ts`](../src/lib/cook-notify.ts) for the unit-tested cache lifecycle and notification helpers.
 
 ## Serwist build wiring
 
@@ -61,6 +61,14 @@ The cache uses `CacheFirst` because recipe photos are effectively immutable and 
 [`src/lib/recipe-page-cache.ts`](../src/lib/recipe-page-cache.ts) matches only same-origin recipe detail pages and Cook Mode pages, including hard document navigations and RSC soft-navigation payloads. Since the user-namespacing cutover (issue #666) those are `/recipes/:cook/:recipe` and `/recipes/:cook/:recipe/cook`; the matcher still accepts the flat legacy `/recipes/:id` and `/recipes/:id/cook` shapes, which 308 to canonical. It intentionally excludes sibling routes such as `/recipes/new`, `/recipes/cook-with`, `/recipes/tags`, and the `/edit`, `/print`, and `/keepsake` sub-routes.
 
 The service worker uses `NetworkFirst`, deliberately not stale-while-revalidate. The reason is security: recipe pages are server-rendered per viewer and access-controlled. The HTML includes personalized state and owner-only controls, and the cache key is only the URL. On a shared family tablet, serving a cached recipe page before the network could reveal one viewer's authorized private/group render to another viewer. `NetworkFirst` fetches fresh authorized content whenever possible and falls back to the cache only offline or after the 3-second timeout.
+
+### Account transition cleanup
+
+Network-first protects connected requests, but a shared browser profile can still reuse an offline response after the active account changes. When Clerk is configured, [`AccountBoundCleanup`](../src/components/auth/account-bound-cleanup.tsx) observes the loaded live Clerk user id from the shared [`Providers`](../src/app/providers.tsx) boundary. A signed-in-to-signed-out transition or account A-to-account B transition starts best-effort cleanup of `heirloom-recipes` and `heirloom-recipe-images`. Cleanup begins without blocking rendering or navigation, and failures in an unavailable or locked Cache Storage implementation do not break the session.
+
+The first loaded identity only establishes the baseline, and an unchanged identity does nothing. Local mode mounts no Clerk observer. The Serwist precache is not registered for account cleanup, so app-shell assets and `/~offline` remain available after the personalized caches are removed.
+
+[`ACCOUNT_BOUND_CLEANUP_HANDLERS`](../src/lib/account-bound-cleanup.ts) is the single registry for account-scoped browser data. Future dietary-model or IndexedDB storage must add its cleanup handler there rather than introducing another identity observer.
 
 ## Offline fallbacks
 
