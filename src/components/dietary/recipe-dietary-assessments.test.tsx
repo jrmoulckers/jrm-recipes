@@ -1,250 +1,68 @@
-import { cleanup, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useState, type ReactElement } from 'react';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { RecipeDietaryAssessments } from './recipe-dietary-assessments';
-import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
-import { useActiveMemberStore } from '~/lib/active-member-store';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { IntlWrapper } from '~/test/intl';
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
-}));
-
-function render(ui: ReactElement) {
-  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
-}
-
-beforeAll(() => {
-  const element = Element.prototype as unknown as Record<string, unknown>;
-  element.hasPointerCapture ??= () => false;
-  element.setPointerCapture ??= () => undefined;
-  element.releasePointerCapture ??= () => undefined;
-  element.scrollIntoView ??= () => undefined;
-  window.matchMedia ??= () =>
-    ({
-      matches: false,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-    }) as unknown as MediaQueryList;
-});
-
-beforeEach(() => {
-  useActiveMemberStore.setState({ activeMemberId: null });
-});
+import { RecipeDietaryAssessments } from './recipe-dietary-assessments';
 
 afterEach(cleanup);
 
-const GLUTEN_CONFLICT: DietaryAssessmentView = {
-  ruleId: 'allergen:wheat',
-  scope: 'canonical',
-  profileId: null,
-  source: 'deterministic',
-  verdict: 'conflicts',
-  confidence: 'high',
-  recognizedIngredients: 1,
-  totalIngredients: 1,
-  evidence: [{ ingredientId: 'flour', ingredient: 'wheat flour', finding: 'present' }],
-};
-
-function TabbedCorrectionFixture() {
-  const [recipeTabOpen, setRecipeTabOpen] = useState(false);
-  return (
-    <>
-      <RecipeDietaryAssessments assessments={[GLUTEN_CONFLICT]} signedIn canReview />
-      <button
-        id="recipe-tab-trigger"
-        type="button"
-        role="tab"
-        aria-selected={recipeTabOpen}
-        onClick={() => setRecipeTabOpen(true)}
-      >
-        Recipe
-      </button>
-      {!recipeTabOpen ? (
-        <p>Timeline content</p>
-      ) : (
-        <details id="dietary-correction-flour">
-          <summary>Review dietary evidence for wheat flour</summary>
-          <select aria-label="Finding for gluten" data-dietary-rule="allergen:wheat">
-            <option>Conflict</option>
-          </select>
-        </details>
-      )}
-    </>
-  );
-}
-
 describe('RecipeDietaryAssessments', () => {
-  it('lets a deterministic conflict replace a declaration for the same underlying rule', () => {
+  it('prioritizes attention results and keeps additional rules available', () => {
     render(
-      <RecipeDietaryAssessments
-        assessments={[GLUTEN_CONFLICT]}
-        declared={['gluten-free']}
-        signedIn
-      />,
-    );
-
-    expect(
-      screen.getByRole('button', { name: /contains gluten.*status: conflict/i }),
-    ).toBeVisible();
-    expect(
-      screen.queryByRole('button', {
-        name: /gluten-free.*confirmed by recipe author/i,
-      }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('does not let an inactive profile conflict suppress the active profile declaration', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(
-      <RecipeDietaryAssessments
-        assessments={[
-          {
-            ...GLUTEN_CONFLICT,
-            scope: 'profile',
-            profileId: 'm1',
-            verdict: 'meets',
-            evidence: [
-              {
-                ingredientId: 'flour',
-                ingredient: 'gluten-free flour',
-                finding: 'absent',
-              },
-            ],
-          },
-          {
-            ...GLUTEN_CONFLICT,
-            scope: 'profile',
-            profileId: 'm2',
-          },
-        ]}
-        declared={['gluten-free']}
-        signedIn
-      />,
-    );
-
-    expect(
-      screen.getByRole('button', {
-        name: /gluten-free.*confirmed by recipe author/i,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /contains gluten.*status: conflict/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('falls back to canonical rows when no profile is active', () => {
-    render(
-      <RecipeDietaryAssessments
-        assessments={[
-          {
-            ...GLUTEN_CONFLICT,
-            verdict: 'meets',
-            evidence: [
-              {
-                ingredientId: 'flour',
-                ingredient: 'gluten-free flour',
-                finding: 'absent',
-              },
-            ],
-          },
-          {
-            ...GLUTEN_CONFLICT,
-            scope: 'profile',
-            profileId: 'm2',
-          },
-        ]}
-        declared={['gluten-free']}
-        signedIn
-      />,
-    );
-
-    expect(
-      screen.getByRole('button', {
-        name: /gluten-free.*confirmed by recipe author/i,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /contains gluten.*status: conflict/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('opens the correction disclosure and moves focus to the relevant rule control', async () => {
-    const user = userEvent.setup();
-    render(
-      <>
-        <RecipeDietaryAssessments assessments={[GLUTEN_CONFLICT]} signedIn canReview />
-        <IngredientsPanel
-          ingredients={[
+      <IntlWrapper>
+        <RecipeDietaryAssessments
+          assessments={[
             {
-              id: 'flour',
-              section: null,
-              quantity: 1,
-              quantityMax: null,
-              unit: 'cup',
-              item: 'wheat flour',
-              note: null,
-              optional: false,
+              ruleId: 'allergen:dairy',
+              source: 'deterministic',
+              verdict: 'conflicts',
+              confidence: 'high',
+              recognizedIngredients: 2,
+              totalIngredients: 2,
+              attentionIngredients: [{ ingredientId: 'milk', name: 'milk', kind: 'conflict' }],
             },
+            ...Array.from({ length: 6 }, (_, index) => ({
+              ruleId: index === 0 ? 'composition:vegan' : `rule:${index}`,
+              source: 'deterministic' as const,
+              verdict: 'meets' as const,
+              confidence: 'high' as const,
+              recognizedIngredients: 2,
+              totalIngredients: 2,
+              attentionIngredients: [],
+            })),
           ]}
-          baseServings={1}
-          servingsNoun={null}
-          dietaryAssessments={[GLUTEN_CONFLICT]}
-          canReviewDietary
         />
-      </>,
+      </IntlWrapper>,
     );
 
-    await user.click(screen.getByRole('button', { name: /contains gluten.*status: conflict/i }));
-    const assessment = await screen.findByRole('dialog');
-    await user.click(within(assessment).getByRole('button', { name: /correct assessment/i }));
-
-    const summary = screen.getByText('Review dietary evidence for wheat flour');
-    const details = summary.closest('details');
-    expect(details).toHaveAttribute('open');
-    await waitFor(() =>
-      expect(screen.getByRole('combobox', { name: /finding for gluten/i })).toHaveFocus(),
-    );
-  }, 10_000);
-
-  it('activates the Recipe tab before opening and focusing an unmounted correction', async () => {
-    const user = userEvent.setup();
-    render(<TabbedCorrectionFixture />);
-
-    const recipeTab = screen.getByRole('tab', { name: 'Recipe' });
-    expect(recipeTab).toHaveAttribute('aria-selected', 'false');
-    expect(screen.queryByRole('combobox', { name: /finding for gluten/i })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /contains gluten.*status: conflict/i }));
-    await user.click(
-      within(await screen.findByRole('dialog')).getByRole('button', {
-        name: /correct assessment/i,
-      }),
-    );
-
-    expect(recipeTab).toHaveAttribute('aria-selected', 'true');
-    const correction = await screen.findByRole('combobox', { name: /finding for gluten/i });
-    await waitFor(() => expect(correction).toHaveFocus());
+    expect(screen.getByRole('heading', { name: 'Dietary assessments' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Dairy-free\. Status: Conflict/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Show 1 more assessments')).toBeInTheDocument();
   });
 
-  it('restores focus to the badge when no correction target or Recipe tab exists', async () => {
-    const user = userEvent.setup();
-    render(<RecipeDietaryAssessments assessments={[GLUTEN_CONFLICT]} signedIn canReview />);
-
-    const trigger = screen.getByRole('button', {
-      name: /contains gluten.*status: conflict/i,
-    });
-    await user.click(trigger);
-    await user.click(
-      within(await screen.findByRole('dialog')).getByRole('button', {
-        name: /correct assessment/i,
-      }),
+  it('keeps public inferred results beyond the first three in the disclosure', () => {
+    render(
+      <IntlWrapper>
+        <RecipeDietaryAssessments
+          limitPublicInferred
+          assessments={Array.from({ length: 4 }, (_, index) => ({
+            ruleId: `rule:${index}`,
+            source: 'deterministic' as const,
+            verdict: 'meets' as const,
+            confidence: 'high' as const,
+            recognizedIngredients: 2,
+            totalIngredients: 2,
+            attentionIngredients: [],
+          }))}
+        />
+      </IntlWrapper>,
     );
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(trigger).toHaveFocus();
+    const disclosure = screen.getByText('Show 1 more assessments').closest('details');
+    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(disclosure).not.toBeNull();
+    expect(within(disclosure!).getAllByRole('button')).toHaveLength(1);
   });
 });

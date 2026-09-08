@@ -13,7 +13,14 @@ import type { RatingSort } from '~/lib/ratings';
 
 vi.mock('~/server/auth', async () => (await import('~/test/harness')).authModuleMock());
 
-const { listPublicRecipesMock, listLibraryRecipeIdsMock } = vi.hoisted(() => ({
+const {
+  attachCardDietaryDataMock,
+  listMemberProfilesMock,
+  listPublicRecipesMock,
+  listLibraryRecipeIdsMock,
+} = vi.hoisted(() => ({
+  attachCardDietaryDataMock: vi.fn(),
+  listMemberProfilesMock: vi.fn(),
   listPublicRecipesMock: vi.fn(),
   listLibraryRecipeIdsMock: vi.fn(),
 }));
@@ -25,6 +32,12 @@ vi.mock('~/server/dietary/presentation', () => ({
 vi.mock('./queries', () => ({
   listPublicRecipes: listPublicRecipesMock,
   listLibraryRecipeIds: listLibraryRecipeIdsMock,
+}));
+vi.mock('~/server/dietary/queries', () => ({
+  listMemberProfiles: listMemberProfilesMock,
+}));
+vi.mock('~/server/dietary/presentation', () => ({
+  attachCardDietaryData: attachCardDietaryDataMock,
 }));
 
 import { loadMorePublicRecipesAction } from './discover-actions';
@@ -40,6 +53,8 @@ beforeEach(() => {
   useAuthMock(makeUser({ id: 'viewer_1' }));
   listPublicRecipesMock.mockResolvedValue(page(['r1']));
   listLibraryRecipeIdsMock.mockResolvedValue([]);
+  listMemberProfilesMock.mockResolvedValue([]);
+  attachCardDietaryDataMock.mockImplementation(async (items) => items);
 });
 
 describe('offset clamping', () => {
@@ -86,6 +101,20 @@ describe('library filtering + pagination', () => {
     listPublicRecipesMock.mockResolvedValue(page(['r1'], 99));
     const result = await loadMorePublicRecipesAction(0);
     expect(result.nextOffset).toBe(99);
+  });
+
+  it('attaches assessment data when the viewer manages a dietary profile', async () => {
+    listMemberProfilesMock.mockResolvedValue([{ id: 'profile_1' }]);
+    attachCardDietaryDataMock.mockResolvedValue([
+      { id: 'r1', dietary: { assessments: [], ingredients: [] } },
+    ]);
+
+    const result = await loadMorePublicRecipesAction(0);
+
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'r1' }]);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({ dietary: { assessments: [], ingredients: [] } }),
+    );
   });
 });
 

@@ -10,6 +10,10 @@ import {
   type AllergenIngredientSource,
 } from '~/lib/recipe-allergens';
 import { type Allergen } from '~/lib/allergens';
+import {
+  dietaryLinkedFoodInputSchema,
+  type DietaryLinkedFoodInput,
+} from '~/lib/dietary-assessment';
 
 /**
  * The STRUCTURED source of truth for a recipe's allergens (issue: attach
@@ -61,22 +65,29 @@ export async function getRecipeAllergens(recipeId: string): Promise<Allergen[]> 
 }
 
 /**
- * Per-ingredient structured allergens for one recipe, keyed by
- * `recipe_ingredients.id`. Powers the ingredient-level flags on the recipe
- * detail panel: each line resolves via `foodId → food_items.allergens`, falling
- * back to text detection when the line carries no curated food. Best-effort.
+ * Per-ingredient dietary context for one recipe, keyed by
+ * `recipe_ingredients.id`. The recipe panel uses the resolved food node both
+ * for allergen flags and deterministic substitution previews. Best-effort;
  * returns an empty map when the DB is off.
  */
-export async function getRecipeIngredientAllergens(
+export type RecipeIngredientDietaryContext = {
+  allergens: Allergen[];
+  linkedFood: DietaryLinkedFoodInput | null;
+};
+
+export async function getRecipeIngredientDietaryContext(
   recipeId: string,
-): Promise<Map<string, Allergen[]>> {
-  const result = new Map<string, Allergen[]>();
+): Promise<Map<string, RecipeIngredientDietaryContext>> {
+  const result = new Map<string, RecipeIngredientDietaryContext>();
   if (!isDbConfigured()) return result;
 
   const rows = await db
     .select({
       id: recipeIngredients.id,
       item: recipeIngredients.item,
+      foodId: foodItems.id,
+      foodSlug: foodItems.slug,
+      foodCategory: foodItems.category,
       foodAllergens: foodItems.allergens,
     })
     .from(recipeIngredients)
@@ -88,7 +99,20 @@ export async function getRecipeIngredientAllergens(
       item: row.item,
       foodAllergens: row.foodAllergens ?? null,
     };
-    result.set(row.id, ingredientAllergens(src));
+    const linkedFood = dietaryLinkedFoodInputSchema.safeParse(
+      row.foodId && row.foodSlug && row.foodCategory
+        ? {
+            id: row.foodId,
+            slug: row.foodSlug,
+            category: row.foodCategory,
+            allergens: row.foodAllergens,
+          }
+        : null,
+    );
+    result.set(row.id, {
+      allergens: ingredientAllergens(src),
+      linkedFood: linkedFood.success ? linkedFood.data : null,
+    });
   }
   return result;
 }

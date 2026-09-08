@@ -8,7 +8,6 @@ import { getCurrentUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import { type User } from '~/server/db/schema';
 import {
-  attachCardAllergens,
   listLibrary,
   listLibraryRecipeIds,
   listPublicRecipes,
@@ -20,15 +19,12 @@ import {
   suggestSearchTerm,
   type RecipeSearchResult,
 } from '~/server/recipes/queries';
-import { listMemberProfiles } from '~/server/dietary/queries';
-import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
-import {
-  CUSTOM_RESTRICTION_SEVERITIES,
-  type CustomRestrictionSeverity,
-} from '~/lib/dietary-assessment';
-import { isDietaryTag } from '~/lib/substitutions';
+import { attachCardDietaryData } from '~/server/dietary/presentation';
+import { listCustomRestrictionsForProfiles, listMemberProfiles } from '~/server/dietary/queries';
 import { macroCardNutrients } from '~/server/recipes/macro-search';
 import { isAllergen } from '~/lib/allergens';
+import { customRestrictionSeveritySchema } from '~/lib/dietary-assessment';
+import { isDietaryTag } from '~/lib/substitutions';
 import {
   isDefaultRecipeView,
   parseRecipeSearch,
@@ -84,27 +80,28 @@ async function RecipesPage({ searchParams }: { searchParams: Promise<SearchParam
     dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
     dbReady && user ? listUserGroups(user.id) : Promise.resolve([]),
   ]);
-  const members: CardDietaryMember[] =
-    dbReady && user
-      ? (await listMemberProfiles(user.id)).map((m) => ({
-          id: m.id,
-          name: m.name,
-          allergens: (m.allergens ?? []).filter(isAllergen),
-          diets: (m.diets ?? []).filter(isDietaryTag),
-          customRestrictions: m.customRestrictions.flatMap((restriction) =>
-            CUSTOM_RESTRICTION_SEVERITIES.includes(
-              restriction.severity as CustomRestrictionSeverity,
-            )
-              ? [
-                  {
-                    id: restriction.id,
-                    severity: restriction.severity as CustomRestrictionSeverity,
-                  },
-                ]
-              : [],
-          ),
-        }))
-      : [];
+  let members: CardDietaryMember[] = [];
+  if (dbReady && user) {
+    const profiles = await listMemberProfiles(user.id);
+    const restrictions = await listCustomRestrictionsForProfiles(
+      profiles.map((profile) => profile.id),
+      user,
+    );
+    members = profiles.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      allergens: (profile.allergens ?? []).filter(isAllergen),
+      diets: (profile.diets ?? []).filter(isDietaryTag),
+      customRestrictions: restrictions
+        .filter((restriction) => restriction.profileId === profile.id)
+        .map((restriction) => ({
+          id: restriction.id,
+          name: restriction.name,
+          severity: customRestrictionSeveritySchema.parse(restriction.severity),
+          terms: restriction.terms.filter((term) => term.approved).map((term) => term.term),
+        })),
+    }));
+  }
   const t = await getTranslations('recipe.library');
 
   return (
@@ -176,16 +173,14 @@ async function BrowseSections({
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
   const hasLibrary = library.items.length > 0;
   const canFavorite = Boolean(user);
-  // Only pay for allergen roll-up when a family member with allergies is active.
-  const showBadges = members.some((m) => m.allergens.length > 0);
-  const libraryWithAllergens = showBadges
-    ? await attachCardAllergens(library.items)
-    : library.items;
-  const [libraryCards, recentCards, discoverCards] = await Promise.all([
-    attachCardDietaryAssessmentViews(libraryWithAllergens, user?.id ?? null),
-    attachCardDietaryAssessmentViews(recentlyViewed, user?.id ?? null),
-    attachCardDietaryAssessmentViews(discoverOnly, user?.id ?? null),
-  ]);
+  const [libraryCards, recentCards, discoverCards] =
+    members.length > 0
+      ? await Promise.all([
+          attachCardDietaryData(library.items),
+          attachCardDietaryData(recentlyViewed),
+          attachCardDietaryData(discoverOnly),
+        ])
+      : [library.items, recentlyViewed, discoverOnly];
   const t = await getTranslations('recipe.library');
 
   return (
@@ -204,7 +199,7 @@ async function BrowseSections({
                 canFavorite={canFavorite}
                 favorited={favoriteIds.has(recipe.id)}
                 quickPlan={quickPlan ?? undefined}
-                signedIn={Boolean(user)}
+                members={members}
               />
             ))}
           </div>
@@ -244,7 +239,6 @@ async function BrowseSections({
             favoritedIds={[...favoriteIds]}
             priorityCount={hasLibrary ? 0 : LCP_PRIORITY_COUNT}
             members={members}
-            signedIn={Boolean(user)}
           />
         </section>
       )}
@@ -277,7 +271,7 @@ async function SearchResults({
     if (suggestion) {
       const correctedSearch = { ...search, q: suggestion };
       const corrected = await searchRecipes(user, correctedSearch);
-      if (corrected.items.length > 0) {
+      if (corrected.items.length > 0 || corrected.possibleItems.length > 0) {
         return (
           <ResultsView
             page={corrected}
@@ -309,10 +303,9 @@ async function SearchResults({
 }
 
 /**
- * Attaches allergen badges to the first page and hands paging off to the client
- * {@link SearchResultsFeed}, which owns the "Load more" button and the count
- * hint. The active search is serialized to its canonical query string so the
- * load-more action re-parses (and re-validates) it server-side (#58).
+ * Attaches assessment facts to both confidence bands and hands paging off to
+ * {@link SearchResultsFeed}. The active search is serialized to its canonical
+ * query string so load-more requests are re-validated server-side (#58).
  */
 async function ResultsView({
   page,
@@ -328,6 +321,7 @@ async function ResultsView({
     items: RecipeSearchResult[];
     possibleItems: RecipeSearchResult[];
     nextOffset: number | null;
+    possibleItems: RecipeSearchResult[];
     possibleNextOffset: number | null;
     unrankable?: { lowConfidence: number; unknown: number };
   };
@@ -339,22 +333,18 @@ async function ResultsView({
   correction?: { from: string; to: string };
   viewerId: string | null;
 }) {
-  // Only pay for allergen roll-up when a family member with allergies is active.
-  const showBadges = members.some((m) => m.allergens.length > 0);
-  const cardsWithAllergens = showBadges ? await attachCardAllergens(page.items) : page.items;
-  const possibleWithAllergens = showBadges
-    ? await attachCardAllergens(page.possibleItems)
-    : page.possibleItems;
   const [cards, possibleCards] = await Promise.all([
-    attachCardDietaryAssessmentViews(cardsWithAllergens, viewerId),
-    attachCardDietaryAssessmentViews(possibleWithAllergens, viewerId),
+    attachCardDietaryData(page.items),
+    attachCardDietaryData(page.possibleItems),
   ]);
   return (
     <SearchResultsFeed
       initialItems={cards}
       initialPossibleItems={possibleCards}
       initialNextOffset={page.nextOffset}
+      initialPossibleItems={possibleCards}
       initialPossibleNextOffset={page.possibleNextOffset}
+      showDietaryBands={search.diets.length > 0}
       queryString={recipeSearchToQueryString(search)}
       canFavorite={canFavorite}
       favoritedIds={[...favoriteIds]}

@@ -108,6 +108,7 @@ export interface StatementMocks {
 /** The transaction/statement surface shared by `db` and its `tx` callback arg. */
 export interface TxMock extends StatementMocks {
   query: QueryMock;
+  execute: Mock<(query?: unknown) => Promise<unknown[]>>;
   /** Nested SAVEPOINT (`tx.transaction`) that runs its callback against `tx`. */
   transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
 }
@@ -145,6 +146,7 @@ export interface DbMock extends StatementMocks {
   /** Shorthand for `db.query`. */
   query: QueryMock;
   transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
+  execute: Mock<(query?: unknown) => Promise<unknown[]>>;
   $count: Mock;
 }
 
@@ -176,9 +178,11 @@ export function createDbMock(extraTables: readonly string[] = []): DbMock {
     }),
   }));
   const $count = vi.fn();
+  const execute = vi.fn((_query?: unknown) => Promise.resolve([]));
 
   const tx: TxMock = {
     query,
+    execute,
     insert,
     update,
     delete: del,
@@ -190,7 +194,7 @@ export function createDbMock(extraTables: readonly string[] = []): DbMock {
   const transaction = vi.fn((cb: (t: TxMock) => unknown) => cb(tx));
 
   return {
-    db: { query, insert, update, delete: del, select, transaction, $count },
+    db: { query, execute, insert, update, delete: del, select, transaction, $count },
     tx,
     query,
     insert,
@@ -198,6 +202,7 @@ export function createDbMock(extraTables: readonly string[] = []): DbMock {
     delete: del,
     select,
     transaction,
+    execute,
     $count,
   };
 }

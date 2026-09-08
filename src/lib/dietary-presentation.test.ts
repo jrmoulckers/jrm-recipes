@@ -1,51 +1,188 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  dietaryAssessmentStatus,
-  effectiveDietaryAssessmentViews,
-  isDefiniteDietaryMatch,
-  isPossibleDietaryMatch,
-  type DietaryAssessmentView,
+  ingredientMatchesExactTerm,
+  summarizeCardDietaryProfile,
+  type CardDietaryData,
+  type DietaryProfileView,
 } from './dietary-presentation';
 
-function assessment(overrides: Partial<DietaryAssessmentView> = {}): DietaryAssessmentView {
+const profile: DietaryProfileView = {
+  id: 'profile_1',
+  name: 'Ada',
+  allergens: ['dairy'],
+  diets: ['vegetarian'],
+  customRestrictions: [],
+};
+
+const ingredients = [
+  { id: 'ingredient_1', name: 'olive oil' },
+  { id: 'ingredient_2', name: 'seasoning blend' },
+];
+
+function data(overrides: Partial<CardDietaryData['assessments'][number]>[] = []): CardDietaryData {
   return {
-    ruleId: 'allergen:wheat',
-    scope: 'canonical',
-    profileId: null,
-    source: 'deterministic',
-    verdict: 'meets',
-    confidence: 'high',
-    recognizedIngredients: 3,
-    totalIngredients: 3,
-    evidence: [],
-    ...overrides,
+    ingredients,
+    assessments: [
+      {
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'meets',
+        confidence: 'high',
+        recognizedIngredients: 2,
+        totalIngredients: 2,
+        attentionIngredients: [],
+      },
+      {
+        ruleId: 'composition:vegetarian',
+        source: 'deterministic',
+        verdict: 'meets',
+        confidence: 'high',
+        recognizedIngredients: 2,
+        totalIngredients: 2,
+        attentionIngredients: [],
+      },
+      ...overrides.map((override) => ({
+        ruleId: 'allergen:dairy',
+        source: 'deterministic' as const,
+        verdict: 'meets' as const,
+        confidence: 'high' as const,
+        recognizedIngredients: 2,
+        totalIngredients: 2,
+        attentionIngredients: [],
+        ...override,
+      })),
+    ],
   };
 }
 
-describe('dietary assessment presentation', () => {
-  it('keeps deterministic conflicts ahead of author confirmation', () => {
-    const effective = effectiveDietaryAssessmentViews([
-      assessment({ source: 'author-confirmed', confidence: null }),
-      assessment({ verdict: 'conflicts', confidence: 'high' }),
-    ]);
-    expect(effective).toHaveLength(1);
-    expect(effective[0]).toMatchObject({ verdict: 'conflicts', source: 'deterministic' });
+describe('ingredientMatchesExactTerm', () => {
+  it('matches complete normalized phrases without broadening to substrings', () => {
+    expect(ingredientMatchesExactTerm('2 cups sliced mushrooms', 'mushrooms')).toBe(true);
+    expect(ingredientMatchesExactTerm('mushroom-seasoning', 'mushroom seasoning')).toBe(true);
+    expect(ingredientMatchesExactTerm('button mushrooms', 'mush')).toBe(false);
+  });
+});
+
+describe('summarizeCardDietaryProfile', () => {
+  it('returns a high suitability result only when every required rule is high', () => {
+    expect(summarizeCardDietaryProfile(profile, data())).toMatchObject({
+      status: 'suitability',
+      confidence: 'high',
+      recognizedIngredients: 2,
+      detailsCount: 2,
+    });
   });
 
-  it('maps valid outcomes to text-backed status semantics', () => {
-    expect(dietaryAssessmentStatus(assessment())).toBe('suitability');
-    expect(dietaryAssessmentStatus(assessment({ confidence: 'medium' }))).toBe('suitability');
+  it('lets a deterministic conflict veto another positive assessment', () => {
     expect(
-      dietaryAssessmentStatus(assessment({ verdict: 'unknown', confidence: 'needs-review' })),
-    ).toBe('review');
-    expect(dietaryAssessmentStatus(assessment({ verdict: 'conflicts' }))).toBe('conflict');
+      summarizeCardDietaryProfile(
+        profile,
+        data([
+          {
+            verdict: 'conflicts',
+            confidence: 'high',
+            attentionIngredients: [
+              { ingredientId: 'ingredient_2', name: 'seasoning blend', kind: 'conflict' },
+            ],
+          },
+        ]),
+      ),
+    ).toMatchObject({
+      status: 'conflict',
+      attentionIngredients: [{ ingredientId: 'ingredient_2', kind: 'conflict' }],
+    });
   });
 
-  it('separates definite and possible positive matches', () => {
-    expect(isDefiniteDietaryMatch(assessment())).toBe(true);
-    expect(isPossibleDietaryMatch(assessment())).toBe(false);
-    expect(isDefiniteDietaryMatch(assessment({ confidence: 'medium' }))).toBe(false);
-    expect(isPossibleDietaryMatch(assessment({ confidence: 'medium' }))).toBe(true);
+  it('fails closed when a required assessment is absent', () => {
+    expect(
+      summarizeCardDietaryProfile(profile, {
+        ingredients,
+        assessments: data().assessments.filter(
+          (assessment) => assessment.ruleId !== 'allergen:dairy',
+        ),
+      }),
+    ).toMatchObject({ status: 'review', confidence: 'needs-review' });
+  });
+
+  it('lets author confirmation resolve uncertainty while conflicts still win', () => {
+    const result = summarizeCardDietaryProfile(
+      { ...profile, diets: [] },
+      data([
+        {
+          source: 'author-confirmed',
+          verdict: 'meets',
+          confidence: null,
+        },
+        {
+          source: 'deterministic',
+          verdict: 'unknown',
+          confidence: 'needs-review',
+        },
+      ]),
+    );
+    expect(result).toMatchObject({
+      status: 'suitability',
+      provenance: 'author-confirmed',
+    });
+  });
+
+  it('fails closed for blocking custom restrictions when ingredients are empty', () => {
+    expect(
+      summarizeCardDietaryProfile(
+        {
+          ...profile,
+          allergens: [],
+          diets: [],
+          customRestrictions: [
+            {
+              id: 'restriction_1',
+              name: 'No mushrooms',
+              severity: 'allergy-intolerance',
+              terms: ['mushrooms'],
+            },
+          ],
+        },
+        { ingredients: [], assessments: [] },
+      ),
+    ).toMatchObject({
+      status: 'review',
+      confidence: 'needs-review',
+      recognizedIngredients: 0,
+    });
+  });
+
+  it('applies exact custom restrictions and keeps preference matches non-blocking', () => {
+    const customProfile: DietaryProfileView = {
+      ...profile,
+      allergens: [],
+      diets: [],
+      customRestrictions: [
+        {
+          id: 'restriction_1',
+          name: 'No mushrooms',
+          severity: 'allergy-intolerance',
+          terms: ['mushrooms'],
+        },
+        {
+          id: 'restriction_2',
+          name: 'Avoid olives',
+          severity: 'preference',
+          terms: ['olives'],
+        },
+      ],
+    };
+    const result = summarizeCardDietaryProfile(customProfile, {
+      ingredients: [
+        { id: 'ingredient_1', name: 'green olives' },
+        { id: 'ingredient_2', name: 'mushrooms' },
+      ],
+      assessments: [],
+    });
+    expect(result).toMatchObject({
+      status: 'conflict',
+      preferenceMatches: 1,
+      detailsCount: 2,
+    });
   });
 });

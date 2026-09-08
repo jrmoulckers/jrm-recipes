@@ -14,15 +14,26 @@ function render(ui: React.ReactElement) {
 afterEach(cleanup);
 
 const MEMBERS: CardDietaryMember[] = [
-  {
-    id: 'm1',
-    name: 'Ada',
-    allergens: ['dairy'],
-    diets: [],
-    customRestrictions: [],
-  },
-  { id: 'm2', name: 'Bo', allergens: [], diets: [], customRestrictions: [] },
+  { id: 'm1', name: 'Ada', allergens: ['dairy'] },
+  { id: 'm2', name: 'Bo', allergens: [] },
 ];
+const DIETARY = {
+  ingredients: [
+    { id: 'milk', name: 'milk' },
+    { id: 'salt', name: 'salt' },
+  ],
+  assessments: [
+    {
+      ruleId: 'allergen:dairy',
+      source: 'deterministic' as const,
+      verdict: 'meets' as const,
+      confidence: 'high' as const,
+      recognizedIngredients: 2,
+      totalIngredients: 2,
+      attentionIngredients: [],
+    },
+  ],
+};
 
 function assessment(overrides: Partial<DietaryAssessmentView> = {}): DietaryAssessmentView {
   return {
@@ -44,103 +55,55 @@ describe('CardDietaryBadge', () => {
     useActiveMemberStore.setState({ activeMemberId: null });
   });
 
-  it('renders author-confirmed declarations without an active profile', () => {
-    render(
-      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={['vegetarian']} signedIn />,
-    );
-    expect(
-      screen.getByRole('button', { name: /vegetarian.*confirmed by recipe author/i }),
-    ).toBeInTheDocument();
-  });
-
-  it('renders only assessment rules relevant to the active profile', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(
-      <CardDietaryBadge
-        members={MEMBERS}
-        assessments={[assessment(), assessment({ ruleId: 'allergen:soy' })]}
-        declared={[]}
-        signedIn
-      />,
-    );
-    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /contains soy/i })).not.toBeInTheDocument();
-  });
-
-  it('excludes an inactive profile conflict for a rule shared with the active profile', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(
-      <CardDietaryBadge
-        members={MEMBERS}
-        assessments={[
-          assessment({
-            scope: 'profile',
-            profileId: 'm1',
-            verdict: 'meets',
-          }),
-          assessment({
-            scope: 'profile',
-            profileId: 'm2',
-            verdict: 'conflicts',
-            evidence: [
-              {
-                ingredientId: 'milk',
-                ingredient: 'milk',
-                finding: 'present',
-              },
-            ],
-          }),
-        ]}
-        declared={[]}
-        signedIn
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /contains dairy.*status: conflict/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('preserves unrelated canonical conflicts so they suppress contradictory declarations', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(
-      <CardDietaryBadge
-        members={MEMBERS}
-        assessments={[
-          assessment({
-            ruleId: 'allergen:wheat',
-            verdict: 'conflicts',
-            evidence: [
-              {
-                ingredientId: 'flour',
-                ingredient: 'wheat flour',
-                finding: 'present',
-              },
-            ],
-          }),
-        ]}
-        declared={['gluten-free']}
-        signedIn
-      />,
-    );
-
-    expect(
-      screen.getByRole('button', { name: /contains gluten.*status: conflict/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', {
-        name: /gluten-free.*confirmed by recipe author/i,
-      }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('never reassures from missing assessment coverage', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    const { container } = render(
-      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={[]} signedIn />,
-    );
+  it('renders nothing when no member is active', () => {
+    const { container } = render(<CardDietaryBadge members={MEMBERS} dietary={DIETARY} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders nothing when the active member has no recorded allergies', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm2' });
+    const { container } = render(<CardDietaryBadge members={MEMBERS} dietary={DIETARY} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows the aggregate active-profile assessment with its details count', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(<CardDietaryBadge members={MEMBERS} dietary={DIETARY} />);
+    expect(
+      screen.getByRole('button', { name: /Ada: 1 dietary check.*Suitable/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('fails closed when a required assessment is missing', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <CardDietaryBadge
+        members={MEMBERS}
+        dietary={{ ingredients: DIETARY.ingredients, assessments: [] }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Status: Needs review/i })).toBeInTheDocument();
+  });
+
+  it('keeps deterministic conflict precedence', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <CardDietaryBadge
+        members={MEMBERS}
+        dietary={{
+          ...DIETARY,
+          assessments: [
+            ...DIETARY.assessments,
+            {
+              ...DIETARY.assessments[0]!,
+              verdict: 'conflicts',
+              attentionIngredients: [{ ingredientId: 'milk', name: 'milk', kind: 'conflict' }],
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Status: Conflict/i })).toBeInTheDocument();
   });
 
   it('uses canonical assessments when no member profile is active', () => {

@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 
 import { cn } from '~/lib/utils';
 import { HAPTICS, vibrate } from '~/lib/haptics';
@@ -46,28 +45,22 @@ import { ingredientIcon } from '~/lib/ingredient-icons';
 import { useThemeBehavior } from '~/components/theme/theme-provider';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
-import { NativeSelect } from '~/components/ui/native-select';
-import type {
-  SubstitutionCustomRestriction,
-  SubstitutionDietaryRule,
-} from '~/components/recipe/ingredient-substitutions';
-import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
-import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
-import {
-  DIETARY_EVIDENCE_FINDINGS,
-  type CustomRestrictionSeverity,
-  type DietaryEvidenceFinding,
-} from '~/lib/dietary-contracts';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
-import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions-lazy';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
 import { type Nutrition } from '~/lib/nutrition';
 import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
+import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
+import {
+  DIETARY_EVIDENCE_FINDINGS,
+  type DietaryEvidenceFinding,
+  type DietaryEvidenceSource,
+  type DietaryLinkedFoodInput,
+} from '~/lib/dietary-assessment';
 
 const IngredientSubstitutions = dynamic(() =>
   import('~/components/recipe/ingredient-substitutions').then(
@@ -106,7 +99,167 @@ type PanelIngredient = {
    * on {@link item}.
    */
   allergens?: Allergen[] | null;
+  linkedFood?: DietaryLinkedFoodInput | null;
 };
+
+export type IngredientDietaryEvidence = {
+  ingredientId: string;
+  ruleId: string;
+  finding: DietaryEvidenceFinding;
+  source: DietaryEvidenceSource;
+};
+
+export type IngredientsPanelRecipeContext = {
+  recipeId: string;
+  updatedAt: string;
+  canEdit: boolean;
+};
+
+const EVIDENCE_FINDING_LABEL: Record<DietaryEvidenceFinding, string> = {
+  present: 'present',
+  absent: 'absent',
+  possible: 'possible',
+  unresolved: 'unresolved',
+};
+
+const DIETARY_RULE_LABEL_KEY: Readonly<Record<string, string>> = {
+  'allergen:peanut': 'allergenPeanut',
+  'allergen:tree-nut': 'allergenTreeNut',
+  'allergen:dairy': 'allergenDairy',
+  'allergen:egg': 'allergenEgg',
+  'allergen:soy': 'allergenSoy',
+  'allergen:wheat': 'allergenWheat',
+  'allergen:fish': 'allergenFish',
+  'allergen:shellfish': 'allergenShellfish',
+  'allergen:sesame': 'allergenSesame',
+  'composition:vegan': 'vegan',
+  'composition:vegetarian': 'vegetarian',
+  'composition:pescatarian': 'pescatarian',
+};
+
+function dietaryRuleLabel(ruleId: string): string {
+  const label = ruleId.split(':').at(-1)?.replaceAll('-', ' ') ?? ruleId;
+  return label.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function IngredientEvidenceControl({
+  ingredient,
+  evidence,
+  canCorrect,
+}: {
+  ingredient: PanelIngredient;
+  evidence: IngredientDietaryEvidence[];
+  canCorrect: boolean;
+}) {
+  const router = useRouter();
+  const t = useTranslations('ingredientsPanel.dietaryEvidence');
+  const rulesT = useTranslations('dietary.assessments');
+  const [open, setOpen] = React.useState(false);
+  const [message, setMessage] = React.useState<{
+    kind: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const [isPending, startTransition] = React.useTransition();
+
+  if (evidence.length === 0) return null;
+
+  function ruleLabel(ruleId: string) {
+    const key = DIETARY_RULE_LABEL_KEY[ruleId];
+    return key && rulesT.has(`rules.${key}`) ? rulesT(`rules.${key}`) : dietaryRuleLabel(ruleId);
+  }
+
+  function saveCorrection(ruleId: string, finding: DietaryEvidenceFinding) {
+    if (isPending) return;
+    setMessage(null);
+    startTransition(async () => {
+      const result = await saveDietaryIngredientCorrectionAction({
+        ingredientId: ingredient.id,
+        ruleId,
+        customRestrictionId: null,
+        finding,
+        correctedFoodId: null,
+      });
+      if (!result.ok) {
+        setMessage({ kind: 'error', text: t('saveError') });
+        return;
+      }
+      setMessage({ kind: 'success', text: t('saved') });
+      router.refresh();
+    });
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('ariaLabel', { ingredient: ingredient.item })}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        >
+          <Info className="size-3.5" />
+          <span>{t('review')}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="max-h-[min(28rem,80vh)] overflow-y-auto text-sm">
+        <h4 className="font-display text-sm font-semibold [overflow-wrap:anywhere]">
+          {ingredient.item}
+        </h4>
+        <ul className="mt-3 space-y-3">
+          {evidence.map((entry) => (
+            <li key={`${entry.ruleId}-${entry.finding}-${entry.source}`} className="space-y-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="font-medium">{ruleLabel(entry.ruleId)}</span>
+                <Badge
+                  variant={entry.finding === 'present' ? 'warning' : 'muted'}
+                  className="capitalize"
+                >
+                  {t(`finding.${EVIDENCE_FINDING_LABEL[entry.finding]}`)}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('sourceLabel', { source: t(`source.${entry.source}`) })}
+              </p>
+              {canCorrect && (
+                <div
+                  role="group"
+                  aria-label={t('correctionGroup', {
+                    rule: ruleLabel(entry.ruleId),
+                  })}
+                  className="flex flex-wrap gap-1"
+                >
+                  {DIETARY_EVIDENCE_FINDINGS.map((finding) => (
+                    <Button
+                      key={finding}
+                      type="button"
+                      size="sm"
+                      variant={entry.finding === finding ? 'secondary' : 'ghost'}
+                      className="min-h-11 px-3 text-xs"
+                      disabled={isPending}
+                      onClick={() => saveCorrection(entry.ruleId, finding)}
+                    >
+                      {t(`finding.${EVIDENCE_FINDING_LABEL[finding]}`)}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        {message && (
+          <p
+            role={message.kind === 'error' ? 'alert' : 'status'}
+            className={cn(
+              'mt-3 text-xs',
+              message.kind === 'success' ? 'text-muted-foreground' : 'text-destructive',
+            )}
+          >
+            {message.text}
+          </p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 /**
  * A saved family member, carrying both their effective calorie target (for the nutrition
@@ -395,6 +548,8 @@ export function IngredientsPanel({
   canReviewDietary = false,
   unitPrefs,
   customUnits,
+  dietaryEvidence = [],
+  recipeContext,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -424,6 +579,10 @@ export function IngredientsPanel({
   unitPrefs?: UnitPrefs;
   /** Viewer's custom units (e.g. "pinch"), consulted during live conversion. */
   customUnits?: readonly CustomUnitDef[];
+  /** Current ingredient evidence, preserving present/possible/unresolved semantics. */
+  dietaryEvidence?: IngredientDietaryEvidence[];
+  /** Detail-page write context for authorized corrections and substitution apply. */
+  recipeContext?: IngredientsPanelRecipeContext;
 }) {
   const canScale = baseServings != null && baseServings > 0;
   // Props win, but fall back to the ambient viewer prefs (Cook Mode threads them
@@ -552,6 +711,19 @@ export function IngredientsPanel({
   const servings = controls ? controls.servings : servingsInternal;
   const system = controls ? controls.system : systemInternal;
   const checked = controls ? controls.checked : checkedInternal;
+  const previewIngredients = React.useMemo(
+    () =>
+      ingredients.map((ingredient) => ({
+        ingredientId: ingredient.id,
+        item: ingredient.item,
+        amount: ingredient.quantity,
+        amountMax: ingredient.quantityMax,
+        unit: ingredient.unit,
+        prep: ingredient.prep ?? null,
+        linkedFood: ingredient.linkedFood ?? null,
+      })),
+    [ingredients],
+  );
 
   const factor = canScale ? servings / baseServings : 1;
 
@@ -1220,14 +1392,30 @@ export function IngredientsPanel({
                           ))}
                         </span>
                       </button>
-                      <div className="col-start-2 row-start-1 flex items-center">
+                      <div className="col-start-2 row-start-1 flex items-center gap-0.5">
+                        <IngredientEvidenceControl
+                          ingredient={ing}
+                          evidence={dietaryEvidence.filter(
+                            (entry) => entry.ingredientId === ing.id,
+                          )}
+                          canCorrect={recipeContext?.canEdit ?? false}
+                        />
                         <IngredientSubstitutions
                           item={ing.item}
                           flagged={flagged}
                           presetTags={presetTags}
                           avoidAllergens={memberNeeds?.allergens}
-                          dietaryRules={assessmentRules}
-                          customRestrictions={activeCustomRestrictions}
+                          recipePreview={
+                            recipeContext
+                              ? {
+                                  recipeId: recipeContext.recipeId,
+                                  updatedAt: recipeContext.updatedAt,
+                                  ingredientId: ing.id,
+                                  ingredients: previewIngredients,
+                                  canApply: recipeContext.canEdit,
+                                }
+                              : undefined
+                          }
                         />
                       </div>
                     </div>

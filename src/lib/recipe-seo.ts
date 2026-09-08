@@ -70,7 +70,15 @@ export type SeoRecipe = {
   }[];
   ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
+  /** Author-confirmed claims only; inferred assessments are never public metadata. */
+  dietaryFlags?: string[] | null;
 } & SeoNutrition;
+
+const schemaDietByTag: Readonly<Record<string, string>> = {
+  vegan: 'https://schema.org/VeganDiet',
+  vegetarian: 'https://schema.org/VegetarianDiet',
+  'gluten-free': 'https://schema.org/GlutenFreeDiet',
+};
 
 /**
  * Format a minute count as an ISO-8601 duration (`90` → `"PT1H30M"`), which is
@@ -309,6 +317,10 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   ];
   if (categories.length > 0)
     jsonLd.recipeCategory = categories.length === 1 ? categories[0] : categories;
+  const suitableForDiet = (recipe.dietaryFlags ?? [])
+    .map((tag) => schemaDietByTag[tag])
+    .filter((value): value is string => value != null);
+  if (suitableForDiet.length > 0) jsonLd.suitableForDiet = suitableForDiet;
 
   const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {

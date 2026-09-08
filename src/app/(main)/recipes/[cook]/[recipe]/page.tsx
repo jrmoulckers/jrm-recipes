@@ -32,7 +32,10 @@ import {
   excludeOwnerRatings,
   ratingSummary,
 } from '~/server/recipes/queries';
-import { getRecipeIngredientAllergens } from '~/server/recipes/allergens';
+import {
+  getRecipeIngredientDietaryContext,
+  type RecipeIngredientDietaryContext,
+} from '~/server/recipes/allergens';
 import {
   getCollectionsForRecipe,
   getFavoriteRecipeIds,
@@ -42,7 +45,7 @@ import { absoluteUrl, formatMinutes } from '~/lib/utils';
 import { brand } from '~/config/brand';
 import { pickNutrition } from '~/lib/nutrition';
 import { todayIso } from '~/lib/nutrition-targets';
-import { isAllergen, type Allergen } from '~/lib/allergens';
+import { isAllergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import {
   CUSTOM_RESTRICTION_SEVERITIES,
@@ -50,7 +53,12 @@ import {
 } from '~/lib/dietary-assessment';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { listMemberProfiles } from '~/server/dietary/queries';
-import { listDietaryAssessmentViews } from '~/server/dietary/presentation';
+import {
+  authorConfirmedDietaryAssessmentViews,
+  listAuthorizedRecipeDietaryAssessmentViews,
+  listRecipeDietaryAssessmentViews,
+} from '~/server/dietary/presentation';
+import { listIngredientDietaryEvidenceForViewer } from '~/server/dietary/ingredient-evidence';
 import { getNutritionTargetOn } from '~/server/dietary/targets';
 import { getEntitlements } from '~/server/billing/entitlements';
 import { getUnitSettings } from '~/server/units/queries';
@@ -61,6 +69,7 @@ import { Badge } from '~/components/ui/badge';
 import { Breadcrumbs } from '~/components/layout/breadcrumbs';
 import { RecipeImage } from '~/components/recipe/recipe-image';
 import { RecipeClassificationBadges } from '~/components/recipe/recipe-classification-badges';
+import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
 import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
@@ -239,8 +248,6 @@ async function RecipePage({
     authorId: recipe.authorId,
   };
   const classifications = groupRecipeClassifications(recipe.tags, recipe.cuisine);
-  const declaredDietary = (recipe.dietaryFlags ?? []).filter(isDietaryTag);
-
   // Unlisted recipes are shared by token, never by their guessable slug, so the
   // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
   // public/group recipes, where the address itself is the shareable link.
@@ -329,9 +336,9 @@ async function RecipePage({
     anchoredSuggestions,
     unitSettings,
     nutritionView,
-    ingredientAllergenMap,
-    dietaryAssessmentViews,
-    entitlements,
+    ingredientDietaryContext,
+    dietaryAssessments,
+    dietaryEvidence,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -345,10 +352,17 @@ async function RecipePage({
     user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
     dbEnabled ? getRecipeNutritionView(recipe.id, manualNutrition) : Promise.resolve(null),
     dbEnabled
-      ? getRecipeIngredientAllergens(recipe.id)
-      : Promise.resolve(new Map<string, Allergen[]>()),
-    dbEnabled
-      ? listDietaryAssessmentViews(recipe.id, user?.id ?? null, { shareToken })
+      ? getRecipeIngredientDietaryContext(recipe.id)
+      : Promise.resolve(new Map<string, RecipeIngredientDietaryContext>()),
+    dbEnabled && user && !shareToken
+      ? listRecipeDietaryAssessmentViews(recipe.id, user.id)
+      : dbEnabled
+        ? listAuthorizedRecipeDietaryAssessmentViews(recipe.id)
+        : Promise.resolve(
+            authorConfirmedDietaryAssessmentViews(recipe.dietaryFlags, recipe.ingredients.length),
+          ),
+    user && dbEnabled && !shareToken
+      ? listIngredientDietaryEvidenceForViewer(recipe.id, user.id)
       : Promise.resolve([]),
     user && dbEnabled ? getEntitlements(user) : Promise.resolve(null),
   ]);
@@ -394,7 +408,8 @@ async function RecipePage({
   // inside the panel for any line the map doesn't cover.
   const panelIngredients = recipe.ingredients.map((ing) => ({
     ...ing,
-    allergens: ingredientAllergenMap.get(ing.id) ?? null,
+    allergens: ingredientDietaryContext.get(ing.id)?.allergens ?? null,
+    linkedFood: ingredientDietaryContext.get(ing.id)?.linkedFood ?? null,
   }));
 
   // Viewer's unit preferences drive display-time auto-conversion (#…): a signed-in
@@ -485,11 +500,6 @@ async function RecipePage({
             )}
             <RecipeClassificationBadges
               items={[...classifications.meal, ...classifications.cuisine]}
-              dietary={declaredDietary}
-              dietaryAssessments={dietaryAssessmentViews}
-              signedIn={Boolean(user)}
-              canReviewDietary={canEdit}
-              canUseAdvancedDietaryAnalysis={Boolean(entitlements?.advancedDietaryAnalysis)}
             />
             {recipe.group && (
               <Link
@@ -686,6 +696,11 @@ async function RecipePage({
           </div>
         </header>
 
+        <RecipeDietaryAssessments
+          assessments={dietaryAssessments}
+          limitPublicInferred={!user || Boolean(shareToken)}
+        />
+
         <Separator />
 
         {familyTree?.multiGeneration ? (
@@ -733,8 +748,12 @@ async function RecipePage({
                     members={calorieMembers}
                     unitPrefs={viewerUnitPrefs}
                     customUnits={viewerCustomUnits}
-                    dietaryAssessments={dietaryAssessmentViews}
-                    canReviewDietary={canEdit}
+                    dietaryEvidence={dietaryEvidence}
+                    recipeContext={{
+                      recipeId: recipe.id,
+                      updatedAt: recipe.updatedAt.toISOString(),
+                      canEdit,
+                    }}
                     ingredientSuggestions={{
                       recipeId: recipe.id,
                       recipeSlug: recipe.slug,

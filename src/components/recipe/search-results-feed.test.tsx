@@ -57,103 +57,21 @@ describe('SearchResultsFeed', () => {
     expect(screen.queryByText('Fried Green Tomatoes')).toBeNull();
   });
 
-  it('appends and de-duplicates Possible matches with its independent cursor', async () => {
-    const user = userEvent.setup();
-    vi.mocked(loadMorePossibleSearchAction).mockResolvedValue({
-      items: [recipe('possible-1', 'Possible One'), recipe('possible-2', 'Possible Two')],
-      nextOffset: 120,
-    });
-
+  it('separates medium-confidence dietary results from normal matches', () => {
     render(
       <SearchResultsFeed
-        initialItems={[recipe('definite-1', 'Definite One')]}
-        initialPossibleItems={[recipe('possible-1', 'Possible One')]}
+        initialItems={[recipe('high', 'Trusted Soup')]}
         initialNextOffset={null}
-        initialPossibleNextOffset={60}
+        initialPossibleItems={[recipe('possible', 'Possible Stew')]}
+        initialPossibleNextOffset={null}
         queryString="diet=vegan"
+        showDietaryBands
       />,
     );
 
-    const possibleSection = screen.getByRole('region', { name: 'Possible matches' });
-    await user.click(within(possibleSection).getByRole('button', { name: 'Load more recipes' }));
-
-    await waitFor(() =>
-      expect(within(possibleSection).getByText('Possible Two')).toBeInTheDocument(),
-    );
-    expect(within(possibleSection).getAllByText('Possible One')).toHaveLength(1);
-    expect(screen.getByText('Definite One')).toBeInTheDocument();
-    expect(loadMorePossibleSearchAction).toHaveBeenCalledWith('diet=vegan', 60);
-    expect(loadMoreSearchAction).not.toHaveBeenCalled();
-    expect(
-      within(possibleSection).getByRole('button', { name: 'Load more recipes' }),
-    ).toBeInTheDocument();
-  });
-
-  it('stops offering more Possible matches when their cursor becomes null', async () => {
-    const user = userEvent.setup();
-    vi.mocked(loadMorePossibleSearchAction).mockResolvedValue({
-      items: [recipe('possible-2', 'Possible Two')],
-      nextOffset: null,
-    });
-
-    render(
-      <SearchResultsFeed
-        initialItems={[]}
-        initialPossibleItems={[recipe('possible-1', 'Possible One')]}
-        initialNextOffset={null}
-        initialPossibleNextOffset={60}
-        queryString="diet=vegan"
-      />,
-    );
-
-    const possibleSection = screen.getByRole('region', { name: 'Possible matches' });
-    await user.click(within(possibleSection).getByRole('button', { name: 'Load more recipes' }));
-
-    await waitFor(() =>
-      expect(
-        within(possibleSection).queryByRole('button', { name: 'Load more recipes' }),
-      ).not.toBeInTheDocument(),
-    );
-    expect(within(possibleSection).getByText('Possible Two')).toBeInTheDocument();
-  });
-
-  it('resets Possible matches and their cursor when filters change', async () => {
-    const user = userEvent.setup();
-    vi.mocked(loadMorePossibleSearchAction).mockResolvedValue({
-      items: [recipe('new-possible-2', 'New Possible Two')],
-      nextOffset: null,
-    });
-
-    const { rerender } = render(
-      <SearchResultsFeed
-        initialItems={[]}
-        initialPossibleItems={[recipe('old-possible', 'Old Possible')]}
-        initialNextOffset={null}
-        initialPossibleNextOffset={60}
-        queryString="diet=vegan"
-      />,
-    );
-
-    rerender(
-      <IntlWrapper>
-        <SearchResultsFeed
-          initialItems={[]}
-          initialPossibleItems={[recipe('new-possible-1', 'New Possible One')]}
-          initialNextOffset={null}
-          initialPossibleNextOffset={40}
-          queryString="diet=vegetarian"
-        />
-      </IntlWrapper>,
-    );
-
-    const possibleSection = screen.getByRole('region', { name: 'Possible matches' });
-    expect(within(possibleSection).getByText('New Possible One')).toBeInTheDocument();
-    expect(screen.queryByText('Old Possible')).not.toBeInTheDocument();
-
-    await user.click(within(possibleSection).getByRole('button', { name: 'Load more recipes' }));
-    await waitFor(() =>
-      expect(within(possibleSection).getByText('New Possible Two')).toBeInTheDocument(),
-    );
-    expect(loadMorePossibleSearchAction).toHaveBeenCalledWith('diet=vegetarian', 40);
+    expect(screen.getByRole('heading', { name: 'Matches' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Possible matches' })).toBeTruthy();
+    expect(screen.getByText('Trusted Soup')).toBeTruthy();
+    expect(screen.getByText('Possible Stew')).toBeTruthy();
   });
 });

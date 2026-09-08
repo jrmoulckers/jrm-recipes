@@ -16,6 +16,7 @@ import { formatQuantity } from '~/lib/units';
 import { Badge } from '~/components/ui/badge';
 import { RecipeImage } from '~/components/recipe/recipe-image';
 import { RecipeClassificationBadges } from './recipe-classification-badges';
+import { DietaryAssessmentBadge } from '~/components/dietary/dietary-assessment-badge';
 import { canonicalizeTag } from '~/lib/tag-taxonomy';
 import type { IngredientInput, RecipeInput, StepInput } from '~/server/recipes/validation';
 
@@ -65,6 +66,8 @@ export function RecipePreview({
   const locale = useLocale();
   const t = useTranslations('recipePreview');
   const td = useTranslations('recipeDetail');
+  const tNames = useTranslations('classificationNames');
+  const tAssessments = useTranslations('dietary.assessments');
 
   const prep = recipe.prepMinutes ?? null;
   const cook = recipe.cookMinutes ?? null;
@@ -160,9 +163,21 @@ export function RecipePreview({
             )}
             <RecipeClassificationBadges
               items={classifications.filter((item) => item.category !== 'general')}
-              dietary={dietary}
               linked={false}
             />
+            {dietary.map((tag) => (
+              <DietaryAssessmentBadge
+                key={tag}
+                label={tNames.has(tag) ? tNames(tag) : tag}
+                status="suitability"
+                provenance={{
+                  kind: 'author-confirmed',
+                  source: tAssessments('authorSource'),
+                }}
+                recognizedIngredients={recipe.ingredients.length}
+                totalIngredients={recipe.ingredients.length}
+              />
+            ))}
           </div>
         )}
 

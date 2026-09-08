@@ -1,10 +1,21 @@
 import { z } from 'zod';
 
 import { ALLERGENS } from '~/lib/allergens';
-import { CUSTOM_RESTRICTION_SEVERITIES } from '~/lib/dietary-assessment';
+import {
+  customDietaryRestrictionInputSchema,
+  customDietaryRestrictionTermSchema,
+  type CustomDietaryRestrictionInput,
+} from '~/lib/dietary-assessment';
 import type { NutritionKey } from '~/lib/nutrients';
 import { isIsoDate, sanitizeTargets, TARGET_NUTRIENTS, todayIso } from '~/lib/nutrition-targets';
 import { DIETARY_TAGS } from '~/lib/substitutions';
+
+export {
+  customDietaryRestrictionInputSchema,
+  customDietaryRestrictionTermSchema,
+  type CustomDietaryRestrictionInput,
+};
+export type CustomDietaryRestrictionInputRaw = z.input<typeof customDietaryRestrictionInputSchema>;
 
 /**
  * Validation contract for per-family-member dietary profiles (issue #396).

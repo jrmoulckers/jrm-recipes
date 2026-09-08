@@ -1,7 +1,8 @@
 'use server';
 
 import { getCurrentUser } from '~/server/auth';
-import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { parseRatingSort, type RatingSort } from '~/lib/ratings';
 import { type Paginated } from './pagination';
 import { listLibraryRecipeIds, listPublicRecipes, type PublicRecipeListItem } from './queries';
@@ -52,8 +53,9 @@ export async function loadMorePublicRecipesAction(
     start = result.nextOffset;
   }
 
+  const profiles = user ? await listMemberProfiles(user.id) : [];
   return {
-    items: await attachCardDietaryAssessmentViews(items, user?.id ?? null),
+    items: profiles.length > 0 ? await attachCardDietaryData(items) : items,
     nextOffset,
   };
 }

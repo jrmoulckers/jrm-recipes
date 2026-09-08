@@ -243,6 +243,19 @@ describe('buildRecipeJsonLd', () => {
 });
 
 describe('buildRecipeJsonLd taxonomy', () => {
+  it('publishes only author-confirmed dietary flags that schema.org can represent', () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        dietaryFlags: ['vegan', 'gluten-free', 'dairy-free'],
+      }),
+    );
+
+    expect(jsonLd.suitableForDiet).toEqual([
+      'https://schema.org/VeganDiet',
+      'https://schema.org/GlutenFreeDiet',
+    ]);
+  });
+
   it('emits recipeCuisine when cuisine is set', () => {
     const jsonLd = buildRecipeJsonLd(makeRecipe({ cuisine: '  Italian  ' }));
     expect(jsonLd.recipeCuisine).toBe('Italian');

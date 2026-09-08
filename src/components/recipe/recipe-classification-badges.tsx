@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '~/lib/utils';
 import { type CanonicalTag, type TagCategory } from '~/lib/tag-taxonomy';
-import { type DietaryTag } from '~/lib/substitutions';
 import { recipeClassificationHref } from '~/lib/recipe-classifications';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 
@@ -15,9 +14,7 @@ const RecipeDietaryAssessments = dynamic(() =>
   ),
 );
 
-type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
-  trustedDietary?: boolean;
-};
+type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'>;
 
 const categoryClass: Record<TagCategory, string> = {
   meal: 'border-transparent bg-primary/12 text-[color:var(--badge-ink-primary)]',
@@ -35,28 +32,18 @@ function ClassificationIcon({ category }: { category: TagCategory }) {
 
 export function RecipeClassificationBadges({
   items,
-  dietary = [],
-  dietaryAssessments = [],
-  signedIn = false,
-  canReviewDietary = false,
-  canUseAdvancedDietaryAnalysis = false,
   linked = true,
   limit,
   className,
 }: {
   items: ClassificationItem[];
-  dietary?: DietaryTag[];
-  dietaryAssessments?: DietaryAssessmentView[];
-  signedIn?: boolean;
-  canReviewDietary?: boolean;
-  canUseAdvancedDietaryAnalysis?: boolean;
   linked?: boolean;
   limit?: number;
   className?: string;
 }) {
   const tNames = useTranslations('classificationNames');
   const deduped = new Map<string, ClassificationItem>();
-  for (const item of items) {
+  for (const item of items.filter((candidate) => candidate.category !== 'dietary')) {
     deduped.set(`${item.category}:${item.slug}`, item);
   }
   const visible = [...deduped.values()].slice(0, limit);
@@ -81,9 +68,7 @@ export function RecipeClassificationBadges({
         return linked ? (
           <Link
             key={`${item.category}:${item.slug}`}
-            href={recipeClassificationHref(item, {
-              trustedDietary: item.trustedDietary,
-            })}
+            href={recipeClassificationHref(item)}
             className={styles}
           >
             {content}
