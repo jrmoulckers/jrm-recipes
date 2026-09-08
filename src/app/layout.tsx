@@ -205,6 +205,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             requireConsent={analyticsRequiresConsent()}
             initialFlags={flags}
             initialHousehold={household}
+            authConfigured={authConfigured}
           >
             {children}
           </Providers>

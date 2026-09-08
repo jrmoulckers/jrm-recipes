@@ -18,6 +18,7 @@ import { TooltipProvider } from '~/components/ui/tooltip';
 import { Toaster } from '~/components/ui/sonner';
 import { ConfirmProvider } from '~/components/ui/confirm-dialog';
 import { ConnectivityStatus } from '~/components/pwa/connectivity-status';
+import { AccountBoundCleanup } from '~/components/auth/account-bound-cleanup';
 
 /** Client-side providers shared across the whole app. */
 export function Providers({
@@ -30,6 +31,7 @@ export function Providers({
   requireConsent = false,
   initialFlags = {},
   initialHousehold = null,
+  authConfigured = false,
 }: {
   children: React.ReactNode;
   initialTheme?: UITheme;
@@ -40,6 +42,7 @@ export function Providers({
   requireConsent?: boolean;
   initialFlags?: FlagMap;
   initialHousehold?: number | null;
+  authConfigured?: boolean;
 }) {
   return (
     <ThemeProvider initialTheme={initialTheme} initialScheme={initialScheme}>
@@ -48,6 +51,7 @@ export function Providers({
           <ConsentProvider initialStatus={initialConsent} requireConsent={requireConsent}>
             <AnalyticsProvider userId={initialUserId}>
               <FlagsProvider initialFlags={initialFlags}>
+                <AccountBoundCleanup enabled={authConfigured} />
                 <PageviewTracker />
                 <TooltipProvider delayDuration={200}>
                   <ConfirmProvider>
