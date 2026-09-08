@@ -148,6 +148,24 @@ describe('dietary analytics contract', () => {
     ).toBeNull();
   });
 
+  it('copies only one validated snapshot when accessors mutate the input', () => {
+    const properties: Record<string, unknown> = {};
+    let reads = 0;
+    Object.defineProperty(properties, 'enabled', {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        properties.householdId = 'CANARY private household identifier';
+        return reads === 1 ? true : 'CANARY unbounded value';
+      },
+    });
+
+    expect(
+      sanitizeDietaryEventProperties('dietary_analysis_enablement_changed', properties),
+    ).toEqual({ enabled: true });
+    expect(reads).toBe(1);
+  });
+
   it('leaves non-dietary events to the general analytics scrubber', () => {
     expect(sanitizeDietaryEventProperties('recipe_created', {})).toBeUndefined();
   });

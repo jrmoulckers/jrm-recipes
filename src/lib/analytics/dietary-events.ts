@@ -98,37 +98,43 @@ export function sanitizeDietaryEventProperties(
 
   const dietaryName = name as DietaryAnalyticsEventName;
   switch (dietaryName) {
-    case 'dietary_analysis_enablement_changed':
-      return hasExactlyKeys(properties, ['enabled']) && typeof properties.enabled === 'boolean'
-        ? { ...properties }
-        : null;
+    case 'dietary_analysis_enablement_changed': {
+      if (!hasExactlyKeys(properties, ['enabled'])) return null;
+      const enabled = properties.enabled;
+      return typeof enabled === 'boolean' ? { enabled } : null;
+    }
 
-    case 'dietary_model_download_finished':
+    case 'dietary_model_download_finished': {
       if (!hasExactlyKeys(properties, ['outcome', 'errorCode'])) return null;
-      return (properties.outcome === 'succeeded' && properties.errorCode === 'none') ||
-        (properties.outcome === 'failed' &&
-          isAllowedValue(properties.errorCode, DOWNLOAD_FAILURE_CODES))
-        ? { ...properties }
-        : null;
-
-    case 'dietary_device_support_checked':
-      return hasExactlyKeys(properties, ['support']) &&
-        isAllowedValue(properties.support, DEVICE_SUPPORT_VALUES)
-        ? { ...properties }
-        : null;
-
-    case 'dietary_analysis_finished':
-      if (
-        !hasExactlyKeys(properties, ['outcome', 'trigger', 'errorCode']) ||
-        !isAllowedValue(properties.trigger, ANALYSIS_TRIGGER_VALUES)
-      ) {
-        return null;
+      const outcome = properties.outcome;
+      const errorCode = properties.errorCode;
+      if (outcome === 'succeeded' && errorCode === 'none') {
+        return { outcome, errorCode };
       }
-      return (properties.outcome === 'succeeded' && properties.errorCode === 'none') ||
-        (properties.outcome === 'failed' &&
-          isAllowedValue(properties.errorCode, ANALYSIS_FAILURE_CODES))
-        ? { ...properties }
+      return outcome === 'failed' && isAllowedValue(errorCode, DOWNLOAD_FAILURE_CODES)
+        ? { outcome, errorCode }
         : null;
+    }
+
+    case 'dietary_device_support_checked': {
+      if (!hasExactlyKeys(properties, ['support'])) return null;
+      const support = properties.support;
+      return isAllowedValue(support, DEVICE_SUPPORT_VALUES) ? { support } : null;
+    }
+
+    case 'dietary_analysis_finished': {
+      if (!hasExactlyKeys(properties, ['outcome', 'trigger', 'errorCode'])) return null;
+      const outcome = properties.outcome;
+      const trigger = properties.trigger;
+      const errorCode = properties.errorCode;
+      if (!isAllowedValue(trigger, ANALYSIS_TRIGGER_VALUES)) return null;
+      if (outcome === 'succeeded' && errorCode === 'none') {
+        return { outcome, trigger, errorCode };
+      }
+      return outcome === 'failed' && isAllowedValue(errorCode, ANALYSIS_FAILURE_CODES)
+        ? { outcome, trigger, errorCode }
+        : null;
+    }
 
     default: {
       const exhaustiveName: never = dietaryName;

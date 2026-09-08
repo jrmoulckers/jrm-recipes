@@ -459,6 +459,73 @@ describe('PostHog client. Privacy posture', () => {
     ).toBeNull();
   });
 
+  it('uses one event-name snapshot before reconstructing dietary events', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+    let reads = 0;
+    const input: CaptureResult = {
+      uuid: '10000000-0000-4000-8000-000000000012',
+      event: 'dietary_device_support_checked',
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        support: 'webgpu',
+      },
+    };
+    Object.defineProperty(input, 'event', {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        return reads === 1 ? 'dietary_device_support_checked' : 'dietary_recipe_assessed';
+      },
+    });
+
+    expect(beforeSend(input)).toEqual({
+      uuid: input.uuid,
+      event: 'dietary_device_support_checked',
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        support: 'webgpu',
+      },
+    });
+    expect(reads).toBe(1);
+  });
+
+  it('rejects inherited PostHog identifiers on dietary events', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+    const properties = Object.assign(
+      Object.create({ distinct_id: 'household_CANARY' }) as Record<string, unknown>,
+      {
+        token: 'phc_project_key',
+        enabled: true,
+      },
+    );
+
+    expect(
+      beforeSend({
+        uuid: '10000000-0000-4000-8000-000000000013',
+        event: 'dietary_analysis_enablement_changed',
+        properties,
+      } as CaptureResult),
+    ).toBeNull();
+
+    const capture: CaptureResult = Object.assign(Object.create({ uuid: 'household_CANARY' }), {
+      event: 'dietary_analysis_enablement_changed',
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        enabled: true,
+      },
+    });
+    expect(beforeSend(capture)).toBeNull();
+  });
+
   it('preserves null events rejected by an earlier before_send hook', async () => {
     const options = await initOptions();
     const beforeSend = options.before_send as (
