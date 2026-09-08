@@ -341,8 +341,8 @@ Three consequences:
 ADR-0011 dietary data uses this same database and restore boundary. There is no separate dietary
 backup and no shorter promise that bypasses the unpinned Neon history window.
 
-After #1101 lands, restore verification and `assertUserErased` coverage must include every
-profile-personal and actor-attributed dietary table. Re-applying an erasure must:
+Restore verification and `assertUserErased` coverage include the profile-personal and
+actor-attributed dietary tables introduced by #1101. Re-applying an erasure must:
 
 - delete profiles, custom restrictions, personalized assessments, and private corrections;
 - retain only schema-constrained current built-in recipe facts/corrections with no personal text or
@@ -353,7 +353,7 @@ profile-personal and actor-attributed dietary table. Re-applying an erasure must
 - preserve only aggregate dietary deletion/retention counts in `deletion_records`.
 
 Browser model, worker, analysis, IndexedDB, and personalized recipe-page caches are outside Neon.
-They are handled by the account-bound cleanup coordinator required by #1109 and
+They are handled by the account-bound cleanup coordinator landed in #1109 and
 [`docs/privacy/dietary-retention-and-rights.md`](./privacy/dietary-retention-and-rights.md), not by
 database restore.
 

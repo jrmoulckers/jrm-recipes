@@ -34,6 +34,11 @@ const BASE: DeletionPreview = {
   cookLogEntryCount: 0,
   reviewCount: 0,
   collectionCount: 0,
+  dietaryProfileCount: 0,
+  customDietaryRestrictionCount: 0,
+  personalDietaryAssessmentCount: 0,
+  retainedDietaryAssessmentCount: 0,
+  retainedDietaryCorrectionCount: 0,
   soleOwnerGroups: [],
   hasActiveSubscription: false,
 };
@@ -89,6 +94,26 @@ describe('DeleteAccountPanel shared-content disclosure', () => {
     ).toBeTruthy();
     expect(screen.getByText(/3 uploaded media items remain/i)).toBeTruthy();
     expect(screen.getByText(/may still identify you/i)).toBeTruthy();
+  });
+
+  it('distinguishes deleted private dietary data from retained recipe facts', () => {
+    renderPanel({
+      dietaryProfileCount: 2,
+      customDietaryRestrictionCount: 3,
+      personalDietaryAssessmentCount: 4,
+      retainedDietaryAssessmentCount: 5,
+      retainedDietaryCorrectionCount: 6,
+    });
+
+    expect(
+      screen.getByText(/2 dietary profiles, 3 custom restrictions, and 4 private/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/5 built-in assessments and 6 structured corrections may remain/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/custom restrictions and personalized verdicts do not remain/i),
+    ).toBeTruthy();
   });
 
   it('keeps the final confirmation scoped to account and profile deletion', () => {

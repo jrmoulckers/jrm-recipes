@@ -2090,6 +2090,7 @@
       "allergies": "Allergien",
       "diets": "Ernährungsweisen",
       "familyGroup": "Familiengruppe (optional)",
+      "familyGroupPrivacy": "Dies ordnet das Profil nur für dich. Das Profil und seine Ernährungsdaten werden nicht mit der Gruppe geteilt.",
       "justMe": "Nur ich"
     },
     "customRestrictions": {
@@ -3279,6 +3280,8 @@
           "recipesUnclaimed": "{count, plural, one {# Rezept mit weiteren angenommenen Mitwirkenden bleibt ohne Inhaberschaft bestehen. Niemand muss es übernehmen.} other {# Rezepte mit weiteren angenommenen Mitwirkenden bleiben ohne Inhaberschaft bestehen. Niemand muss sie übernehmen.}}",
           "sharedRecipesDeleted": "{count, plural, one {# nicht öffentliches, nicht beanspruchtes Rezept wird gelöscht, weil keine weitere angenommene mitwirkende Person bleibt.} other {# nicht öffentliche, nicht beanspruchte Rezepte werden gelöscht, weil keine weitere angenommene mitwirkende Person bleibt.}}",
           "cooking": "Dein Kochverlauf geht ebenfalls: {cookLogs, plural, one {# Eintrag im Kochtagebuch} other {# Einträge im Kochtagebuch}}, {reviews, plural, one {# Bewertung} other {# Bewertungen}} und {collections, plural, one {# Sammlung} other {# Sammlungen}}.",
+          "dietaryDeleted": "Deine privaten Ernährungsdaten werden gelöscht: {profiles, plural, one {# Ernährungsprofil} other {# Ernährungsprofile}}, {restrictions, plural, one {# benutzerdefinierte Einschränkung} other {# benutzerdefinierte Einschränkungen}} und {assessments, plural, one {# private Bewertung} other {# private Bewertungen}}, zusammen mit den zugehörigen privaten Begriffen und Nachweisen.",
+          "dietaryRetained": "Bei erhaltenen geteilten Rezepten können {assessments, plural, one {# integrierte Bewertung} other {# integrierte Bewertungen}} und {corrections, plural, one {# strukturierte Korrektur} other {# strukturierte Korrekturen}} ohne Verknüpfung mit deinem Konto oder deinen Ernährungsprofilen bestehen bleiben. Benutzerdefinierte Einschränkungen und personalisierte Ergebnisse bleiben nicht bestehen.",
           "photos": "{retained, plural, =0 {Fotos, die kein erhaltenes geteiltes Rezept nutzt, werden aus dem Bildspeicher gelöscht.} one {# hochgeladene Mediendatei bleibt erhalten, weil ein geteiltes Rezept sie nutzt. Ihre Lebenszyklus-Verantwortung wechselt. Andere Medien werden gelöscht.} other {# hochgeladene Mediendateien bleiben erhalten, weil geteilte Rezepte sie nutzen. Ihre Lebenszyklus-Verantwortung wechselt. Andere Medien werden gelöscht.}}",
           "coCreated": "{count, plural, one {Deine Beiträge zu # geteilten Rezept bleiben ohne Verknüpfung zu deinem Konto bestehen.} other {Deine Beiträge zu # geteilten Rezepten bleiben ohne Verknüpfung zu deinem Konto bestehen.}} {versions, plural, one {# Verlaufseintrag bleibt als „Unbekannte mitwirkende Person“ bestehen.} other {# Verlaufseinträge bleiben als „Unbekannte mitwirkende Person“ bestehen.}} Text oder Bilder können dich durch ihren Inhalt oder familiären Zusammenhang weiterhin erkennen lassen.",
           "pendingInvites": "{count, plural, one {# Einladung, ein Rezept mitzugestalten, wird zurückgezogen.} other {# Einladungen, Rezepte mitzugestalten, werden zurückgezogen.}}",
@@ -3291,7 +3294,7 @@
           "body": "{groups} bliebe ohne Inhaberschaft zurück. Mach bitte vorher jemand anderen zur Inhaberin oder zum Inhaber, sonst können die Mitglieder die Gruppe nicht mehr verwalten."
         },
         "export": {
-          "body": "Nimm vorher dein Kochbuch und den Verlauf deiner Beiträge zu geteilten Rezepten mit. Der Download funktioniert offline.",
+          "body": "Nimm vorher dein Kochbuch, deine Ernährungsdaten und den Verlauf deiner Beiträge zu geteilten Rezepten mit. Der Download funktioniert offline.",
           "cta": "Erst mein Kochbuch herunterladen"
         },
         "start": "Konto und persönliches Profil löschen",

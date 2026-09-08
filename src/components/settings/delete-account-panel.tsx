@@ -97,6 +97,21 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
             })}
           </li>
           <li>
+            {t('consequences.dietaryDeleted', {
+              profiles: preview.dietaryProfileCount,
+              restrictions: preview.customDietaryRestrictionCount,
+              assessments: preview.personalDietaryAssessmentCount,
+            })}
+          </li>
+          {preview.retainedDietaryAssessmentCount + preview.retainedDietaryCorrectionCount > 0 ? (
+            <li className="text-foreground">
+              {t('consequences.dietaryRetained', {
+                assessments: preview.retainedDietaryAssessmentCount,
+                corrections: preview.retainedDietaryCorrectionCount,
+              })}
+            </li>
+          ) : null}
+          <li>
             {t('consequences.photos', {
               retained: preview.retainedMediaCount,
             })}

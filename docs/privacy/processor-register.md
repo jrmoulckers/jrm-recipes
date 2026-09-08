@@ -38,15 +38,15 @@ until it is added here.
 
 ## Register
 
-| #   | Processor      | Purpose                                             | Personal data it receives                                                                                                                                                                                                                                                       | Conditional on                                        | Reached from                                               |
-| --- | -------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
-| 1   | **Clerk**      | Identity, authentication, account lifecycle         | Email address, name, avatar image, authentication events, and the Clerk user id                                                                                                                                                                                                 | `CLERK_SECRET_KEY` (dev falls back to a local bypass) | `@clerk/nextjs` proxy; `src/server/auth/index.ts`          |
-| 2   | **Neon**       | Primary Postgres database                           | Everything the product currently stores, including recipe free text and existing private dietary profile fields. If #1101 lands, planned custom restrictions, severities, personalized assessments, and corrections may reveal health, religion, or other sensitive information | `DATABASE_URL`                                        | `src/server/db/**`                                         |
-| 3   | **Vercel**     | Application hosting and edge network                | Request metadata, IP addresses, user agents, runtime logs, and current dietary-profile request bodies. If #1101 lands, planned restriction/evidence/correction requests will use the same application boundary; logs must never record their content                            | Always in production                                  | Platform, see `DEPLOY.md`                                  |
-| 4   | **Cloudinary** | Image upload, storage, transformation, CDN delivery | User-uploaded photographs, avatars, and original recipe documents. Images may contain identifiable faces, handwriting, names, addresses, and embedded EXIF metadata, so they are personal data beyond the file itself                                                           | `CLOUDINARY_API_SECRET`                               | `src/app/api/cloudinary/sign/route.ts`; `next-cloudinary`  |
-| 5   | **Stripe**     | Subscription billing                                | **Email address and name**, plus our internal `userId` in customer metadata, plus payment details collected by Stripe directly                                                                                                                                                  | `STRIPE_SECRET_KEY`                                   | `src/server/billing/actions.ts`, `stripe.customers.create` |
-| 6   | **PostHog**    | Product analytics                                   | Internal user id as the distinct id, plus deliberately non-PII event properties. No dietary events are emitted today. #1107 proposes coarse enablement/runtime enums and fixed errors while forbidding dietary content, identifiers, and relationship fields                    | `NEXT_PUBLIC_POSTHOG_KEY`                             | `src/lib/analytics/**`                                     |
-| 7   | **Resend**     | Transactional and digest email                      | Recipient email address, message subject, and the **full message body**, which for the weekly digest includes the user's own recipe titles                                                                                                                                      | `RESEND_API_KEY`                                      | `src/server/digest/email.ts`                               |
+| #   | Processor      | Purpose                                             | Personal data it receives                                                                                                                                                                                                                                         | Conditional on                                        | Reached from                                               |
+| --- | -------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
+| 1   | **Clerk**      | Identity, authentication, account lifecycle         | Email address, name, avatar image, authentication events, and the Clerk user id                                                                                                                                                                                   | `CLERK_SECRET_KEY` (dev falls back to a local bypass) | `@clerk/nextjs` proxy; `src/server/auth/index.ts`          |
+| 2   | **Neon**       | Primary Postgres database                           | Everything the product stores, including recipe free text, private dietary profiles, custom restrictions and terms, severities, personalized assessments, structured evidence, and corrections. These may reveal health, religion, or other sensitive information | `DATABASE_URL`                                        | `src/server/db/**`                                         |
+| 3   | **Vercel**     | Application hosting and edge network                | Request metadata, IP addresses, user agents, runtime logs, and dietary profile, restriction, evidence, correction, export, and erasure requests. Logs must never record their dietary content                                                                     | Always in production                                  | Platform, see `DEPLOY.md`                                  |
+| 4   | **Cloudinary** | Image upload, storage, transformation, CDN delivery | User-uploaded photographs, avatars, and original recipe documents. Images may contain identifiable faces, handwriting, names, addresses, and embedded EXIF metadata, so they are personal data beyond the file itself                                             | `CLOUDINARY_API_SECRET`                               | `src/app/api/cloudinary/sign/route.ts`; `next-cloudinary`  |
+| 5   | **Stripe**     | Subscription billing                                | **Email address and name**, plus our internal `userId` in customer metadata, plus payment details collected by Stripe directly                                                                                                                                    | `STRIPE_SECRET_KEY`                                   | `src/server/billing/actions.ts`, `stripe.customers.create` |
+| 6   | **PostHog**    | Product analytics                                   | Internal user id as the distinct id, plus deliberately non-PII event properties. No dietary events are emitted today. #1107 proposes coarse enablement/runtime enums and fixed errors while forbidding dietary content, identifiers, and relationship fields      | `NEXT_PUBLIC_POSTHOG_KEY`                             | `src/lib/analytics/**`                                     |
+| 7   | **Resend**     | Transactional and digest email                      | Recipient email address, message subject, and the **full message body**, which for the weekly digest includes the user's own recipe titles                                                                                                                        | `RESEND_API_KEY`                                      | `src/server/digest/email.ts`                               |
 
 Entries 1, 4, 5, 6 and 7 are **conditional**: unset the credential and the integration silently
 degrades rather than failing. This means a staging or preview environment can have a materially
@@ -63,22 +63,21 @@ special-category data even though no column is labelled as such. This is the sam
 makes erasure hard rather than a matter of nulling a column, and it is why account deletion is full
 deletion rather than anonymisation. See `docs/architecture/0004-account-erasure.md`.
 
-Existing dietary profile names, allergen/diet selections, and nutrition targets already make this
-sensitivity explicit rather than incidental. If #1101 lands, its custom restrictions, severities,
-personalized assessments, and corrections must remain private, creator-controlled data in v1. A
-profile's optional `groupId` is not a sharing grant. Planned recipe-level built-in facts use a
-separate authorization and retention boundary; profile/custom data must not enter their public or
-shared projection. See `docs/privacy/dietary-data-inventory-and-dpia.md`.
+Dietary profile names, allergen/diet selections, nutrition targets, custom restrictions, severities,
+personalized assessments, and corrections make this sensitivity explicit rather than incidental.
+They remain private, creator-controlled data in v1. A profile's optional `groupId` is not a sharing
+grant. Recipe-level built-in facts use a separate authorization and retention boundary;
+profile/custom data must not enter their public or shared projection. See
+`docs/privacy/dietary-data-inventory-and-dpia.md`.
 
 Backup copies extend this beyond the live database. See `docs/db-backup-and-recovery.md`.
 
 ### Vercel (3) handles dietary request bodies
 
-The current profile flow already reaches the Vercel-hosted application before Neon. If ADR-0011's
-pending on-device inference, structured evidence, correction, export, and erasure work lands, those
-requests will use the same boundary. On-device inference must prevent ingredient and profile
-context from being sent to a third-party model service, but it does not remove the application host
-from the data path.
+The profile, structured evidence, correction, export, and erasure flows reach the Vercel-hosted
+application before Neon. Future on-device inference must prevent ingredient and profile context
+from being sent to a third-party model service, but it does not remove the application host from
+the data path.
 
 Runtime logs must therefore use fixed dietary error codes and counts only. They must not interpolate
 request bodies, recipe/profile/restriction/rule/ingredient identifiers or content, severity,

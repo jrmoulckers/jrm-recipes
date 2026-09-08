@@ -2090,6 +2090,7 @@
       "allergies": "Allergies",
       "diets": "Diets",
       "familyGroup": "Family group (optional)",
+      "familyGroupPrivacy": "This only organizes the profile for you. It does not share the profile or its dietary information with the group.",
       "justMe": "Just me"
     },
     "customRestrictions": {
@@ -3279,6 +3280,8 @@
           "recipesUnclaimed": "{count, plural, one {# recipe with other accepted contributors remains as an unclaimed recipe. Nobody is forced to own it.} other {# recipes with other accepted contributors remain as unclaimed recipes. Nobody is forced to own them.}}",
           "sharedRecipesDeleted": "{count, plural, one {# non-public unclaimed recipe is deleted because no other accepted contributor remains.} other {# non-public unclaimed recipes are deleted because no other accepted contributor remains.}}",
           "cooking": "Your cooking history goes too: {cookLogs, plural, one {# cook log entry} other {# cook log entries}}, {reviews, plural, one {# review} other {# reviews}}, and {collections, plural, one {# collection} other {# collections}}.",
+          "dietaryDeleted": "Your private dietary data is deleted: {profiles, plural, one {# dietary profile} other {# dietary profiles}}, {restrictions, plural, one {# custom restriction} other {# custom restrictions}}, and {assessments, plural, one {# private assessment} other {# private assessments}}, together with their private terms and evidence.",
+          "dietaryRetained": "With retained shared recipes, {assessments, plural, one {# built-in assessment} other {# built-in assessments}} and {corrections, plural, one {# structured correction} other {# structured corrections}} may remain without links to your account or dietary profiles. Custom restrictions and personalized verdicts do not remain.",
           "photos": "{retained, plural, =0 {Photos not used by a retained shared recipe are deleted from image storage.} one {# uploaded media item remains because a shared recipe uses it. Its lifecycle custody changes. Other uploaded media is deleted.} other {# uploaded media items remain because shared recipes use them. Their lifecycle custody changes. Other uploaded media is deleted.}}",
           "coCreated": "{count, plural, one {Your contributions to # shared recipe remain without a link to your account.} other {Your contributions to # shared recipes remain without a link to your account.}} {versions, plural, one {# version-history entry remains as “Unknown contributor.”} other {# version-history entries remain as “Unknown contributor.”}} The text or images may still identify you from their content or family context.",
           "pendingInvites": "{count, plural, one {# invitation to co-create a recipe is withdrawn.} other {# invitations to co-create recipes are withdrawn.}}",
@@ -3291,7 +3294,7 @@
           "body": "{groups} would be left without an owner. Please make someone else an owner first, or the people in it won't be able to manage it."
         },
         "export": {
-          "body": "Take your cookbook and shared-recipe contribution history with you first. The download keeps working offline.",
+          "body": "Take your cookbook, dietary data, and shared-recipe contribution history with you first. The download keeps working offline.",
           "cta": "Download my cookbook first"
         },
         "start": "Delete account and personal profile",

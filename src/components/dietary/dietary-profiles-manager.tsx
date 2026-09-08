@@ -540,6 +540,7 @@ export function DietaryProfilesManager({
                     </option>
                   ))}
                 </NativeSelect>
+                <p className="text-xs text-muted-foreground">{t('fields.familyGroupPrivacy')}</p>
                 {fieldErrors.groupId?.[0] ? (
                   <p className="text-sm text-destructive">{fieldErrors.groupId[0]}</p>
                 ) : null}
