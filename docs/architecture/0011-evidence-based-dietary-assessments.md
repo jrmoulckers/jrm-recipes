@@ -158,8 +158,15 @@ synonyms, and aliases, but the user must approve them before they affect results
 infers whether a custom restriction is medical.
 
 Custom restrictions attach to an individual dietary profile and can be copied deliberately to
-another profile. Authorization and collaboration follow Heirloom's existing recipe, profile,
-family, and co-creator rules; this feature does not create a parallel permission system.
+another profile by its creator. In v1 the profile and its custom restrictions remain private to
+that creator. Family-group membership, the profile's optional `groupId`, recipe access, and
+co-creator status do not authorize reading or changing profile-personal data.
+
+Model-assisted/custom-restriction processing is self-only in v1. Before either capability runs, a
+minimal non-identifying subject-scope declaration must state that the profile describes its
+creator. Missing, non-self, or disputed status is rejected at the server mutation/persistence
+boundary until the qualified-human-approved child/non-user rights process in the dietary DPIA is
+implemented.
 
 ## Provenance and correction
 
@@ -231,9 +238,11 @@ After enablement:
 5. Unsupported devices fall back to deterministic results without implying failure or reduced
    safety.
 
-Only the structured assessment syncs. Once synced, family members and other authorized viewers can
-reuse it without independently downloading or running the model. A newer valid assessment replaces
-an older one deterministically.
+Only a structured recipe-level assessment against a built-in rule may sync for reuse by other
+recipe-authorized viewers without independently downloading or running the model. Profile-linked
+or custom-restriction assessments remain creator-private in v1 and never become reusable because a
+viewer is a family member or co-creator. A newer valid recipe-level assessment replaces an older one
+deterministically.
 
 Synced model output is untrusted input. The server re-evaluates deterministic evidence and rejects
 any submitted assessment that contradicts it. The server also applies the existing recipe and
@@ -258,6 +267,36 @@ Custom restrictions, corrections, and persisted assessments participate in the e
 export, account erasure, and shared-recipe retention behavior. On-device model and analysis caches
 are removed when smart analysis is disabled or the user signs out. Downgrade may retain the local
 model for offline display and a future resubscription, but it cannot run new premium analysis.
+
+### Privacy, retention, and rights boundary
+
+Issue #1106 owns the detailed implementation contract in
+[`docs/privacy/dietary-data-inventory-and-dpia.md`](../privacy/dietary-data-inventory-and-dpia.md)
+and
+[`docs/privacy/dietary-retention-and-rights.md`](../privacy/dietary-retention-and-rights.md).
+Those documents make explicit several boundaries that this architecture depends on:
+
+- profiles and custom restrictions are private, creator-controlled notes in v1;
+- a profile's optional `groupId` organizes the creator's data but never grants another person
+  access;
+- only current recipe-level built-in-rule facts may enter a shared/public projection or follow a
+  recipe retained under ADR-0009;
+- profile names, custom restrictions, severities, personalized assessments, and profile/private
+  corrections must cascade with their profile and never survive as recipe facts;
+- authenticated export includes requester-owned or requester-attributed dietary data without
+  exposing another person's profile;
+- account erasure may retain only schema-constrained, allowlisted built-in recipe facts with no
+  personal text or context; it removes actor/profile linkage, deletes free-text/private correction
+  content, and records aggregate counts only;
+- one account-bound cleanup coordinator must stop work and purge model, analysis, IndexedDB, and
+  personalized recipe caches on disable, sign-out, account switch, and deletion completion;
+- smart-analysis enablement is separate from analytics consent and from any legal consent record.
+
+The merged #1101 schema/rights, #1107 analytics, and #1109 cleanup controls have been verified
+against these release requirements. Capabilities that do not yet have product call sites remain
+dormant rather than implicitly enabled. Production enablement also remains blocked on qualified
+legal review, a named model asset host/distributor, and an honest configured backup horizon;
+engineering verification does not satisfy those human gates.
 
 ## Integrated presentation
 
@@ -392,5 +431,8 @@ transmitting recipe and dietary context elsewhere.
   that require explicit setup and progressive processing.
 - Public inferred badges require ongoing compatibility and revocation support because a synced
   result can outlive the device and model that produced it.
+- Health-adjacent data, non-user/child profiles, rights behavior, processor transfers, and
+  purpose-bound retention require the DPIA and production gates recorded in
+  `docs/privacy/dietary-data-inventory-and-dpia.md`.
 - The implementation is larger than adding a confidence column, but it avoids propagating another
   binary representation that would need to be replaced when personalized restrictions arrive.

@@ -99,7 +99,7 @@ describe('getDeletionPreview', () => {
       retainedRecipes: [],
     };
     state.retainedMediaCount = 4;
-    queue(1, 9, 92, 17, 6, 0, 0);
+    queue(1, 9, 92, 17, 6, 0, 0, 2, 3, 4, 5, 6);
     const preview = await getDeletionPreview('u1');
 
     expect(preview.ownedRecipeCount).toBe(214);
@@ -113,13 +113,18 @@ describe('getDeletionPreview', () => {
     expect(preview.cookLogEntryCount).toBe(92);
     expect(preview.reviewCount).toBe(17);
     expect(preview.collectionCount).toBe(6);
+    expect(preview.dietaryProfileCount).toBe(2);
+    expect(preview.customDietaryRestrictionCount).toBe(3);
+    expect(preview.personalDietaryAssessmentCount).toBe(4);
+    expect(preview.retainedDietaryAssessmentCount).toBe(5);
+    expect(preview.retainedDietaryCorrectionCount).toBe(6);
   });
 
   it('reports whether a live subscription exists', async () => {
-    queue(0, 0, 0, 0, 0, 0, 1);
+    queue(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0);
     expect((await getDeletionPreview('u1')).hasActiveSubscription).toBe(true);
 
-    queue(0, 0, 0, 0, 0, 0, 0);
+    queue(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     expect((await getDeletionPreview('u1')).hasActiveSubscription).toBe(false);
   });
 
@@ -137,9 +142,14 @@ describe('getDeletionPreview', () => {
         cookLogEntryCount: 5,
         reviewCount: 2,
         collectionCount: 1,
+        dietaryProfileCount: 2,
+        customDietaryRestrictionCount: 1,
+        personalDietaryAssessmentCount: 3,
+        retainedDietaryAssessmentCount: 99,
+        retainedDietaryCorrectionCount: 99,
         soleOwnerGroups: [],
         hasActiveSubscription: false,
       }),
-    ).toBe(17);
+    ).toBe(23);
   });
 });

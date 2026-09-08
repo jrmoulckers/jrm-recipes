@@ -336,4 +336,29 @@ Three consequences:
   backup would compromise its integrity as a recovery artifact, which is why re-application on
   restore is the control instead.
 
-_Related issues: #257, #678, #855 (pin the retention number — blocking), #806 (record the horizon)._
+### Dietary profiles and assessments
+
+ADR-0011 dietary data uses this same database and restore boundary. There is no separate dietary
+backup and no shorter promise that bypasses the unpinned Neon history window.
+
+Restore verification and `assertUserErased` coverage include the profile-personal and
+actor-attributed dietary tables introduced by #1101. Re-applying an erasure must:
+
+- delete profiles, custom restrictions, personalized assessments, and private corrections;
+- retain only schema-constrained current built-in recipe facts/corrections with no personal text or
+  context, remove their erased-user attribution, and delete any private, free-text, or identifying
+  correction content even when the ADR-0009 recipe survives;
+- confirm no retained row contains a profile id, custom-restriction id/name, severity, personalized
+  verdict, or hidden subject/manager linkage;
+- preserve only aggregate dietary deletion/retention counts in `deletion_records`.
+
+Browser model, worker, analysis, IndexedDB, and personalized recipe-page caches are outside Neon.
+They are handled by the account-bound cleanup coordinator landed in #1109 and
+[`docs/privacy/dietary-retention-and-rights.md`](./privacy/dietary-retention-and-rights.md), not by
+database restore.
+
+Deletion copy must not state a dietary backup horizon until #855 pins the actual provider value and
+#806 supplies it to `backup_horizon_at`. Qualified legal review of that wording remains a production
+gate rather than an outcome of this runbook.
+
+_Related issues: #257, #678, #806, #855 (pin the retention number — blocking), and #1106._

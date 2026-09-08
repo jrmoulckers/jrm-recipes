@@ -38,15 +38,15 @@ until it is added here.
 
 ## Register
 
-| #   | Processor      | Purpose                                             | Personal data it receives                                                                                                                                                                                             | Conditional on                                        | Reached from                                               |
-| --- | -------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
-| 1   | **Clerk**      | Identity, authentication, account lifecycle         | Email address, name, avatar image, authentication events, and the Clerk user id                                                                                                                                       | `CLERK_SECRET_KEY` (dev falls back to a local bypass) | `@clerk/nextjs` proxy; `src/server/auth/index.ts`          |
-| 2   | **Neon**       | Primary Postgres database                           | Everything the product stores, including recipe free text, which is unbounded user-authored content and must be assumed to contain personal data about the author and about third parties they mention                | `DATABASE_URL`                                        | `src/server/db/**`                                         |
-| 3   | **Vercel**     | Application hosting and edge network                | Request metadata, IP addresses, user agents, and runtime logs                                                                                                                                                         | Always in production                                  | Platform, see `DEPLOY.md`                                  |
-| 4   | **Cloudinary** | Image upload, storage, transformation, CDN delivery | User-uploaded photographs, avatars, and original recipe documents. Images may contain identifiable faces, handwriting, names, addresses, and embedded EXIF metadata, so they are personal data beyond the file itself | `CLOUDINARY_API_SECRET`                               | `src/app/api/cloudinary/sign/route.ts`; `next-cloudinary`  |
-| 5   | **Stripe**     | Subscription billing                                | **Email address and name**, plus our internal `userId` in customer metadata, plus payment details collected by Stripe directly                                                                                        | `STRIPE_SECRET_KEY`                                   | `src/server/billing/actions.ts`, `stripe.customers.create` |
-| 6   | **PostHog**    | Product analytics                                   | Internal user id as the distinct id, plus deliberately non-PII event properties. Recipe content and personal details are excluded by design                                                                           | `NEXT_PUBLIC_POSTHOG_KEY`                             | `src/lib/analytics/**`                                     |
-| 7   | **Resend**     | Transactional and digest email                      | Recipient email address, message subject, and the **full message body**, which for the weekly digest includes the user's own recipe titles                                                                            | `RESEND_API_KEY`                                      | `src/server/digest/email.ts`                               |
+| #   | Processor      | Purpose                                             | Personal data it receives                                                                                                                                                                                                                                                                    | Conditional on                                        | Reached from                                               |
+| --- | -------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
+| 1   | **Clerk**      | Identity, authentication, account lifecycle         | Email address, name, avatar image, authentication events, and the Clerk user id                                                                                                                                                                                                              | `CLERK_SECRET_KEY` (dev falls back to a local bypass) | `@clerk/nextjs` proxy; `src/server/auth/index.ts`          |
+| 2   | **Neon**       | Primary Postgres database                           | Everything the product stores, including recipe free text, private dietary profiles, custom restrictions and terms, severities, personalized assessments, structured evidence, and corrections. These may reveal health, religion, or other sensitive information                            | `DATABASE_URL`                                        | `src/server/db/**`                                         |
+| 3   | **Vercel**     | Application hosting and edge network                | Request metadata, IP addresses, user agents, runtime logs, and dietary profile, restriction, evidence, correction, export, and erasure requests. Logs must never record their dietary content                                                                                                | Always in production                                  | Platform, see `DEPLOY.md`                                  |
+| 4   | **Cloudinary** | Image upload, storage, transformation, CDN delivery | User-uploaded photographs, avatars, and original recipe documents. Images may contain identifiable faces, handwriting, names, addresses, and embedded EXIF metadata, so they are personal data beyond the file itself                                                                        | `CLOUDINARY_API_SECRET`                               | `src/app/api/cloudinary/sign/route.ts`; `next-cloudinary`  |
+| 5   | **Stripe**     | Subscription billing                                | **Email address and name**, plus our internal `userId` in customer metadata, plus payment details collected by Stripe directly                                                                                                                                                               | `STRIPE_SECRET_KEY`                                   | `src/server/billing/actions.ts`, `stripe.customers.create` |
+| 6   | **PostHog**    | Product analytics                                   | Internal user id as the distinct id, plus deliberately non-PII event properties. No dietary event call sites are enabled today. The available #1107 contract permits only coarse enablement/runtime enums and fixed errors and rejects dietary content, identifiers, and relationship fields | `NEXT_PUBLIC_POSTHOG_KEY`                             | `src/lib/analytics/**`                                     |
+| 7   | **Resend**     | Transactional and digest email                      | Recipient email address, message subject, and the **full message body**, which for the weekly digest includes the user's own recipe titles                                                                                                                                                   | `RESEND_API_KEY`                                      | `src/server/digest/email.ts`                               |
 
 Entries 1, 4, 5, 6 and 7 are **conditional**: unset the credential and the integration silently
 degrades rather than failing. This means a staging or preview environment can have a materially
@@ -63,7 +63,27 @@ special-category data even though no column is labelled as such. This is the sam
 makes erasure hard rather than a matter of nulling a column, and it is why account deletion is full
 deletion rather than anonymisation. See `docs/architecture/0004-account-erasure.md`.
 
+Dietary profile names, allergen/diet selections, nutrition targets, custom restrictions, severities,
+personalized assessments, and corrections make this sensitivity explicit rather than incidental.
+They remain private, creator-controlled data in v1. A profile's optional `groupId` is not a sharing
+grant. Recipe-level built-in facts use a separate authorization and retention boundary;
+profile/custom data must not enter their public or shared projection. See
+`docs/privacy/dietary-data-inventory-and-dpia.md`.
+
 Backup copies extend this beyond the live database. See `docs/db-backup-and-recovery.md`.
+
+### Vercel (3) handles dietary request bodies
+
+The profile, structured evidence, correction, export, and erasure flows reach the Vercel-hosted
+application before Neon. Future on-device inference must prevent ingredient and profile context
+from being sent to a third-party model service, but it does not remove the application host from
+the data path.
+
+Runtime logs must therefore use fixed dietary error codes and counts only. They must not interpolate
+request bodies, recipe/profile/restriction/rule/ingredient identifiers or content, severity,
+verdicts, evidence, corrections, fingerprints, model input/output, `groupId`, household/group
+identifiers, subject/manager relationship fields, or raw exceptions. The proposed application-log
+limit is 30 days; the configured Vercel retention remains a human-owned fact to verify below.
 
 ### PostHog (6) defaults to a US ingestion host
 
@@ -72,11 +92,19 @@ Backup copies extend this beyond the live database. See `docs/db-backup-and-reco
 configured in production is the one that governs, so confirm the deployed value rather than
 assuming the default, and record it below once confirmed.
 
-Analytics is consent-gated and cookieless, and event properties are scrubbed before dispatch
-(`src/lib/analytics/**`). The scrub is a guard, not a proof: **#705** is open to move scrubbing into
-`before_send` so that it also covers properties added by code paths that bypass the typed `track`
-API. Until that lands, treat "PostHog receives no PII" as an intent enforced in most places rather
-than an invariant.
+Current analytics is consent-gated and cookieless, and event properties are scrubbed before
+dispatch (`src/lib/analytics/**`). No production dietary event call sites are enabled today. The
+merged #1107 contract nevertheless provides an exhaustive typed event set, exact runtime allowlists
+on client and server, unknown-namespace rejection, fixed error codes, and the same boundary in
+PostHog `before_send`. Canary tests verify rejection of `groupId`, household/group identifiers,
+subject/manager relationship fields, PostHog group associations, dietary content, and resource ids.
+Adding a call site does not remove the separate consent, retention-configuration, and legal-review
+gates.
+
+The proposed raw dietary-event limit is 90 days. Longer-lived reporting is permitted only after
+documented aggregation removes account and dietary linkage. Legal, product and operations must
+approve the period and configure the actual PostHog retention; writing it here does not change the
+provider setting.
 
 ### Resend (7) receives message bodies, not just addresses
 
@@ -94,6 +122,29 @@ which contractual terms apply and what a user's deletion request can achieve: fi
 commonly subject to a statutory retention period that overrides erasure. This must be reflected in
 the deletion notice.
 
+## Pending model asset distributor: production blocked
+
+ADR-0011 permits optional on-device interpretation and rejects a cloud inference fallback. A browser
+still needs to download the static model asset, so its host or distributor receives request
+metadata such as IP address, user agent, timestamp and cache headers. It is a recipient even though
+ingredient, recipe, profile and restriction content must never be sent for inference.
+
+**No model asset host or distributor is selected in this repository.** Do not add a plausible
+vendor, infer one from a prototype dependency, or assume that Vercel will host the asset. Production
+enablement is blocked until the selected delivery design is recorded here with:
+
+- legal role (processor, independent controller, or existing Vercel processing);
+- DPA status, subprocessors, actual region and international transfer mechanism;
+- request-log and CDN-cache retention;
+- model asset integrity/signature or digest verification;
+- model license and redistribution terms;
+- a verified network test showing that only static asset requests leave the device and no recipe
+  or dietary content reaches the distributor.
+
+If Vercel is selected, update its existing row and this decision rather than inventing an eighth
+processor. If a new third party is selected, add it to the numbered register before any production
+download.
+
 ## Gaps requiring a human
 
 These are contractual and organisational facts that do not exist anywhere in this repository, so
@@ -101,14 +152,19 @@ they cannot be derived from the code. They are listed unfilled on purpose. **An 
 honest; a plausible-looking invented one is a compliance liability**, because a register is relied
 on precisely when someone is checking whether a claim was true.
 
-| Gap                                                                  | Why it cannot be answered from the codebase               | Owner              |
-| -------------------------------------------------------------------- | --------------------------------------------------------- | ------------------ |
-| Whether a **DPA** is executed with each of the seven                 | Contract status is not in the repo                        | Legal / operations |
-| **Sub-processors** used by each                                      | Published on their sites and versioned by them, not by us | Legal / operations |
-| **International transfer mechanism** (SCCs, adequacy) per processor  | Contractual; note PostHog's default host is US            | Legal              |
-| **Hosting region actually configured** for Neon, Cloudinary, PostHog | Deployment configuration, not source                      | Operations         |
-| **Retention** each processor applies independently of ours           | Their policy, and it can outlive our deletion             | Legal / operations |
-| Whether **Stripe's controller-side retention** is disclosed to users | Depends on the above                                      | Legal              |
+| Gap                                                                     | Why it cannot be answered from the codebase                      | Owner                        |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------- |
+| Whether a **DPA** is executed with each of the seven current processors | Contract status is not in the repo                               | Legal / operations           |
+| **Sub-processors** used by each                                         | Published on their sites and versioned by them, not by us        | Legal / operations           |
+| **International transfer mechanism** (SCCs, adequacy) per processor     | Contractual; note PostHog's default host is US                   | Legal                        |
+| **Hosting region actually configured** for Neon, Cloudinary, PostHog    | Deployment configuration, not source                             | Operations                   |
+| **Retention** each processor applies independently of ours              | Their policy, and it can outlive our deletion                    | Legal / operations           |
+| Vercel runtime-log retention and dietary no-content logging controls    | Provider configuration and production evidence are not in source | Operations / security        |
+| PostHog's configured 90-day dietary raw-event limit                     | A proposed policy does not configure the provider                | Product / operations / legal |
+| Selected **model asset host/distributor**, legal role and region        | No selection exists in the repository                            | Product / legal / operations |
+| Model host subprocessors, transfers, request-log retention and DPA      | Depends on the selected distributor and contract                 | Legal / operations           |
+| Model integrity controls and redistribution license                     | Requires a selected artifact and distribution design             | Security / legal             |
+| Whether **Stripe's controller-side retention** is disclosed to users    | Depends on the above                                             | Legal                        |
 
 Filling these is prerequisite to publishing a privacy notice, since Art. 13 requires disclosing
 recipients and transfer safeguards, and neither is currently established.
@@ -122,5 +178,8 @@ entered the list is never reconsidered. Resend is the proof.
 Re-derive when adding any outbound integration, and as part of the quarterly review in
 `docs/secrets-management.md`.
 
-_Related issues: #678, #705, #814. Related docs: `docs/secrets-management.md`,
-`docs/db-backup-and-recovery.md`, `docs/architecture/0004-account-erasure.md`._
+_Related issues: #678, #705, #814, #1106 and #1107. Related docs:
+`docs/secrets-management.md`, `docs/db-backup-and-recovery.md`,
+`docs/architecture/0004-account-erasure.md`,
+`docs/privacy/dietary-data-inventory-and-dpia.md`, and
+`docs/privacy/dietary-retention-and-rights.md`._

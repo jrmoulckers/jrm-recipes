@@ -2090,12 +2090,16 @@
       "allergies": "Alergias",
       "diets": "Dietas",
       "familyGroup": "Grupo familiar (opcional)",
+      "familyGroupPrivacy": "Esto solo organiza el perfil para ti. No comparte el perfil ni su información dietética con el grupo.",
       "justMe": "Solo yo"
     },
     "customRestrictions": {
       "title": "Restricciones personalizadas",
       "description": "Agrega ingredientes exactos que esta persona evita. Heirloom nunca supone si una restricción es médica.",
       "add": "Agregar restricción",
+      "subjectScope": "Confirmo que este perfil me describe a mí.",
+      "subjectScopeHelp": "Por ahora, las restricciones personalizadas solo pueden usarse para uno mismo. Los perfiles de menores u otras personas no pueden usarlas hasta que haya un proceso de derechos revisado.",
+      "subjectScopeRequired": "Confirma que este perfil te describe antes de guardar restricciones personalizadas.",
       "name": "Nombre de la restricción",
       "namePlaceholder": "Sin champiñones",
       "effect": "¿Cómo debe afectar los resultados?",
@@ -3279,6 +3283,8 @@
           "recipesUnclaimed": "{count, plural, one {# receta con otras personas colaboradoras aceptadas permanece sin propietario. Nadie está obligado a asumirla.} other {# recetas con otras personas colaboradoras aceptadas permanecen sin propietario. Nadie está obligado a asumirlas.}}",
           "sharedRecipesDeleted": "{count, plural, one {Se elimina # receta no pública sin propietario porque no queda ninguna otra persona colaboradora aceptada.} other {Se eliminan # recetas no públicas sin propietario porque no queda ninguna otra persona colaboradora aceptada.}}",
           "cooking": "Tu historial de cocina también se va: {cookLogs, plural, one {# entrada del diario} other {# entradas del diario}}, {reviews, plural, one {# reseña} other {# reseñas}} y {collections, plural, one {# colección} other {# colecciones}}.",
+          "dietaryDeleted": "Se eliminan tus datos dietéticos privados: {profiles, plural, one {# perfil dietético} other {# perfiles dietéticos}}, {restrictions, plural, one {# restricción personalizada} other {# restricciones personalizadas}} y {assessments, plural, one {# evaluación privada} other {# evaluaciones privadas}}, junto con sus términos y pruebas privados.",
+          "dietaryRetained": "Con las recetas compartidas conservadas, pueden permanecer {assessments, plural, one {# evaluación integrada} other {# evaluaciones integradas}} y {corrections, plural, one {# corrección estructurada} other {# correcciones estructuradas}} sin vínculos con tu cuenta ni tus perfiles dietéticos. Las restricciones personalizadas y los veredictos personalizados no permanecen.",
           "photos": "{retained, plural, =0 {Las fotos que no usa una receta compartida conservada se eliminan del almacenamiento.} one {Se conserva # archivo multimedia porque lo usa una receta compartida. Cambia quién gestiona su ciclo de vida. Los demás se eliminan.} other {Se conservan # archivos multimedia porque los usan recetas compartidas. Cambia quién gestiona su ciclo de vida. Los demás se eliminan.}}",
           "coCreated": "{count, plural, one {Tus contribuciones a # receta compartida permanecen sin vínculo con tu cuenta.} other {Tus contribuciones a # recetas compartidas permanecen sin vínculo con tu cuenta.}} {versions, plural, one {# entrada del historial permanece como «Colaborador desconocido».} other {# entradas del historial permanecen como «Colaborador desconocido».}} El texto o las imágenes aún podrían identificarte por su contenido o contexto familiar.",
           "pendingInvites": "{count, plural, one {Se retira # invitación para co-crear una receta.} other {Se retiran # invitaciones para co-crear recetas.}}",
@@ -3291,7 +3297,7 @@
           "body": "{groups} se quedaría sin propietario. Haz que otra persona sea propietaria antes, o quienes están dentro no podrán gestionarlo."
         },
         "export": {
-          "body": "Llévate primero tu recetario y el historial de contribuciones a recetas compartidas. La descarga funciona sin conexión.",
+          "body": "Llévate primero tu recetario, tus datos dietéticos y el historial de contribuciones a recetas compartidas. La descarga funciona sin conexión.",
           "cta": "Descargar mi recetario primero"
         },
         "start": "Eliminar la cuenta y el perfil personal",

@@ -1,15 +1,20 @@
 import 'server-only';
 
-import { and, count, eq, inArray, ne } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, ne, or } from 'drizzle-orm';
 
 import { db, isDbConfigured } from '~/server/db';
 import {
   billingCustomers,
   collections,
   cookLogEntries,
+  customDietaryRestrictions,
+  dietaryAssessments,
+  dietaryIngredientCorrections,
   groupMembers,
   groups,
+  memberDietaryProfiles,
   recipeCreators,
+  recipeIngredients,
   recipeVersions,
   reviews,
   subscriptions,
@@ -62,6 +67,16 @@ export type DeletionPreview = {
   cookLogEntryCount: number;
   reviewCount: number;
   collectionCount: number;
+  /** Creator-owned dietary profiles deleted with the account. */
+  dietaryProfileCount: number;
+  /** Custom restrictions cascading from the creator's profiles. */
+  customDietaryRestrictionCount: number;
+  /** Personal/profile assessments cascading with the account or its profiles. */
+  personalDietaryAssessmentCount: number;
+  /** Canonical built-in assessments retained with surviving shared recipes. */
+  retainedDietaryAssessmentCount: number;
+  /** Structured built-in corrections retained with surviving shared recipes. */
+  retainedDietaryCorrectionCount: number;
   /**
    * Groups where this user is the only owner and other members remain. Deleting
    * the account cascades their membership away and leaves the group ownerless,
@@ -84,6 +99,11 @@ const EMPTY: DeletionPreview = {
   cookLogEntryCount: 0,
   reviewCount: 0,
   collectionCount: 0,
+  dietaryProfileCount: 0,
+  customDietaryRestrictionCount: 0,
+  personalDietaryAssessmentCount: 0,
+  retainedDietaryAssessmentCount: 0,
+  retainedDietaryCorrectionCount: 0,
   soleOwnerGroups: [],
   hasActiveSubscription: false,
 };
@@ -170,6 +190,11 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
     collectionCount,
     soleOwnerGroups,
     liveSubscriptions,
+    dietaryProfileCount,
+    customDietaryRestrictionCount,
+    personalDietaryAssessmentCount,
+    retainedDietaryAssessmentCount,
+    retainedDietaryCorrectionCount,
   ] = await Promise.all([
     countRows(() =>
       db
@@ -210,6 +235,63 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
           ),
         ),
     ),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(memberDietaryProfiles)
+        .where(eq(memberDietaryProfiles.userId, userId)),
+    ),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(customDietaryRestrictions)
+        .innerJoin(
+          memberDietaryProfiles,
+          eq(memberDietaryProfiles.id, customDietaryRestrictions.profileId),
+        )
+        .where(eq(memberDietaryProfiles.userId, userId)),
+    ),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(dietaryAssessments)
+        .leftJoin(memberDietaryProfiles, eq(memberDietaryProfiles.id, dietaryAssessments.profileId))
+        .where(
+          or(eq(dietaryAssessments.ownerUserId, userId), eq(memberDietaryProfiles.userId, userId)),
+        ),
+    ),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(dietaryAssessments)
+        .where(
+          and(
+            eq(dietaryAssessments.scope, 'canonical'),
+            eq(dietaryAssessments.createdById, userId),
+            retainedRecipeIds.length === 0
+              ? eq(dietaryAssessments.recipeId, '__none__')
+              : inArray(dietaryAssessments.recipeId, retainedRecipeIds),
+          ),
+        ),
+    ),
+    countRows(() =>
+      db
+        .select({ value: count() })
+        .from(dietaryIngredientCorrections)
+        .innerJoin(
+          recipeIngredients,
+          eq(recipeIngredients.id, dietaryIngredientCorrections.ingredientId),
+        )
+        .where(
+          and(
+            eq(dietaryIngredientCorrections.actorId, userId),
+            isNotNull(dietaryIngredientCorrections.ruleId),
+            retainedRecipeIds.length === 0
+              ? eq(recipeIngredients.recipeId, '__none__')
+              : inArray(recipeIngredients.recipeId, retainedRecipeIds),
+          ),
+        ),
+    ),
   ]);
 
   return {
@@ -224,6 +306,11 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
     cookLogEntryCount,
     reviewCount,
     collectionCount,
+    dietaryProfileCount,
+    customDietaryRestrictionCount,
+    personalDietaryAssessmentCount,
+    retainedDietaryAssessmentCount,
+    retainedDietaryCorrectionCount,
     soleOwnerGroups,
     hasActiveSubscription: liveSubscriptions > 0,
   };
@@ -236,6 +323,9 @@ export function previewTotal(preview: DeletionPreview): number {
     preview.deletedSharedRecipeCount +
     preview.cookLogEntryCount +
     preview.reviewCount +
-    preview.collectionCount
+    preview.collectionCount +
+    preview.dietaryProfileCount +
+    preview.customDietaryRestrictionCount +
+    preview.personalDietaryAssessmentCount
   );
 }

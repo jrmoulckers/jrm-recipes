@@ -52,6 +52,7 @@ describe('memberProfileInput', () => {
   it('normalizes exact custom restrictions and preserves their severity', () => {
     const parsed = memberProfileInput.parse({
       name: 'Ana',
+      subjectScope: 'self',
       customRestrictions: [
         {
           id: '',
@@ -72,16 +73,40 @@ describe('memberProfileInput', () => {
     ]);
   });
 
+  it('rejects custom restrictions without an explicit self subject declaration', () => {
+    const customRestrictions = [
+      { name: 'Nightshades', severity: 'strict-avoidance' as const, terms: ['tomato'] },
+    ];
+
+    expect(() => memberProfileInput.parse({ name: 'Ana', customRestrictions })).toThrow();
+    expect(() =>
+      memberProfileInput.parse({
+        name: 'Ana',
+        customRestrictions,
+        subjectScope: 'managed-child',
+      }),
+    ).toThrow();
+    expect(
+      memberProfileInput.parse({
+        name: 'Ana',
+        customRestrictions,
+        subjectScope: 'self',
+      }).subjectScope,
+    ).toBe('self');
+  });
+
   it('requires an exact term and a supported custom restriction severity', () => {
     expect(() =>
       memberProfileInput.parse({
         name: 'Ana',
+        subjectScope: 'self',
         customRestrictions: [{ name: 'Nightshades', severity: 'strict-avoidance', terms: [] }],
       }),
     ).toThrow();
     expect(() =>
       memberProfileInput.parse({
         name: 'Ana',
+        subjectScope: 'self',
         customRestrictions: [{ name: 'Nightshades', severity: 'medical', terms: ['tomato'] }],
       }),
     ).toThrow();

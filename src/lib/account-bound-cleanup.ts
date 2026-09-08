@@ -4,12 +4,33 @@ export type AccountIdentity = string | null;
 
 export type AccountBoundCleanupContext = {
   cacheStorage: Pick<CacheStorage, 'delete'> | undefined;
+  deleteIndexedDatabase?: (name: string) => void | Promise<void>;
 };
 
 export type AccountBoundCleanupHandler = {
   id: string;
   cleanup: (context: AccountBoundCleanupContext) => void | Promise<void>;
 };
+
+export const DIETARY_ACCOUNT_BOUND_CACHE_NAMES: readonly string[] = Object.freeze([
+  'heirloom-dietary-model-assets',
+]);
+
+export const DIETARY_ACCOUNT_BOUND_INDEXED_DB_NAMES: readonly string[] = Object.freeze([
+  'heirloom-dietary-analysis',
+]);
+
+async function deleteIndexedDatabase(factory: IDBFactory, name: string): Promise<void> {
+  const request = factory.deleteDatabase(name);
+
+  await new Promise<void>((resolve, reject) => {
+    request.onsuccess = () => resolve();
+    request.onerror = () =>
+      reject(request.error ?? new Error(`Could not delete IndexedDB database "${name}".`));
+    request.onblocked = () =>
+      reject(new Error(`Deletion of IndexedDB database "${name}" was blocked.`));
+  });
+}
 
 /**
  * The single registry for browser data that belongs to the active account.
@@ -22,11 +43,26 @@ export const ACCOUNT_BOUND_CLEANUP_HANDLERS: readonly AccountBoundCleanupHandler
       await clearAppCaches(cacheStorage);
     },
   }),
+  Object.freeze({
+    id: 'dietary-analysis-storage',
+    cleanup: async ({ cacheStorage, deleteIndexedDatabase }: AccountBoundCleanupContext) => {
+      await Promise.all([
+        clearAppCaches(cacheStorage, DIETARY_ACCOUNT_BOUND_CACHE_NAMES),
+        ...(deleteIndexedDatabase
+          ? DIETARY_ACCOUNT_BOUND_INDEXED_DB_NAMES.map((name) => deleteIndexedDatabase(name))
+          : []),
+      ]);
+    },
+  }),
 ]);
 
 function browserCleanupContext(): AccountBoundCleanupContext {
   return {
     cacheStorage: typeof window === 'undefined' ? undefined : window.caches,
+    deleteIndexedDatabase:
+      typeof window === 'undefined' || !window.indexedDB
+        ? undefined
+        : (name) => deleteIndexedDatabase(window.indexedDB, name),
   };
 }
 

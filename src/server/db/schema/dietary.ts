@@ -30,8 +30,8 @@ import { groups } from './groups';
  *
  * `allergens` stores canonical {@link Allergen} strings and `diets` stores
  * canonical `DietaryTag` strings. Validation guarantees no drift from the
- * shared unions. A profile is owned by a user and optionally scoped to a group
- * (e.g. one household), so it can be shared with the right family table.
+ * shared unions. A profile is owned by one user. Its optional group id is
+ * organizational context only in v1 and never grants another member access.
  */
 export const memberDietaryProfiles = pgTable(
   'member_dietary_profiles',
@@ -40,8 +40,8 @@ export const memberDietaryProfiles = pgTable(
     userId: fk()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    // Optional household scope. If the group is deleted the profile survives as
-    // a personal (unscoped) profile rather than vanishing.
+    // Optional household organization, not authorization. If the group is
+    // deleted the profile survives as personal (unscoped) data.
     groupId: fk().references(() => groups.id, { onDelete: 'set null' }),
     name: varchar({ length: 80 }).notNull(),
     allergens: text().array(),

@@ -4,24 +4,35 @@ import {
   ACCOUNT_BOUND_CLEANUP_HANDLERS,
   cleanupAccountBoundClientData,
   createAccountBoundCleanupCoordinator,
+  DIETARY_ACCOUNT_BOUND_CACHE_NAMES,
+  DIETARY_ACCOUNT_BOUND_INDEXED_DB_NAMES,
 } from './account-bound-cleanup';
 
 describe('cleanupAccountBoundClientData', () => {
-  it('registers the named recipe caches without including the app-shell precache', async () => {
+  it('registers recipe and dietary stores without including the app-shell precache', async () => {
     const deleteCache = vi.fn().mockResolvedValue(true);
+    const deleteIndexedDatabase = vi.fn().mockResolvedValue(undefined);
 
     await cleanupAccountBoundClientData({
       cacheStorage: { delete: deleteCache },
+      deleteIndexedDatabase,
     });
 
-    expect(ACCOUNT_BOUND_CLEANUP_HANDLERS.map(({ id }) => id)).toEqual(['recipe-runtime-caches']);
+    expect(ACCOUNT_BOUND_CLEANUP_HANDLERS.map(({ id }) => id)).toEqual([
+      'recipe-runtime-caches',
+      'dietary-analysis-storage',
+    ]);
     expect(deleteCache.mock.calls.map(([name]) => name)).toEqual([
       'heirloom-recipes',
       'heirloom-recipe-images',
+      ...DIETARY_ACCOUNT_BOUND_CACHE_NAMES,
     ]);
+    expect(deleteIndexedDatabase.mock.calls.map(([name]) => name)).toEqual(
+      DIETARY_ACCOUNT_BOUND_INDEXED_DB_NAMES,
+    );
   });
 
-  it('is safe when Cache Storage is unavailable', async () => {
+  it('is safe when browser storage APIs are unavailable', async () => {
     await expect(
       cleanupAccountBoundClientData({ cacheStorage: undefined }),
     ).resolves.toBeUndefined();
