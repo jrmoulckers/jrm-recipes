@@ -22,6 +22,15 @@ type FavoriteButtonProps = {
   className?: string;
 };
 
+async function analyzeSavedRecipe(recipeId: string, accountId: string): Promise<void> {
+  try {
+    const { analyzeRecipeOnDevice } = await import('~/lib/dietary-analysis-client');
+    await analyzeRecipeOnDevice(recipeId, accountId, 'recipe_save');
+  } catch {
+    console.error('Unable to load private dietary analysis.');
+  }
+}
+
 export function FavoriteButton({
   recipeId,
   recipeSlug,
@@ -39,7 +48,12 @@ export function FavoriteButton({
   // un-favorite), which remounts the glyph so the pop/burst replays once.
   const [burstKey, setBurstKey] = React.useState(0);
   const toggle = useServerAction(toggleFavoriteAction, {
-    onSuccess: (result) => setFavorited(result.favorited),
+    onSuccess: (result) => {
+      setFavorited(result.favorited);
+      if (result.favorited) {
+        void analyzeSavedRecipe(recipeId, result.accountId);
+      }
+    },
     onError: () => setFavorited(previousRef.current),
     successToast: (result) => (result.favorited ? t('toast.saved') : t('toast.removed')),
     errorToast: true,

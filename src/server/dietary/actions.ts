@@ -5,8 +5,19 @@ import { type z } from 'zod';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
-import { dietaryIngredientCorrectionSchema } from '~/lib/dietary-assessment';
-import { saveDietaryIngredientCorrection } from './assessments';
+import {
+  dietaryIngredientCorrectionSchema,
+  onDeviceDietarySubmissionSchema,
+  type OnDeviceDietarySubmission,
+} from '~/lib/dietary-assessment';
+import { requireEntitlement } from '~/server/billing/entitlements';
+import { listLibraryRecipeIds } from '~/server/recipes/queries';
+import {
+  getOnDeviceDietaryJob,
+  saveDietaryIngredientCorrection,
+  saveOnDeviceDietaryAssessment,
+  type OnDeviceDietaryJob,
+} from './assessments';
 import {
   createMemberProfile,
   deleteMemberProfile,
@@ -38,8 +49,64 @@ function messageFor(error: unknown): string {
       return "We couldn't find that profile.";
     case 'FORBIDDEN':
       return 'You can only scope a profile to a group you belong to.';
+    case 'UPGRADE_REQUIRED':
+      return 'Family is required to run smart dietary analysis.';
     default:
       return "We couldn't save that change.";
+  }
+}
+
+export async function getOnDeviceDietaryJobAction(
+  recipeId: string,
+): Promise<
+  { ok: true; job: OnDeviceDietaryJob } | { ok: false; error: string; upgrade?: boolean }
+> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  try {
+    const user = await requireUser();
+    return { ok: true, job: await getOnDeviceDietaryJob(recipeId, user) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: messageFor(error),
+      upgrade: error instanceof Error && error.message === 'UPGRADE_REQUIRED',
+    };
+  }
+}
+
+export async function saveOnDeviceDietaryAssessmentAction(
+  input: OnDeviceDietarySubmission,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = onDeviceDietarySubmissionSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'The analysis result was invalid.' };
+  try {
+    const user = await requireUser();
+    await saveOnDeviceDietaryAssessment(user, parsed.data);
+    revalidatePath('/recipes', 'layout');
+    return { ok: true, id: input.recipeId };
+  } catch (error) {
+    return {
+      ok: false,
+      error: messageFor(error),
+    };
+  }
+}
+
+export async function listDietaryLibraryScanIdsAction(): Promise<
+  { ok: true; recipeIds: string[] } | { ok: false; error: string; upgrade?: boolean }
+> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  try {
+    const user = await requireUser();
+    await requireEntitlement(user, 'advancedDietaryAnalysis');
+    return { ok: true, recipeIds: await listLibraryRecipeIds(user) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: messageFor(error),
+      upgrade: error instanceof Error && error.message === 'UPGRADE_REQUIRED',
+    };
   }
 }
 

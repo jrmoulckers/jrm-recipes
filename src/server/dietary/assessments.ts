@@ -13,9 +13,11 @@ import {
   dietaryIngredientEvidenceSchema,
   dietaryIngredientInputSchema,
   dietaryLinkedFoodInputSchema,
+  onDeviceDietarySubmissionSchema,
   dietaryVerdictSchema,
   type DietaryIngredientCorrection,
   type DietaryIngredientInput,
+  type OnDeviceDietarySubmission,
 } from '~/lib/dietary-assessment';
 import {
   aggregateDietaryEvidence,
@@ -36,6 +38,10 @@ import {
   dietaryRulesetVersion,
   isBuiltInDietaryRuleId,
 } from '~/lib/dietary-rules';
+import { DIETARY_MODEL } from '~/config/on-device-dietary';
+import { FOOD_ITEMS, foodSlug } from '~/lib/food-db';
+import { assertOnDeviceSubmissionContext } from '~/lib/dietary-on-device-validation';
+import { requireEntitlement } from '~/server/billing/entitlements';
 import { db } from '~/server/db';
 import {
   dietaryAssessments,
@@ -48,6 +54,7 @@ import {
   recipeCreators,
   recipeIngredients,
   recipes,
+  type User,
 } from '~/server/db/schema';
 import { DomainError } from '~/server/errors';
 import { viewerHoldsRecipeShareLink } from '~/server/recipes/share-token';
@@ -82,6 +89,18 @@ export function canReadOwnedDietaryScope(
 ): boolean {
   return actorId != null && actorId === ownerUserId;
 }
+
+export type OnDeviceDietaryJob = {
+  recipeId: string;
+  ingredientFingerprint: string;
+  rulesetVersion: string;
+  ingredients: { ingredientId: string; text: string }[];
+  candidates: {
+    foodId: string;
+    text: string;
+    evidence: { ruleId: string; finding: 'present' | 'absent' | 'possible' | 'unresolved' }[];
+  }[];
+};
 
 async function recipeAccess(
   executor: DbExecutor,
@@ -198,6 +217,215 @@ function toDietaryIngredientInput(row: DietaryInputRow): DietaryIngredientInput 
     unit: row.unit,
     prep: row.prep,
     linkedFood: linkedFood.success ? linkedFood.data : null,
+  });
+}
+
+/**
+ * Return the minimum same-origin input needed by the local worker. This is
+ * authorized recipe data the viewer can already read; it is never forwarded
+ * to the model host or analytics.
+ */
+export async function getOnDeviceDietaryJob(
+  recipeId: string,
+  actor: User,
+): Promise<OnDeviceDietaryJob> {
+  await requireEntitlement(actor, 'advancedDietaryAnalysis');
+  const access = await recipeAccess(db, recipeId, actor.id);
+  if (!canReadCanonicalDietaryAssessment(access)) throw new DomainError('NOT_FOUND');
+
+  const [ingredients, foods] = await Promise.all([
+    dietaryInputs(db, recipeId),
+    db.query.foodItems.findMany({
+      columns: { id: true, slug: true, name: true, category: true, allergens: true },
+    }),
+  ]);
+  const aliasesBySlug = new Map(
+    FOOD_ITEMS.map((food) => [foodSlug(food.name), [food.name, ...food.aliases].join(' | ')]),
+  );
+
+  return {
+    recipeId,
+    ingredientFingerprint: dietaryIngredientFingerprint(ingredients),
+    rulesetVersion: dietaryRulesetVersion(),
+    ingredients: ingredients
+      .filter((ingredient) =>
+        BUILT_IN_DIETARY_RULES.some((rule) =>
+          assessIngredientsDeterministically([ingredient], rule.id).evidence.some(
+            (item) => item.finding === 'unresolved',
+          ),
+        ),
+      )
+      .map((ingredient) => ({ ingredientId: ingredient.ingredientId, text: ingredient.item })),
+    candidates: foods.map((food) => {
+      const synthetic = dietaryIngredientInputSchema.parse({
+        ingredientId: 'candidate',
+        item: '__model_candidate__',
+        amount: null,
+        amountMax: null,
+        unit: null,
+        prep: null,
+        linkedFood: food,
+      });
+      return {
+        foodId: food.id,
+        text: aliasesBySlug.get(food.slug) ?? food.name,
+        evidence: BUILT_IN_DIETARY_RULES.flatMap((rule) =>
+          assessIngredientsDeterministically([synthetic], rule.id).evidence.flatMap((item) =>
+            item.finding === 'unresolved' ? [] : [{ ruleId: rule.id, finding: item.finding }],
+          ),
+        ),
+      };
+    }),
+  };
+}
+
+function modelEvidenceForCandidate(
+  ingredient: DietaryIngredientInput,
+  food: typeof foodItems.$inferSelect,
+  ruleId: string,
+) {
+  if (!isBuiltInDietaryRuleId(ruleId)) throw new DomainError('INVALID');
+  const synthetic = dietaryIngredientInputSchema.parse({
+    ...ingredient,
+    item: '__model_candidate__',
+    linkedFood: {
+      id: food.id,
+      slug: food.slug,
+      category: food.category,
+      allergens: food.allergens,
+    },
+  });
+  const findings = assessIngredientsDeterministically([synthetic], ruleId).evidence.filter(
+    (item) => item.finding !== 'unresolved',
+  );
+  if (findings.length !== 1) throw new DomainError('INVALID');
+  return dietaryIngredientEvidenceSchema.parse({
+    ...findings[0],
+    source: 'on-device',
+    foodId: food.id,
+    correctionId: null,
+  });
+}
+
+/**
+ * Accept structured local-model output as untrusted input. The server rechecks
+ * entitlement, recipe access, freshness, food-node identity, every categorical
+ * finding, and the final veto-based verdict before persisting personal rows.
+ */
+export async function saveOnDeviceDietaryAssessment(
+  actor: User,
+  value: OnDeviceDietarySubmission,
+): Promise<void> {
+  const submission = onDeviceDietarySubmissionSchema.parse(value);
+  await requireEntitlement(actor, 'advancedDietaryAnalysis');
+
+  await db.transaction(async (tx) => {
+    const executor = tx as unknown as DbExecutor;
+    const access = await recipeAccess(executor, submission.recipeId, actor.id);
+    if (!canReadCanonicalDietaryAssessment(access)) throw new DomainError('NOT_FOUND');
+    await lockRecipeForDietaryWrite(executor, submission.recipeId);
+
+    const ingredients = await dietaryInputs(executor, submission.recipeId);
+    const ingredientsById = new Map(
+      ingredients.map((ingredient) => [ingredient.ingredientId, ingredient]),
+    );
+    const foodIds = [...new Set(submission.evidence.map((item) => item.foodId))];
+    const foods =
+      foodIds.length === 0
+        ? []
+        : await executor.query.foodItems.findMany({
+            where: inArray(foodItems.id, foodIds),
+          });
+    const foodsById = new Map(foods.map((food) => [food.id, food]));
+    try {
+      assertOnDeviceSubmissionContext({
+        submission,
+        expectedFingerprint: dietaryIngredientFingerprint(ingredients),
+        expectedRulesetVersion: dietaryRulesetVersion(),
+        allowedAnalyzerVersions: new Set([DIETARY_MODEL.analyzerVersion]),
+        ingredientIds: new Set(ingredientsById.keys()),
+        foodIds: new Set(foodsById.keys()),
+      });
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+      throw new DomainError('INVALID');
+    }
+
+    const acceptedEvidence = submission.evidence.map((item) => {
+      const ingredient = ingredientsById.get(item.ingredientId);
+      const food = foodsById.get(item.foodId);
+      if (!ingredient || !food) throw new DomainError('INVALID');
+      const derived = modelEvidenceForCandidate(ingredient, food, item.ruleId);
+      if (derived.finding !== item.finding) throw new DomainError('INVALID');
+      return derived;
+    });
+    const ruleIds = [...new Set(acceptedEvidence.map((item) => item.ruleId))];
+    const now = new Date();
+
+    for (const ruleId of ruleIds) {
+      if (!isBuiltInDietaryRuleId(ruleId)) throw new DomainError('INVALID');
+      const deterministic = assessIngredientsDeterministically(ingredients, ruleId);
+      const assessment = aggregateDietaryEvidence({
+        ruleId,
+        ingredientIds: ingredients.map((ingredient) => ingredient.ingredientId),
+        evidence: [
+          ...deterministic.evidence,
+          ...acceptedEvidence.filter((item) => item.ruleId === ruleId),
+        ],
+      });
+      const confidence =
+        assessment.verdict === 'meets' && assessment.confidence === 'high'
+          ? 'medium'
+          : assessment.confidence;
+
+      await executor
+        .update(dietaryAssessments)
+        .set({ invalidatedAt: now, updatedAt: now })
+        .where(
+          and(
+            eq(dietaryAssessments.recipeId, submission.recipeId),
+            eq(dietaryAssessments.ruleId, ruleId),
+            eq(dietaryAssessments.scope, 'personal'),
+            eq(dietaryAssessments.ownerUserId, actor.id),
+            eq(dietaryAssessments.source, 'on-device'),
+            isNull(dietaryAssessments.invalidatedAt),
+          ),
+        );
+      const [created] = await executor
+        .insert(dietaryAssessments)
+        .values({
+          recipeId: submission.recipeId,
+          ruleId,
+          customRestrictionId: null,
+          scope: 'personal',
+          ownerUserId: actor.id,
+          profileId: null,
+          source: 'on-device',
+          verdict: assessment.verdict,
+          confidence,
+          ingredientFingerprint: submission.ingredientFingerprint,
+          analyzerVersion: submission.analyzerVersion,
+          rulesetVersion: submission.rulesetVersion,
+          restrictionTermsVersion: null,
+          createdById: actor.id,
+        })
+        .returning({ id: dietaryAssessments.id });
+      if (!created) throw new DomainError('INVALID');
+      const evidence = acceptedEvidence.filter((item) => item.ruleId === ruleId);
+      if (evidence.length > 0) {
+        await executor.insert(dietaryEvidence).values(
+          evidence.map((item) => ({
+            assessmentId: created.id,
+            ingredientId: item.ingredientId,
+            finding: item.finding,
+            source: 'on-device',
+            material: item.material,
+            foodId: item.foodId,
+            correctionId: null,
+          })),
+        );
+      }
+    }
   });
 }
 

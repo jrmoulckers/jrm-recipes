@@ -4,14 +4,13 @@ import type * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Show, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
+import { Show, SignInButton, SignUpButton } from '@clerk/nextjs';
 import {
   Bell,
   ChefHat,
   CreditCard,
   Database,
   Images,
-  LogOut,
   Ruler,
   Salad,
   ShieldBan,
@@ -28,6 +27,7 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { BottomNavCustomizer } from '~/components/profile/bottom-nav-customizer';
+import { PrivacySafeSignOutButton } from '~/components/profile/privacy-safe-sign-out-button';
 import { ProfileAvatarField } from '~/components/profile/profile-avatar-field';
 import { ProfilePreferences } from '~/components/profile/profile-preferences';
 
@@ -234,12 +234,7 @@ export function ProfileHub({
         {isConfigured ? (
           <Show when="signed-in">
             <div className="mt-3 border-t border-border pt-3">
-              <SignOutButton>
-                <Button variant="ghost" className="w-full justify-start gap-3">
-                  <LogOut className="size-4" aria-hidden="true" />
-                  {t('signOut')}
-                </Button>
-              </SignOutButton>
+              <PrivacySafeSignOutButton>{t('signOut')}</PrivacySafeSignOutButton>
             </div>
           </Show>
         ) : null}

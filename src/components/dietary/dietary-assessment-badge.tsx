@@ -23,13 +23,18 @@ export type DietaryAssessmentProvenance =
       confidence: DietaryAssessmentConfidence;
     };
 
-export type DietaryAssessmentAction = {
-  kind: 'review' | 'correct';
-  /** Return true only when focus is transferred to an action destination. */
-  onSelect: () => boolean | void;
-  /** Set false when the action deliberately transfers focus outside the popover. */
-  restoreFocus?: boolean;
-};
+export type DietaryAssessmentAction =
+  | {
+      kind: 'review' | 'correct';
+      /** Return true only when focus is transferred to an action destination. */
+      onSelect: () => boolean | void;
+      /** Set false when the action deliberately transfers focus outside the popover. */
+      restoreFocus?: boolean;
+    }
+  | {
+      kind: 'upgrade';
+      href: '/pricing';
+    };
 
 export type DietaryAttentionIngredient = {
   name: string;

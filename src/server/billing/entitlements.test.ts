@@ -65,6 +65,7 @@ describe('getEntitlements', () => {
     state.configured = false;
     const ent = await getEntitlements(user);
     expect(ent.aiGeneration).toBe(false);
+    expect(ent.advancedDietaryAnalysis).toBe(false);
     expect(ent.maxRecipes).toBe(50);
     expect(db.query.groupMembers.findMany).not.toHaveBeenCalled();
   });
@@ -80,6 +81,7 @@ describe('getEntitlements', () => {
     state.subs = [{ planId: 'family', status: 'active', currentPeriodEnd: future }];
     const ent = await getEntitlements(user);
     expect(ent.aiGeneration).toBe(true);
+    expect(ent.advancedDietaryAnalysis).toBe(true);
     expect(ent.maxRecipes).toBeNull();
     expect(await getEffectivePlanId(user)).toBe('family');
   });

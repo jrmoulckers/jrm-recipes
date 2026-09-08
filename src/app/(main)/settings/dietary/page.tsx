@@ -8,6 +8,7 @@ import { isDbConfigured } from '~/server/db';
 import { listMemberProfiles } from '~/server/dietary/queries';
 import { listNutritionTargetsForUser } from '~/server/dietary/targets';
 import { listMyGroups } from '~/server/groups/queries';
+import { getEntitlements } from '~/server/billing/entitlements';
 import { ALLERGENS, type Allergen } from '~/lib/allergens';
 import type { EffectiveNutritionTarget } from '~/lib/nutrition-targets';
 import { DIETARY_TAGS, type DietaryTag } from '~/lib/substitutions';
@@ -20,6 +21,7 @@ import {
   DietaryProfilesManager,
   type MemberProfileView,
 } from '~/components/dietary/dietary-profiles-manager';
+import { SmartDietaryAnalysis } from '~/components/dietary/smart-dietary-analysis';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata');
@@ -38,13 +40,14 @@ async function DietaryProfilesPage() {
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
-  const [profileRows, groups, targetsByProfile] = user
+  const [profileRows, groups, targetsByProfile, entitlements] = user
     ? await Promise.all([
         listMemberProfiles(user.id),
         listMyGroups(user.id),
         listNutritionTargetsForUser(user.id),
+        getEntitlements(user),
       ])
-    : [[], [], new Map<string, EffectiveNutritionTarget[]>()];
+    : [[], [], new Map<string, EffectiveNutritionTarget[]>(), null];
 
   const profiles: MemberProfileView[] = profileRows.map((p) => ({
     id: p.id,
@@ -81,7 +84,12 @@ async function DietaryProfilesPage() {
       {!dbConfigured ? (
         <ConnectDbNotice />
       ) : (
-        <DietaryProfilesManager profiles={profiles} groups={groupOptions} />
+        <>
+          {user && entitlements?.advancedDietaryAnalysis ? (
+            <SmartDietaryAnalysis accountId={user.id} />
+          ) : null}
+          <DietaryProfilesManager profiles={profiles} groups={groupOptions} />
+        </>
       )}
     </div>
   );

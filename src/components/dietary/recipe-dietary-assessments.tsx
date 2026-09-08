@@ -28,12 +28,14 @@ export function RecipeDietaryAssessments({
   declared = [],
   signedIn,
   canReview = false,
+  canUseAdvancedAnalysis = false,
   className,
 }: {
   assessments: DietaryAssessmentView[];
   declared?: DietaryTag[];
   signedIn: boolean;
   canReview?: boolean;
+  canUseAdvancedAnalysis?: boolean;
   className?: string;
 }) {
   const t = useTranslations('dietary.assessments');
@@ -168,7 +170,7 @@ export function RecipeDietaryAssessments({
             totalIngredients={assessment.totalIngredients}
             attentionIngredients={attentionIngredients}
             action={
-              canReview && firstAttention
+              firstAttention && canReview
                 ? {
                     kind: status === 'conflict' ? 'correct' : 'review',
                     restoreFocus: false,
@@ -207,7 +209,12 @@ export function RecipeDietaryAssessments({
                       return true;
                     },
                   }
-                : undefined
+                : firstAttention && status === 'review' && signedIn && !canUseAdvancedAnalysis
+                  ? {
+                      kind: 'upgrade',
+                      onSelect: () => window.location.assign('/pricing'),
+                    }
+                  : undefined
             }
           />
         );

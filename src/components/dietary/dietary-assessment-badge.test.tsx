@@ -265,4 +265,22 @@ describe('DietaryAssessmentBadge', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(trigger).toHaveFocus();
   });
+
+  it('supports a contextual Family upgrade action for unresolved evidence', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <DietaryAssessmentBadge
+        {...BASE_PROPS}
+        status="review"
+        provenance={{ kind: 'ingredient-analyzed', confidence: 'needs-review' }}
+        attentionIngredients={[{ name: 'seasoning blend', kind: 'unresolved' }]}
+        action={{ kind: 'upgrade', onSelect }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+    await user.click(await screen.findByRole('button', { name: 'Resolve with Family' }));
+    expect(onSelect).toHaveBeenCalledOnce();
+  });
 });
