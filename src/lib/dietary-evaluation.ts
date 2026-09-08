@@ -1,5 +1,16 @@
 import { type Locale, SUPPORTED_LOCALES } from '../config/i18n';
-import { ALLERGENS, detectAllergensForSafety, type Allergen } from './allergens';
+import { detectAllergensForSafety } from './allergens';
+import {
+  DIETARY_EVIDENCE_FINDINGS,
+  DIETARY_EVIDENCE_SOURCES,
+  type DietaryEvidenceFinding,
+  type DietaryEvidenceSource,
+} from './dietary-assessment';
+import {
+  BUILT_IN_DIETARY_RULES,
+  getBuiltInDietaryRule,
+  type BuiltInDietaryRuleId,
+} from './dietary-rules';
 import { canonicalFood, FOOD_ITEMS, foodNodeId } from './food-db';
 import { foodAllergensForSlug } from './food-allergens';
 
@@ -19,9 +30,12 @@ export const DIETARY_EVALUATION_CATEGORIES = [
 ] as const;
 
 export type DietaryEvaluationCategory = (typeof DIETARY_EVALUATION_CATEGORIES)[number];
-export type DietaryEvaluationRuleId = `allergen:${Allergen}`;
-export type DietaryEvaluationFinding = 'present' | 'absent' | 'possible' | 'unresolved';
-export type DietaryEvaluationEvidenceSource = 'food-link' | 'text-match' | 'certification';
+export type DietaryEvaluationRuleId = Extract<BuiltInDietaryRuleId, `allergen:${string}`>;
+export type DietaryEvaluationFinding = DietaryEvidenceFinding;
+export type DietaryEvaluationEvidenceSource = Extract<
+  DietaryEvidenceSource,
+  'food-link' | 'text-match' | 'on-device' | 'certification'
+>;
 
 type FoodLinkedExpectedOutcome = {
   finding: 'present' | 'absent';
@@ -82,7 +96,7 @@ export type DietaryEvaluationCaseResult = {
   expected: DietaryEvaluationFinding;
   actual: DietaryEvaluationFinding;
   classification: DietaryEvaluationClassification;
-  evidenceSourceMatch: boolean | null;
+  evidenceSourceCompatible: boolean | null;
   foodIdsMatch: boolean | null;
 };
 
@@ -119,10 +133,18 @@ export type DietaryEvaluationReport = {
   }[];
 };
 
-const FINDINGS = ['present', 'absent', 'possible', 'unresolved'] as const;
+const EXPECTED_EVIDENCE_SOURCES = ['food-link', 'text-match', 'certification'] as const;
+const RESOLVER_EVIDENCE_SOURCES = DIETARY_EVIDENCE_SOURCES.filter(
+  (source): source is DietaryEvaluationEvidenceSource =>
+    source === 'food-link' ||
+    source === 'text-match' ||
+    source === 'on-device' ||
+    source === 'certification',
+);
+const FINDINGS = DIETARY_EVIDENCE_FINDINGS;
 const CLASSIFICATIONS = ['accepted', 'false-safe', 'false-conflict', 'unresolved'] as const;
-export const DIETARY_EVALUATION_RULE_IDS = ALLERGENS.map(
-  (allergen) => `allergen:${allergen}` as const,
+export const DIETARY_EVALUATION_RULE_IDS = BUILT_IN_DIETARY_RULES.flatMap((rule) =>
+  rule.kind === 'allergen' ? [rule.id] : [],
 );
 const KNOWN_FOOD_IDS = new Set(FOOD_ITEMS.map((food) => foodNodeId(food.name)));
 const CASE_ID_PATTERN = /^[a-z]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -169,7 +191,7 @@ function assertExpectedOutcome(
   }
 
   if (value.finding === 'present' || value.finding === 'absent') {
-    if (!isOneOf(value.evidenceSource, ['food-link', 'text-match', 'certification'] as const)) {
+    if (!isOneOf(value.evidenceSource, EXPECTED_EVIDENCE_SOURCES)) {
       throw new Error(`${context} resolved outcome requires a known evidence source.`);
     }
 
@@ -337,17 +359,20 @@ function assertCandidateResolution(
     return;
   }
 
-  if (!isOneOf(value.evidenceSource, ['food-link', 'text-match', 'certification'] as const)) {
+  if (!isOneOf(value.evidenceSource, RESOLVER_EVIDENCE_SOURCES)) {
     throw new Error(`Resolver returned an unknown evidence source for "${caseId}".`);
   }
   if (value.evidenceSource === 'text-match') {
-    if (value.finding === 'absent' || value.foodIds !== undefined) {
+    if (value.foodIds !== undefined) {
       throw new Error(`Resolver returned invalid text-match evidence for "${caseId}".`);
     }
     return;
   }
   if (value.evidenceSource === 'certification' && value.finding !== 'absent') {
     throw new Error(`Resolver returned invalid certification evidence for "${caseId}".`);
+  }
+  if (value.evidenceSource === 'on-device' && value.foodIds === undefined) {
+    return;
   }
   if (value.foodIds === undefined) {
     throw new Error(`Resolver omitted canonical food ids for "${caseId}".`);
@@ -364,41 +389,51 @@ function sameFoodIds(expected: readonly string[], actual: readonly string[] | un
 function classifyResult(
   expected: DietaryExpectedOutcome,
   actual: DietaryCandidateResolution,
-): Pick<DietaryEvaluationCaseResult, 'classification' | 'evidenceSourceMatch' | 'foodIdsMatch'> {
+): Pick<
+  DietaryEvaluationCaseResult,
+  'classification' | 'evidenceSourceCompatible' | 'foodIdsMatch'
+> {
   const expectedResolved = expected.finding === 'present' || expected.finding === 'absent';
   const actualResolved = actual.finding === 'present' || actual.finding === 'absent';
-  const evidenceSourceMatch =
-    expectedResolved && actualResolved ? expected.evidenceSource === actual.evidenceSource : null;
+  const evidenceSourceCompatible =
+    expectedResolved && actualResolved
+      ? expected.evidenceSource === 'certification'
+        ? actual.evidenceSource === 'certification'
+        : actual.evidenceSource !== 'certification'
+      : null;
   const foodIdsMatch =
     expectedResolved && actualResolved && expected.evidenceSource !== 'text-match'
       ? sameFoodIds(expected.foodIds, actual.foodIds)
-      : expectedResolved && expected.evidenceSource === 'text-match'
-        ? actualResolved && actual.evidenceSource === 'text-match'
+      : expectedResolved &&
+          actualResolved &&
+          expected.evidenceSource === 'text-match' &&
+          actual.foodIds !== undefined
+        ? false
         : null;
-  const evidenceMatches = evidenceSourceMatch === true && foodIdsMatch !== false;
+  const evidenceMatches = evidenceSourceCompatible === true && foodIdsMatch !== false;
 
   if (actual.finding === 'absent') {
     if (expected.finding === 'absent' && evidenceMatches) {
-      return { classification: 'accepted', evidenceSourceMatch, foodIdsMatch };
+      return { classification: 'accepted', evidenceSourceCompatible, foodIdsMatch };
     }
-    return { classification: 'false-safe', evidenceSourceMatch, foodIdsMatch };
+    return { classification: 'false-safe', evidenceSourceCompatible, foodIdsMatch };
   }
 
   if (
     expected.finding === 'absent' &&
     (actual.finding === 'present' || actual.finding === 'possible')
   ) {
-    return { classification: 'false-conflict', evidenceSourceMatch, foodIdsMatch };
+    return { classification: 'false-conflict', evidenceSourceCompatible, foodIdsMatch };
   }
 
   if (actual.finding === expected.finding) {
     if (expected.finding === 'present' && !evidenceMatches) {
-      return { classification: 'unresolved', evidenceSourceMatch, foodIdsMatch };
+      return { classification: 'unresolved', evidenceSourceCompatible, foodIdsMatch };
     }
-    return { classification: 'accepted', evidenceSourceMatch, foodIdsMatch };
+    return { classification: 'accepted', evidenceSourceCompatible, foodIdsMatch };
   }
 
-  return { classification: 'unresolved', evidenceSourceMatch, foodIdsMatch };
+  return { classification: 'unresolved', evidenceSourceCompatible, foodIdsMatch };
 }
 
 function emptyCount<T extends string>(values: readonly T[]): CountBy<T> {
@@ -464,7 +499,7 @@ export async function evaluateDietaryResolver(
     const scored = resolverFailed
       ? {
           classification: 'unresolved' as const,
-          evidenceSourceMatch: null,
+          evidenceSourceCompatible: null,
           foodIdsMatch: null,
         }
       : classifyResult(testCase.expected, actual);
@@ -527,8 +562,12 @@ export function assertDietaryEvaluationReleaseGate(report: DietaryEvaluationRepo
   }
 }
 
-function allergenFromRuleId(ruleId: DietaryEvaluationRuleId): Allergen {
-  return ruleId.slice('allergen:'.length) as Allergen;
+function allergenFromRuleId(ruleId: DietaryEvaluationRuleId) {
+  const rule = getBuiltInDietaryRule(ruleId);
+  if (!rule || rule.kind !== 'allergen') {
+    throw new RangeError(`Unknown allergen dietary rule: ${ruleId}`);
+  }
+  return rule.allergen;
 }
 
 /**

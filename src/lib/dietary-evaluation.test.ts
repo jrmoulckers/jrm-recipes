@@ -188,6 +188,17 @@ describe('evaluateDietaryResolver', () => {
     expect(report.releaseGate.falseSafeCaseIds).toEqual(['en-safe-rice']);
   });
 
+  it('scores an absent text match as false-safe rather than malformed', async () => {
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) =>
+      input.input === '2 tbsp peanul butter'
+        ? { finding: 'absent', evidenceSource: 'text-match' }
+        : { finding: 'unresolved' },
+    );
+
+    expect(report.errors).toEqual([]);
+    expect(report.releaseGate.falseSafeCaseIds).toEqual(['en-ocr-peanut']);
+  });
+
   it('requires an exact canonical food identity without contradictory extras', async () => {
     const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) =>
       input.input === '2 cups whole milk'
@@ -202,6 +213,36 @@ describe('evaluateDietaryResolver', () => {
     expect(report.results.find((result) => result.caseId === 'en-direct-dairy')).toMatchObject({
       classification: 'unresolved',
       foodIdsMatch: false,
+    });
+  });
+
+  it('accepts compatible on-device evidence and compares ids only when ground truth has them', async () => {
+    const report = await evaluateDietaryResolver(DIETARY_EVALUATION_CORPUS_V1, (input) => {
+      if (input.input === '2 cups whole milk') {
+        return {
+          finding: 'present',
+          evidenceSource: 'on-device',
+          foodIds: [foodNodeId('Milk')],
+        };
+      }
+      if (input.input === '2 tbsp peanul butter') {
+        return {
+          finding: 'present',
+          evidenceSource: 'on-device',
+        };
+      }
+      return { finding: 'unresolved' };
+    });
+
+    expect(report.results.find((result) => result.caseId === 'en-direct-dairy')).toMatchObject({
+      classification: 'accepted',
+      evidenceSourceCompatible: true,
+      foodIdsMatch: true,
+    });
+    expect(report.results.find((result) => result.caseId === 'en-ocr-peanut')).toMatchObject({
+      classification: 'accepted',
+      evidenceSourceCompatible: true,
+      foodIdsMatch: null,
     });
   });
 

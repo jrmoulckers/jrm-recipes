@@ -10,7 +10,8 @@ it contains no recipes, dietary profiles, or ingredient text collected from user
 
 Each case contains one ingredient string, one supported locale, one scenario category, and one
 canonical allergen rule id. A resolved expected outcome is either `present` or `absent` and records
-its evidence source:
+its evidence source. Finding, source, and rule-id types come from the production assessment core
+introduced in #1101:
 
 - `food-link` names the canonical food node whose reviewed facts support the finding;
 - `text-match` supports a positive finding when the text is explicit but the current food graph has
@@ -18,7 +19,9 @@ its evidence source:
 - `certification` names the canonical food while keeping the label claim distinct from food facts.
 
 Text matching cannot establish absence. `possible` and `unresolved` deliberately carry no
-explanation or model output.
+explanation or model output. A future resolver may report `on-device` provenance; it is accepted
+when its finding matches and, where the reviewed expectation defines canonical food identities,
+those identities match exactly.
 
 The model-agnostic harness in
 [`src/lib/dietary-evaluation.ts`](../src/lib/dietary-evaluation.ts) accepts a synchronous or
@@ -58,8 +61,7 @@ Corpus changes require review of:
 
 1. The dietary finding, evidence source, and canonical food/rule identifiers.
 2. Whether every linked food node has reviewed facts covering the evaluated rule. Food-link
-   absence cases depend on the complete negative-fact contract introduced by the assessment core
-   in #1101; they are intentionally unresolved in the current deterministic adapter.
+   absence cases are intentionally unresolved in the current positive-only deterministic adapter.
 3. Native-language meaning, including negation and misspelling intent.
 4. Whether a brand example is fictional and the text contains no user data.
 5. Whether an uncertain product remains `possible` or `unresolved` rather than becoming a safe
