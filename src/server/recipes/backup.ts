@@ -47,7 +47,7 @@ function readme(recipes: PrintRecipe[], date: Date): string {
     '- `shared-recipe-contributions.json`. Version snapshots you authored in',
     '  recipes currently shared with you, plus references to media you uploaded.',
     '- `dietary-data.json`. Your dietary profiles, custom restrictions, personal',
-    '  assessments, and recipe evidence or corrections you authored.',
+    '  nutrition-target history, assessments, and recipe evidence or corrections you authored.',
     '- Original recipe images are included as provider URLs and metadata. Image',
     '  bytes are not copied into this archive.',
     '',

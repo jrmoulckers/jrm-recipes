@@ -2,20 +2,53 @@
 
 import * as React from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 import {
+  type AccountBoundOwnerMarkerStore,
+  type AccountIdentityMarker,
   cleanupAccountBoundClientData,
   createAccountBoundCleanupCoordinator,
 } from '~/lib/account-bound-cleanup';
 
-function ClerkAccountBoundCleanup({ cleanup }: { cleanup: () => void | Promise<void> }) {
+function ClerkAccountBoundCleanup({
+  cleanup,
+  ownerMarkerStore,
+  markerForIdentity,
+}: {
+  cleanup: () => unknown | Promise<unknown>;
+  ownerMarkerStore?: AccountBoundOwnerMarkerStore;
+  markerForIdentity?: AccountIdentityMarker;
+}) {
   const { isLoaded, userId } = useAuth();
-  const [coordinator] = React.useState(() => createAccountBoundCleanupCoordinator(cleanup));
+  const t = useTranslations('auth');
+  const [coordinator] = React.useState(() =>
+    createAccountBoundCleanupCoordinator(cleanup, ownerMarkerStore, markerForIdentity),
+  );
 
   React.useEffect(() => {
     if (!isLoaded) return;
-    void coordinator.observe(userId ?? null);
-  }, [coordinator, isLoaded, userId]);
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let warned = false;
+
+    const observe = async () => {
+      const cleaned = await coordinator.observe(userId ?? null);
+      if (cleaned || cancelled) return;
+      if (!warned) {
+        warned = true;
+        toast.warning(t('accountCleanupFailed'));
+      }
+      retry = setTimeout(() => void observe(), 1_000);
+    };
+
+    void observe();
+    return () => {
+      cancelled = true;
+      if (retry) clearTimeout(retry);
+    };
+  }, [coordinator, isLoaded, t, userId]);
 
   return null;
 }
@@ -27,9 +60,19 @@ function ClerkAccountBoundCleanup({ cleanup }: { cleanup: () => void | Promise<v
 export function AccountBoundCleanup({
   enabled,
   cleanup = cleanupAccountBoundClientData,
+  ownerMarkerStore,
+  markerForIdentity,
 }: {
   enabled: boolean;
-  cleanup?: () => void | Promise<void>;
+  cleanup?: () => unknown | Promise<unknown>;
+  ownerMarkerStore?: AccountBoundOwnerMarkerStore;
+  markerForIdentity?: AccountIdentityMarker;
 }) {
-  return enabled ? <ClerkAccountBoundCleanup cleanup={cleanup} /> : null;
+  return enabled ? (
+    <ClerkAccountBoundCleanup
+      cleanup={cleanup}
+      ownerMarkerStore={ownerMarkerStore}
+      markerForIdentity={markerForIdentity}
+    />
+  ) : null;
 }

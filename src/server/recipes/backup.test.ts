@@ -109,6 +109,7 @@ describe('buildCookbookArchive', () => {
             diets: [],
             createdAt: date,
             updatedAt: date,
+            nutritionTargets: [],
             customRestrictions: [],
           },
         ],

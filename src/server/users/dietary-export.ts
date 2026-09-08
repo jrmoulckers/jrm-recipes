@@ -19,6 +19,7 @@ async function loadProfiles(userId: string) {
   return db.query.memberDietaryProfiles.findMany({
     where: eq(memberDietaryProfiles.userId, userId),
     with: {
+      nutritionTargets: true,
       customRestrictions: {
         with: { terms: true },
       },

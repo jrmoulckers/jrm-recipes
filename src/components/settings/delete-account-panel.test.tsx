@@ -129,7 +129,7 @@ describe('DeleteAccountPanel shared-content disclosure', () => {
 
   it('purges account-bound browser data after deletion completes', async () => {
     deleteAccountAction.mockResolvedValue({ ok: true });
-    cleanupAccountBoundClientData.mockResolvedValue(undefined);
+    cleanupAccountBoundClientData.mockResolvedValue({ ok: true, outcomes: [] });
     renderPanel({});
     openConfirmStep();
 

@@ -292,6 +292,14 @@ describe('eraseUserAccount', () => {
       .mockResolvedValueOnce([{ id: 'term_1' }])
       .mockResolvedValueOnce([{ id: 'correction_1' }])
       .mockResolvedValueOnce([{ id: 'correction_other_profile' }]);
+    state.returning.set('delete dietary_assessments', [
+      [{ id: 'personal_1' }, { id: 'profile_assessment_1' }],
+      [{ id: 'invalidated_1' }],
+    ]);
+    state.returning.set('delete dietary_ingredient_corrections', [
+      [{ id: 'correction_1' }],
+      [{ id: 'revoked_1' }],
+    ]);
     queueCoreSelects();
 
     await eraseUserAccount('u1', { trigger: 'in_app' });
@@ -304,6 +312,8 @@ describe('eraseUserAccount', () => {
       custom_dietary_restriction_terms: 1,
       dietary_ingredient_corrections: 2,
       dietary_ingredient_corrections_personal_deleted: 1,
+      dietary_assessments_invalidated_deleted: 1,
+      dietary_corrections_revoked_deleted: 1,
     });
     expect(JSON.stringify(state.inserted?.deletedCounts)).not.toContain('restriction_1');
     expect(JSON.stringify(state.inserted?.deletedCounts)).not.toContain('evidence_1');

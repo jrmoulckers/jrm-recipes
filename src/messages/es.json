@@ -2019,7 +2019,8 @@
     "toasts": {
       "added": "Perfil agregado",
       "updated": "Perfil actualizado",
-      "removed": "Perfil eliminado"
+      "removed": "Perfil eliminado",
+      "removedCleanupIncomplete": "Se eliminó el perfil, pero no se pudieron borrar algunos datos alimentarios sin conexión. Borra los datos almacenados de este sitio antes de compartir este dispositivo."
     },
     "actions": {
       "addFamilyMember": "Agregar familiar",
@@ -2076,7 +2077,7 @@
     "confirm": {
       "remove": {
         "title": "¿Eliminar el perfil alimentario de «{name}»?",
-        "description": "Se eliminan sus datos alimentarios y objetivos. Esto no se puede deshacer.",
+        "description": "Se eliminan los datos alimentarios, los objetivos, las evaluaciones privadas y los datos de análisis locales del perfil. Los datos integrados de las recetas no cambian. Esto no se puede deshacer.",
         "confirmLabel": "Eliminar perfil"
       }
     },
@@ -2118,6 +2119,9 @@
         "strict-avoidance": "Se excluyen las coincidencias y se informa la incertidumbre.",
         "preference": "Las coincidencias siguen disponibles, pero aparecen más abajo."
       }
+    },
+    "privacy": {
+      "subjectScope": "Los perfiles son privados para ti. El procesamiento asistido por modelos y de restricciones personalizadas es solo para ti hasta que exista un proceso revisado para los derechos de menores y no usuarios."
     },
     "assessmentBadge": {
       "detailsTitle": "Evaluación alimentaria: {label}",
@@ -3308,7 +3312,8 @@
           "cancel": "Conservar mi cuenta"
         },
         "toasts": {
-          "deleted": "Tu cuenta y tu perfil personal se han eliminado. Cuídate."
+          "deleted": "Tu cuenta y tu perfil personal se han eliminado. Cuídate.",
+          "deletedCleanupIncomplete": "Tu cuenta se eliminó, pero no se pudieron borrar algunos datos sin conexión. Borra los datos almacenados de este sitio antes de compartir este dispositivo."
         }
       }
     }
@@ -3532,7 +3537,8 @@
     "localMode": "Modo local",
     "avatarAlt": "Tú",
     "signIn": "Iniciar sesión",
-    "startCookbook": "Empieza tu recetario"
+    "startCookbook": "Empieza tu recetario",
+    "accountCleanupFailed": "No se pudieron borrar algunos datos sin conexión de la cuenta anterior. Heirloom seguirá intentándolo. Borra los datos almacenados de este sitio antes de compartir este dispositivo."
   },
   "marketing": {
     "waitlist": {

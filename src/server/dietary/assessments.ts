@@ -7,6 +7,7 @@ import {
   dietaryAssessmentScopeSchema,
   dietaryAssessmentSourceSchema,
   dietaryConfidenceSchema,
+  dietarySubjectScopeSchema,
   customDietaryRestrictionTermSchema,
   dietaryIngredientCorrectionSchema,
   dietaryIngredientEvidenceSchema,
@@ -430,8 +431,12 @@ function importedAggregate(
 export async function saveDietaryIngredientCorrection(
   actorId: string,
   value: DietaryIngredientCorrection,
+  subjectScope?: unknown,
 ): Promise<void> {
   const correction = dietaryIngredientCorrectionSchema.parse(value);
+  if (correction.customRestrictionId) {
+    dietarySubjectScopeSchema.parse(subjectScope);
+  }
   await db.transaction(async (tx) => {
     const executor = tx as unknown as DbExecutor;
     const ingredient = await executor.query.recipeIngredients.findFirst({

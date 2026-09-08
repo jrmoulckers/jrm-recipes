@@ -48,8 +48,12 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
         toast.error(result.error);
         return;
       }
-      await cleanupAccountBoundClientData();
-      toast.success(t('toasts.deleted'));
+      const cleanup = await cleanupAccountBoundClientData();
+      if (cleanup.ok) {
+        toast.success(t('toasts.deleted'));
+      } else {
+        toast.warning(t('toasts.deletedCleanupIncomplete'));
+      }
       router.replace('/');
       router.refresh();
     });

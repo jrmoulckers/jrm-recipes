@@ -292,11 +292,11 @@ Those documents make explicit several boundaries that this architecture depends 
   personalized recipe caches on disable, sign-out, account switch, and deletion completion;
 - smart-analysis enablement is separate from analytics consent and from any legal consent record.
 
-The merged #1101 schema/rights, #1107 analytics, and #1109 cleanup controls have been verified
-against these release requirements. Capabilities that do not yet have product call sites remain
-dormant rather than implicitly enabled. Production enablement also remains blocked on qualified
-legal review, a named model asset host/distributor, and an honest configured backup horizon;
-engineering verification does not satisfy those human gates.
+These release requirements were reconciled against the merged schema/authorization, analytics, and
+account-bound cleanup controls. Capabilities that do not yet have product call sites remain dormant
+rather than implicitly enabled. Production enablement also remains blocked on qualified legal
+review, a named model asset host/distributor, and an honest configured backup horizon; engineering
+verification does not satisfy those human gates.
 
 ## Integrated presentation
 
