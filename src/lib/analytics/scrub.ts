@@ -10,6 +10,7 @@
 
 import { type CaptureResult } from 'posthog-js';
 
+import { sanitizeDietaryEventProperties } from './dietary-events';
 import { normalizePathname } from './pageview';
 
 /** Substrings that mark a property key as identifying (matched case-insensitively). */
@@ -257,6 +258,16 @@ export function scrubPostHogProperties(
 /** Scrub every property bag on an outbound PostHog capture result. */
 export function scrubPostHogCapture(capture: CaptureResult | null): CaptureResult | null {
   if (!capture) return null;
+
+  const dietaryProperties = sanitizeDietaryEventProperties(
+    capture.event,
+    Object.fromEntries(
+      Object.entries(capture.properties).filter(
+        ([key]) => key !== 'token' && key !== 'distinct_id' && !key.startsWith('$'),
+      ),
+    ),
+  );
+  if (dietaryProperties === null) return null;
 
   return {
     ...capture,

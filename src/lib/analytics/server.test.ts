@@ -90,6 +90,45 @@ describe('captureServer', () => {
     expect(typeof body.timestamp).toBe('string');
   });
 
+  it('allows only bounded dietary properties through the server path', async () => {
+    const fetchFn = mockFetch({ ok: true });
+
+    await captureServer('user_1', 'dietary_model_download_finished', {
+      outcome: 'failed',
+      errorCode: 'insufficient_storage',
+    });
+
+    expect(bodyOf(fetchFn)).toMatchObject({
+      event: 'dietary_model_download_finished',
+      properties: {
+        outcome: 'failed',
+        errorCode: 'insufficient_storage',
+      },
+    });
+  });
+
+  it('drops dietary canary data before it reaches the server transport', async () => {
+    const fetchFn = mockFetch({ ok: true });
+
+    await (
+      captureServer as unknown as (
+        distinctId: string,
+        name: string,
+        properties: Record<string, unknown>,
+      ) => Promise<void>
+    )('user_1', 'dietary_analysis_finished', {
+      outcome: 'failed',
+      trigger: 'recipe_open',
+      errorCode: 'worker_failed',
+      ingredientText: 'CANARY shellfish ingredient',
+      restrictionName: 'CANARY severe shellfish allergy',
+      recipeId: 'recipe_canary',
+      exceptionMessage: 'CANARY private exception',
+    });
+
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
   it('swallows fetch errors (never throws)', async () => {
     vi.stubGlobal(
       'fetch',

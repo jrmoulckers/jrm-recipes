@@ -12,6 +12,7 @@
  */
 import { getClientBackend } from './backend';
 import { isCaptureAllowed } from './consent';
+import { sanitizeDietaryEventProperties } from './dietary-events';
 import { type AnalyticsEventName, type EventProperties } from './events';
 import { scrubProperties } from './scrub';
 
@@ -25,7 +26,10 @@ export { type AnalyticsEvent, type AnalyticsEventName } from './events';
 export function track<K extends AnalyticsEventName>(name: K, properties: EventProperties[K]): void {
   if (!isCaptureAllowed()) return;
   try {
-    getClientBackend().capture(name, scrubProperties(properties));
+    const dietaryProperties = sanitizeDietaryEventProperties(name, properties);
+    if (dietaryProperties === null) return;
+
+    getClientBackend().capture(name, dietaryProperties ?? scrubProperties(properties));
   } catch {
     // Instrumentation must never throw or block the UI.
   }

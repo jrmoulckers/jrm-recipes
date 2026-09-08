@@ -8,11 +8,25 @@
  *
  * Rules for properties:
  * - **No PII, ever**. No emails, names, handles, or raw ids of people. Recipe
- *   and group ids are opaque cuids and are fine. User identity is attached only
- *   via server-side `identify` (issue #321), never as an event property.
+ *   and group ids are opaque cuids and are fine for existing product events,
+ *   but dietary events prohibit all resource ids. User identity is attached
+ *   only via server-side `identify` (issue #321), never as an event property.
  * - Values are constrained to enums/counts/flags wherever possible so insights
  *   stay low-cardinality and safe.
  */
+
+import { type DietaryEventProperties } from './dietary-events';
+
+export type {
+  DietaryAnalysisErrorCode,
+  DietaryAnalysisResult,
+  DietaryAnalysisTrigger,
+  DietaryAnalyticsEventName,
+  DietaryDeviceSupport,
+  DietaryDownloadErrorCode,
+  DietaryDownloadResult,
+  DietaryEventProperties,
+} from './dietary-events';
 
 /** Recipe visibility, mirrored from the recipe validation enum. */
 export type RecipeVisibility = 'private' | 'group' | 'unlisted' | 'public';
@@ -44,7 +58,7 @@ export type GroupSizeBucket = '1' | '2-5' | '6-10' | '11+';
  * `Record<string, never>` so their call sites pass `{}` and can't smuggle in
  * stray (possibly identifying) properties.
  */
-export interface EventProperties {
+export interface EventProperties extends DietaryEventProperties {
   // --- Pageviews & navigation (#322) ---
   $pageview: { pathname: string; $current_url: string };
 

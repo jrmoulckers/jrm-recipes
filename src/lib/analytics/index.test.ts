@@ -101,6 +101,43 @@ describe('analytics client. Dispatch to a registered backend', () => {
     });
   });
 
+  it('allows only bounded dietary properties through the client path', () => {
+    const { backend, mocks } = fakeBackend();
+    setClientBackend(backend);
+
+    track('dietary_analysis_finished', {
+      outcome: 'failed',
+      trigger: 'recipe_save',
+      errorCode: 'worker_failed',
+    });
+
+    expect(mocks.capture).toHaveBeenCalledWith('dietary_analysis_finished', {
+      outcome: 'failed',
+      trigger: 'recipe_save',
+      errorCode: 'worker_failed',
+    });
+  });
+
+  it('drops dietary canary data before it reaches the client backend', () => {
+    const { backend, mocks } = fakeBackend();
+    setClientBackend(backend);
+
+    (track as unknown as (n: string, p: Record<string, unknown>) => void)(
+      'dietary_analysis_finished',
+      {
+        outcome: 'failed',
+        trigger: 'recipe_open',
+        errorCode: 'worker_failed',
+        ingredientText: 'CANARY shellfish ingredient',
+        restrictionName: 'CANARY severe shellfish allergy',
+        recipeId: 'recipe_canary',
+        rawError: new Error('CANARY private exception'),
+      },
+    );
+
+    expect(mocks.capture).not.toHaveBeenCalled();
+  });
+
   it('forwards identify/alias/reset', () => {
     const { backend, mocks } = fakeBackend();
     setClientBackend(backend);

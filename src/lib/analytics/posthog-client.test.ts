@@ -330,6 +330,49 @@ describe('PostHog client. Privacy posture', () => {
     });
   });
 
+  it('rejects dietary canary data in before_send', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+
+    expect(
+      beforeSend({
+        uuid: '10000000-0000-4000-8000-000000000008',
+        event: 'dietary_analysis_finished',
+        properties: {
+          token: 'phc_project_key',
+          distinct_id: 'user_internal_123',
+          outcome: 'failed',
+          trigger: 'recipe_open',
+          errorCode: 'worker_failed',
+          ingredientText: 'CANARY shellfish ingredient',
+          restrictionName: 'CANARY severe shellfish allergy',
+          exceptionMessage: 'CANARY private exception',
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it('preserves a valid dietary event in before_send', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+    const input = {
+      uuid: '10000000-0000-4000-8000-000000000009',
+      event: 'dietary_device_support_checked',
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        $device_id: 'device_internal_123',
+        support: 'deterministic_only',
+      },
+    } satisfies CaptureResult;
+
+    expect(beforeSend(input)).toEqual(input);
+  });
+
   it('preserves null events rejected by an earlier before_send hook', async () => {
     const options = await initOptions();
     const beforeSend = options.before_send as (
