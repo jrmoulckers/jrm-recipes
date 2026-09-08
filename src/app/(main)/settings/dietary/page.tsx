@@ -11,6 +11,10 @@ import { listMyGroups } from '~/server/groups/queries';
 import { ALLERGENS, type Allergen } from '~/lib/allergens';
 import type { EffectiveNutritionTarget } from '~/lib/nutrition-targets';
 import { DIETARY_TAGS, type DietaryTag } from '~/lib/substitutions';
+import {
+  CUSTOM_RESTRICTION_SEVERITIES,
+  type CustomRestrictionSeverity,
+} from '~/lib/dietary-assessment';
 import { withRouteMessages } from '~/components/i18n/route-messages';
 import {
   DietaryProfilesManager,
@@ -24,6 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const ALLERGEN_SET = new Set<string>(ALLERGENS);
 const DIET_SET = new Set<string>(DIETARY_TAGS);
+const RESTRICTION_SEVERITY_SET = new Set<string>(CUSTOM_RESTRICTION_SEVERITIES);
 
 async function DietaryProfilesPage() {
   const user = await getCurrentUser();
@@ -48,6 +53,20 @@ async function DietaryProfilesPage() {
     diets: (p.diets ?? []).filter((d): d is DietaryTag => DIET_SET.has(d)),
     groupId: p.groupId,
     targets: targetsByProfile.get(p.id) ?? [],
+    customRestrictions: p.customRestrictions.flatMap((restriction) =>
+      RESTRICTION_SEVERITY_SET.has(restriction.severity)
+        ? [
+            {
+              id: restriction.id,
+              name: restriction.name,
+              severity: restriction.severity as CustomRestrictionSeverity,
+              terms: restriction.terms
+                .filter((term) => term.source === 'exact' || term.approved)
+                .map((term) => term.term),
+            },
+          ]
+        : [],
+    ),
   }));
 
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));

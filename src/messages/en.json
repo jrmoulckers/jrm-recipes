@@ -2092,6 +2092,29 @@
       "familyGroup": "Family group (optional)",
       "justMe": "Just me"
     },
+    "customRestrictions": {
+      "title": "Custom restrictions",
+      "description": "Add exact ingredients this person avoids. Heirloom never guesses whether a restriction is medical.",
+      "add": "Add restriction",
+      "name": "Restriction name",
+      "namePlaceholder": "No mushrooms",
+      "effect": "How should this affect results?",
+      "ingredients": "Exact ingredients",
+      "ingredientsPlaceholder": "mushroom, truffle",
+      "ingredientsHelp": "Separate ingredients with commas. Only exact terms you approve affect results.",
+      "remove": "Remove {name}",
+      "unnamed": "unnamed restriction",
+      "severity": {
+        "allergy-intolerance": "Allergy or intolerance",
+        "strict-avoidance": "Strict avoidance",
+        "preference": "Preference"
+      },
+      "help": {
+        "allergy-intolerance": "Fails closed: uncertain recipes are not shown as safe.",
+        "strict-avoidance": "Matches are excluded and uncertainty is disclosed.",
+        "preference": "Matches remain available but rank lower."
+      }
+    },
     "assessmentBadge": {
       "detailsTitle": "{label} dietary assessment",
       "triggerLabel": "{label}. Status: {status}. {provenance}",
@@ -2127,6 +2150,40 @@
       "action": {
         "review": "Review details",
         "correct": "Correct assessment"
+      }
+    },
+    "assessments": {
+      "recipeAuthor": "Recipe author",
+      "more": "+{count} dietary details",
+      "less": "Show fewer dietary details",
+      "labels": {
+        "allergenMeets": "{rule}-free",
+        "conflicts": "Contains {rule}",
+        "notSuitable": "Not {rule}",
+        "review": "{rule} needs review"
+      },
+      "rules": {
+        "allergen": {
+          "peanut": "peanut",
+          "tree-nut": "tree nut",
+          "dairy": "dairy",
+          "egg": "egg",
+          "soy": "soy",
+          "wheat": "gluten",
+          "fish": "fish",
+          "shellfish": "shellfish",
+          "sesame": "sesame"
+        },
+        "composition": {
+          "vegan": "Vegan",
+          "vegetarian": "Vegetarian",
+          "pescatarian": "Pescatarian"
+        },
+        "confirmation": {
+          "celiac-safe": "Celiac-safe",
+          "kosher": "Kosher",
+          "halal": "Halal"
+        }
       }
     }
   },
@@ -2821,6 +2878,10 @@
       "title": "Results",
       "correction": "No exact matches for <strong>“{from}”</strong>. Showing results for <strong>“{to}”</strong>.",
       "count": "{count}{plus} {count, plural, one {recipe} other {recipes}}",
+      "possible": {
+        "title": "Possible matches",
+        "description": "No conflict was found, but some ingredient evidence is incomplete. Review the dietary details before deciding."
+      },
       "withheld": {
         "lowConfidence": "{count, plural, one {# recipe is hidden} other {# recipes are hidden}} because our estimate isn't confident enough to rank honestly.",
         "unknown": "{count, plural, one {# more recipe has} other {# more recipes have}} no nutrition figures at all, so we can't say either way.",
@@ -3632,6 +3693,11 @@
       "glutenFree": "Gluten-free",
       "eggFree": "Egg-free"
     },
+    "impact": {
+      "removes": "Removes the {need} conflict",
+      "addsConflict": "Adds a dietary conflict",
+      "review": "Dietary impact still needs review"
+    },
     "noMatches": "No swaps match every selected dietary need."
   },
   "ingredientsPanel": {
@@ -3676,7 +3742,43 @@
     "measureAsSr": "Measure as ",
     "reasonContains": "contains {list}",
     "reasonNot": "not {list}",
-    "rangeTo": "{low} to {high}"
+    "rangeTo": "{low} to {high}",
+    "dietaryReview": {
+      "summary": "Review dietary evidence for {ingredient}",
+      "rule": "Finding for {rule}",
+      "finding": {
+        "absent": "Suitable for this rule",
+        "present": "Conflicts with this rule",
+        "possible": "Possible conflict",
+        "unresolved": "Still unresolved"
+      },
+      "save": "Save correction",
+      "saving": "Saving…",
+      "saved": "Dietary correction saved",
+      "rules": {
+        "allergen": {
+          "peanut": "peanut",
+          "tree-nut": "tree nut",
+          "dairy": "dairy",
+          "egg": "egg",
+          "soy": "soy",
+          "wheat": "gluten",
+          "fish": "fish",
+          "shellfish": "shellfish",
+          "sesame": "sesame"
+        },
+        "composition": {
+          "vegan": "vegan",
+          "vegetarian": "vegetarian",
+          "pescatarian": "pescatarian"
+        },
+        "confirmation": {
+          "celiac-safe": "celiac-safe",
+          "kosher": "kosher",
+          "halal": "halal"
+        }
+      }
+    }
   },
   "nutritionPanel": {
     "aria": "Nutrition facts",

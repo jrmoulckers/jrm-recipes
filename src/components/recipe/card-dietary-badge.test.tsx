@@ -5,6 +5,7 @@ import type * as React from 'react';
 import { CardDietaryBadge, type CardDietaryMember } from './card-dietary-badge';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import { IntlWrapper } from '~/test/intl';
+import type { DietaryAssessmentView } from '~/lib/dietary-presentation';
 
 function render(ui: React.ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -13,55 +14,61 @@ function render(ui: React.ReactElement) {
 afterEach(cleanup);
 
 const MEMBERS: CardDietaryMember[] = [
-  { id: 'm1', name: 'Ada', allergens: ['dairy', 'peanut'] },
-  { id: 'm2', name: 'Bo', allergens: [] },
+  {
+    id: 'm1',
+    name: 'Ada',
+    allergens: ['dairy'],
+    diets: [],
+    customRestrictions: [],
+  },
+  { id: 'm2', name: 'Bo', allergens: [], diets: [], customRestrictions: [] },
 ];
+
+function assessment(overrides: Partial<DietaryAssessmentView> = {}): DietaryAssessmentView {
+  return {
+    ruleId: 'allergen:dairy',
+    scope: 'canonical',
+    profileId: null,
+    source: 'deterministic',
+    verdict: 'meets',
+    confidence: 'high',
+    recognizedIngredients: 2,
+    totalIngredients: 2,
+    evidence: [],
+    ...overrides,
+  };
+}
 
 describe('CardDietaryBadge', () => {
   beforeEach(() => {
     useActiveMemberStore.setState({ activeMemberId: null });
   });
 
-  it('renders nothing when no member is active', () => {
+  it('renders author-confirmed declarations without an active profile', () => {
+    render(<CardDietaryBadge members={MEMBERS} assessments={[]} declared={['vegetarian']} />);
+    expect(
+      screen.getByRole('button', { name: /vegetarian.*confirmed by recipe author/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders only assessment rules relevant to the active profile', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
+    render(
+      <CardDietaryBadge
+        members={MEMBERS}
+        assessments={[assessment(), assessment({ ruleId: 'allergen:soy', verdict: 'conflicts' })]}
+        declared={[]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /contains soy/i })).not.toBeInTheDocument();
+  });
+
+  it('never reassures from missing assessment coverage', () => {
+    useActiveMemberStore.setState({ activeMemberId: 'm1' });
     const { container } = render(
-      <CardDietaryBadge members={MEMBERS} recipeAllergens={['dairy']} />,
+      <CardDietaryBadge members={MEMBERS} assessments={[]} declared={[]} />,
     );
     expect(container).toBeEmptyDOMElement();
-  });
-
-  it('renders nothing when the active member has no recorded allergies', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm2' });
-    const { container } = render(
-      <CardDietaryBadge members={MEMBERS} recipeAllergens={['dairy']} />,
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("reassures when the recipe trips none of the member's allergens", () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(<CardDietaryBadge members={MEMBERS} recipeAllergens={['soy']} />);
-    expect(screen.getByText(/looks safe for ada/i)).toBeInTheDocument();
-  });
-
-  it("stays silent (no false 'safe') when there is no ingredient data", () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    const { container } = render(<CardDietaryBadge members={MEMBERS} recipeAllergens={null} />);
-    // null = "nothing to analyze". Must NOT render the reassuring safe badge.
-    expect(container).toBeEmptyDOMElement();
-    expect(screen.queryByText(/looks safe/i)).not.toBeInTheDocument();
-  });
-
-  it('still warns on a conflict even from an otherwise sparse recipe', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(<CardDietaryBadge members={MEMBERS} recipeAllergens={['dairy']} />);
-    expect(screen.getByText(/contains dairy/i)).toBeInTheDocument();
-  });
-
-  it('warns and names the conflicting allergen', () => {
-    useActiveMemberStore.setState({ activeMemberId: 'm1' });
-    render(<CardDietaryBadge members={MEMBERS} recipeAllergens={['dairy', 'soy']} />);
-    expect(screen.getByText(/contains dairy/i)).toBeInTheDocument();
-    // Best-effort disclaimer is exposed for assistive tech.
-    expect(screen.getByLabelText(/double-check labels and brands/i)).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Pencil, Plus, Target, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Pencil, Plus, ShieldAlert, Target, Trash2, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFriendlyError } from '~/lib/error-copy';
 import { useDialogInitialFocus } from '~/lib/use-initial-focus';
@@ -17,6 +17,10 @@ import { type MemberProfileInputRaw } from '~/server/dietary/validation';
 import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
 import { formatNutrient } from '~/lib/nutrition';
+import {
+  CUSTOM_RESTRICTION_SEVERITIES,
+  type CustomRestrictionSeverity,
+} from '~/lib/dietary-assessment';
 import {
   selectEffectiveTarget,
   targetRows,
@@ -48,6 +52,12 @@ export type MemberProfileView = {
   groupId: string | null;
   /** Target history, newest first (#1046). Empty when none were ever set. */
   targets: EffectiveNutritionTarget[];
+  customRestrictions: {
+    id: string;
+    name: string;
+    severity: CustomRestrictionSeverity;
+    terms: string[];
+  }[];
 };
 
 type GroupOption = { id: string; name: string };
@@ -60,6 +70,7 @@ type Draft = {
   allergens: Allergen[];
   diets: DietaryTag[];
   groupId: string;
+  customRestrictions: MemberProfileView['customRestrictions'];
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -67,6 +78,7 @@ const EMPTY_DRAFT: Draft = {
   allergens: [],
   diets: [],
   groupId: '',
+  customRestrictions: [],
 };
 
 function toDraft(profile: MemberProfileView): Draft {
@@ -75,6 +87,7 @@ function toDraft(profile: MemberProfileView): Draft {
     allergens: profile.allergens,
     diets: profile.diets,
     groupId: profile.groupId ?? '',
+    customRestrictions: profile.customRestrictions,
   };
 }
 
@@ -126,6 +139,7 @@ export function DietaryProfilesManager({
       allergens: draft.allergens,
       diets: draft.diets,
       groupId: draft.groupId || undefined,
+      customRestrictions: draft.customRestrictions,
     };
     setFieldErrors({});
 
@@ -245,6 +259,26 @@ export function DietaryProfilesManager({
                 </div>
               ) : null}
 
+              {profile.customRestrictions.length > 0 ? (
+                <div className="grid gap-2">
+                  {profile.customRestrictions.map((restriction) => (
+                    <div
+                      key={restriction.id}
+                      className="rounded-lg border border-border bg-muted/30 px-3 py-2"
+                    >
+                      <p className="flex items-center gap-1.5 text-sm font-medium">
+                        <ShieldAlert className="size-3.5 text-warning" aria-hidden="true" />
+                        {restriction.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {t(`customRestrictions.severity.${restriction.severity}`)} ·{' '}
+                        {restriction.terms.join(', ')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
               {profile.targets.length > 0 ? (
                 <TargetSummary profile={profile} />
               ) : (
@@ -262,7 +296,9 @@ export function DietaryProfilesManager({
                 </Button>
               </div>
 
-              {profile.allergens.length === 0 && profile.diets.length === 0 ? (
+              {profile.allergens.length === 0 &&
+              profile.diets.length === 0 &&
+              profile.customRestrictions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('profile.noRestrictions')}</p>
               ) : null}
             </li>
@@ -325,6 +361,137 @@ export function DietaryProfilesManager({
                   );
                 })}
               </div>
+            </fieldset>
+
+            <fieldset className="grid gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <legend className="text-sm font-medium text-foreground">
+                    {t('customRestrictions.title')}
+                  </legend>
+                  <p className="text-xs text-muted-foreground">
+                    {t('customRestrictions.description')}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      customRestrictions: [
+                        ...current.customRestrictions,
+                        {
+                          id: '',
+                          name: '',
+                          severity: 'strict-avoidance',
+                          terms: [],
+                        },
+                      ],
+                    }))
+                  }
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  {t('customRestrictions.add')}
+                </Button>
+              </div>
+              {draft.customRestrictions.map((restriction, index) => {
+                const restrictionNameId = `${nameId}-restriction-${index}`;
+                const severityId = `${nameId}-restriction-severity-${index}`;
+                const termsId = `${nameId}-restriction-terms-${index}`;
+                const updateRestriction = (
+                  update: Partial<(typeof draft.customRestrictions)[number]>,
+                ) =>
+                  setDraft((current) => ({
+                    ...current,
+                    customRestrictions: current.customRestrictions.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, ...update } : item,
+                    ),
+                  }));
+                return (
+                  <div
+                    key={restriction.id || `new-${index}`}
+                    className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="grid flex-1 gap-2">
+                        <Label htmlFor={restrictionNameId}>{t('customRestrictions.name')}</Label>
+                        <Input
+                          id={restrictionNameId}
+                          value={restriction.name}
+                          onChange={(event) => updateRestriction({ name: event.target.value })}
+                          placeholder={t('customRestrictions.namePlaceholder')}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mt-6"
+                        aria-label={t('customRestrictions.remove', {
+                          name: restriction.name || t('customRestrictions.unnamed'),
+                        })}
+                        onClick={() =>
+                          setDraft((current) => ({
+                            ...current,
+                            customRestrictions: current.customRestrictions.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          }))
+                        }
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor={severityId}>{t('customRestrictions.effect')}</Label>
+                      <NativeSelect
+                        id={severityId}
+                        value={restriction.severity}
+                        onChange={(event) =>
+                          updateRestriction({
+                            severity: event.target.value as CustomRestrictionSeverity,
+                          })
+                        }
+                      >
+                        {CUSTOM_RESTRICTION_SEVERITIES.map((severity) => (
+                          <option key={severity} value={severity}>
+                            {t(`customRestrictions.severity.${severity}`)}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                      <p className="text-xs text-muted-foreground">
+                        {t(`customRestrictions.help.${restriction.severity}`)}
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor={termsId}>{t('customRestrictions.ingredients')}</Label>
+                      <Input
+                        id={termsId}
+                        value={restriction.terms.join(', ')}
+                        onChange={(event) =>
+                          updateRestriction({
+                            terms: event.target.value
+                              .split(',')
+                              .map((term) => term.trim())
+                              .filter(Boolean),
+                          })
+                        }
+                        placeholder={t('customRestrictions.ingredientsPlaceholder')}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t('customRestrictions.ingredientsHelp')}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {fieldErrors.customRestrictions?.[0] ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {fieldErrors.customRestrictions[0]}
+                </p>
+              ) : null}
             </fieldset>
 
             <fieldset className="grid gap-2">

@@ -2092,6 +2092,29 @@
       "familyGroup": "Grupo familiar (opcional)",
       "justMe": "Solo yo"
     },
+    "customRestrictions": {
+      "title": "Restricciones personalizadas",
+      "description": "Agrega ingredientes exactos que esta persona evita. Heirloom nunca supone si una restricción es médica.",
+      "add": "Agregar restricción",
+      "name": "Nombre de la restricción",
+      "namePlaceholder": "Sin champiñones",
+      "effect": "¿Cómo debe afectar los resultados?",
+      "ingredients": "Ingredientes exactos",
+      "ingredientsPlaceholder": "champiñón, trufa",
+      "ingredientsHelp": "Separa los ingredientes con comas. Solo afectan los resultados los términos exactos que apruebes.",
+      "remove": "Eliminar {name}",
+      "unnamed": "restricción sin nombre",
+      "severity": {
+        "allergy-intolerance": "Alergia o intolerancia",
+        "strict-avoidance": "Evitación estricta",
+        "preference": "Preferencia"
+      },
+      "help": {
+        "allergy-intolerance": "Falla de forma segura: las recetas inciertas no se muestran como aptas.",
+        "strict-avoidance": "Se excluyen las coincidencias y se informa la incertidumbre.",
+        "preference": "Las coincidencias siguen disponibles, pero aparecen más abajo."
+      }
+    },
     "assessmentBadge": {
       "detailsTitle": "Evaluación alimentaria: {label}",
       "triggerLabel": "{label}. Estado: {status}. {provenance}",
@@ -2127,6 +2150,40 @@
       "action": {
         "review": "Revisar detalles",
         "correct": "Corregir evaluación"
+      }
+    },
+    "assessments": {
+      "recipeAuthor": "Autor de la receta",
+      "more": "+{count} detalles alimentarios",
+      "less": "Mostrar menos detalles alimentarios",
+      "labels": {
+        "allergenMeets": "Sin {rule}",
+        "conflicts": "Contiene {rule}",
+        "notSuitable": "No es {rule}",
+        "review": "{rule}: requiere revisión"
+      },
+      "rules": {
+        "allergen": {
+          "peanut": "cacahuate",
+          "tree-nut": "frutos secos",
+          "dairy": "lácteos",
+          "egg": "huevo",
+          "soy": "soya",
+          "wheat": "trigo y gluten",
+          "fish": "pescado",
+          "shellfish": "mariscos",
+          "sesame": "sésamo"
+        },
+        "composition": {
+          "vegan": "Vegano",
+          "vegetarian": "Vegetariano",
+          "pescatarian": "Pescetariano"
+        },
+        "confirmation": {
+          "celiac-safe": "Apto para celíacos",
+          "kosher": "Kósher",
+          "halal": "Permitido halal"
+        }
       }
     }
   },
@@ -2821,6 +2878,10 @@
       "title": "Resultados",
       "correction": "No hay coincidencias exactas para <strong>«{from}»</strong>. Mostramos resultados de <strong>«{to}»</strong>.",
       "count": "{count}{plus} {count, plural, one {receta} other {recetas}}",
+      "possible": {
+        "title": "Coincidencias posibles",
+        "description": "No se encontró ningún conflicto, pero falta parte de la evidencia de ingredientes. Revisa los detalles alimentarios antes de decidir."
+      },
       "withheld": {
         "lowConfidence": "{count, plural, one {Se ha ocultado # receta} other {Se han ocultado # recetas}} porque nuestra estimación no es lo bastante fiable para clasificarla con honestidad.",
         "unknown": "{count, plural, one {# receta más no tiene} other {# recetas más no tienen}} ningún dato nutricional, así que no podemos afirmar nada.",
@@ -3632,6 +3693,11 @@
       "glutenFree": "Sin gluten",
       "eggFree": "Sin huevo"
     },
+    "impact": {
+      "removes": "Elimina el conflicto de {need}",
+      "addsConflict": "Agrega un conflicto alimentario",
+      "review": "El impacto alimentario aún requiere revisión"
+    },
     "noMatches": "Ninguna sustitución cumple todas las necesidades dietéticas elegidas."
   },
   "ingredientsPanel": {
@@ -3676,7 +3742,43 @@
     "measureAsSr": "Mide como ",
     "reasonContains": "contiene {list}",
     "reasonNot": "no es {list}",
-    "rangeTo": "{low} a {high}"
+    "rangeTo": "{low} a {high}",
+    "dietaryReview": {
+      "summary": "Revisar evidencia alimentaria de {ingredient}",
+      "rule": "Hallazgo para {rule}",
+      "finding": {
+        "absent": "Apto para esta regla",
+        "present": "En conflicto con esta regla",
+        "possible": "Posible conflicto",
+        "unresolved": "Sigue sin resolverse"
+      },
+      "save": "Guardar corrección",
+      "saving": "Guardando…",
+      "saved": "Corrección alimentaria guardada",
+      "rules": {
+        "allergen": {
+          "peanut": "cacahuate",
+          "tree-nut": "frutos secos",
+          "dairy": "lácteos",
+          "egg": "huevo",
+          "soy": "soya",
+          "wheat": "trigo y gluten",
+          "fish": "pescado",
+          "shellfish": "mariscos",
+          "sesame": "sésamo"
+        },
+        "composition": {
+          "vegan": "vegano",
+          "vegetarian": "vegetariano",
+          "pescatarian": "pescetariano"
+        },
+        "confirmation": {
+          "celiac-safe": "apto para celíacos",
+          "kosher": "kósher",
+          "halal": "permitido halal"
+        }
+      }
+    }
   },
   "nutritionPanel": {
     "aria": "Información nutricional",

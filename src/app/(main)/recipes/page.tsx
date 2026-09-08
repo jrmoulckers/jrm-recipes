@@ -21,6 +21,12 @@ import {
   type RecipeSearchResult,
 } from '~/server/recipes/queries';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
+import {
+  CUSTOM_RESTRICTION_SEVERITIES,
+  type CustomRestrictionSeverity,
+} from '~/lib/dietary-assessment';
+import { isDietaryTag } from '~/lib/substitutions';
 import { macroCardNutrients } from '~/server/recipes/macro-search';
 import { isAllergen } from '~/lib/allergens';
 import {
@@ -84,6 +90,19 @@ async function RecipesPage({ searchParams }: { searchParams: Promise<SearchParam
           id: m.id,
           name: m.name,
           allergens: (m.allergens ?? []).filter(isAllergen),
+          diets: (m.diets ?? []).filter(isDietaryTag),
+          customRestrictions: m.customRestrictions.flatMap((restriction) =>
+            CUSTOM_RESTRICTION_SEVERITIES.includes(
+              restriction.severity as CustomRestrictionSeverity,
+            )
+              ? [
+                  {
+                    id: restriction.id,
+                    severity: restriction.severity as CustomRestrictionSeverity,
+                  },
+                ]
+              : [],
+          ),
         }))
       : [];
   const t = await getTranslations('recipe.library');
@@ -159,7 +178,14 @@ async function BrowseSections({
   const canFavorite = Boolean(user);
   // Only pay for allergen roll-up when a family member with allergies is active.
   const showBadges = members.some((m) => m.allergens.length > 0);
-  const libraryCards = showBadges ? await attachCardAllergens(library.items) : library.items;
+  const libraryWithAllergens = showBadges
+    ? await attachCardAllergens(library.items)
+    : library.items;
+  const [libraryCards, recentCards, discoverCards] = await Promise.all([
+    attachCardDietaryAssessmentViews(libraryWithAllergens, user?.id ?? null),
+    attachCardDietaryAssessmentViews(recentlyViewed, user?.id ?? null),
+    attachCardDietaryAssessmentViews(discoverOnly, user?.id ?? null),
+  ]);
   const t = await getTranslations('recipe.library');
 
   return (
@@ -171,7 +197,7 @@ async function BrowseSections({
             <h2 className="font-display text-xl font-bold tracking-tight">{t('recentlyViewed')}</h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {recentlyViewed.map((recipe) => (
+            {recentCards.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
@@ -210,7 +236,7 @@ async function BrowseSections({
             <h2 className="font-display text-2xl font-bold tracking-tight">{t('discover')}</h2>
           </div>
           <DiscoverFeed
-            initialItems={discoverOnly}
+            initialItems={discoverCards}
             initialNextOffset={discover.nextOffset}
             canFavorite={canFavorite}
             favoritedIds={[...favoriteIds]}
@@ -240,7 +266,7 @@ async function SearchResults({
   ]);
   const canFavorite = Boolean(user);
 
-  if (page.items.length === 0) {
+  if (page.items.length === 0 && page.possibleItems.length === 0) {
     // Typo-tolerant fallback: only for text queries, and only when a close
     // trigram match exists *and* actually yields results.
     const suggestion = search.q ? await suggestSearchTerm(user, search.q) : null;
@@ -256,6 +282,7 @@ async function SearchResults({
             canFavorite={canFavorite}
             members={members}
             quickPlan={quickPlan}
+            viewerId={user?.id ?? null}
             correction={{ from: search.q!, to: suggestion }}
           />
         );
@@ -272,6 +299,7 @@ async function SearchResults({
       canFavorite={canFavorite}
       members={members}
       quickPlan={quickPlan}
+      viewerId={user?.id ?? null}
     />
   );
 }
@@ -290,9 +318,11 @@ async function ResultsView({
   members,
   quickPlan,
   correction,
+  viewerId,
 }: {
   page: {
     items: RecipeSearchResult[];
+    possibleItems: RecipeSearchResult[];
     nextOffset: number | null;
     unrankable?: { lowConfidence: number; unknown: number };
   };
@@ -302,13 +332,22 @@ async function ResultsView({
   members: CardDietaryMember[];
   quickPlan: QuickPlanContext | null;
   correction?: { from: string; to: string };
+  viewerId: string | null;
 }) {
   // Only pay for allergen roll-up when a family member with allergies is active.
   const showBadges = members.some((m) => m.allergens.length > 0);
-  const cards = showBadges ? await attachCardAllergens(page.items) : page.items;
+  const cardsWithAllergens = showBadges ? await attachCardAllergens(page.items) : page.items;
+  const possibleWithAllergens = showBadges
+    ? await attachCardAllergens(page.possibleItems)
+    : page.possibleItems;
+  const [cards, possibleCards] = await Promise.all([
+    attachCardDietaryAssessmentViews(cardsWithAllergens, viewerId),
+    attachCardDietaryAssessmentViews(possibleWithAllergens, viewerId),
+  ]);
   return (
     <SearchResultsFeed
       initialItems={cards}
+      initialPossibleItems={possibleCards}
       initialNextOffset={page.nextOffset}
       queryString={recipeSearchToQueryString(search)}
       canFavorite={canFavorite}

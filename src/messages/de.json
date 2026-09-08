@@ -2092,6 +2092,29 @@
       "familyGroup": "Familiengruppe (optional)",
       "justMe": "Nur ich"
     },
+    "customRestrictions": {
+      "title": "Eigene Einschränkungen",
+      "description": "Füge genaue Zutaten hinzu, die diese Person meidet. Heirloom entscheidet nie selbst, ob eine Einschränkung medizinisch ist.",
+      "add": "Einschränkung hinzufügen",
+      "name": "Name der Einschränkung",
+      "namePlaceholder": "Keine Pilze",
+      "effect": "Wie soll dies die Ergebnisse beeinflussen?",
+      "ingredients": "Genaue Zutaten",
+      "ingredientsPlaceholder": "Pilz, Trüffel",
+      "ingredientsHelp": "Trenne Zutaten mit Kommas. Nur von dir bestätigte genaue Begriffe wirken sich aus.",
+      "remove": "{name} entfernen",
+      "unnamed": "unbenannte Einschränkung",
+      "severity": {
+        "allergy-intolerance": "Allergie oder Unverträglichkeit",
+        "strict-avoidance": "Strikt vermeiden",
+        "preference": "Vorliebe"
+      },
+      "help": {
+        "allergy-intolerance": "Im Zweifel sicher: unsichere Rezepte werden nicht als geeignet gezeigt.",
+        "strict-avoidance": "Treffer werden ausgeschlossen und Unsicherheit wird offengelegt.",
+        "preference": "Treffer bleiben verfügbar, werden aber weiter unten einsortiert."
+      }
+    },
     "assessmentBadge": {
       "detailsTitle": "Ernährungsbewertung: {label}",
       "triggerLabel": "{label}. Ergebnis: {status}. {provenance}",
@@ -2127,6 +2150,40 @@
       "action": {
         "review": "Details prüfen",
         "correct": "Bewertung korrigieren"
+      }
+    },
+    "assessments": {
+      "recipeAuthor": "Rezeptautor",
+      "more": "+{count} Ernährungsdetails",
+      "less": "Weniger Ernährungsdetails zeigen",
+      "labels": {
+        "allergenMeets": "Ohne {rule}",
+        "conflicts": "Enthält {rule}",
+        "notSuitable": "Nicht {rule}",
+        "review": "{rule} muss geprüft werden"
+      },
+      "rules": {
+        "allergen": {
+          "peanut": "Erdnüsse",
+          "tree-nut": "Schalenfrüchte",
+          "dairy": "Milchprodukte",
+          "egg": "Ei",
+          "soy": "Soja",
+          "wheat": "Gluten",
+          "fish": "Fisch",
+          "shellfish": "Schalentiere",
+          "sesame": "Sesam"
+        },
+        "composition": {
+          "vegan": "Vegan",
+          "vegetarian": "Vegetarisch",
+          "pescatarian": "Pescetarisch"
+        },
+        "confirmation": {
+          "celiac-safe": "Für Zöliakie geeignet",
+          "kosher": "Koscher",
+          "halal": "Halal-konform"
+        }
       }
     }
   },
@@ -2821,6 +2878,10 @@
       "title": "Ergebnisse",
       "correction": "Keine genauen Treffer für <strong>„{from}“</strong>. Wir zeigen Ergebnisse für <strong>„{to}“</strong>.",
       "count": "{count}{plus} {count, plural, one {Rezept} other {Rezepte}}",
+      "possible": {
+        "title": "Mögliche Treffer",
+        "description": "Es wurde kein Konflikt gefunden, aber einige Zutatennachweise sind unvollständig. Prüfe vor der Entscheidung die Ernährungsdetails."
+      },
       "withheld": {
         "lowConfidence": "{count, plural, one {# Rezept ist ausgeblendet} other {# Rezepte sind ausgeblendet}}, weil unsere Schätzung für eine ehrliche Einordnung nicht sicher genug ist.",
         "unknown": "{count, plural, one {# weiteres Rezept hat} other {# weitere Rezepte haben}} überhaupt keine Nährwertangaben, daher können wir dazu nichts sagen.",
@@ -3632,6 +3693,11 @@
       "glutenFree": "Glutenfrei",
       "eggFree": "Ohne Ei"
     },
+    "impact": {
+      "removes": "Beseitigt den Konflikt mit {need}",
+      "addsConflict": "Fügt einen Ernährungskonflikt hinzu",
+      "review": "Die Ernährungswirkung muss noch geprüft werden"
+    },
     "noMatches": "Keine Alternative erfüllt alle gewählten Ernährungsbedürfnisse."
   },
   "ingredientsPanel": {
@@ -3676,7 +3742,43 @@
     "measureAsSr": "Abmessen als ",
     "reasonContains": "enthält {list}",
     "reasonNot": "nicht {list}",
-    "rangeTo": "{low} bis {high}"
+    "rangeTo": "{low} bis {high}",
+    "dietaryReview": {
+      "summary": "Ernährungsnachweise für {ingredient} prüfen",
+      "rule": "Bewertung für {rule}",
+      "finding": {
+        "absent": "Für diese Regel geeignet",
+        "present": "Konflikt mit dieser Regel",
+        "possible": "Möglicher Konflikt",
+        "unresolved": "Weiterhin ungeklärt"
+      },
+      "save": "Korrektur speichern",
+      "saving": "Speichern…",
+      "saved": "Ernährungskorrektur gespeichert",
+      "rules": {
+        "allergen": {
+          "peanut": "Erdnüsse",
+          "tree-nut": "Schalenfrüchte",
+          "dairy": "Milchprodukte",
+          "egg": "Ei",
+          "soy": "Soja",
+          "wheat": "Gluten",
+          "fish": "Fisch",
+          "shellfish": "Schalentiere",
+          "sesame": "Sesam"
+        },
+        "composition": {
+          "vegan": "pflanzlich",
+          "vegetarian": "vegetarisch",
+          "pescatarian": "pescetarisch"
+        },
+        "confirmation": {
+          "celiac-safe": "für Zöliakie geeignet",
+          "kosher": "koscher",
+          "halal": "halal-konform"
+        }
+      }
+    }
   },
   "nutritionPanel": {
     "aria": "Nährwertangaben",

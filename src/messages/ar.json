@@ -2092,6 +2092,29 @@
       "familyGroup": "مجموعة العائلة (اختياري)",
       "justMe": "أنا فقط"
     },
+    "customRestrictions": {
+      "title": "قيود مخصصة",
+      "description": "أضف المكونات المحددة التي يتجنبها هذا الشخص. لا يفترض Heirloom أبدًا ما إذا كان القيد طبيًا.",
+      "add": "إضافة قيد",
+      "name": "اسم القيد",
+      "namePlaceholder": "بدون فطر",
+      "effect": "كيف يؤثر هذا في النتائج؟",
+      "ingredients": "المكونات المحددة",
+      "ingredientsPlaceholder": "فطر، كمأة",
+      "ingredientsHelp": "افصل المكونات بفواصل. لا تؤثر إلا المصطلحات المحددة التي توافق عليها.",
+      "remove": "إزالة {name}",
+      "unnamed": "قيد بلا اسم",
+      "severity": {
+        "allergy-intolerance": "حساسية أو عدم تحمّل",
+        "strict-avoidance": "تجنب صارم",
+        "preference": "تفضيل"
+      },
+      "help": {
+        "allergy-intolerance": "يتوقف بأمان: لا تظهر الوصفات غير المؤكدة على أنها مناسبة.",
+        "strict-avoidance": "تُستبعد المطابقات ويُوضَّح عدم اليقين.",
+        "preference": "تبقى المطابقات متاحة لكن ترتيبها ينخفض."
+      }
+    },
     "assessmentBadge": {
       "detailsTitle": "تقييم النظام الغذائي: {label}",
       "triggerLabel": "{label}. الحالة: {status}. {provenance}",
@@ -2127,6 +2150,40 @@
       "action": {
         "review": "مراجعة التفاصيل",
         "correct": "تصحيح التقييم"
+      }
+    },
+    "assessments": {
+      "recipeAuthor": "مؤلف الوصفة",
+      "more": "+{count} من التفاصيل الغذائية",
+      "less": "عرض تفاصيل غذائية أقل",
+      "labels": {
+        "allergenMeets": "خالٍ من {rule}",
+        "conflicts": "يحتوي على {rule}",
+        "notSuitable": "غير {rule}",
+        "review": "يحتاج {rule} إلى مراجعة"
+      },
+      "rules": {
+        "allergen": {
+          "peanut": "الفول السوداني",
+          "tree-nut": "المكسرات الشجرية",
+          "dairy": "منتجات الألبان",
+          "egg": "البيض",
+          "soy": "الصويا",
+          "wheat": "الغلوتين",
+          "fish": "السمك",
+          "shellfish": "المحار",
+          "sesame": "السمسم"
+        },
+        "composition": {
+          "vegan": "نباتي صرف",
+          "vegetarian": "نباتي",
+          "pescatarian": "نباتي مع الأسماك"
+        },
+        "confirmation": {
+          "celiac-safe": "مناسب للداء البطني",
+          "kosher": "كوشر",
+          "halal": "حلال"
+        }
       }
     }
   },
@@ -2821,6 +2878,10 @@
       "title": "النتائج",
       "correction": "لا توجد نتائج مطابقة تمامًا لـ <strong>«{from}»</strong>. نعرض نتائج لـ <strong>«{to}»</strong>.",
       "count": "{count}{plus} {count, plural, zero {وصفة} one {وصفة} two {وصفتان} few {وصفات} many {وصفة} other {وصفة}}",
+      "possible": {
+        "title": "مطابقات محتملة",
+        "description": "لم يُعثر على تعارض، لكن بعض أدلة المكونات غير مكتملة. راجع التفاصيل الغذائية قبل أن تقرر."
+      },
       "withheld": {
         "lowConfidence": "{count, plural, zero {لا وصفات مخفية} one {وصفة واحدة مخفية} two {وصفتان مخفيتان} few {# وصفات مخفية} many {# وصفة مخفية} other {# وصفة مخفية}} لأن تقديرنا ليس واثقًا بما يكفي لترتيبها بأمانة.",
         "unknown": "{count, plural, zero {لا وصفات أخرى} one {وصفة أخرى} two {وصفتان أخريان} few {# وصفات أخرى} many {# وصفة أخرى} other {# وصفة أخرى}} بلا أي أرقام غذائية، لذا لا يمكننا الحكم عليها.",
@@ -3632,6 +3693,11 @@
       "glutenFree": "خال من الغلوتين",
       "eggFree": "خال من البيض"
     },
+    "impact": {
+      "removes": "يزيل تعارض {need}",
+      "addsConflict": "يضيف تعارضًا غذائيًا",
+      "review": "ما زال الأثر الغذائي يحتاج إلى مراجعة"
+    },
     "noMatches": "لا يوجد بديل يلبي كل الاحتياجات الغذائية المحددة."
   },
   "ingredientsPanel": {
@@ -3676,7 +3742,43 @@
     "measureAsSr": "قس كالتالي ",
     "reasonContains": "يحتوي على {list}",
     "reasonNot": "ليس {list}",
-    "rangeTo": "{low} إلى {high}"
+    "rangeTo": "{low} إلى {high}",
+    "dietaryReview": {
+      "summary": "مراجعة الدليل الغذائي للمكوّن {ingredient}",
+      "rule": "النتيجة لـ {rule}",
+      "finding": {
+        "absent": "مناسب لهذه القاعدة",
+        "present": "يتعارض مع هذه القاعدة",
+        "possible": "تعارض محتمل",
+        "unresolved": "ما زال غير محسوم"
+      },
+      "save": "حفظ التصحيح",
+      "saving": "جارٍ الحفظ…",
+      "saved": "تم حفظ التصحيح الغذائي",
+      "rules": {
+        "allergen": {
+          "peanut": "الفول السوداني",
+          "tree-nut": "المكسرات الشجرية",
+          "dairy": "منتجات الألبان",
+          "egg": "البيض",
+          "soy": "الصويا",
+          "wheat": "الغلوتين",
+          "fish": "السمك",
+          "shellfish": "المحار",
+          "sesame": "السمسم"
+        },
+        "composition": {
+          "vegan": "نباتي صرف",
+          "vegetarian": "نباتي",
+          "pescatarian": "نباتي مع الأسماك"
+        },
+        "confirmation": {
+          "celiac-safe": "مناسب للداء البطني",
+          "kosher": "كوشر",
+          "halal": "حلال"
+        }
+      }
+    }
   },
   "nutritionPanel": {
     "aria": "القيم الغذائية",

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ALLERGENS } from '~/lib/allergens';
+import { CUSTOM_RESTRICTION_SEVERITIES } from '~/lib/dietary-assessment';
 import type { NutritionKey } from '~/lib/nutrients';
 import { isIsoDate, sanitizeTargets, TARGET_NUTRIENTS, todayIso } from '~/lib/nutrition-targets';
 import { DIETARY_TAGS } from '~/lib/substitutions';
@@ -14,10 +15,27 @@ import { DIETARY_TAGS } from '~/lib/substitutions';
 
 const dedupe = <T>(values: T[]): T[] => [...new Set(values)];
 
+const customRestrictionInput = z.object({
+  id: z
+    .string()
+    .trim()
+    .max(24)
+    .optional()
+    .transform((value) => value || undefined),
+  name: z.string().trim().min(1, 'Add a restriction name').max(80),
+  severity: z.enum(CUSTOM_RESTRICTION_SEVERITIES),
+  terms: z
+    .array(z.string().trim().min(1).max(300))
+    .min(1, 'Add at least one exact ingredient')
+    .max(100)
+    .transform((terms) => dedupe(terms.map((term) => term.toLowerCase()))),
+});
+
 export const memberProfileInput = z.object({
   name: z.string().trim().min(1, 'Add a name').max(80),
   allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).default([]).transform(dedupe),
   diets: z.array(z.enum(DIETARY_TAGS)).max(DIETARY_TAGS.length).default([]).transform(dedupe),
+  customRestrictions: z.array(customRestrictionInput).max(25).default([]),
   // A sensible daily-energy range: high enough for athletes, low enough to
   // reject typos. Optional. Many members won't track calories.
   calorieGoal: z

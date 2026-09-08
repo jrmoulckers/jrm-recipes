@@ -5,6 +5,8 @@ import { type z } from 'zod';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
+import { dietaryIngredientCorrectionSchema } from '~/lib/dietary-assessment';
+import { saveDietaryIngredientCorrection } from './assessments';
 import {
   createMemberProfile,
   deleteMemberProfile,
@@ -127,6 +129,30 @@ export async function deleteMemberProfileAction(id: string): Promise<ActionResul
     await deleteMemberProfile(id, user);
     revalidatePath(SETTINGS_PATH);
     return { ok: true, id };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function saveDietaryIngredientCorrectionAction(input: {
+  ingredientId: string;
+  ruleId: string;
+  finding: 'present' | 'absent' | 'possible' | 'unresolved';
+}): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = dietaryIngredientCorrectionSchema.safeParse({
+    ...input,
+    customRestrictionId: null,
+    correctedFoodId: null,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: 'Choose a valid dietary finding.' };
+  }
+  try {
+    const user = await requireUser();
+    await saveDietaryIngredientCorrection(user.id, parsed.data);
+    revalidatePath('/recipes', 'layout');
+    return { ok: true, id: input.ingredientId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

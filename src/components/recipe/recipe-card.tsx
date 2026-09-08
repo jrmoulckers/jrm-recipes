@@ -16,6 +16,8 @@ import { CardDietaryBadge, type CardDietaryMember } from '~/components/recipe/ca
 import { CardMacroLine } from '~/components/recipe/card-macro-line';
 import { type MacroNutrientKey } from '~/server/recipes/search';
 import { type MacroCardSummary } from '~/server/recipes/macro-search';
+import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
+import { isDietaryTag } from '~/lib/substitutions';
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
@@ -46,6 +48,7 @@ export type CardRecipe = {
       category?: 'meal' | 'cuisine' | 'dietary' | 'general';
     };
   }[];
+  dietaryFlags?: string[] | null;
   /** Denormalized, owner-excluded rating aggregates (issue #154). Preferred. */
   ratingCount?: number;
   ratingSum?: number;
@@ -57,6 +60,7 @@ export type CardRecipe = {
    * analyze (badge withholds the "safe" verdict); `[]` = analyzed, none found.
    */
   allergens?: Allergen[] | null;
+  dietaryAssessments?: DietaryAssessmentView[];
 };
 
 export function RecipeCard({
@@ -234,9 +238,6 @@ export function RecipeCard({
               ))}
             </div>
           )}
-          {members && members.length > 0 && (
-            <CardDietaryBadge members={members} recipeAllergens={recipe.allergens ?? null} />
-          )}
           <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
             {recipe.totalMinutes != null && (
               <span className="inline-flex items-center gap-1">
@@ -263,6 +264,15 @@ export function RecipeCard({
           </div>
         </div>
       </Link>
+      {((members && members.length > 0) || (recipe.dietaryFlags?.length ?? 0) > 0) && (
+        <div className="mt-2">
+          <CardDietaryBadge
+            members={members ?? []}
+            assessments={recipe.dietaryAssessments ?? []}
+            declared={(recipe.dietaryFlags ?? []).filter(isDietaryTag)}
+          />
+        </div>
+      )}
     </div>
   );
 }

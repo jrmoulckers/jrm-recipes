@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { cn } from '~/lib/utils';
 import { HAPTICS, vibrate } from '~/lib/haptics';
@@ -39,7 +41,11 @@ import { useThemeBehavior } from '~/components/theme/theme-provider';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { NativeSelect } from '~/components/ui/native-select';
 import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions';
+import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
+import { DIETARY_EVIDENCE_FINDINGS, type DietaryEvidenceFinding } from '~/lib/dietary-assessment';
+import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
@@ -125,6 +131,95 @@ function effectivePrefs(prefs: UnitPrefs, system: 'us' | 'metric'): UnitPrefs {
     temperatureUnit: prefs.temperatureUnit,
     autoConvert: true,
   };
+}
+
+function DietaryIngredientReview({
+  ingredientId,
+  ingredient,
+  findings,
+}: {
+  ingredientId: string;
+  ingredient: string;
+  findings: { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[];
+}) {
+  const t = useTranslations('ingredientsPanel.dietaryReview');
+  return (
+    <details className="col-span-3 mb-2 ms-9 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2">
+      <summary className="cursor-pointer text-xs font-medium text-foreground">
+        {t('summary', { ingredient })}
+      </summary>
+      <div className="mt-3 grid gap-3">
+        {findings.map((finding) => (
+          <DietaryFindingEditor
+            key={finding.ruleId}
+            ingredientId={ingredientId}
+            ruleId={finding.ruleId}
+            initialFinding={finding.finding}
+          />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function DietaryFindingEditor({
+  ingredientId,
+  ruleId,
+  initialFinding,
+}: {
+  ingredientId: string;
+  ruleId: string;
+  initialFinding: 'present' | 'possible' | 'unresolved';
+}) {
+  const t = useTranslations('ingredientsPanel.dietaryReview');
+  const router = useRouter();
+  const selectId = React.useId();
+  const [finding, setFinding] = React.useState<DietaryEvidenceFinding>(initialFinding);
+  const [pending, startTransition] = React.useTransition();
+  const ruleKey = ruleId.replace(':', '.');
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="grid gap-1">
+        <label htmlFor={selectId} className="text-xs font-medium text-muted-foreground">
+          {t('rule', { rule: t(`rules.${ruleKey}`) })}
+        </label>
+        <NativeSelect
+          id={selectId}
+          value={finding}
+          onChange={(event) => setFinding(event.target.value as DietaryEvidenceFinding)}
+        >
+          {DIETARY_EVIDENCE_FINDINGS.map((value) => (
+            <option key={value} value={value}>
+              {t(`finding.${value}`)}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await saveDietaryIngredientCorrectionAction({
+              ingredientId,
+              ruleId,
+              finding,
+            });
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success(t('saved'));
+            router.refresh();
+          })
+        }
+      >
+        {pending ? t('saving') : t('save')}
+      </Button>
+    </div>
+  );
 }
 
 function measure(
@@ -264,6 +359,8 @@ export function IngredientsPanel({
   nutritionView: nutritionViewProp,
   members,
   ingredientSuggestions,
+  dietaryAssessments = [],
+  canReviewDietary = false,
   unitPrefs,
   customUnits,
 }: {
@@ -289,6 +386,8 @@ export function IngredientsPanel({
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
   ingredientSuggestions?: IngredientSuggestions;
+  dietaryAssessments?: DietaryAssessmentView[];
+  canReviewDietary?: boolean;
   /** Viewer's saved unit preferences: seeds the initial system + per-dimension conversion. */
   unitPrefs?: UnitPrefs;
   /** Viewer's custom units (e.g. "pinch"), consulted during live conversion. */
@@ -329,6 +428,29 @@ export function IngredientsPanel({
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
+  const dietaryEvidenceByIngredient = React.useMemo(() => {
+    const map = new Map<
+      string,
+      { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[]
+    >();
+    for (const assessment of dietaryAssessments) {
+      for (const evidence of assessment.evidence) {
+        if (
+          evidence.finding !== 'present' &&
+          evidence.finding !== 'possible' &&
+          evidence.finding !== 'unresolved'
+        ) {
+          continue;
+        }
+        const rows = map.get(evidence.ingredientId) ?? [];
+        if (!rows.some((row) => row.ruleId === assessment.ruleId)) {
+          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
+        }
+        map.set(evidence.ingredientId, rows);
+      }
+    }
+    return map;
+  }, [dietaryAssessments]);
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
@@ -858,6 +980,7 @@ export function IngredientsPanel({
                   >
                     <div className="contents">
                       <button
+                        id={`ingredient-${ing.id}`}
                         type="button"
                         onClick={() => toggle(ing.id)}
                         aria-pressed={isChecked}
@@ -973,6 +1096,7 @@ export function IngredientsPanel({
                           flagged={flagged}
                           presetTags={conflict?.suggestedTags}
                           avoidAllergens={memberNeeds?.allergens}
+                          currentConflictTags={conflict?.suggestedTags}
                         />
                       </div>
                     </div>
@@ -985,6 +1109,14 @@ export function IngredientsPanel({
                         </span>
                       </p>
                     )}
+                    {canReviewDietary &&
+                    (dietaryEvidenceByIngredient.get(ing.id)?.length ?? 0) > 0 ? (
+                      <DietaryIngredientReview
+                        ingredientId={ing.id}
+                        ingredient={ing.item}
+                        findings={dietaryEvidenceByIngredient.get(ing.id) ?? []}
+                      />
+                    ) : null}
                     {nudge && (
                       <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />

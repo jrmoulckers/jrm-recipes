@@ -18,6 +18,10 @@ const { listPublicRecipesMock, listLibraryRecipeIdsMock } = vi.hoisted(() => ({
   listLibraryRecipeIdsMock: vi.fn(),
 }));
 
+vi.mock('~/server/dietary/presentation', () => ({
+  attachCardDietaryAssessmentViews: vi.fn(async (recipes) => recipes),
+}));
+
 vi.mock('./queries', () => ({
   listPublicRecipes: listPublicRecipesMock,
   listLibraryRecipeIds: listLibraryRecipeIdsMock,
