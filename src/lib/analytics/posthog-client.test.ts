@@ -370,7 +370,88 @@ describe('PostHog client. Privacy posture', () => {
       },
     } satisfies CaptureResult;
 
-    expect(beforeSend(input)).toEqual(input);
+    expect(beforeSend(input)).toEqual({
+      uuid: input.uuid,
+      event: input.event,
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        support: 'deterministic_only',
+      },
+    });
+  });
+
+  it('removes nested and top-level PostHog mutation bypasses from dietary events', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+    const input = {
+      uuid: '10000000-0000-4000-8000-000000000010',
+      event: 'dietary_analysis_finished',
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        outcome: 'failed',
+        trigger: 'recipe_open',
+        errorCode: 'worker_failed',
+        $set: {
+          restrictionName: 'CANARY severe shellfish allergy',
+        },
+        $set_once: {
+          modelOutput: 'CANARY private model output',
+        },
+        $groups: {
+          dietaryProfile: 'CANARY private profile identifier',
+        },
+        $exception_message: 'CANARY private exception',
+        $arbitrary_reserved: 'CANARY private payload',
+      },
+      $set: {
+        restrictionName: 'CANARY top-level restriction',
+      },
+      $set_once: {
+        modelOutput: 'CANARY top-level model output',
+      },
+      $unset: ['CANARY private property name'],
+    } satisfies CaptureResult;
+
+    const result = beforeSend(input);
+
+    expect(result).toEqual({
+      uuid: input.uuid,
+      event: input.event,
+      properties: {
+        token: 'phc_project_key',
+        distinct_id: 'user_internal_123',
+        outcome: 'failed',
+        trigger: 'recipe_open',
+        errorCode: 'worker_failed',
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain('CANARY');
+  });
+
+  it('rejects non-reserved PostHog group metadata on dietary events', async () => {
+    const options = await initOptions();
+    const beforeSend = options.before_send as (
+      capture: CaptureResult | null,
+    ) => CaptureResult | null;
+
+    expect(
+      beforeSend({
+        uuid: '10000000-0000-4000-8000-000000000011',
+        event: 'dietary_analysis_enablement_changed',
+        properties: {
+          token: 'phc_project_key',
+          distinct_id: 'user_internal_123',
+          enabled: true,
+          groups: {
+            dietaryProfile: 'CANARY private profile identifier',
+          },
+        },
+      }),
+    ).toBeNull();
   });
 
   it('preserves null events rejected by an earlier before_send hook', async () => {

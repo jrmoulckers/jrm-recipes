@@ -268,6 +268,21 @@ export function scrubPostHogCapture(capture: CaptureResult | null): CaptureResul
     ),
   );
   if (dietaryProperties === null) return null;
+  if (dietaryProperties) {
+    const { token, distinct_id: distinctId } = capture.properties;
+    if (typeof token !== 'string' || typeof distinctId !== 'string') return null;
+
+    return {
+      uuid: capture.uuid,
+      event: capture.event,
+      properties: {
+        token,
+        distinct_id: distinctId,
+        ...dietaryProperties,
+      },
+      ...(capture.timestamp ? { timestamp: capture.timestamp } : {}),
+    };
+  }
 
   return {
     ...capture,
