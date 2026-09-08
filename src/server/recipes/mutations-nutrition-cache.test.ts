@@ -32,6 +32,10 @@ vi.mock('~/server/db/resolve-food', () => ({
   resolveFoodIds: resolveMock,
 }));
 
+vi.mock('~/server/dietary/assessments', () => ({
+  refreshDeterministicDietaryAssessmentsForAuthorizedWrite: vi.fn(),
+}));
+
 vi.mock('./nutrition', () => ({
   refreshRecipeNutritionCache: refreshMock,
 }));
@@ -95,6 +99,7 @@ function recordingTx(existing?: Record<string, unknown>) {
       recipes: { findFirst: vi.fn().mockResolvedValue(existing) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
       tags: { findMany: vi.fn(() => Promise.resolve([])) },
     },
     execute: vi.fn().mockResolvedValue(undefined),

@@ -11,14 +11,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { dbMock, resolveMock } = vi.hoisted(() => ({
+const { dbMock, resolveMock, refreshMock } = vi.hoisted(() => ({
   dbMock: { transaction: vi.fn() },
   resolveMock: vi.fn(),
+  refreshMock: vi.fn(),
 }));
 
 vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
+}));
+
+vi.mock('~/server/dietary/assessments', () => ({
+  refreshDeterministicDietaryAssessmentsForAuthorizedWrite: refreshMock,
 }));
 
 vi.mock('~/server/db/resolve-food', () => ({
@@ -92,6 +97,7 @@ function recordingTx(existing?: Record<string, unknown>) {
       recipes: { findFirst: vi.fn().mockResolvedValue(existing) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
       tags: { findMany: vi.fn(() => Promise.resolve([])) },
     },
     // Slug allocation serializes on the namespace before probing (issue #668).
@@ -116,6 +122,7 @@ const twoIngredients = [{ item: '2 cloves garlic, minced' }, { item: 'mystery sp
 beforeEach(() => {
   dbMock.transaction.mockReset();
   resolveMock.mockReset();
+  refreshMock.mockReset();
   // Resolve garlic to a node, leave the nonsense line unresolved (null).
   resolveMock.mockImplementation((items: string[]) =>
     Promise.resolve(items.map((it) => (it.includes('garlic') ? 'food_garlic' : null))),
@@ -141,6 +148,7 @@ describe('insertChildren wires foodId onto ingredient rows', () => {
       { item: '2 cloves garlic, minced', foodId: 'food_garlic' },
       { item: 'mystery space dust', foodId: null },
     ]);
+    expect(refreshMock).toHaveBeenCalledWith(tx, 'r1', author.id);
   });
 
   it('populates foodId on update', async () => {
@@ -165,5 +173,6 @@ describe('insertChildren wires foodId onto ingredient rows', () => {
       foodId: string | null;
     }>;
     expect(rows.map((r) => r.foodId)).toEqual(['food_garlic', null]);
+    expect(refreshMock).toHaveBeenCalledWith(tx, 'r1', author.id);
   });
 });

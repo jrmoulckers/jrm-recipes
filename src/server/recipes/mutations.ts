@@ -22,7 +22,6 @@ import {
   type User,
 } from '~/server/db/schema';
 import { canonicalizeTag } from '~/lib/tag-taxonomy';
-import { deriveDietaryTags } from '~/lib/dietary-derive';
 import { AuditAction, recordAudit } from '~/server/audit';
 import { assertKidAllowed } from '~/server/groups/kid-safe';
 import { resolveFoodIds } from '~/server/db/resolve-food';
@@ -33,6 +32,7 @@ import { parseSnapshot } from './queries';
 import { buildAdaptationInput } from './timeline';
 import { invalidateNutritionCache } from './nutrition-cache';
 import { refreshRecipeNutritionCache } from './nutrition';
+import { refreshDeterministicDietaryAssessmentsForAuthorizedWrite } from '~/server/dietary/assessments';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -433,10 +433,6 @@ export async function resolveGroupId(
 }
 
 function scalarFields(input: RecipeInput, groupId: string | null) {
-  // Derived "-free" dietary tags, recomputed from ingredients on every write
-  // (issue #273). Stored NULL when nothing is derivable (no ingredients / no
-  // "-free" tag holds), mirroring the other optional array columns.
-  const derivedDietaryTags = deriveDietaryTags(input.ingredients.map((ing) => ing.item));
   return {
     title: input.title,
     description: input.description ?? null,
@@ -467,8 +463,6 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
     // "safe for" filtering has a trustworthy, structured source (issue #404).
     dietaryFlags: input.dietaryFlags.length > 0 ? input.dietaryFlags : null,
-    // Derived "-free" tags (issue #273). Union'd with dietaryFlags at search.
-    dietaryTags: derivedDietaryTags.length > 0 ? derivedDietaryTags : null,
     sourceName: input.sourceName ?? null,
     sourceUrl: input.sourceUrl ?? null,
     notes: input.notes ?? null,
@@ -491,35 +485,59 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
   };
 }
 
-async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
-  if (input.ingredients.length > 0) {
-    // Best-effort write-time link to the canonical food graph (foodId is
-    // nullable). We pass `tx` so the lookup runs on this transaction's own
-    // connection. In production the pool is `max: 1`, so resolving through the
-    // global `db` here would deadlock the request against our own open
-    // transaction and time the save out (504). `resolveFoodIds` still degrades
-    // to nulls when the graph is unavailable, so it never blocks the save.
-    const foodIds = await resolveFoodIds(
-      input.ingredients.map((ing) => ing.item),
-      tx,
-    );
-    await tx.insert(recipeIngredients).values(
-      input.ingredients.map((ing, i) => ({
-        recipeId,
-        position: i,
-        section: ing.section ?? null,
-        quantity: ing.quantity ?? null,
-        quantityMax: ing.quantityMax ?? null,
-        unit: ing.unit ?? null,
-        item: ing.item,
-        foodId: foodIds[i] ?? null,
-        note: ing.note ?? null,
-        prep: ing.prep ?? null,
-        stepPosition: ing.stepPosition ?? null,
-        optional: ing.optional,
-      })),
-    );
+async function syncIngredients(tx: Tx, recipeId: string, input: RecipeInput) {
+  const existing = await tx.query.recipeIngredients.findMany({
+    where: eq(recipeIngredients.recipeId, recipeId),
+    columns: { id: true, position: true, item: true },
+  });
+  const foodIds = await resolveFoodIds(
+    input.ingredients.map((ingredient) => ingredient.item),
+    tx,
+  );
+  const retained = new Set<string>();
+  const additions: Array<typeof recipeIngredients.$inferInsert> = [];
+  const existingByItem = new Map<string, typeof existing>();
+  for (const row of [...existing].sort((left, right) => left.position - right.position)) {
+    const matches = existingByItem.get(row.item) ?? [];
+    matches.push(row);
+    existingByItem.set(row.item, matches);
   }
+
+  for (const [position, ingredient] of input.ingredients.entries()) {
+    const current = existingByItem.get(ingredient.item)?.shift();
+    const values = {
+      recipeId,
+      position,
+      section: ingredient.section ?? null,
+      quantity: ingredient.quantity ?? null,
+      quantityMax: ingredient.quantityMax ?? null,
+      unit: ingredient.unit ?? null,
+      item: ingredient.item,
+      foodId: foodIds[position] ?? null,
+      note: ingredient.note ?? null,
+      prep: ingredient.prep ?? null,
+      stepPosition: ingredient.stepPosition ?? null,
+      optional: ingredient.optional,
+    };
+    if (current) {
+      retained.add(current.id);
+      await tx.update(recipeIngredients).set(values).where(eq(recipeIngredients.id, current.id));
+    } else {
+      additions.push(values);
+    }
+  }
+  if (additions.length > 0) {
+    await tx.insert(recipeIngredients).values(additions);
+  }
+
+  const removedIds = existing.filter((row) => !retained.has(row.id)).map((row) => row.id);
+  if (removedIds.length > 0) {
+    await tx.delete(recipeIngredients).where(inArray(recipeIngredients.id, removedIds));
+  }
+}
+
+async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
+  await syncIngredients(tx, recipeId, input);
   if (input.steps.length > 0) {
     await tx.insert(recipeSteps).values(
       input.steps.map((step, i) => ({
@@ -726,10 +744,14 @@ async function applyRecipeInput(
     await assertSourceImageIdsBelongToRecipe(tx, id, input);
   }
   const canonicalInput = withCanonicalSourceImageIds(input, true);
-  await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
   await tx.delete(recipeSourceImages).where(eq(recipeSourceImages.recipeId, id));
   await insertChildren(tx, id, canonicalInput);
+  await refreshDeterministicDietaryAssessmentsForAuthorizedWrite(
+    tx as unknown as typeof db,
+    id,
+    actor.id,
+  );
   // The derived nutrition cache is invalidated **in this transaction** (#1044),
   // right where the ingredient lines — and therefore the foods the recipe
   // resolves to — are rewritten. Committing the delete atomically with the edit
@@ -801,6 +823,11 @@ export async function createRecipe(input: RecipeInput, author: User) {
         .returning({ id: recipes.id, slug: recipes.slug });
       const recipe = row!;
       await insertChildren(tx, recipe.id, canonicalInput);
+      await refreshDeterministicDietaryAssessmentsForAuthorizedWrite(
+        tx as unknown as typeof db,
+        recipe.id,
+        author.id,
+      );
       await syncTags(tx, recipe.id, canonicalInput);
       await journal(tx, recipe.id, author.id, canonicalInput, 'Created');
       await recordEvent(tx, {
@@ -1001,6 +1028,11 @@ export async function forkRecipe(sourceIdOrSlug: string, author: User, forkNote?
 
       const recipe = row!;
       await insertChildren(tx, recipe.id, canonicalInput);
+      await refreshDeterministicDietaryAssessmentsForAuthorizedWrite(
+        tx as unknown as typeof db,
+        recipe.id,
+        author.id,
+      );
       await syncTags(tx, recipe.id, canonicalInput);
       await journal(tx, recipe.id, author.id, canonicalInput, `Adapted from "${source.title}"`);
 

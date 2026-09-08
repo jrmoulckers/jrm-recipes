@@ -105,13 +105,9 @@ export const recipes = pgTable(
     // author made no declaration (not "unsafe").
     dietaryFlags: text().array(),
 
-    // DERIVED dietary tags computed from the recipe's ingredients on every
-    // create/update (issue #273). Holds ONLY the three reliably-detectable
-    // "-free" tags, dairy-free, gluten-free, egg-free, via allergen detection
-    // (see src/lib/dietary-derive.ts). vegan/vegetarian are intentionally NOT
-    // derived here (the allergen KB can't see meat), so they come only from the
-    // author-declared `dietaryFlags` above. Search matches the UNION of the two
-    // columns. NULL/empty means "nothing derivable" (e.g. no ingredient data).
+    // Compatibility projection of current canonical deterministic assessments.
+    // Holds only complete high-confidence dairy-free, gluten-free, and egg-free
+    // results. Search also verifies ruleset freshness and conflict absence.
     dietaryTags: text().array(),
 
     sourceName: varchar({ length: 200 }),

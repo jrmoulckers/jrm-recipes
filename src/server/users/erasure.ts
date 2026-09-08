@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import { and, count, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 
 import { env } from '~/env';
 import { db, isDbConfigured } from '~/server/db';
@@ -9,7 +9,13 @@ import {
   auditLog,
   comments,
   contentReports,
+  customDietaryRestrictionTerms,
+  customDietaryRestrictions,
   deletionRecords,
+  dietaryAssessments,
+  dietaryEvidence,
+  dietaryIngredientCorrections,
+  memberDietaryProfiles,
   notifications,
   ratings,
   reactions,
@@ -293,6 +299,115 @@ export async function eraseUserAccount(
       );
     }
 
+    const profiles = await t.query.memberDietaryProfiles.findMany({
+      where: eq(memberDietaryProfiles.userId, userId),
+      columns: { id: true },
+    });
+    const profileIds = profiles.map((profile) => profile.id);
+    const restrictions =
+      profileIds.length === 0
+        ? []
+        : await t.query.customDietaryRestrictions.findMany({
+            where: inArray(customDietaryRestrictions.profileId, profileIds),
+            columns: { id: true },
+          });
+    const restrictionIds = restrictions.map((restriction) => restriction.id);
+    const ownedAssessments = await t.query.dietaryAssessments.findMany({
+      where:
+        profileIds.length === 0
+          ? eq(dietaryAssessments.ownerUserId, userId)
+          : or(
+              eq(dietaryAssessments.ownerUserId, userId),
+              inArray(dietaryAssessments.profileId, profileIds),
+            ),
+      columns: { id: true, scope: true },
+    });
+    const ownedAssessmentIds = ownedAssessments.map((assessment) => assessment.id);
+    const ownedEvidence =
+      ownedAssessmentIds.length === 0
+        ? []
+        : await t.query.dietaryEvidence.findMany({
+            where: inArray(dietaryEvidence.assessmentId, ownedAssessmentIds),
+            columns: { id: true },
+          });
+    const restrictionTerms =
+      restrictionIds.length === 0
+        ? []
+        : await t.query.customDietaryRestrictionTerms.findMany({
+            where: inArray(customDietaryRestrictionTerms.restrictionId, restrictionIds),
+            columns: { id: true },
+          });
+    const restrictionCorrections =
+      restrictionIds.length === 0
+        ? []
+        : await t.query.dietaryIngredientCorrections.findMany({
+            where: inArray(dietaryIngredientCorrections.customRestrictionId, restrictionIds),
+            columns: { id: true },
+          });
+    const authoredCustomCorrections = await t.query.dietaryIngredientCorrections.findMany({
+      where: and(
+        eq(dietaryIngredientCorrections.actorId, userId),
+        isNotNull(dietaryIngredientCorrections.customRestrictionId),
+      ),
+      columns: { id: true },
+    });
+
+    counts.dietary_evidence = ownedEvidence.length;
+    counts.dietary_assessments_personal = ownedAssessments.filter(
+      (assessment) => assessment.scope === 'personal',
+    ).length;
+    counts.dietary_assessments_profile = ownedAssessments.filter(
+      (assessment) => assessment.scope === 'profile',
+    ).length;
+    counts.custom_dietary_restrictions = restrictions.length;
+    counts.custom_dietary_restriction_terms = restrictionTerms.length;
+    counts.dietary_ingredient_corrections = new Set([
+      ...restrictionCorrections.map((correction) => correction.id),
+      ...authoredCustomCorrections.map((correction) => correction.id),
+    ]).size;
+
+    counts.dietary_assessments_personal_deleted = await deleteCounted(t, () =>
+      t
+        .delete(dietaryAssessments)
+        .where(eq(dietaryAssessments.ownerUserId, userId))
+        .returning({ id: dietaryAssessments.id }),
+    );
+    counts.dietary_ingredient_corrections_personal_deleted = await deleteCounted(t, () =>
+      t
+        .delete(dietaryIngredientCorrections)
+        .where(
+          and(
+            eq(dietaryIngredientCorrections.actorId, userId),
+            isNotNull(dietaryIngredientCorrections.customRestrictionId),
+          ),
+        )
+        .returning({ id: dietaryIngredientCorrections.id }),
+    );
+    counts.member_dietary_profiles = await deleteCounted(t, () =>
+      t
+        .delete(memberDietaryProfiles)
+        .where(eq(memberDietaryProfiles.userId, userId))
+        .returning({ id: memberDietaryProfiles.id }),
+    );
+    const clearedAssessmentAttribution = await t
+      .update(dietaryAssessments)
+      .set({ createdById: null })
+      .where(eq(dietaryAssessments.createdById, userId))
+      .returning({ id: dietaryAssessments.id });
+    counts.dietary_assessment_attribution_cleared = clearedAssessmentAttribution.length;
+    const clearedCorrectionAttribution = await t
+      .update(dietaryIngredientCorrections)
+      .set({ actorId: null })
+      .where(
+        and(
+          eq(dietaryIngredientCorrections.actorId, userId),
+          isNotNull(dietaryIngredientCorrections.ruleId),
+          isNull(dietaryIngredientCorrections.customRestrictionId),
+        ),
+      )
+      .returning({ id: dietaryIngredientCorrections.id });
+    counts.dietary_correction_attribution_cleared = clearedCorrectionAttribution.length;
+
     counts.media_assets = await deleteUserMediaRows(userId, t);
 
     if (retention.ownerlessToDeleteIds.length > 0) {
@@ -431,6 +546,35 @@ export async function assertUserErased(userId: string): Promise<void> {
     .limit(1);
   if (orphanRecipe) {
     throw new Error(`ERASURE_INCOMPLETE: recipes still authored by ${userId}`);
+  }
+
+  const [personalAssessment] = await db
+    .select({ id: dietaryAssessments.id })
+    .from(dietaryAssessments)
+    .where(
+      or(eq(dietaryAssessments.ownerUserId, userId), eq(dietaryAssessments.createdById, userId)),
+    )
+    .limit(1);
+  if (personalAssessment) {
+    throw new Error(`ERASURE_INCOMPLETE: dietary assessments still name ${userId}`);
+  }
+
+  const [profile] = await db
+    .select({ id: memberDietaryProfiles.id })
+    .from(memberDietaryProfiles)
+    .where(eq(memberDietaryProfiles.userId, userId))
+    .limit(1);
+  if (profile) {
+    throw new Error(`ERASURE_INCOMPLETE: dietary profiles still name ${userId}`);
+  }
+
+  const [correction] = await db
+    .select({ id: dietaryIngredientCorrections.id })
+    .from(dietaryIngredientCorrections)
+    .where(eq(dietaryIngredientCorrections.actorId, userId))
+    .limit(1);
+  if (correction) {
+    throw new Error(`ERASURE_INCOMPLETE: dietary corrections still name ${userId}`);
   }
 }
 

@@ -18,6 +18,10 @@ vi.mock('~/server/db', () => ({
   isDbConfigured: () => true,
 }));
 
+vi.mock('~/server/dietary/assessments', () => ({
+  refreshDeterministicDietaryAssessmentsForAuthorizedWrite: vi.fn(),
+}));
+
 import {
   recipes,
   recipeSlugAliases,
@@ -551,6 +555,7 @@ function createTx(opts: { member: boolean }) {
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
     },
     // Slug allocation serializes on the author's namespace (issue #668).
     execute: vi.fn().mockResolvedValue(undefined),
@@ -730,6 +735,7 @@ function updateTx(opts: {
           .mockResolvedValueOnce(opts.creator ? { id: 'rc_1' } : undefined)
           .mockResolvedValue(undefined),
       },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
       recipeSourceImages: {
         findMany: vi.fn().mockResolvedValue((opts.sourceImageIds ?? []).map((id) => ({ id }))),
       },
@@ -873,6 +879,7 @@ function versionRaceTx() {
       },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeIngredients: { findMany: vi.fn().mockResolvedValue([]) },
     },
     update: vi.fn(() => ({
       set: () => ({ where: vi.fn(() => Promise.resolve(undefined)) }),
