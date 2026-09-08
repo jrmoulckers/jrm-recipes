@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
+import { cleanupAccountBoundClientData } from '~/lib/account-bound-cleanup';
 import { deleteAccountAction } from '~/server/users/actions';
 import { DELETION_CONFIRM_PHRASE } from '~/server/users/deletion-notice';
 import type { DeletionPreview } from '~/server/users/deletion-preview';
@@ -47,6 +48,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
         toast.error(result.error);
         return;
       }
+      await cleanupAccountBoundClientData();
       toast.success(t('toasts.deleted'));
       router.replace('/');
       router.refresh();

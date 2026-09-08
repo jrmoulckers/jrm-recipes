@@ -1,16 +1,25 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { IntlWrapper } from '~/test/intl';
 import { DeleteAccountPanel } from './delete-account-panel';
 import type { DeletionPreview } from '~/server/users/deletion-preview';
+
+const { cleanupAccountBoundClientData, deleteAccountAction } = vi.hoisted(() => ({
+  cleanupAccountBoundClientData: vi.fn(),
+  deleteAccountAction: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock('~/server/users/actions', () => ({
-  deleteAccountAction: vi.fn(),
+  deleteAccountAction,
+}));
+
+vi.mock('~/lib/account-bound-cleanup', () => ({
+  cleanupAccountBoundClientData,
 }));
 
 const BASE: DeletionPreview = {
@@ -36,6 +45,11 @@ function renderPanel(preview: Partial<DeletionPreview>) {
     </IntlWrapper>,
   );
 }
+
+beforeEach(() => {
+  deleteAccountAction.mockReset();
+  cleanupAccountBoundClientData.mockReset();
+});
 
 afterEach(cleanup);
 
@@ -86,5 +100,33 @@ describe('DeleteAccountPanel shared-content disclosure', () => {
       screen.getByRole('button', { name: /delete account and personal profile/i }),
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: /permanently delete everything/i })).toBeNull();
+  });
+
+  it('purges account-bound browser data after deletion completes', async () => {
+    deleteAccountAction.mockResolvedValue({ ok: true });
+    cleanupAccountBoundClientData.mockResolvedValue(undefined);
+    renderPanel({});
+    openConfirmStep();
+
+    fireEvent.change(screen.getByLabelText(/type delete to confirm/i), {
+      target: { value: 'DELETE' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^delete account and personal profile$/i }));
+
+    await waitFor(() => expect(cleanupAccountBoundClientData).toHaveBeenCalledOnce());
+  });
+
+  it('keeps account-bound browser data when deletion fails', async () => {
+    deleteAccountAction.mockResolvedValue({ ok: false, error: 'Try again.' });
+    renderPanel({});
+    openConfirmStep();
+
+    fireEvent.change(screen.getByLabelText(/type delete to confirm/i), {
+      target: { value: 'DELETE' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^delete account and personal profile$/i }));
+
+    await waitFor(() => expect(deleteAccountAction).toHaveBeenCalledOnce());
+    expect(cleanupAccountBoundClientData).not.toHaveBeenCalled();
   });
 });
