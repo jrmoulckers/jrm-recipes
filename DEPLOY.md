@@ -338,11 +338,11 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
   convention and the **rollback/repair runbook** in
   [`docs/migrations.md`](docs/migrations.md).
 
-> **Gate the site on green CI (optional but recommended).** Vercel deploys `main`
-> independently of GitHub Actions, so a build that passes Vercel but fails CI can
-> still ship. To require checks first, add a branch-protection rule on `main`
-> (Settings → Branches) requiring the **CI** status checks. Then nothing reaches
-> the site until lint, tests, and the build pass.
+> **`main` is gated on green CI.** The active `Protect main` repository ruleset
+> requires every change to arrive through a pull request with the **Quality
+> gate** check passing against the latest `main`. It also blocks branch deletion
+> and non-fast-forward updates. Vercel therefore deploys only commits that passed
+> the complete CI gate.
 
 ## Troubleshooting
 

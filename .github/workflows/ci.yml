@@ -639,10 +639,8 @@ jobs:
 
   # One check that summarises every gate above (#672). Two reasons it exists:
   #
-  # 1. Branch protection can require a single, stable check name instead of a
-  #    list that drifts every time a job is added or renamed. `main` is currently
-  #    unprotected, so this is inert until a human enables it — see the "Needs
-  #    Human Action" note on the PR that added this job.
+  # 1. The active `Protect main` ruleset requires this single, stable check name
+  #    instead of a list that drifts every time a job is added or renamed.
   # 2. A skipped job reports neutral, which GitHub counts as success. This asserts
   #    on the actual result strings, so a job that never ran cannot pass as green.
   #
