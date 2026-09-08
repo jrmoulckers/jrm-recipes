@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 const canonicalWorkflowSha = 'f06bc9f51d347d2681d551f944fbbdf2e9514b53';
 const postgresDigest = 'sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b';
 
-const [ci, release, keepWarm, deployWatch, rawDeploy, rawLighthouse, rawPackageBuild] =
+const [ci, release, keepWarm, deployWatch, prConflicts, rawDeploy, rawLighthouse, rawPackageBuild] =
   await Promise.all([
     readFile(resolve('.github/workflows/ci.yml'), 'utf8'),
     readFile(resolve('.github/workflows/release.yml'), 'utf8'),
     readFile(resolve('.github/workflows/keep-warm.yml'), 'utf8'),
     readFile(resolve('.github/workflows/deploy-watch.yml'), 'utf8'),
+    readFile(resolve('.github/workflows/pr-conflicts.yml'), 'utf8'),
     readFile(resolve('DEPLOY.md'), 'utf8'),
     readFile(resolve('lighthouserc.cjs'), 'utf8'),
     readFile(resolve('scripts/package-ci-build.mjs'), 'utf8'),
@@ -181,7 +182,7 @@ describe('workflow integrity policy', () => {
   });
 
   it('bounds every local runner job', () => {
-    const localJobs = [ci, release, keepWarm].flatMap((workflow) =>
+    const localJobs = [ci, release, keepWarm, prConflicts].flatMap((workflow) =>
       jobBlocks(workflow).filter(({ body }) => body.includes('runs-on:')),
     );
 
@@ -189,6 +190,20 @@ describe('workflow integrity policy', () => {
     for (const { name, body } of localJobs) {
       expect(body, `${name} needs timeout-minutes`).toMatch(/^\s{4}timeout-minutes: \d+$/m);
     }
+  });
+
+  it('reports conflicts on a serialized non-gating schedule with least privilege', () => {
+    expect(prConflicts).toContain("cron: '*/15 * * * *'");
+    expect(prConflicts).toMatch(/^\s{2}workflow_dispatch:\s*$/m);
+    expect(prConflicts).toMatch(
+      /^permissions:\s*\n\s{2}contents: read\s*\n\s{2}pull-requests: write$/m,
+    );
+    expect(prConflicts).toContain('group: pull-request-conflict-report');
+    expect(prConflicts).toContain('cancel-in-progress: false');
+    expect(prConflicts).toContain('run: node scripts/report-pr-conflicts.mjs');
+    expect(prConflicts).not.toContain('issues: write');
+    expect(prConflicts).not.toContain('checks: write');
+    expect(prConflicts).not.toContain('statuses: write');
   });
 
   it('pins each ephemeral PostgreSQL service to the verified digest', () => {
