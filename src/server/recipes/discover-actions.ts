@@ -1,6 +1,7 @@
 'use server';
 
 import { getCurrentUser } from '~/server/auth';
+import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
 import { parseRatingSort, type RatingSort } from '~/lib/ratings';
 import { type Paginated } from './pagination';
 import { listLibraryRecipeIds, listPublicRecipes, type PublicRecipeListItem } from './queries';
@@ -51,5 +52,8 @@ export async function loadMorePublicRecipesAction(
     start = result.nextOffset;
   }
 
-  return { items, nextOffset };
+  return {
+    items: await attachCardDietaryAssessmentViews(items, user?.id ?? null),
+    nextOffset,
+  };
 }

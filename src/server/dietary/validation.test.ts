@@ -9,6 +9,7 @@ describe('memberProfileInput', () => {
       name: 'Theo',
       allergens: [],
       diets: [],
+      customRestrictions: [],
     });
     expect(parsed.calorieGoal).toBeUndefined();
     expect(parsed.groupId).toBeUndefined();
@@ -46,6 +47,44 @@ describe('memberProfileInput', () => {
 
   it('treats a blank group as unscoped', () => {
     expect(memberProfileInput.parse({ name: 'Ana', groupId: '   ' }).groupId).toBeUndefined();
+  });
+
+  it('normalizes exact custom restrictions and preserves their severity', () => {
+    const parsed = memberProfileInput.parse({
+      name: 'Ana',
+      customRestrictions: [
+        {
+          id: '',
+          name: '  Nightshades  ',
+          severity: 'strict-avoidance',
+          terms: [' Tomato ', 'TOMATO', 'eggplant'],
+        },
+      ],
+    });
+
+    expect(parsed.customRestrictions).toEqual([
+      {
+        id: undefined,
+        name: 'Nightshades',
+        severity: 'strict-avoidance',
+        terms: ['tomato', 'eggplant'],
+      },
+    ]);
+  });
+
+  it('requires an exact term and a supported custom restriction severity', () => {
+    expect(() =>
+      memberProfileInput.parse({
+        name: 'Ana',
+        customRestrictions: [{ name: 'Nightshades', severity: 'strict-avoidance', terms: [] }],
+      }),
+    ).toThrow();
+    expect(() =>
+      memberProfileInput.parse({
+        name: 'Ana',
+        customRestrictions: [{ name: 'Nightshades', severity: 'medical', terms: ['tomato'] }],
+      }),
+    ).toThrow();
   });
 });
 

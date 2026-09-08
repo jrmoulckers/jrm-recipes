@@ -1,85 +1,54 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { AlertTriangle, ShieldCheck } from 'lucide-react';
-
-import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
-import { allergenConflicts } from '~/lib/dietary-match';
 import { useActiveMemberStore } from '~/lib/active-member-store';
-import { formatList } from '~/lib/i18n-format';
-import { Badge } from '~/components/ui/badge';
+import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
+import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
+import { type Allergen } from '~/lib/allergens';
+import { type DietaryTag } from '~/lib/substitutions';
+import { type CustomRestrictionSeverity } from '~/lib/dietary-assessment';
+import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
 
 /** The active-member data a card needs to render its safe-for badge. */
 export type CardDietaryMember = {
   id: string;
   name: string;
   allergens: Allergen[];
+  diets: DietaryTag[];
+  customRestrictions: {
+    id: string;
+    severity: CustomRestrictionSeverity;
+  }[];
 };
 
-const DISCLAIMER = 'Best-effort from ingredient text. Always double-check labels and brands.';
-
-/**
- * At-a-glance "safe for my family" signal on a recipe card (issue #431). When a
- * family member with recorded allergies is active, it cross-references the
- * recipe's detected allergens (rolled up server-side via `summarizeAllergens`)
- * against that member and shows a reassuring check or a caution chip naming the
- * conflict. Renders nothing when no such member is active, so grids stay clean
- * by default. Detection is text-based, so the label carries a best-effort
- * disclaimer.
- */
 export function CardDietaryBadge({
   members,
-  recipeAllergens,
+  assessments,
+  declared,
 }: {
   members: CardDietaryMember[];
-  /**
-   * The recipe's detected allergens (conservative direct+hidden union, rolled
-   * up server-side). `null` means there was no structured ingredient data to
-   * analyze. Distinct from `[]` ("analyzed, none found"). So the reassuring
-   * "safe" badge is withheld rather than claimed off missing data.
-   */
-  recipeAllergens: Allergen[] | null;
+  assessments: DietaryAssessmentView[];
+  declared: DietaryTag[];
 }) {
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const member = members.find((m) => m.id === activeMemberId);
-  const locale = useLocale();
+  const relevantRuleIds = new Set([
+    ...(member?.allergens.map((allergen) => `allergen:${allergen}`) ?? []),
+    ...(member?.diets.flatMap((diet) => dietaryRuleIdsForTag(diet)) ?? []),
+  ]);
+  const relevant = member
+    ? assessments.filter(
+        (assessment) =>
+          assessment.profileId === member.id || relevantRuleIds.has(assessment.ruleId),
+      )
+    : [];
+  if (relevant.length === 0 && declared.length === 0) return null;
 
-  // Only meaningful when the active member actually has allergies to check.
-  // otherwise every card would wear a trivial "safe" chip.
-  if (!member || member.allergens.length === 0) return null;
-
-  // No ingredient data to analyze: never imply "safe" from an absence of
-  // detections. Stay silent (the grid stays clean. No false reassurance).
-  if (recipeAllergens === null) return null;
-
-  const conflicts = allergenConflicts(member.allergens, recipeAllergens);
-
-  if (conflicts.length === 0) {
-    const label = `Looks safe for ${member.name}`;
-    return (
-      <Badge
-        variant="success"
-        className="w-fit gap-1"
-        aria-label={`${label}. ${DISCLAIMER}`}
-        title={DISCLAIMER}
-      >
-        <ShieldCheck className="size-3.5" aria-hidden />
-        {label}
-      </Badge>
-    );
-  }
-
-  const names = conflicts.map((a) => ALLERGEN_LABELS[a].toLowerCase());
-  const label = `Contains ${formatList(names, locale)}`;
   return (
-    <Badge
-      variant="warning"
-      className="w-fit gap-1"
-      aria-label={`Not safe for ${member.name}: ${label}. ${DISCLAIMER}`}
-      title={DISCLAIMER}
-    >
-      <AlertTriangle className="size-3.5" aria-hidden />
-      {label}
-    </Badge>
+    <RecipeDietaryAssessments
+      assessments={relevant}
+      declared={declared.slice(0, 1)}
+      signedIn
+      className="w-fit"
+    />
   );
 }

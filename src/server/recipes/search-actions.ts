@@ -3,6 +3,7 @@
 import { getCurrentUser } from '~/server/auth';
 import { isAllergen } from '~/lib/allergens';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
 import { type SearchParams } from '~/lib/route-params';
 import { type Paginated } from './pagination';
 import { parseRecipeSearch } from './search';
@@ -42,9 +43,10 @@ export async function loadMoreSearchAction(
 
   const members = user ? await listMemberProfiles(user.id) : [];
   const showBadges = members.some((m) => (m.allergens ?? []).some(isAllergen));
-  const items: RecipeSearchResult[] = showBadges
+  const itemsWithAllergens: RecipeSearchResult[] = showBadges
     ? await attachCardAllergens(page.items)
     : page.items;
+  const items = await attachCardDietaryAssessmentViews(itemsWithAllergens, user?.id ?? null);
 
   return { items, nextOffset: page.nextOffset };
 }

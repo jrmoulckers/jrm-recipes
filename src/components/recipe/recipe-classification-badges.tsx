@@ -4,8 +4,10 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '~/lib/utils';
 import { type CanonicalTag, type TagCategory } from '~/lib/tag-taxonomy';
-import { DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import { type DietaryTag } from '~/lib/substitutions';
 import { recipeClassificationHref } from '~/lib/recipe-classifications';
+import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
+import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
 
 type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
   trustedDietary?: boolean;
@@ -28,29 +30,29 @@ function ClassificationIcon({ category }: { category: TagCategory }) {
 export function RecipeClassificationBadges({
   items,
   dietary = [],
+  dietaryAssessments = [],
+  signedIn = false,
+  canReviewDietary = false,
   linked = true,
   limit,
   className,
 }: {
   items: ClassificationItem[];
   dietary?: DietaryTag[];
+  dietaryAssessments?: DietaryAssessmentView[];
+  signedIn?: boolean;
+  canReviewDietary?: boolean;
   linked?: boolean;
   limit?: number;
   className?: string;
 }) {
   const tNames = useTranslations('classificationNames');
-  const declared = dietary.map((slug): ClassificationItem => ({
-    slug,
-    name: DIETARY_TAG_LABELS[slug],
-    category: 'dietary',
-    trustedDietary: true,
-  }));
   const deduped = new Map<string, ClassificationItem>();
-  for (const item of [...items, ...declared]) {
+  for (const item of items) {
     deduped.set(`${item.category}:${item.slug}`, item);
   }
   const visible = [...deduped.values()].slice(0, limit);
-  if (visible.length === 0) return null;
+  if (visible.length === 0 && dietary.length === 0 && dietaryAssessments.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -84,6 +86,12 @@ export function RecipeClassificationBadges({
           </span>
         );
       })}
+      <RecipeDietaryAssessments
+        assessments={dietaryAssessments}
+        declared={dietary}
+        signedIn={signedIn}
+        canReview={canReviewDietary}
+      />
     </div>
   );
 }

@@ -62,6 +62,7 @@ export function IngredientSubstitutions({
   flagged = false,
   presetTags,
   avoidAllergens,
+  currentConflictTags = [],
 }: {
   item: string;
   className?: string;
@@ -75,6 +76,7 @@ export function IngredientSubstitutions({
    * for a member who is also allergic to tree nuts).
    */
   avoidAllergens?: Allergen[];
+  currentConflictTags?: DietaryTag[];
 }) {
   const t = useTranslations('ingredientSubstitutions');
   const presetKey = (presetTags ?? []).join('|');
@@ -161,6 +163,12 @@ export function IngredientSubstitutions({
                 <span className="text-xs leading-relaxed text-muted-foreground">
                   {sub.ratioOrNotes}
                 </span>
+                <SubstitutionDietaryImpact
+                  currentConflictTags={currentConflictTags}
+                  substituteTags={sub.dietaryTags ?? []}
+                  substitute={sub.substitute}
+                  avoidAllergens={avoidAllergens ?? []}
+                />
                 {sub.dietaryTags && sub.dietaryTags.length > 0 && (
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {sub.dietaryTags.map((tag) => (
@@ -185,4 +193,38 @@ export function IngredientSubstitutions({
       </PopoverContent>
     </Popover>
   );
+}
+
+function SubstitutionDietaryImpact({
+  currentConflictTags,
+  substituteTags,
+  substitute,
+  avoidAllergens,
+}: {
+  currentConflictTags: DietaryTag[];
+  substituteTags: DietaryTag[];
+  substitute: string;
+  avoidAllergens: Allergen[];
+}) {
+  const t = useTranslations('ingredientSubstitutions.impact');
+  const introducedAllergens = safeSubstitutions(
+    [{ substitute, ratioOrNotes: '', dietaryTags: substituteTags }],
+    avoidAllergens,
+  ).length
+    ? []
+    : avoidAllergens;
+  const removed = currentConflictTags.filter((tag) => substituteTags.includes(tag));
+  const message =
+    introducedAllergens.length > 0
+      ? t('addsConflict')
+      : removed.length > 0
+        ? t('removes', { need: removed[0]! })
+        : currentConflictTags.length > 0
+          ? t('review')
+          : null;
+  return message ? (
+    <p className="text-xs font-medium text-foreground" role="status">
+      {message}
+    </p>
+  ) : null;
 }

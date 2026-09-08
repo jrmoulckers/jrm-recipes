@@ -14,5 +14,11 @@ export async function listMemberProfiles(userId: string) {
   return db.query.memberDietaryProfiles.findMany({
     where: eq(memberDietaryProfiles.userId, userId),
     orderBy: [asc(memberDietaryProfiles.createdAt), asc(memberDietaryProfiles.id)],
+    with: {
+      customRestrictions: {
+        with: { terms: true },
+        orderBy: (restriction, { asc }) => [asc(restriction.createdAt), asc(restriction.id)],
+      },
+    },
   });
 }

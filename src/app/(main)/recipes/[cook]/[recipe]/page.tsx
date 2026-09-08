@@ -46,6 +46,7 @@ import { isAllergen, type Allergen } from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { listMemberProfiles } from '~/server/dietary/queries';
+import { listDietaryAssessmentViews } from '~/server/dietary/presentation';
 import { getNutritionTargetOn } from '~/server/dietary/targets';
 import { getUnitSettings } from '~/server/units/queries';
 import { toUnitPrefs, toCustomUnitDefs } from '~/lib/unit-prefs';
@@ -324,6 +325,7 @@ async function RecipePage({
     unitSettings,
     nutritionView,
     ingredientAllergenMap,
+    dietaryAssessmentViews,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -339,6 +341,7 @@ async function RecipePage({
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
+    dbEnabled ? listDietaryAssessmentViews(recipe.id, user?.id ?? null) : Promise.resolve([]),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -459,6 +462,9 @@ async function RecipePage({
             <RecipeClassificationBadges
               items={[...classifications.meal, ...classifications.cuisine]}
               dietary={declaredDietary}
+              dietaryAssessments={dietaryAssessmentViews}
+              signedIn={Boolean(user)}
+              canReviewDietary={canEdit}
             />
             {recipe.group && (
               <Link
@@ -699,6 +705,8 @@ async function RecipePage({
                     members={calorieMembers}
                     unitPrefs={viewerUnitPrefs}
                     customUnits={viewerCustomUnits}
+                    dietaryAssessments={dietaryAssessmentViews}
+                    canReviewDietary={canEdit}
                     ingredientSuggestions={{
                       recipeId: recipe.id,
                       recipeSlug: recipe.slug,
