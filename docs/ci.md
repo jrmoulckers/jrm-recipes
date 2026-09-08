@@ -310,10 +310,10 @@ remain important:
 
 - Read the mergeability, not just the check list:
   `gh pr view <n> --json mergeable,mergeStateStatus`.
-- Required status checks in branch protection. A required check that never runs
-  blocks the merge instead of appearing green. `main` is currently unprotected;
-  the `Quality gate` job exists so that a single, stable check name can be
-  required once someone enables it.
+- The active `Protect main` repository ruleset requires the `Quality gate`
+  status check. A required check that never runs blocks the merge instead of
+  appearing green, and strict enforcement requires the checked head to include
+  the latest `main`.
 
 `gh pr update-branch` merges the base in and produces a conflicted merge when the
 conflict is real. Rebase instead.
