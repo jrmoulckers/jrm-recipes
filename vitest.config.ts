@@ -20,9 +20,9 @@ export default defineConfig({
     // Library's async-query budget and must stay strictly below this, so the
     // relationship is only checkable if both numbers are written down.
     testTimeout: 5000,
-    // Vitest 4's pool rewrite can saturate high-core hosts enough to make
-    // interaction tests exceed their existing timeout under full-suite load.
-    maxWorkers: '25%',
+    // Keep enough headroom for jsdom workers to answer Vitest 5's startup
+    // handshake on high-core hosts without oversubscribing smaller CI runners.
+    maxWorkers: '12.5%',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     exclude: ['node_modules/**', '.next/**', 'tests/e2e/**'],
