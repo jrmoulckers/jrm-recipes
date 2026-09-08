@@ -22,7 +22,9 @@ stated bound on reuse before measurement is approved.
   `$pageview`, `$feature_flag_called`, `$current_url`,
   `$feature_flag`, `$feature_flag_response`.
 - No PII in event properties: no emails, names, handles, phone numbers, or raw
-  person identifiers. Recipe and group ids are opaque cuids and are allowed.
+  person identifiers. Recipe and group ids are opaque cuids and are allowed in
+  existing product events, but the dietary contract below prohibits every
+  recipe, profile, restriction, rule, ingredient, and fingerprint identifier.
 - User identity is attached only through server-side identify work (#321), using
   non-PII traits from `src/lib/analytics/identity.ts`: `group_count`,
   `has_recipes`, `is_dev`, `created_at`, and `household_active`.
@@ -37,10 +39,10 @@ stated bound on reuse before measurement is approved.
 
 Browser capture flows through `track()` in `src/lib/analytics/index.ts`, and
 server capture flows through `captureServer()` in `src/lib/analytics/server.ts`.
-Both paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
-The PostHog browser adapter also runs the scrubber in `before_send`, the final
-boundary for every outbound browser event, including events generated inside
-the SDK.
+Both paths scrub ordinary properties with `src/lib/analytics/scrub.ts` and
+strictly validate dietary properties before dispatch. The PostHog browser
+adapter also runs both protections in `before_send`, the final boundary for
+every outbound browser event, including events generated inside the SDK.
 
 Ordinary properties drop identifying keys and redact email- or phone-like
 values. PostHog's reserved session, device, and feature-flag properties pass
@@ -63,6 +65,20 @@ allows capture unless denied. Server capture uses the server consent gate called
 from `src/lib/analytics/server.ts`. If analytics is not configured,
 `src/lib/analytics/config.ts` and `src/lib/analytics/backend.ts` make all capture
 a safe no-op.
+
+Dietary operational events receive an additional runtime allowlist in
+`src/lib/analytics/dietary-events.ts`. Both capture paths reject the whole event
+when its name, keys, or values do not exactly match that allowlist. The PostHog
+`before_send` hook repeats this check as a final browser boundary and rebuilds
+dietary events from the validated properties plus only PostHog's required
+`token` and `distinct_id`. It removes nested and top-level person mutations,
+group associations, session/device fields, and arbitrary reserved properties.
+This prevents casts, untyped callers, or future adapter changes from sending
+ingredient or recipe text and identifiers; profile, restriction, or rule
+identifiers and names; group or household identifiers; subject, manager, or
+relationship fields; profile-to-household links; severity, verdict, or conflict
+state; evidence or corrections; fingerprints; model input/output; or raw errors
+and exception text. Failure events use only fixed error codes.
 
 For metric context, see `docs/analytics/activation.md` for activation and
 `docs/analytics/retention.md` for returning-cook retention.
@@ -149,6 +165,29 @@ Current call sites are in the paths named in the "When it fires" column.
 | ----------------------- | ------------------ | ------------------------------------------------------------------------- |
 | `digest_opt_in_changed` | `optedIn: boolean` | After weekly digest preference changes in `src/server/digest/actions.ts`. |
 
+### Dietary operational analytics
+
+These events establish the privacy-safe contract for the future on-device
+dietary runtime. They have no feature call sites until that runtime ships.
+Smart-analysis enablement remains separate from analytics consent: these events
+still use the ordinary consent and GPC/DNT gates.
+
+| Event                                 | Properties                                                                                                         | Purpose                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `dietary_analysis_enablement_changed` | `enabled: boolean`                                                                                                 | Coarse enable/disable adoption.                            |
+| `dietary_model_download_finished`     | `outcome: "succeeded" \| "failed"`; fixed `errorCode`                                                              | Model setup reliability without URLs or exception details. |
+| `dietary_device_support_checked`      | `support: "webgpu" \| "wasm" \| "deterministic_only"`                                                              | Capability-tier coverage without device fingerprints.      |
+| `dietary_analysis_finished`           | `outcome: "succeeded" \| "failed"`; `trigger: "recipe_open" \| "recipe_save" \| "library_scan"`; fixed `errorCode` | Operational reliability without assessment content.        |
+
+Successful result events require `errorCode: "none"`. Failed download events
+accept only `network_unavailable`, `insufficient_storage`,
+`integrity_check_failed`, `cache_failed`, `runtime_initialization_failed`,
+`interrupted`, or `unknown`. Failed analysis events accept only
+`device_unsupported`, `runtime_initialization_failed`, `worker_failed`,
+`invalid_output`, `stale_input`, `cache_failed`, or `unknown`. Callers must map
+runtime failures to these codes locally and must never attach the original
+error, message, stack, model output, or dietary payload.
+
 ### Experimentation
 
 | Event                  | Properties                                                           | When it fires                                                                                                                                                                 |
@@ -158,21 +197,25 @@ Current call sites are in the paths named in the "When it fires" column.
 
 ## Type aliases used by event properties
 
-| Type               | Values                                            |
-| ------------------ | ------------------------------------------------- |
-| `RecipeVisibility` | `"private"`, `"group"`, `"unlisted"`, `"public"`  |
-| `RecipeSource`     | `"manual"`, `"import"`                            |
-| `CookUnitSystem`   | `"original"`, `"us"`, `"metric"`, `"grams"`       |
-| `ShareMethod`      | `"native"`, `"file"`, `"copy_link"`, `"keepsake"` |
-| `ReelExportKind`   | `"image"`, `"video"`                              |
-| `ReelExportMethod` | `"download"`, `"share"`                           |
-| `InviteRole`       | `"admin"`, `"member"`, `"kid"`                    |
-| `WaitlistSource`   | `"landing"`, `"hero"`, `"closing"`                |
-| `GroupSizeBucket`  | `"1"`, `"2-5"`, `"6-10"`, `"11+"`                 |
+| Type                     | Values                                             |
+| ------------------------ | -------------------------------------------------- |
+| `RecipeVisibility`       | `"private"`, `"group"`, `"unlisted"`, `"public"`   |
+| `RecipeSource`           | `"manual"`, `"import"`                             |
+| `CookUnitSystem`         | `"original"`, `"us"`, `"metric"`, `"grams"`        |
+| `ShareMethod`            | `"native"`, `"file"`, `"copy_link"`, `"keepsake"`  |
+| `ReelExportKind`         | `"image"`, `"video"`                               |
+| `ReelExportMethod`       | `"download"`, `"share"`                            |
+| `InviteRole`             | `"admin"`, `"member"`, `"kid"`                     |
+| `WaitlistSource`         | `"landing"`, `"hero"`, `"closing"`                 |
+| `GroupSizeBucket`        | `"1"`, `"2-5"`, `"6-10"`, `"11+"`                  |
+| `DietaryDeviceSupport`   | `"webgpu"`, `"wasm"`, `"deterministic_only"`       |
+| `DietaryAnalysisTrigger` | `"recipe_open"`, `"recipe_save"`, `"library_scan"` |
 
 ## Adding a new event
 
 1. Add a new key to `EventProperties` in `src/lib/analytics/events.ts`.
+   Dietary events must instead extend `DietaryEventProperties` and its exhaustive
+   runtime validator map in `src/lib/analytics/dietary-events.ts`.
 2. Define the property shape with safe, low-cardinality values. Use
    `Record<string, never>` when the event has no properties.
 3. Emit it with `track("event_name", { ... })` from browser code or

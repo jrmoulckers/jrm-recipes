@@ -10,6 +10,7 @@ import 'server-only';
  * pass an explicit, non-PII distinct id (the internal user id. See #321).
  */
 import { analyticsHost, analyticsKey, isAnalyticsConfigured } from './config';
+import { sanitizeDietaryEventProperties } from './dietary-events';
 import { type AnalyticsEventName, type EventProperties } from './events';
 import { scrubProperties } from './scrub';
 import { serverCaptureAllowed } from './server-consent';
@@ -51,10 +52,14 @@ export async function captureServer<K extends AnalyticsEventName>(
 ): Promise<void> {
   if (!isAnalyticsConfigured()) return;
   if (!(await serverCaptureAllowed())) return;
+
+  const dietaryProperties = sanitizeDietaryEventProperties(name, properties);
+  if (dietaryProperties === null) return;
+
   await post('/capture/', {
     event: name,
     distinct_id: distinctId,
-    properties: scrubProperties(properties) ?? {},
+    properties: dietaryProperties ?? scrubProperties(properties) ?? {},
     timestamp: new Date().toISOString(),
   });
 }

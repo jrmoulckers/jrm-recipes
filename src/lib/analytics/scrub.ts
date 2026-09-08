@@ -10,6 +10,7 @@
 
 import { type CaptureResult } from 'posthog-js';
 
+import { sanitizeDietaryEventProperties } from './dietary-events';
 import { normalizePathname } from './pageview';
 
 /** Substrings that mark a property key as identifying (matched case-insensitively). */
@@ -45,6 +46,7 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:T[\d:.+-]+Z?)?$/;
 
 const REDACTED = '[redacted]';
 const RELATIVE_URL_BASE = 'https://relative.invalid';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const CURRENT_URL_PROPERTIES = new Set([
   '$current_url',
@@ -257,6 +259,60 @@ export function scrubPostHogProperties(
 /** Scrub every property bag on an outbound PostHog capture result. */
 export function scrubPostHogCapture(capture: CaptureResult | null): CaptureResult | null {
   if (!capture) return null;
+
+  const event = capture.event;
+  const captureProperties = capture.properties;
+  const propertySnapshot = Object.fromEntries(Object.entries(captureProperties));
+  const dietaryProperties = sanitizeDietaryEventProperties(
+    event,
+    Object.fromEntries(
+      Object.entries(propertySnapshot).filter(
+        ([key]) => key !== 'token' && key !== 'distinct_id' && !key.startsWith('$'),
+      ),
+    ),
+  );
+  if (dietaryProperties === null) return null;
+  if (dietaryProperties) {
+    if (
+      !Object.prototype.hasOwnProperty.call(capture, 'event') ||
+      !Object.prototype.hasOwnProperty.call(capture, 'uuid') ||
+      !Object.prototype.hasOwnProperty.call(capture, 'properties')
+    ) {
+      return null;
+    }
+
+    const uuid = capture.uuid;
+    const token = propertySnapshot.token;
+    const distinctId = propertySnapshot.distinct_id;
+    if (
+      typeof uuid !== 'string' ||
+      !UUID_RE.test(uuid) ||
+      typeof token !== 'string' ||
+      typeof distinctId !== 'string'
+    ) {
+      return null;
+    }
+
+    let timestamp: Date | undefined;
+    if (Object.prototype.hasOwnProperty.call(capture, 'timestamp')) {
+      const captureTimestamp = capture.timestamp;
+      if (!(captureTimestamp instanceof Date) || Number.isNaN(captureTimestamp.getTime())) {
+        return null;
+      }
+      timestamp = new Date(captureTimestamp.getTime());
+    }
+
+    return {
+      uuid,
+      event,
+      properties: {
+        token,
+        distinct_id: distinctId,
+        ...dietaryProperties,
+      },
+      ...(timestamp ? { timestamp } : {}),
+    };
+  }
 
   return {
     ...capture,
