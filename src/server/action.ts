@@ -1,11 +1,12 @@
 import 'server-only';
 
-import type { TypeOf, ZodTypeAny } from 'zod';
+import type { output, ZodTypeAny } from 'zod';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import type { User } from '~/server/db/schema';
 import { type ActionResult, fail, fromZodError } from '~/server/action-result';
+import type { SchemaInput } from '~/lib/zod-types';
 
 /**
  * Composable server-action wrapper (#169).
@@ -47,22 +48,20 @@ type ActionHandler<In, T, Ctx extends unknown[]> = (
  */
 export function authedAction<S extends ZodTypeAny, T, Ctx extends unknown[] = []>(config: {
   input: S;
-  handler: ActionHandler<TypeOf<S>, T, Ctx>;
+  handler: ActionHandler<output<S>, T, Ctx>;
   /** Override the default DB-guard copy for this action. */
   noDbMessage?: string;
-}): (...args: [...Ctx, TypeOf<S>]) => Promise<ActionResult<T>> {
+}): (...args: [...Ctx, SchemaInput<S>]) => Promise<ActionResult<T>> {
   const { input, handler, noDbMessage = NEEDS_DATABASE } = config;
-  return async (...args: [...Ctx, TypeOf<S>]): Promise<ActionResult<T>> => {
+  return async (...args: [...Ctx, SchemaInput<S>]): Promise<ActionResult<T>> => {
     if (!isDbConfigured()) return fail(noDbMessage);
     // The raw payload is always the final argument. Anything before it is
     // context (e.g. a leading record id) forwarded to the handler.
-    const raw = args[args.length - 1] as TypeOf<S>;
+    const raw = args[args.length - 1] as SchemaInput<S>;
     const ctx = args.slice(0, -1) as Ctx;
     const parsed = input.safeParse(raw);
     if (!parsed.success) return fromZodError(parsed.error);
     const user = await requireUser();
-    // `safeParse` on the generic `ZodTypeAny` widens `data` to `any`. It is the
-    // schema's own output, so narrow it back to the handler's input type.
-    return handler(parsed.data as TypeOf<S>, user, ...ctx);
+    return handler(parsed.data, user, ...ctx);
   };
 }

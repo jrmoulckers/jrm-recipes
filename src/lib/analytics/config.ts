@@ -1,4 +1,4 @@
-import { env } from '~/env';
+import { analyticsRequireConsent, posthogHost, posthogKey } from '~/client-env';
 
 /**
  * Analytics configuration. The single place that reads the (optional) product
@@ -25,13 +25,12 @@ export const INGEST_PATH = '/ingest';
 
 /** The public project key, or undefined when analytics is unconfigured. */
 export function analyticsKey(): string | undefined {
-  // `emptyStringAsUndefined` in env.js already maps "" -> undefined.
-  return env.NEXT_PUBLIC_POSTHOG_KEY;
+  return posthogKey;
 }
 
 /** The configured ingestion host (used server-side and for the client proxy). */
 export function analyticsHost(): string {
-  return env.NEXT_PUBLIC_POSTHOG_HOST ?? DEFAULT_POSTHOG_HOST;
+  return posthogHost ?? DEFAULT_POSTHOG_HOST;
 }
 
 /** True once a project key is present. Gates all real capture. */
@@ -45,5 +44,5 @@ export function isAnalyticsConfigured(): boolean {
  * honors DNT/GPC and an explicit opt-out. See `~/lib/analytics/consent`.
  */
 export function analyticsRequiresConsent(): boolean {
-  return env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT === '1';
+  return analyticsRequireConsent === '1';
 }

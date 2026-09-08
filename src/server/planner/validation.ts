@@ -1,24 +1,18 @@
 import { isValid, parse } from 'date-fns';
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+import { MEAL_SLOTS } from '~/lib/meal-slots';
+
 /**
  * Validation contract for the weekly meal planner. Shared by the client picker
  * and the server actions so the shape is guaranteed end to end. Depends only on
  * zod + date-fns, so it is safe to import from client components.
  */
 
-/** Meal slots in display order. Mirrors the `meal_slot` pg enum. */
-export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
-export type MealSlotValue = (typeof MEAL_SLOTS)[number];
+export { MEAL_SLOTS, MEAL_SLOT_LABELS, type MealSlotValue } from '~/lib/meal-slots';
 
 export const mealSlotSchema = z.enum(MEAL_SLOTS);
-
-export const MEAL_SLOT_LABELS: Record<MealSlotValue, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  snack: 'Snack',
-};
 
 const idInput = z.string().trim().min(1).max(24);
 
@@ -120,9 +114,9 @@ export const mealWithLeftoversInput = z
     });
   });
 
-export type AddEntryInput = z.infer<typeof addEntryInput>;
-export type MoveEntryInput = z.infer<typeof moveEntryInput>;
-export type RemoveEntryInput = z.infer<typeof removeEntryInput>;
-export type CopyWeekInput = z.infer<typeof copyWeekInput>;
-export type LeftoverAllocationInput = z.infer<typeof leftoverAllocationInput>;
-export type MealWithLeftoversInput = z.infer<typeof mealWithLeftoversInput>;
+export type AddEntryInput = ParsedInput<typeof addEntryInput>;
+export type MoveEntryInput = ParsedInput<typeof moveEntryInput>;
+export type RemoveEntryInput = ParsedInput<typeof removeEntryInput>;
+export type CopyWeekInput = ParsedInput<typeof copyWeekInput>;
+export type LeftoverAllocationInput = ParsedInput<typeof leftoverAllocationInput>;
+export type MealWithLeftoversInput = ParsedInput<typeof mealWithLeftoversInput>;

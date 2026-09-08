@@ -66,10 +66,12 @@ export function fromZodError(
   // Zod's flattened `fieldErrors` types its values as `string[] | undefined`
   // (a key may be absent). Copy only the populated entries so the result is a
   // clean `Record<string, string[]>` the clients' error state can consume.
-  const flattened = error.flatten().fieldErrors;
   const fieldErrors: FieldErrors = {};
-  for (const [key, value] of Object.entries(flattened)) {
-    if (value && value.length > 0) fieldErrors[key] = value;
+  for (const issue of error.issues) {
+    const field = issue.path[0];
+    if (field === undefined) continue;
+    const key = String(field);
+    (fieldErrors[key] ??= []).push(issue.message);
   }
   return { ok: false, error: message, fieldErrors };
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 /**
  * Validation contracts for favorites & collections. Shared by the client UI and
  * the server actions so the shape is guaranteed end to end.
@@ -52,8 +54,8 @@ export const collectionGroupShareInput = z.object({
   groupId: idInput,
 });
 
-export type CollectionInput = z.infer<typeof collectionInput>;
-export type ToggleFavoriteInput = z.infer<typeof toggleFavoriteInput>;
-export type CollectionRecipeInput = z.infer<typeof collectionRecipeInput>;
-export type CollectionGroupShareInput = z.infer<typeof collectionGroupShareInput>;
+export type CollectionInput = ParsedInput<typeof collectionInput>;
+export type ToggleFavoriteInput = ParsedInput<typeof toggleFavoriteInput>;
+export type CollectionRecipeInput = ParsedInput<typeof collectionRecipeInput>;
+export type CollectionGroupShareInput = ParsedInput<typeof collectionGroupShareInput>;
 export type CollectionVisibilityValue = (typeof collectionVisibilityValues)[number];

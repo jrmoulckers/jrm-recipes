@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 /**
  * Shared validation for the moderation surface: personal blocks (#355), content
  * reports (#356), and the moderation queue's hide/dismiss actions (#357). Client
@@ -43,8 +45,8 @@ export const dismissReportInput = z.object({
   groupSlug: idInput,
 });
 
-export type BlockUserInput = z.infer<typeof blockUserInput>;
-export type UnblockUserInput = z.infer<typeof unblockUserInput>;
-export type ReportContentInput = z.infer<typeof reportContentInput>;
-export type HideContentInput = z.infer<typeof hideContentInput>;
-export type DismissReportInput = z.infer<typeof dismissReportInput>;
+export type BlockUserInput = ParsedInput<typeof blockUserInput>;
+export type UnblockUserInput = ParsedInput<typeof unblockUserInput>;
+export type ReportContentInput = ParsedInput<typeof reportContentInput>;
+export type HideContentInput = ParsedInput<typeof hideContentInput>;
+export type DismissReportInput = ParsedInput<typeof dismissReportInput>;

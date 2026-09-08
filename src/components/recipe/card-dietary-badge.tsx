@@ -5,7 +5,7 @@ import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { type Allergen } from '~/lib/allergens';
 import { type DietaryTag } from '~/lib/substitutions';
-import { type CustomRestrictionSeverity } from '~/lib/dietary-assessment';
+import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
 import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
 
 /** The active-member data a card needs to render its safe-for badge. */

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 /**
  * Validation contract for cook-alongs (issue #353). Shared by the schedule
  * dialog (client) and the server actions so the shape is guaranteed end to end.
@@ -52,7 +54,7 @@ export const deleteCookAlongInput = z.object({
   cookAlongId: idInput,
 });
 
-export type CreateCookAlongInput = z.infer<typeof createCookAlongInput>;
-export type UpdateCookAlongInput = z.infer<typeof updateCookAlongInput>;
-export type RsvpInput = z.infer<typeof rsvpInput>;
-export type DeleteCookAlongInput = z.infer<typeof deleteCookAlongInput>;
+export type CreateCookAlongInput = ParsedInput<typeof createCookAlongInput>;
+export type UpdateCookAlongInput = ParsedInput<typeof updateCookAlongInput>;
+export type RsvpInput = ParsedInput<typeof rsvpInput>;
+export type DeleteCookAlongInput = ParsedInput<typeof deleteCookAlongInput>;

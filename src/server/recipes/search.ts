@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
 import { slugify } from '~/lib/utils';
 import { type NutritionKey } from '~/lib/nutrients';
 import { DIETARY_TAGS, isDietaryTag, type DietaryTag } from '~/lib/substitutions';
@@ -289,7 +290,7 @@ export const recipeSearchSchema = z.object({
   sort: z.enum(recipeSortValues).optional().catch(undefined),
 });
 
-export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
+export type RecipeSearch = ParsedInput<typeof recipeSearchSchema> & {
   /** Selected meals/courses. Empty when unfiltered. */
   meals: string[];
   mealMatch: FacetMatchMode;

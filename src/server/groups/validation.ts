@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 const optionalString = (max: number) =>
   z
     .string()
@@ -76,7 +78,7 @@ export const createInviteLinkInput = z.object({
   maxUses: z.coerce.number().int().min(1).max(1000).optional(),
 });
 
-export type GroupInput = z.infer<typeof groupInput>;
+export type GroupInput = ParsedInput<typeof groupInput>;
 export type AddMemberInput = z.infer<typeof addMemberInput>;
 export type UpdateRoleInput = z.infer<typeof updateRoleInput>;
 export type InviteInput = z.input<typeof inviteInput>;

@@ -1,5 +1,5 @@
 import { createEnv } from '@t3-oss/env-nextjs';
-import { z } from 'zod';
+import { z } from 'zod/mini';
 
 /**
  * Heirloom env schema.
@@ -25,6 +25,8 @@ import { z } from 'zod';
  * with dev-bypass.
  */
 const skipValidation = !!process.env.SKIP_ENV_VALIDATION || process.env.NODE_ENV === 'test';
+const optionalString = z.optional(z.string());
+const optionalUrl = z.optional(z.url());
 
 /**
  * True when running in (or building for) a *real production deployment*, where
@@ -95,75 +97,75 @@ export function findProductionAuthIssues(vars) {
 
 export const env = createEnv({
   server: {
-    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-    DATABASE_URL: z.string().url().optional(),
-    CLERK_SECRET_KEY: z.string().optional(),
+    NODE_ENV: z._default(z.enum(['development', 'test', 'production']), 'development'),
+    DATABASE_URL: optionalUrl,
+    CLERK_SECRET_KEY: optionalString,
     // Svix signing secret (`whsec_…`) for the Clerk webhook (#217). Optional like
     // every other integration: unset ⇒ the webhook route is a 501 no-op, so the
     // app boots/builds with zero config and never processes unsigned payloads.
-    CLERK_WEBHOOK_SECRET: z.string().optional(),
-    CLOUDINARY_API_SECRET: z.string().optional(),
+    CLERK_WEBHOOK_SECRET: optionalString,
+    CLOUDINARY_API_SECRET: optionalString,
     // Shared secret guarding the weekly-digest trigger endpoint (#354). When
     // unset the endpoint is disabled (503) so it can never be triggered
     // anonymously. Vercel Cron sends it as `Authorization: Bearer <secret>`.
-    CRON_SECRET: z.string().optional(),
+    CRON_SECRET: optionalString,
     // Salt for the one-way subject hashes in `deletion_records` (#678). The
     // tombstone must outlive the erased `users` row without storing anything
     // that identifies its subject, so ids are stored only as salted SHA-256.
     // Without the salt, a hash of a known cuid2 would be trivially confirmable
     // by anyone who obtained the table. When unset, erasure still runs but the
     // tombstone is skipped rather than written with a guessable digest.
-    DELETION_HASH_SALT: z.string().min(16).optional(),
+    DELETION_HASH_SALT: z.optional(z.string().check(z.minLength(16))),
     // Transactional email (Resend), optional. With `RESEND_API_KEY` unset the
     // email layer degrades to a log/no-op provider (see ~/server/digest/email
     // `getEmailProvider`), so the digest cron builds + "sends" with zero config
     // and never throws on a missing provider. Set it to actually deliver.
-    RESEND_API_KEY: z.string().optional(),
+    RESEND_API_KEY: optionalString,
     // From-address for outgoing email (e.g. `Heirloom <hello@example.com>`).
     // Optional: defaults to a safe placeholder, and is only meaningful once
     // `RESEND_API_KEY` is set. A real, verified sender is required to deliver.
-    EMAIL_FROM: z.string().optional(),
+    EMAIL_FROM: optionalString,
     // Billing (Stripe), optional (#299). Like every other external service,
     // billing degrades gracefully: with these unset the app boots, builds, and
     // stays fully clickable, and all billing code paths no-op (see
     // ~/server/billing/stripe `isBillingConfigured`).
-    STRIPE_SECRET_KEY: z.string().optional(),
-    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_SECRET_KEY: optionalString,
+    STRIPE_WEBHOOK_SECRET: optionalString,
     // Stripe Price IDs (e.g. `price_123…`) for purchasable plans (#303). Optional
     // With these unset, checkout reports a friendly "not available" instead of
     // failing, so the app still builds and runs with no billing config.
-    STRIPE_PRICE_FAMILY: z.string().optional(),
+    STRIPE_PRICE_FAMILY: optionalString,
     // Stripe one-time Price ID for a gift purchase (#331). Optional: with it
     // unset the "Gift Heirloom" flow reports a friendly "not available" and the
     // app still builds and runs. Redeeming an already-issued code needs only the
     // database, never this key.
-    STRIPE_PRICE_GIFT_FAMILY: z.string().optional(),
+    STRIPE_PRICE_GIFT_FAMILY: optionalString,
     // Structured-logger verbosity (#268): one of debug|info|warn|error|silent.
     // Read directly by ~/lib/log (never imported here) so a deploy-time script
     // can log without triggering env validation. It is declared here only so it's a
     // documented, validated part of the schema. Unset ⇒ `info` in production,
     // `debug` elsewhere.
-    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
+    LOG_LEVEL: z.optional(z.enum(['debug', 'info', 'warn', 'error', 'silent'])),
   },
 
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL: z.string().optional(),
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().optional(),
-    NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
-    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
-    NEXT_PUBLIC_CLOUDINARY_API_KEY: z.string().optional(),
+    NEXT_PUBLIC_APP_URL: optionalUrl,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: optionalString,
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: optionalString,
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: optionalString,
+    NEXT_PUBLIC_DEV_AUTH_BYPASS: optionalString,
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: optionalString,
+    NEXT_PUBLIC_CLOUDINARY_API_KEY: optionalString,
     // Product analytics (PostHog), optional. When unset the whole analytics
     // layer no-ops (see ~/lib/analytics) so the app boots + builds with no key.
-    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-    NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+    NEXT_PUBLIC_POSTHOG_KEY: optionalString,
+    NEXT_PUBLIC_POSTHOG_HOST: optionalUrl,
     // Consent model for analytics. Set to "1" to require explicit opt-in
     // consent before any capture (GDPR-style). Unset/other = opt-out model.
-    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: z.string().optional(),
+    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: optionalString,
     // Stripe publishable key (client-safe), optional (#299). Used only by the
     // billing UI. It is absent by default so the app runs with zero billing config.
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: optionalString,
   },
 
   runtimeEnv: {
@@ -211,22 +213,24 @@ export const env = createEnv({
  * deployed environment, preview or production, requires real Clerk keys.
  */
 if (isProductionDeploy() && typeof window === 'undefined') {
-  const result = z
+  const productionAuthSchema = z
     .object({
-      NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
-      E2E_IDENTITY_SELECTOR: z.string().optional(),
-      CLERK_SECRET_KEY: z.string().optional(),
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: optionalString,
+      E2E_IDENTITY_SELECTOR: optionalString,
+      CLERK_SECRET_KEY: optionalString,
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: optionalString,
     })
-    .superRefine((vars, ctx) => {
-      for (const message of findProductionAuthIssues({
-        NODE_ENV: 'production',
-        ...vars,
-      })) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message });
-      }
-    })
-    .safeParse(process.env);
+    .check(
+      z.superRefine((vars, ctx) => {
+        for (const message of findProductionAuthIssues({
+          NODE_ENV: 'production',
+          ...vars,
+        })) {
+          ctx.addIssue({ code: 'custom', message, input: vars });
+        }
+      }),
+    );
+  const result = z.safeParse(productionAuthSchema, process.env);
 
   if (!result.success) {
     const messages = result.error.issues.map((issue) => issue.message);

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { slugify } from '~/lib/utils';
 import { DIETARY_TAGS } from '~/lib/substitutions';
 import { ALLOWED_MEDIA_HOSTS } from '~/config/media-hosts';
+import type { ParsedInput } from '~/lib/zod-types';
 
 /**
  * Validation contract for recipe input. The editor (client) and the server
@@ -91,7 +92,9 @@ export const recipeSourceImageInput = z.object({
     .length(24)
     .regex(/^[a-z0-9]+$/)
     .optional(),
-  imageUrl: mediaUrl.refine((value) => value != null, 'Choose an original recipe photo'),
+  imageUrl: mediaUrl
+    .refine((value) => value != null, 'Choose an original recipe photo')
+    .pipe(z.string()),
   caption: optionalString(500),
   altText: imageAlt,
 });
@@ -295,9 +298,9 @@ export const recipeWriteInput = recipeInput.superRefine((recipe, context) => {
   });
 });
 
-export type RecipeInput = z.infer<typeof recipeInput>;
-export type IngredientInput = z.infer<typeof ingredientInput>;
-export type StepInput = z.infer<typeof stepInput>;
+export type RecipeInput = ParsedInput<typeof recipeInput>;
+export type IngredientInput = ParsedInput<typeof ingredientInput>;
+export type StepInput = ParsedInput<typeof stepInput>;
 
 /** Build a URL-friendly slug from a title (uniqueness handled at write time). */
 export function recipeSlug(title: string): string {

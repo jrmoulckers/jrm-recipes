@@ -20,7 +20,7 @@ import { formatNutrient } from '~/lib/nutrition';
 import {
   CUSTOM_RESTRICTION_SEVERITIES,
   type CustomRestrictionSeverity,
-} from '~/lib/dietary-assessment';
+} from '~/lib/dietary-contracts';
 import {
   selectEffectiveTarget,
   targetRows,

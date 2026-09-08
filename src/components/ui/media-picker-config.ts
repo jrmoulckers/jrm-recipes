@@ -1,4 +1,4 @@
-import { env } from '~/env';
+import { cloudinaryApiKey, cloudinaryCloudName } from '~/client-env';
 
 /**
  * The tiny part of the media picker (#656) that callers need *before* deciding
@@ -15,6 +15,4 @@ export type MediaSelection = { url: string; assetId: string | null };
  * and nothing to store, so image fields degrade to a plain URL input (mirrors
  * the optional-auth / optional-db design elsewhere in the app).
  */
-export const cloudinaryConfigured = Boolean(
-  env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-);
+export const cloudinaryConfigured = Boolean(cloudinaryCloudName && cloudinaryApiKey);

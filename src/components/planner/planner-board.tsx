@@ -22,7 +22,7 @@ import {
   removeEntryAction,
 } from '~/server/planner/actions';
 import { logCookAction } from '~/server/cooklog/actions';
-import { MEAL_SLOTS, type MealSlotValue } from '~/server/planner/validation';
+import { MEAL_SLOTS, type MealSlotValue } from '~/lib/meal-slots';
 import { cookTimestampForParam } from '~/server/planner/week';
 import { cn } from '~/lib/utils';
 import { parseLeftoversNote } from '~/lib/planner-batch';
