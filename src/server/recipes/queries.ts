@@ -12,6 +12,7 @@ import {
   gt,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lt,
   lte,
@@ -31,15 +32,19 @@ import {
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from '~/lib/ratings';
-import { summarizeAllergensForSafety, isAllergen, type Allergen } from '~/lib/allergens';
+import {
+  detectAllergensForSafety,
+  summarizeAllergensForSafety,
+  isAllergen,
+  type Allergen,
+} from '~/lib/allergens';
 import { isDietaryTag } from '~/lib/substitutions';
 import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
-import { dietaryRulesetVersion } from '~/lib/dietary-rules';
+import { COMPOSITION_COVERED_CATEGORIES, dietaryRulesetVersion } from '~/lib/dietary-rules';
 import {
   dietaryAssessments,
   dietaryEvidence,
   customDietaryRestrictions,
-  customDietaryRestrictionTerms,
   groupMembers,
   memberDietaryProfiles,
   recipeCreators,
@@ -95,6 +100,7 @@ import { todayParam } from '~/server/planner/week';
 import { customRestrictionTermsFingerprint } from '~/lib/dietary-fingerprint';
 import { customDietaryRestrictionTermSchema } from '~/lib/dietary-assessment';
 import { viewerHoldsRecipeShareLink } from './share-token';
+import { normalizeFoodText } from '~/lib/food-db';
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -217,7 +223,31 @@ function profileDietaryCondition(
     : and(...eligible);
 }
 
-function customRestrictionConflictCondition(restrictionId: string): SQL {
+function customRestrictionConflictCondition(normalizedTerms: readonly string[]): SQL {
+  const activeTerms = normalizedTerms.filter(Boolean);
+  if (activeTerms.length === 0) return sql`false`;
+  const normalizedIngredient = sql`trim(
+    regexp_replace(
+      regexp_replace(
+        split_part(
+          regexp_replace(
+            lower(${recipeIngredients.item}),
+            ${'\\([^)]*\\)'},
+            ' ',
+            'g'
+          ),
+          ',',
+          1
+        ),
+        ${'[^a-z0-9]+'},
+        ' ',
+        'g'
+      ),
+      ${'\\s+'},
+      ' ',
+      'g'
+    )
+  )`;
   return exists(
     qb
       .select({ one: sql`1` })
@@ -225,20 +255,11 @@ function customRestrictionConflictCondition(restrictionId: string): SQL {
       .where(
         and(
           eq(recipeIngredients.recipeId, recipes.id),
-          exists(
-            qb
-              .select({ one: sql`1` })
-              .from(customDietaryRestrictionTerms)
-              .where(
-                and(
-                  eq(customDietaryRestrictionTerms.restrictionId, restrictionId),
-                  or(
-                    eq(customDietaryRestrictionTerms.source, 'exact'),
-                    eq(customDietaryRestrictionTerms.approved, true),
-                  ),
-                  sql`lower(${recipeIngredients.item}) like '%' || lower(${customDietaryRestrictionTerms.term}) || '%'`,
-                ),
-              ),
+          or(
+            ...activeTerms.map(
+              (term) =>
+                sql`position(${` ${term} `} in (' ' || ${normalizedIngredient} || ' ')) > 0`,
+            ),
           ),
         ),
       ),
@@ -249,7 +270,11 @@ function customRestrictionAffirmativeCoverageCondition(
   restrictionId: string,
   profileId: string,
   restrictionTermsVersion: string,
-  restrictedFoodIds: readonly string[] | null,
+  restrictedFoodIds: readonly string[],
+  restrictedAllergens: readonly Allergen[],
+  normalizedTerms: readonly string[],
+  hasCompleteTermCoverage: boolean,
+  hasCompleteAllergenTermCoverage: boolean,
 ): SQL {
   const hasIngredients = exists(
     qb
@@ -318,46 +343,52 @@ function customRestrictionAffirmativeCoverageCondition(
       ),
   );
   // Exact custom restrictions can be decided without a persisted profile
-  // assessment only when every active term and every ingredient resolve to
-  // curated food identities. That gives affirmative identity-level coverage;
-  // an unlinked/mined ingredient or unresolvable term remains unknown rather
-  // than inheriting safety from a text non-match.
-  const hasCompleteStructuredCoverage =
-    restrictedFoodIds && restrictedFoodIds.length > 0
-      ? and(
-          ...restrictedFoodIds.map((foodId) =>
-            exists(
-              qb
-                .select({ one: sql`1` })
-                .from(foodItems)
-                .where(and(eq(foodItems.id, foodId), eq(foodItems.source, 'curated'))),
-            ),
-          ),
-          notExists(
+  // assessment only when every active term resolves to a curated food identity
+  // or built-in allergen fact, and every ingredient has facts complete enough
+  // for that target. Simple composition-covered foods establish identity
+  // absence; opaque compounds require an explicit allergen vector. Unlinked,
+  // mined, or opaque fact-less nodes remain unknown.
+  const hasCompleteStructuredCoverage = hasCompleteTermCoverage
+    ? and(
+        ...restrictedFoodIds.map((foodId) =>
+          exists(
             qb
               .select({ one: sql`1` })
-              .from(recipeIngredients)
-              .where(
-                and(
-                  eq(recipeIngredients.recipeId, recipes.id),
-                  notExists(
-                    qb
-                      .select({ one: sql`1` })
-                      .from(foodItems)
-                      .where(
-                        and(
-                          eq(foodItems.id, recipeIngredients.foodId),
-                          eq(foodItems.source, 'curated'),
+              .from(foodItems)
+              .where(and(eq(foodItems.id, foodId), eq(foodItems.source, 'curated'))),
+          ),
+        ),
+        notExists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeIngredients)
+            .where(
+              and(
+                eq(recipeIngredients.recipeId, recipes.id),
+                notExists(
+                  qb
+                    .select({ one: sql`1` })
+                    .from(foodItems)
+                    .where(
+                      and(
+                        eq(foodItems.id, recipeIngredients.foodId),
+                        eq(foodItems.source, 'curated'),
+                        or(
+                          inArray(foodItems.category, COMPOSITION_COVERED_CATEGORIES),
+                          hasCompleteAllergenTermCoverage
+                            ? isNotNull(foodItems.allergens)
+                            : undefined,
                         ),
                       ),
-                  ),
+                    ),
                 ),
               ),
-          ),
-        )
-      : undefined;
+            ),
+        ),
+      )
+    : undefined;
   const hasStructuredConflict =
-    restrictedFoodIds && restrictedFoodIds.length > 0
+    hasCompleteTermCoverage && (restrictedFoodIds.length > 0 || restrictedAllergens.length > 0)
       ? exists(
           qb
             .select({ one: sql`1` })
@@ -373,8 +404,15 @@ function customRestrictionAffirmativeCoverageCondition(
                       and(
                         eq(foodItems.id, recipeIngredients.foodId),
                         or(
-                          inArray(foodItems.id, restrictedFoodIds),
-                          inArray(foodItems.parentId, restrictedFoodIds),
+                          restrictedFoodIds.length > 0
+                            ? or(
+                                inArray(foodItems.id, restrictedFoodIds),
+                                inArray(foodItems.parentId, restrictedFoodIds),
+                              )
+                            : undefined,
+                          ...restrictedAllergens.map((allergen) =>
+                            arrayContains(foodItems.allergens, [allergen]),
+                          ),
                         ),
                       ),
                     ),
@@ -392,7 +430,7 @@ function customRestrictionAffirmativeCoverageCondition(
         .where(
           and(
             eq(customDietaryRestrictions.id, restrictionId),
-            customRestrictionConflictCondition(restrictionId),
+            customRestrictionConflictCondition(normalizedTerms),
           ),
         ),
     ),
@@ -1608,7 +1646,11 @@ export async function searchRecipes(
     severity: string;
     profileId: string;
     restrictionTermsVersion: string;
-    restrictedFoodIds: string[] | null;
+    restrictedFoodIds: string[];
+    restrictedAllergens: Allergen[];
+    normalizedTerms: string[];
+    hasCompleteTermCoverage: boolean;
+    hasCompleteAllergenTermCoverage: boolean;
   }[] = [];
   if (search.safeFor && viewer) {
     const profile = await db.query.memberDietaryProfiles.findFirst({
@@ -1652,16 +1694,30 @@ export async function searchRecipes(
           medicalTermOffset + activeTerms.length,
         );
         medicalTermOffset += activeTerms.length;
+        const termFacts = activeTerms.map((term, index) => ({
+          foodId: resolvedTerms[index] ?? null,
+          allergens: detectAllergensForSafety(term.term),
+        }));
         return {
           id: restriction.id,
           severity: restriction.severity,
           profileId: profile.id,
           restrictionTermsVersion: customRestrictionTermsFingerprint(restriction.terms),
-          restrictedFoodIds:
+          restrictedFoodIds: [
+            ...new Set(termFacts.flatMap((fact) => (fact.foodId ? [fact.foodId] : []))),
+          ],
+          restrictedAllergens: [
+            ...new Set(termFacts.flatMap((fact) => fact.allergens).filter(isAllergen)),
+          ],
+          normalizedTerms: restriction.terms
+            .filter((term) => term.source === 'exact' || term.approved)
+            .map((term) => normalizeFoodText(term.term))
+            .filter(Boolean),
+          hasCompleteTermCoverage:
             activeTerms.length > 0 &&
-            resolvedTerms.every((foodId): foodId is string => foodId != null)
-              ? [...new Set(resolvedTerms)]
-              : null,
+            termFacts.every((fact) => fact.foodId != null || fact.allergens.length > 0),
+          hasCompleteAllergenTermCoverage:
+            activeTerms.length > 0 && termFacts.every((fact) => fact.allergens.length > 0),
         };
       });
       conditions.push(profileDietaryCondition(profileDiets, profileAllergens, 'definite'));
@@ -1673,6 +1729,10 @@ export async function searchRecipes(
               restriction.profileId,
               restriction.restrictionTermsVersion,
               restriction.restrictedFoodIds,
+              restriction.restrictedAllergens,
+              restriction.normalizedTerms,
+              restriction.hasCompleteTermCoverage,
+              restriction.hasCompleteAllergenTermCoverage,
             ),
           );
         } else if (restriction.severity === 'strict-avoidance') {
@@ -1684,7 +1744,7 @@ export async function searchRecipes(
                 .where(
                   and(
                     eq(customDietaryRestrictions.id, restriction.id),
-                    customRestrictionConflictCondition(restriction.id),
+                    customRestrictionConflictCondition(restriction.normalizedTerms),
                   ),
                 ),
             ),
@@ -1714,7 +1774,7 @@ export async function searchRecipes(
         sql`case when ${or(
           ...profileRestrictions
             .filter((restriction) => restriction.severity === 'preference')
-            .map((restriction) => customRestrictionConflictCondition(restriction.id)),
+            .map((restriction) => customRestrictionConflictCondition(restriction.normalizedTerms)),
         )} then 1 else 0 end`,
         ...(macroOrdering ?? recipeOrderBy(search.sort)),
       ]
@@ -1821,6 +1881,10 @@ export async function searchRecipes(
           restriction.profileId,
           restriction.restrictionTermsVersion,
           restriction.restrictedFoodIds,
+          restriction.restrictedAllergens,
+          restriction.normalizedTerms,
+          restriction.hasCompleteTermCoverage,
+          restriction.hasCompleteAllergenTermCoverage,
         ),
       ),
     ...profileRestrictions
@@ -1833,7 +1897,7 @@ export async function searchRecipes(
             .where(
               and(
                 eq(customDietaryRestrictions.id, restriction.id),
-                customRestrictionConflictCondition(restriction.id),
+                customRestrictionConflictCondition(restriction.normalizedTerms),
               ),
             ),
         )!,
