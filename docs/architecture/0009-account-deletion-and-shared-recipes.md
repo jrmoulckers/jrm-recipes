@@ -117,6 +117,28 @@ The notice says that retained text and images may still identify the person from
 version is recorded in `deletion_records`. The tombstone stores counts only and never stores recipe
 ids, titles, media URLs, or a contributor linkage.
 
+### Dietary facts under ADR-0011
+
+ADR-0011 introduces a second distinction that must follow this retention decision without widening
+it. The implementation requirements are recorded in
+[`docs/privacy/dietary-retention-and-rights.md`](../privacy/dietary-retention-and-rights.md):
+
+- a current recipe assessment against a built-in rule may remain as recipe metadata when the recipe
+  survives, provided it contains no profile or custom-restriction linkage;
+- actor attribution on retained dietary evidence or corrections is removed with the account;
+- profile names, custom restrictions, severities, personalized assessments, private corrections,
+  and manager/subject linkage are personal profile data and do not survive as recipe facts;
+- deletion evidence adds aggregate counts only, never dietary ids, names, verdicts, evidence,
+  corrections, fingerprints, or hidden subject linkage;
+- the pre-deletion export includes requester-owned and requester-attributed dietary data where that
+  can be done without exposing another person's profile;
+- the versioned deletion notice must distinguish deleted profile-personal data from retained
+  built-in recipe facts before this behavior is enabled.
+
+This is a requirement for #1101/#1106, not a claim that the pending dietary schema already satisfies
+it. The same qualified-lawful-basis and public-policy review required for retained shared
+contributions applies before dietary processing is enabled.
+
 ## Consequences
 
 - The co-creator erasure hold is no longer needed for new requests once this behavior is deployed.
@@ -125,6 +147,8 @@ ids, titles, media URLs, or a contributor linkage.
   owner rather than fabricating a user.
 - Shared contribution retention needs an approved lawful basis and public policy language outside
   this engineering decision. This ADR records product behavior, not legal sign-off.
+- Retained dietary recipe facts must remain structurally separate from profile-personal data and
+  lose actor linkage on erasure; `groupId` never converts a private profile into shared content.
 - `recipe_versions` remains load-bearing family history and follows the retained recipe's lifetime.
 - The Neon backup horizon remains independently blocked on
   [#855](https://github.com/jrmoulckers/jrm-recipes/issues/855) and

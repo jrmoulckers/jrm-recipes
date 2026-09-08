@@ -106,6 +106,30 @@ identifying from their content or family context. See
   delete `users` → write the tombstone. The committed state is then checked for live identity
   references.
 
+### Dietary privacy boundary (ADR-0011 and issue #1106)
+
+The evidence-based dietary schema is still being delivered by #1101. Its final table names and
+foreign keys must be documented here after that issue lands; this section records the required
+shape rather than claiming the pending implementation exists.
+
+- Recipe-level built-in-rule facts and profile-personal assessments are structurally separate.
+- Profiles and custom restrictions are creator-controlled in v1. An optional `groupId` is context,
+  not an authorization or sharing edge.
+- Profile/custom rows and their personalized assessments/corrections cascade with the
+  profile/restriction/account. They cannot be public.
+- A current built-in recipe fact may follow a recipe retained under ADR-0009, but every actor,
+  profile, custom-restriction, severity, personalized verdict, and hidden subject/manager link is
+  removed.
+- Authenticated export includes requester-owned profiles/restrictions and requester-owned or
+  actor-attributed facts without crossing into another profile.
+- Deletion tombstones contain aggregate dietary counts only, and post-erasure assertions cover
+  every new personal or actor-attributed table.
+- Invalidated/superseded personal rows are purpose-bound and purged under
+  [`docs/privacy/dietary-retention-and-rights.md`](./privacy/dietary-retention-and-rights.md).
+
+The data inventory, DPIA and human production gates are recorded in
+[`docs/privacy/dietary-data-inventory-and-dpia.md`](./privacy/dietary-data-inventory-and-dpia.md).
+
 ## Main tables
 
 | Table                                    | Source                                                         | Purpose                                                                                                                       |

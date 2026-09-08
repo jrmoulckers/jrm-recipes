@@ -259,6 +259,34 @@ export, account erasure, and shared-recipe retention behavior. On-device model a
 are removed when smart analysis is disabled or the user signs out. Downgrade may retain the local
 model for offline display and a future resubscription, but it cannot run new premium analysis.
 
+### Privacy, retention, and rights boundary
+
+Issue #1106 owns the detailed implementation contract in
+[`docs/privacy/dietary-data-inventory-and-dpia.md`](../privacy/dietary-data-inventory-and-dpia.md)
+and
+[`docs/privacy/dietary-retention-and-rights.md`](../privacy/dietary-retention-and-rights.md).
+Those documents make explicit several boundaries that this architecture depends on:
+
+- profiles and custom restrictions are private, creator-controlled notes in v1;
+- a profile's optional `groupId` organizes the creator's data but never grants another person
+  access;
+- only current recipe-level built-in-rule facts may enter a shared/public projection or follow a
+  recipe retained under ADR-0009;
+- profile names, custom restrictions, severities, personalized assessments, and profile/private
+  corrections must cascade with their profile and never survive as recipe facts;
+- authenticated export includes requester-owned or requester-attributed dietary data without
+  exposing another person's profile;
+- account erasure removes actor/profile linkage from any retained built-in recipe fact and records
+  aggregate counts only;
+- one account-bound cleanup coordinator must stop work and purge model, analysis, IndexedDB, and
+  personalized recipe caches on disable, sign-out, account switch, and deletion completion;
+- smart-analysis enablement is separate from analytics consent and from any legal consent record.
+
+These are release requirements, not claims about the current schema. They must be verified against
+#1101, #1107 and #1109 after those implementations land. Production enablement also remains blocked
+on qualified legal review, a named model asset host/distributor, and an honest configured backup
+horizon; engineering documentation does not satisfy those human gates.
+
 ## Integrated presentation
 
 Dietary intelligence is not a standalone AI surface. It uses the existing badge, recipe,
@@ -392,5 +420,8 @@ transmitting recipe and dietary context elsewhere.
   that require explicit setup and progressive processing.
 - Public inferred badges require ongoing compatibility and revocation support because a synced
   result can outlive the device and model that produced it.
+- Health-adjacent data, non-user/child profiles, rights behavior, processor transfers, and
+  purpose-bound retention require the DPIA and production gates recorded in
+  `docs/privacy/dietary-data-inventory-and-dpia.md`.
 - The implementation is larger than adding a confidence column, but it avoids propagating another
   binary representation that would need to be replaced when personalized restrictions arrive.
