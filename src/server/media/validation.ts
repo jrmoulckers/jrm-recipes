@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { isAllowedMediaUrl } from '~/config/media-hosts';
+import type { ParsedInput } from '~/lib/zod-types';
 
 /**
  * Validation contracts for the media library (issue #657). Shared by the client
@@ -101,7 +102,7 @@ export const listAssetsInput = z.object({
   limit: z.number().int().positive().max(MEDIA_MAX_PAGE_SIZE).optional(),
 });
 
-export type RecordUploadInput = z.infer<typeof recordUploadInput>;
-export type UpdateAltTextInput = z.infer<typeof updateAltTextInput>;
-export type DeleteAssetInput = z.infer<typeof deleteAssetInput>;
-export type ListAssetsInput = z.infer<typeof listAssetsInput>;
+export type RecordUploadInput = ParsedInput<typeof recordUploadInput>;
+export type UpdateAltTextInput = ParsedInput<typeof updateAltTextInput>;
+export type DeleteAssetInput = ParsedInput<typeof deleteAssetInput>;
+export type ListAssetsInput = ParsedInput<typeof listAssetsInput>;

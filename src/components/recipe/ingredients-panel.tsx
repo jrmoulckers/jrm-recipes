@@ -58,7 +58,7 @@ import {
   DIETARY_EVIDENCE_FINDINGS,
   type CustomRestrictionSeverity,
   type DietaryEvidenceFinding,
-} from '~/lib/dietary-assessment';
+} from '~/lib/dietary-contracts';
 import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';

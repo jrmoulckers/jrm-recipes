@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 import { SHOPPING_CATEGORIES } from '~/lib/shopping-list';
 import { dateParam } from '~/server/planner/validation';
 
@@ -212,19 +214,19 @@ export const saveIngredientPackageInput = z
   })
   .superRefine(validatePackagePreference);
 
-export type ManualItemInput = z.infer<typeof manualItemInput>;
-export type AddRecipeToListInput = z.infer<typeof addRecipeToListInput>;
-export type BuildFromPlanInput = z.infer<typeof buildFromPlanInput>;
-export type SetItemCategoryInput = z.infer<typeof setItemCategoryInput>;
-export type ListIdInput = z.infer<typeof listIdInput>;
-export type SetItemCheckedInput = z.infer<typeof setItemCheckedInput>;
-export type CreateShoppingListInput = z.infer<typeof createShoppingListInput>;
-export type RenameShoppingListInput = z.infer<typeof renameShoppingListInput>;
-export type CreateShoppingStoreInput = z.infer<typeof createShoppingStoreInput>;
-export type RenameShoppingStoreInput = z.infer<typeof renameShoppingStoreInput>;
-export type ShoppingStoreIdInput = z.infer<typeof shoppingStoreIdInput>;
-export type MoveShoppingItemInput = z.infer<typeof moveShoppingItemInput>;
-export type BulkMoveShoppingItemsInput = z.infer<typeof bulkMoveShoppingItemsInput>;
-export type RestoreShoppingListPointInput = z.infer<typeof restoreShoppingListPointInput>;
-export type RestoreShoppingListPointsInput = z.infer<typeof restoreShoppingListPointsInput>;
-export type SaveIngredientPackageInput = z.infer<typeof saveIngredientPackageInput>;
+export type ManualItemInput = ParsedInput<typeof manualItemInput>;
+export type AddRecipeToListInput = ParsedInput<typeof addRecipeToListInput>;
+export type BuildFromPlanInput = ParsedInput<typeof buildFromPlanInput>;
+export type SetItemCategoryInput = ParsedInput<typeof setItemCategoryInput>;
+export type ListIdInput = ParsedInput<typeof listIdInput>;
+export type SetItemCheckedInput = ParsedInput<typeof setItemCheckedInput>;
+export type CreateShoppingListInput = ParsedInput<typeof createShoppingListInput>;
+export type RenameShoppingListInput = ParsedInput<typeof renameShoppingListInput>;
+export type CreateShoppingStoreInput = ParsedInput<typeof createShoppingStoreInput>;
+export type RenameShoppingStoreInput = ParsedInput<typeof renameShoppingStoreInput>;
+export type ShoppingStoreIdInput = ParsedInput<typeof shoppingStoreIdInput>;
+export type MoveShoppingItemInput = ParsedInput<typeof moveShoppingItemInput>;
+export type BulkMoveShoppingItemsInput = ParsedInput<typeof bulkMoveShoppingItemsInput>;
+export type RestoreShoppingListPointInput = ParsedInput<typeof restoreShoppingListPointInput>;
+export type RestoreShoppingListPointsInput = ParsedInput<typeof restoreShoppingListPointsInput>;
+export type SaveIngredientPackageInput = ParsedInput<typeof saveIngredientPackageInput>;

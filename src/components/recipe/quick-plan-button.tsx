@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { friendlyError } from '~/lib/error-copy';
 
 import { addEntryAction } from '~/server/planner/actions';
-import { MEAL_SLOTS, MEAL_SLOT_LABELS, type MealSlotValue } from '~/server/planner/validation';
+import { MEAL_SLOTS, MEAL_SLOT_LABELS, type MealSlotValue } from '~/lib/meal-slots';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { NativeSelect } from '~/components/ui/native-select';

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ParsedInput } from '~/lib/zod-types';
+
 /**
  * Validation contract for the "Cooked it" journal. The log dialog (client) and
  * the server actions share these schemas so the shape is guaranteed end to end.
@@ -98,7 +100,7 @@ export const deleteCookLogInput = z.object({
   recipeSlug: idInput,
 });
 
-export type LogCookInput = z.infer<typeof logCookInput>;
+export type LogCookInput = ParsedInput<typeof logCookInput>;
 /** Raw shape the client dialog sends before server-side coercion. */
 export type LogCookFormInput = z.input<typeof logCookInput>;
-export type DeleteCookLogInput = z.infer<typeof deleteCookLogInput>;
+export type DeleteCookLogInput = ParsedInput<typeof deleteCookLogInput>;
