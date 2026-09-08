@@ -27,9 +27,10 @@
       },
       {
         "route": "/recipes",
-        "kb": 282,
+        "kb": 283,
+        "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34255296584",
+        "runId": "34282854684",
         "issue": 1102
       },
       {
@@ -42,14 +43,15 @@
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
-        "kb": 247,
+        "kb": 248,
+        "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34281054835",
+        "runId": "34282854684",
         "issue": 1095
       }
     ]
   },
-  "//measurement-tolerance": "Issue #1055 resolves the strict-equality limitation recorded in //zero-headroom-variance and reconfirmed in //macro-search-filters. Only /recipes/[cook]/[recipe] receives a 1 kB claim tolerance: the same application code measured 309 and 310 on consecutive Linux CI runs, with only this JSON file changed between them. scripts/check-bundle-budget.mjs rejects any tolerance above 1 kB and still fails this claim at 311 or 307, so measured display noise passes without masking a real movement. Route budgets are unchanged. Use pnpm bundle:route-chunks with both --expect-absent and --expect-present to prove whether a suspected module reaches this route; the required present assertion is the positive control that makes zero hits readable.",
+  "//measurement-tolerance": "Issue #1055 resolves the strict-equality limitation recorded in //zero-headroom-variance and reconfirmed in //macro-search-filters. /recipes/[cook]/[recipe] first received a 1 kB claim tolerance after the same application code measured 309 and 310 on consecutive Linux CI runs with only this JSON file changed between them. The same condition was reproduced in #1106: /recipes/[cook]/[recipe]/edit measured 248 in run 34270183989, 247 in run 34281054835, then 248 again in run 34282854684; /recipes measured 282 in run 34255296584 and 283 in run 34282854684. Those routes now use the same bounded tolerance. scripts/check-bundle-budget.mjs rejects any tolerance above 1 kB, so measured display noise passes without masking a larger movement. Route budgets are unchanged. Use pnpm bundle:route-chunks with both --expect-absent and --expect-present to prove whether a suspected module reaches this route; the required present assertion is the positive control that makes zero hits readable.",
   "//unsaved-changes-guard": "Issue #115 adds the editor's always-on dirty-state and navigation guard. A local Windows build on 2026-08-31 moved /recipes/[cook]/[recipe]/edit from the inherited 218 kB zero-headroom baseline to 219 kB. The draft envelope codec, expiry/compatibility checks, and storage parser are dynamically imported after hydration and confirmed absent from the route's first-load chunks; the shared confirm context was split from its alert-dialog renderer so the editor imports only the context. The route budget moves 218 -> 222: the measured 219 kB plus the required 2 kB headroom and 1 kB for the documented Windows-to-Linux offset. No other route budget changes.",
   "//search-match-rules": "Issue #1088 adds always-on recipe-filter match semantics: URL-backed per-facet modes, semantic Any/All selection labels, and the locale-aware active-query summary. Linux CI run 34050931860 and a local Windows production build both measure /recipes at 284 kB against the inherited 283 kB limit. The larger advanced-rule control is dynamically imported only after Filters opens; route-chunk attribution finds the parent key facetSelectedAny in 1/26 first-load chunks and matchRulesEmpty from the advanced component in 0/26. The /recipes budget moves 283 -> 286, the measured 284 kB plus the required 2 kB headroom. No other route budget changes.",
   "routes": {
