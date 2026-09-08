@@ -1,4 +1,4 @@
-import { cleanup, render as rtlRender, screen } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -69,6 +69,28 @@ describe('RecipeEditor view toggle', () => {
 
       expect(edit).toHaveAttribute('data-state', 'off');
       expect(preview).toHaveAttribute('data-state', 'on');
+    },
+    EDITOR_TEST_TIMEOUT_MS,
+  );
+});
+
+describe('RecipeEditor unit suggestions', () => {
+  it(
+    'loads food-specific units after the editor becomes interactive',
+    async () => {
+      const user = userEvent.setup();
+      render(<RecipeEditor mode="create" />);
+
+      await user.type(screen.getByLabelText('Ingredient'), 'chicken breast');
+
+      const unitInput = screen.getByPlaceholderText('e.g. cups');
+      await waitFor(() => {
+        const listId = unitInput.getAttribute('list');
+        const firstOption = listId
+          ? (document.getElementById(listId) as HTMLDataListElement | null)?.options[0]
+          : undefined;
+        expect(firstOption).toHaveValue('lb');
+      });
     },
     EDITOR_TEST_TIMEOUT_MS,
   );

@@ -30,7 +30,7 @@ import { todayParam } from '~/server/planner/week';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { Card, CardContent } from '~/components/ui/card';
-import { ModePicker } from '~/components/theme/mode-picker';
+import { ModePickerLazy } from '~/components/theme/mode-picker-lazy';
 import { DinnerSuggestion } from '~/components/recipe/dinner-suggestion';
 import { RotationRail } from '~/components/recipe/rotation-rail';
 import { RecipeCard } from '~/components/recipe/recipe-card';
@@ -282,7 +282,7 @@ async function HomePage() {
                 </h2>
                 <p className="max-w-xl text-muted-foreground">{t('themes.body')}</p>
               </div>
-              <ModePicker />
+              <ModePickerLazy />
             </div>
           </section>
 

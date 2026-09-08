@@ -59,7 +59,6 @@ import {
   type CustomUnitDef,
 } from '~/lib/units';
 import { unitLabel } from '~/lib/unit-labels';
-import { getSuggestedUnitsForFood } from '~/lib/food-units';
 import { createRecipeAction, updateRecipeAction } from '~/server/recipes/actions';
 import { Button } from '~/components/ui/button';
 import { CloseButton } from '~/components/ui/close-button';
@@ -1127,33 +1126,44 @@ export function RecipeEditor({
   }, [customUnits]);
   const unitDatalistId = React.useId();
 
-  // Food-type unit groupings: when a row names a food the food graph knows,
-  // surface that food's most-appropriate units first in its unit picker (index
-  // 0 = smartest default), then the rest of the catalog. Keyed by the food name
-  // so rows sharing an ingredient reuse the same computed option list. Rows with
-  // no food match fall back to the shared catalog datalist.
-  const foodUnitOptionsByItem = React.useMemo(() => {
-    const cache = new Map<string, { value: string; label: string }[] | null>();
-    for (const r of ingredients) {
-      const key = r.item.trim().toLowerCase();
-      if (!key || cache.has(key)) continue;
-      const suggestions = getSuggestedUnitsForFood(r.item);
-      if (suggestions.length === 0) {
-        cache.set(key, null);
-        continue;
-      }
-      const seen = new Set<string>();
-      const suggested: { value: string; label: string }[] = [];
-      for (const s of suggestions) {
-        const value = s.unit.trim();
-        if (!value || seen.has(value)) continue;
-        seen.add(value);
-        suggested.push({ value, label: unitLabel(value) });
-      }
-      const rest = unitOptions.filter((o) => !seen.has(o.value));
-      cache.set(key, [...suggested, ...rest]);
+  // Food matching carries the curated food graph. Load it after the editor's
+  // first paint; the complete generic unit list remains available meanwhile.
+  const [foodUnitOptionsByItem, setFoodUnitOptionsByItem] = React.useState(
+    () => new Map<string, { value: string; label: string }[] | null>(),
+  );
+  React.useEffect(() => {
+    if (!ingredients.some((row) => row.item.trim() !== '')) {
+      setFoodUnitOptionsByItem((current) => (current.size === 0 ? current : new Map()));
+      return;
     }
-    return cache;
+    let cancelled = false;
+    void import('~/lib/food-units').then(({ getSuggestedUnitsForFood }) => {
+      if (cancelled) return;
+      const cache = new Map<string, { value: string; label: string }[] | null>();
+      for (const r of ingredients) {
+        const key = r.item.trim().toLowerCase();
+        if (!key || cache.has(key)) continue;
+        const suggestions = getSuggestedUnitsForFood(r.item);
+        if (suggestions.length === 0) {
+          cache.set(key, null);
+          continue;
+        }
+        const seen = new Set<string>();
+        const suggested: { value: string; label: string }[] = [];
+        for (const s of suggestions) {
+          const value = s.unit.trim();
+          if (!value || seen.has(value)) continue;
+          seen.add(value);
+          suggested.push({ value, label: unitLabel(value) });
+        }
+        const rest = unitOptions.filter((o) => !seen.has(o.value));
+        cache.set(key, [...suggested, ...rest]);
+      }
+      setFoodUnitOptionsByItem(cache);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [ingredients, unitOptions]);
 
   // "Convert old amount?" affordance, per ingredient row. When a cook swaps a
