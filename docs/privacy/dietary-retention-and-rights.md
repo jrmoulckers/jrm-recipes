@@ -1,8 +1,9 @@
 # Dietary retention and rights
 
 **Status:** Required behavior for issue
-[#1106](https://github.com/jrmoulckers/jrm-recipes/issues/1106). Implementation-specific statements
-remain conditional until #1101, #1107, and #1109 are merged and verified.
+[#1106](https://github.com/jrmoulckers/jrm-recipes/issues/1106). The implementation-specific
+statements below were reconciled with the merged #1101, #1107, and #1109 controls. Proposed
+retention periods and production-enable decisions remain conditional on the human gates below.
 
 This is an engineering and product contract, not legal advice. Qualified legal review remains a
 production-enable gate in
@@ -197,7 +198,7 @@ future resubscription is a product decision; keeping personalized cache data is 
 
 ## Analytics and logs
 
-Issue #1107 owns the runtime boundary. After it lands, issue #1106 must verify rather than duplicate:
+Issue #1107 owns the runtime boundary. The merged implementation has been verified to provide:
 
 - an exhaustive typed event map for coarse enablement, download, device support, analysis outcome,
   trigger, and fixed errors;
