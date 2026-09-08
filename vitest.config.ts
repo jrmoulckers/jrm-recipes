@@ -22,7 +22,7 @@ export default defineConfig({
     testTimeout: 5000,
     // Keep enough headroom for jsdom workers to answer Vitest 5's startup
     // handshake on high-core hosts without oversubscribing smaller CI runners.
-    maxWorkers: '12.5%',
+    maxWorkers: '10%',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     exclude: ['node_modules/**', '.next/**', 'tests/e2e/**'],
