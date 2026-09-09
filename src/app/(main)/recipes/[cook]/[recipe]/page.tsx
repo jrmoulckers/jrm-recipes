@@ -69,12 +69,11 @@ import { Badge } from '~/components/ui/badge';
 import { Breadcrumbs } from '~/components/layout/breadcrumbs';
 import { RecipeImage } from '~/components/recipe/recipe-image';
 import { RecipeClassificationBadges } from '~/components/recipe/recipe-classification-badges';
-import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments';
+import { RecipeDietaryAssessments } from '~/components/dietary/recipe-dietary-assessments-lazy';
 import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
-import { AllergenSummary } from '~/components/recipe/allergen-summary';
 import { ShareButton } from '~/components/recipe/share-button';
 import { CreateReelButton } from '~/components/recipe/reel-button';
 import { mapRecipeToReel } from '~/lib/reel/scenes';
@@ -699,6 +698,7 @@ async function RecipePage({
         <RecipeDietaryAssessments
           assessments={dietaryAssessments}
           limitPublicInferred={!user || Boolean(shareToken)}
+          canReview={canEdit}
         />
 
         <Separator />
@@ -732,12 +732,6 @@ async function RecipePage({
                 <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
                   {t('ingredients.heading')}
                 </h2>
-                {recipe.ingredients.length > 0 && (
-                  <AllergenSummary
-                    items={recipe.ingredients.map((ing) => ing.item)}
-                    className="mb-4"
-                  />
-                )}
                 {recipe.ingredients.length > 0 ? (
                   <IngredientsPanel
                     ingredients={panelIngredients}

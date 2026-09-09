@@ -1,7 +1,6 @@
 'use server';
 
 import { getCurrentUser } from '~/server/auth';
-import { listMemberProfiles } from '~/server/dietary/queries';
 import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { parseRatingSort, type RatingSort } from '~/lib/ratings';
 import { type Paginated } from './pagination';
@@ -53,9 +52,8 @@ export async function loadMorePublicRecipesAction(
     start = result.nextOffset;
   }
 
-  const profiles = user ? await listMemberProfiles(user.id) : [];
   return {
-    items: profiles.length > 0 ? await attachCardDietaryData(items) : items,
+    items: await attachCardDietaryData(items),
     nextOffset,
   };
 }

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { Globe2, Leaf, Utensils } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

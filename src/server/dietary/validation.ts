@@ -17,6 +17,21 @@ export {
   type CustomDietaryRestrictionInput,
 };
 export type CustomDietaryRestrictionInputRaw = z.input<typeof customDietaryRestrictionInputSchema>;
+export const customDietaryRestrictionMutationInputSchema =
+  customDietaryRestrictionInputSchema.extend({
+    subjectScope: z.literal('self', {
+      message: 'Confirm that this profile describes you before saving custom restrictions.',
+    }),
+  });
+export type CustomDietaryRestrictionMutationInputRaw = Omit<
+  z.input<typeof customDietaryRestrictionMutationInputSchema>,
+  'subjectScope'
+> & { subjectScope?: 'self' };
+export const customDietaryRestrictionCopyInputSchema = z.object({
+  subjectScope: z.literal('self', {
+    message: 'Confirm that this profile describes you before saving custom restrictions.',
+  }),
+});
 
 /**
  * Validation contract for per-family-member dietary profiles (issue #396).

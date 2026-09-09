@@ -1,6 +1,6 @@
 import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 
 import { IntlWrapper } from '~/test/intl';
@@ -281,7 +281,7 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      const evidenceTrigger = screen.getByRole('button', {
+      const evidenceTrigger = await screen.findByRole('button', {
         name: 'Dietary evidence for flour',
       });
       const checkOff = screen
@@ -320,7 +320,7 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: 'Dietary evidence for flour' }));
+      await user.click(await screen.findByRole('button', { name: 'Dietary evidence for flour' }));
       const correctionGroup = await screen.findByRole('group', {
         name: 'Correct Wheat-free evidence',
       });

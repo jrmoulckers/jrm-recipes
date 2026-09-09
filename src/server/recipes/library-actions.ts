@@ -1,7 +1,6 @@
 'use server';
 
 import { getCurrentUser } from '~/server/auth';
-import { listMemberProfiles } from '~/server/dietary/queries';
 import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { type CardRecipe } from '~/components/recipe/recipe-card';
 import { type Paginated } from './pagination';
@@ -21,9 +20,7 @@ export async function loadMoreLibraryAction(offset: number): Promise<Paginated<C
   const user = await getCurrentUser();
   const page = await listLibrary(user, { offset: start });
 
-  const members = user ? await listMemberProfiles(user.id) : [];
-  const items: CardRecipe[] =
-    members.length > 0 ? await attachCardDietaryData(page.items) : page.items;
+  const items: CardRecipe[] = await attachCardDietaryData(page.items);
 
   return { items, nextOffset: page.nextOffset };
 }

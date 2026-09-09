@@ -63,7 +63,6 @@ export function RecipeCard({
   priority = false,
   matchReason,
   members,
-  signedIn = false,
   macro,
   macroNutrients,
 }: {
@@ -240,12 +239,16 @@ export function RecipeCard({
               ))}
             </div>
           )}
-          {members && members.length > 0 && recipe.dietary && (
+          {recipe.dietary && (
             // This is the sibling slot for dietary UI. The current read-only
             // badge passes pointer input through to the card link; native
             // links/buttons added here remain independently operable.
             <div className="pointer-events-none relative z-10 w-fit [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
-              <CardDietaryBadge members={members} dietary={recipe.dietary} />
+              <CardDietaryBadge
+                members={members ?? []}
+                dietary={recipe.dietary}
+                signedIn={canFavorite}
+              />
             </div>
           )}
           <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">

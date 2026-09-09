@@ -47,6 +47,7 @@ import {
 const restrictionInput = {
   name: '  Nightshades  ',
   severity: 'strict-avoidance' as const,
+  subjectScope: 'self' as const,
   terms: [
     { term: ' tomato ', source: 'exact' as const, approved: true },
     { term: 'aubergine', source: 'suggested' as const, approved: false },
@@ -68,8 +69,8 @@ describe('custom dietary restriction actions', () => {
     expect(createCustomRestrictionMock).toHaveBeenCalledWith(
       'profile_1',
       {
-        ...restrictionInput,
         name: 'Nightshades',
+        severity: 'strict-avoidance',
         terms: [
           { term: 'tomato', source: 'exact', approved: true },
           { term: 'aubergine', source: 'suggested', approved: false },
@@ -104,9 +105,9 @@ describe('custom dietary restriction actions', () => {
       ok: true,
       id: 'restriction_1',
     });
-    await expect(copyCustomDietaryRestrictionAction('restriction_1', 'profile_2')).resolves.toEqual(
-      { ok: true, id: 'restriction_copy' },
-    );
+    await expect(
+      copyCustomDietaryRestrictionAction('restriction_1', 'profile_2', 'self'),
+    ).resolves.toEqual({ ok: true, id: 'restriction_copy' });
 
     expect(updateCustomRestrictionMock).toHaveBeenCalledWith('restriction_1', expect.any(Object), {
       id: 'owner_1',
@@ -117,6 +118,34 @@ describe('custom dietary restriction actions', () => {
     expect(copyCustomRestrictionMock).toHaveBeenCalledWith('restriction_1', 'profile_2', {
       id: 'owner_1',
     });
+  });
+
+  it('requires a self-subject declaration before create, update, or copy', async () => {
+    const { subjectScope: _subjectScope, ...unconfirmed } = restrictionInput;
+
+    await expect(
+      createCustomDietaryRestrictionAction('profile_1', unconfirmed),
+    ).resolves.toMatchObject({
+      ok: false,
+      fieldErrors: { subjectScope: expect.any(Array) },
+    });
+    await expect(
+      updateCustomDietaryRestrictionAction('restriction_1', unconfirmed),
+    ).resolves.toMatchObject({
+      ok: false,
+      fieldErrors: { subjectScope: expect.any(Array) },
+    });
+    await expect(
+      copyCustomDietaryRestrictionAction('restriction_1', 'profile_2', undefined),
+    ).resolves.toMatchObject({
+      ok: false,
+      fieldErrors: { subjectScope: expect.any(Array) },
+    });
+
+    expect(requireUserMock).not.toHaveBeenCalled();
+    expect(createCustomRestrictionMock).not.toHaveBeenCalled();
+    expect(updateCustomRestrictionMock).not.toHaveBeenCalled();
+    expect(copyCustomRestrictionMock).not.toHaveBeenCalled();
   });
 
   it('does not reveal whether a failed restriction is missing or foreign', async () => {

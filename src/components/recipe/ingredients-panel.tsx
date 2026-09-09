@@ -1,10 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import dynamic from 'next/dynamic';
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 
 import { cn } from '~/lib/utils';
 import { HAPTICS, vibrate } from '~/lib/haptics';
@@ -45,7 +43,6 @@ import { ingredientIcon } from '~/lib/ingredient-icons';
 import { useThemeBehavior } from '~/components/theme/theme-provider';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions-lazy';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
@@ -54,19 +51,21 @@ import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestion
 import { type Nutrition } from '~/lib/nutrition';
 import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
-import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
 import {
-  DIETARY_EVIDENCE_FINDINGS,
-  type DietaryEvidenceFinding,
-  type DietaryEvidenceSource,
+  type CustomRestrictionSeverity,
   type DietaryLinkedFoodInput,
 } from '~/lib/dietary-assessment';
-
-const IngredientSubstitutions = dynamic(() =>
-  import('~/components/recipe/ingredient-substitutions').then(
-    (module) => module.IngredientSubstitutions,
-  ),
-);
+import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
+import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
+import type {
+  SubstitutionCustomRestriction,
+  SubstitutionDietaryRule,
+} from '~/components/recipe/ingredient-substitutions';
+import {
+  IngredientEvidenceControl,
+  type IngredientDietaryEvidence,
+} from '~/components/recipe/ingredient-evidence-control-lazy';
 
 /**
  * Serializable payload for the per-ingredient anchored-suggestion slot (#346).
@@ -102,164 +101,11 @@ type PanelIngredient = {
   linkedFood?: DietaryLinkedFoodInput | null;
 };
 
-export type IngredientDietaryEvidence = {
-  ingredientId: string;
-  ruleId: string;
-  finding: DietaryEvidenceFinding;
-  source: DietaryEvidenceSource;
-};
-
 export type IngredientsPanelRecipeContext = {
   recipeId: string;
   updatedAt: string;
   canEdit: boolean;
 };
-
-const EVIDENCE_FINDING_LABEL: Record<DietaryEvidenceFinding, string> = {
-  present: 'present',
-  absent: 'absent',
-  possible: 'possible',
-  unresolved: 'unresolved',
-};
-
-const DIETARY_RULE_LABEL_KEY: Readonly<Record<string, string>> = {
-  'allergen:peanut': 'allergenPeanut',
-  'allergen:tree-nut': 'allergenTreeNut',
-  'allergen:dairy': 'allergenDairy',
-  'allergen:egg': 'allergenEgg',
-  'allergen:soy': 'allergenSoy',
-  'allergen:wheat': 'allergenWheat',
-  'allergen:fish': 'allergenFish',
-  'allergen:shellfish': 'allergenShellfish',
-  'allergen:sesame': 'allergenSesame',
-  'composition:vegan': 'vegan',
-  'composition:vegetarian': 'vegetarian',
-  'composition:pescatarian': 'pescatarian',
-};
-
-function dietaryRuleLabel(ruleId: string): string {
-  const label = ruleId.split(':').at(-1)?.replaceAll('-', ' ') ?? ruleId;
-  return label.replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function IngredientEvidenceControl({
-  ingredient,
-  evidence,
-  canCorrect,
-}: {
-  ingredient: PanelIngredient;
-  evidence: IngredientDietaryEvidence[];
-  canCorrect: boolean;
-}) {
-  const router = useRouter();
-  const t = useTranslations('ingredientsPanel.dietaryEvidence');
-  const rulesT = useTranslations('dietary.assessments');
-  const [open, setOpen] = React.useState(false);
-  const [message, setMessage] = React.useState<{
-    kind: 'success' | 'error';
-    text: string;
-  } | null>(null);
-  const [isPending, startTransition] = React.useTransition();
-
-  if (evidence.length === 0) return null;
-
-  function ruleLabel(ruleId: string) {
-    const key = DIETARY_RULE_LABEL_KEY[ruleId];
-    return key && rulesT.has(`rules.${key}`) ? rulesT(`rules.${key}`) : dietaryRuleLabel(ruleId);
-  }
-
-  function saveCorrection(ruleId: string, finding: DietaryEvidenceFinding) {
-    if (isPending) return;
-    setMessage(null);
-    startTransition(async () => {
-      const result = await saveDietaryIngredientCorrectionAction({
-        ingredientId: ingredient.id,
-        ruleId,
-        customRestrictionId: null,
-        finding,
-        correctedFoodId: null,
-      });
-      if (!result.ok) {
-        setMessage({ kind: 'error', text: t('saveError') });
-        return;
-      }
-      setMessage({ kind: 'success', text: t('saved') });
-      router.refresh();
-    });
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('ariaLabel', { ingredient: ingredient.item })}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-        >
-          <Info className="size-3.5" />
-          <span>{t('review')}</span>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="max-h-[min(28rem,80vh)] overflow-y-auto text-sm">
-        <h4 className="font-display text-sm font-semibold [overflow-wrap:anywhere]">
-          {ingredient.item}
-        </h4>
-        <ul className="mt-3 space-y-3">
-          {evidence.map((entry) => (
-            <li key={`${entry.ruleId}-${entry.finding}-${entry.source}`} className="space-y-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <span className="font-medium">{ruleLabel(entry.ruleId)}</span>
-                <Badge
-                  variant={entry.finding === 'present' ? 'warning' : 'muted'}
-                  className="capitalize"
-                >
-                  {t(`finding.${EVIDENCE_FINDING_LABEL[entry.finding]}`)}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('sourceLabel', { source: t(`source.${entry.source}`) })}
-              </p>
-              {canCorrect && (
-                <div
-                  role="group"
-                  aria-label={t('correctionGroup', {
-                    rule: ruleLabel(entry.ruleId),
-                  })}
-                  className="flex flex-wrap gap-1"
-                >
-                  {DIETARY_EVIDENCE_FINDINGS.map((finding) => (
-                    <Button
-                      key={finding}
-                      type="button"
-                      size="sm"
-                      variant={entry.finding === finding ? 'secondary' : 'ghost'}
-                      className="min-h-11 px-3 text-xs"
-                      disabled={isPending}
-                      onClick={() => saveCorrection(entry.ruleId, finding)}
-                    >
-                      {t(`finding.${EVIDENCE_FINDING_LABEL[finding]}`)}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-        {message && (
-          <p
-            role={message.kind === 'error' ? 'alert' : 'status'}
-            className={cn(
-              'mt-3 text-xs',
-              message.kind === 'success' ? 'text-muted-foreground' : 'text-destructive',
-            )}
-          >
-            {message.text}
-          </p>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 /**
  * A saved family member, carrying both their effective calorie target (for the nutrition
@@ -522,6 +368,7 @@ export function IngredientsPanel({
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
+  const tNames = useTranslations('classificationNames');
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
@@ -571,6 +418,15 @@ export function IngredientsPanel({
   );
   const hasActiveRestrictions =
     memberNeeds != null || (activeMember?.customRestrictions?.length ?? 0) > 0;
+  const dietaryEvidenceByIngredient = React.useMemo(() => {
+    const byIngredient = new Map<string, IngredientDietaryEvidence[]>();
+    for (const evidence of dietaryEvidence) {
+      const entries = byIngredient.get(evidence.ingredientId) ?? [];
+      entries.push(evidence);
+      byIngredient.set(evidence.ingredientId, entries);
+    }
+    return byIngredient;
+  }, [dietaryEvidence]);
   const cookingForId = React.useId();
 
   const servings = controls ? controls.servings : servingsInternal;
@@ -1070,7 +926,7 @@ export function IngredientsPanel({
                   : null;
                 const ingredientAllergens = ing.allergens ?? detectAllergensForSafety(ing.item);
                 const assessmentRules = activeDietaryRules.flatMap((rule) => {
-                  const finding = canonicalEvidenceByIngredient
+                  const finding = dietaryEvidenceByIngredient
                     .get(ing.id)
                     ?.find((item) => item.ruleId === rule.ruleId)?.finding;
                   return finding ? [{ ...rule, currentFinding: finding }] : [];
@@ -1139,7 +995,6 @@ export function IngredientsPanel({
                     .filter((rule) => rule.currentFinding === 'present')
                     .map((rule) => rule.dietaryTag),
                 ].filter((tag, index, tags) => tags.indexOf(tag) === index);
-                const reviewFindings = dietaryEvidenceByIngredient.get(ing.id) ?? [];
                 return (
                   <li
                     key={ing.id}
@@ -1270,6 +1125,8 @@ export function IngredientsPanel({
                           flagged={flagged}
                           presetTags={presetTags}
                           avoidAllergens={memberNeeds?.allergens}
+                          dietaryRules={assessmentRules}
+                          customRestrictions={activeCustomRestrictions}
                           recipePreview={
                             recipeContext
                               ? {

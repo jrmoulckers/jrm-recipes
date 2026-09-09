@@ -19,7 +19,7 @@ import {
   updateMemberProfileAction,
 } from '~/server/dietary/actions';
 import {
-  type CustomDietaryRestrictionInputRaw,
+  type CustomDietaryRestrictionMutationInputRaw,
   type MemberProfileInputRaw,
 } from '~/server/dietary/validation';
 import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
@@ -105,6 +105,7 @@ type RestrictionDraft = {
   severity: CustomRestrictionSeverity;
   exactTerms: string;
   suggestedTerms: CustomDietaryRestrictionInput['terms'];
+  subjectConfirmed: boolean;
 };
 
 const EMPTY_RESTRICTION_DRAFT: RestrictionDraft = {
@@ -112,6 +113,7 @@ const EMPTY_RESTRICTION_DRAFT: RestrictionDraft = {
   severity: 'allergy-intolerance',
   exactTerms: '',
   suggestedTerms: [],
+  subjectConfirmed: false,
 };
 
 function exactTerms(value: string): CustomDietaryRestrictionInput['terms'] {
@@ -164,6 +166,8 @@ export function DietaryProfilesManager({
     null,
   );
   const [copyTargetProfileId, setCopyTargetProfileId] = React.useState('');
+  const [copySubjectConfirmed, setCopySubjectConfirmed] = React.useState(false);
+  const [copyErrors, setCopyErrors] = React.useState<Record<string, string[]>>({});
   const [restrictionDraft, setRestrictionDraft] =
     React.useState<RestrictionDraft>(EMPTY_RESTRICTION_DRAFT);
   const [restrictionErrors, setRestrictionErrors] = React.useState<Record<string, string[]>>({});
@@ -207,6 +211,7 @@ export function DietaryProfilesManager({
         .map((term) => term.term)
         .join('\n'),
       suggestedTerms: restriction.terms.filter((term) => term.source === 'suggested'),
+      subjectConfirmed: false,
     });
     setRestrictionErrors({});
     setRestrictionEditing({ kind: 'edit', profileId, restriction });
@@ -219,6 +224,8 @@ export function DietaryProfilesManager({
     const target = profiles.find((profile) => profile.id !== sourceProfileId);
     if (!target) return;
     setCopyTargetProfileId(target.id);
+    setCopySubjectConfirmed(false);
+    setCopyErrors({});
     setCopyingRestriction({ sourceProfileId, restriction });
   }
 
@@ -278,10 +285,11 @@ export function DietaryProfilesManager({
   function onRestrictionSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!restrictionEditing) return;
-    const input: CustomDietaryRestrictionInputRaw = {
+    const input: CustomDietaryRestrictionMutationInputRaw = {
       name: restrictionDraft.name,
       severity: restrictionDraft.severity,
       terms: [...exactTerms(restrictionDraft.exactTerms), ...restrictionDraft.suggestedTerms],
+      subjectScope: restrictionDraft.subjectConfirmed ? 'self' : undefined,
     };
     setRestrictionErrors({});
     startTransition(() => {
@@ -326,17 +334,22 @@ export function DietaryProfilesManager({
   function onCopyRestriction(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!copyingRestriction || !copyTargetProfileId) return;
+    setCopyErrors({});
     startTransition(() => {
       void copyCustomDietaryRestrictionAction(
         copyingRestriction.restriction.id,
         copyTargetProfileId,
+        copySubjectConfirmed ? 'self' : undefined,
       ).then((result) => {
         if (!result.ok) {
+          setCopyErrors(result.fieldErrors ?? {});
           toast.error(friendlyError(result.error));
           return;
         }
         toast.success(t('custom.toasts.copied'));
         setCopyingRestriction(null);
+        setCopySubjectConfirmed(false);
+        setCopyErrors({});
         router.refresh();
       });
     });
@@ -801,6 +814,39 @@ export function DietaryProfilesManager({
               </div>
             )}
 
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id={`${restrictionNameId}-subject`}
+                  checked={restrictionDraft.subjectConfirmed}
+                  onCheckedChange={(checked) =>
+                    setRestrictionDraft((draft) => ({
+                      ...draft,
+                      subjectConfirmed: checked === true,
+                    }))
+                  }
+                  aria-describedby={`${restrictionNameId}-subject-help`}
+                  aria-invalid={Boolean(restrictionErrors.subjectScope)}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor={`${restrictionNameId}-subject`}>
+                    {t('customRestrictions.subjectScope')}
+                  </Label>
+                  <p
+                    id={`${restrictionNameId}-subject-help`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    {t('customRestrictions.subjectScopeHelp')}
+                  </p>
+                </div>
+              </div>
+              {restrictionErrors.subjectScope?.[0] && (
+                <p role="alert" className="text-sm text-destructive">
+                  {t('customRestrictions.subjectScopeRequired')}
+                </p>
+              )}
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"
@@ -820,7 +866,13 @@ export function DietaryProfilesManager({
 
       <Dialog
         open={copyingRestriction !== null}
-        onOpenChange={(open) => !open && setCopyingRestriction(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCopyingRestriction(null);
+            setCopySubjectConfirmed(false);
+            setCopyErrors({});
+          }
+        }}
       >
         <DialogContent>
           <form onSubmit={onCopyRestriction} className="grid gap-5">
@@ -848,6 +900,30 @@ export function DietaryProfilesManager({
                     </option>
                   ))}
               </NativeSelect>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id={`${copyTargetId}-subject`}
+                  checked={copySubjectConfirmed}
+                  onCheckedChange={(checked) => setCopySubjectConfirmed(checked === true)}
+                  aria-describedby={`${copyTargetId}-subject-help`}
+                  aria-invalid={Boolean(copyErrors.subjectScope)}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor={`${copyTargetId}-subject`}>
+                    {t('customRestrictions.subjectScope')}
+                  </Label>
+                  <p id={`${copyTargetId}-subject-help`} className="text-xs text-muted-foreground">
+                    {t('customRestrictions.subjectScopeHelp')}
+                  </p>
+                </div>
+              </div>
+              {copyErrors.subjectScope?.[0] && (
+                <p role="alert" className="text-sm text-destructive">
+                  {t('customRestrictions.subjectScopeRequired')}
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button

@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from '~/server/auth';
 import { type SearchParams } from '~/lib/route-params';
+import { type Paginated } from './pagination';
 import { parseRecipeSearch } from './search';
 import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { searchRecipes, type RecipeSearchResult } from './queries';
@@ -26,34 +27,19 @@ function paramsFromQueryString(queryString: string): SearchParams {
  * Fetch a further page of search results for the results "Load more" button
  * (#58). The active search is passed as its canonical query string and re-parsed
  * server-side. The viewer is re-derived (never trusted) so visibility scoping
- * and "safe for" filtering match the initial render. Both confidence bands are
- * returned independently so each section can page without mixing outcomes.
+ * and "safe for" filtering match the initial render.
  */
 export async function loadMoreSearchAction(
   queryString: string,
   offset: number,
-): Promise<{
-  items: RecipeSearchResult[];
-  nextOffset: number | null;
-  possibleItems: RecipeSearchResult[];
-  possibleNextOffset: number | null;
-}> {
+): Promise<Paginated<RecipeSearchResult>> {
   const start = Number.isInteger(offset) && offset > 0 ? offset : 0;
   const user = await getCurrentUser();
   const search = parseRecipeSearch(paramsFromQueryString(queryString));
   const page = await searchRecipes(user, search, { offset: start, lane: 'definite' });
 
-  const [items, possibleItems] = await Promise.all([
-    attachCardDietaryData(page.items),
-    attachCardDietaryData(page.possibleItems),
-  ]);
-
-  return {
-    items,
-    nextOffset: page.nextOffset,
-    possibleItems,
-    possibleNextOffset: page.possibleNextOffset,
-  };
+  const items = await attachCardDietaryData(page.items);
+  return { items, nextOffset: page.nextOffset };
 }
 
 /** Fetch another page from the separately ranked Possible matches lane. */
@@ -69,12 +55,7 @@ export async function loadMorePossibleSearchAction(
     lane: 'possible',
   });
 
-  const members = user ? await listMemberProfiles(user.id) : [];
-  const showBadges = members.some((member) => (member.allergens ?? []).some(isAllergen));
-  const itemsWithAllergens: RecipeSearchResult[] = showBadges
-    ? await attachCardAllergens(page.possibleItems)
-    : page.possibleItems;
-  const items = await attachCardDietaryAssessmentViews(itemsWithAllergens, user?.id ?? null);
+  const items = await attachCardDietaryData(page.possibleItems);
 
   return { items, nextOffset: page.possibleNextOffset };
 }

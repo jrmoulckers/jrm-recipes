@@ -127,8 +127,11 @@ describe('DietaryProfilesManager custom restrictions', () => {
 
     await user.click(screen.getByRole('button', { name: 'Copy Avoid rosemary' }));
     expect(screen.getByRole('combobox', { name: 'Copy to' })).toHaveValue('profile_2');
+    await user.click(screen.getByRole('checkbox', { name: /profile describes me/i }));
     await user.click(screen.getByRole('button', { name: 'Copy restriction' }));
 
-    await waitFor(() => expect(copyRestriction).toHaveBeenCalledWith('restriction_1', 'profile_2'));
+    await waitFor(() =>
+      expect(copyRestriction).toHaveBeenCalledWith('restriction_1', 'profile_2', 'self'),
+    );
   });
 });

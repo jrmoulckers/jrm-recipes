@@ -13,21 +13,19 @@ import {
   type DietaryTag,
 } from '~/lib/substitutions';
 import { safeSubstitutions } from '~/lib/dietary-match';
-import { deterministicEvidenceForIngredient } from '~/lib/dietary-evidence';
+import { type Allergen } from '~/lib/allergens';
+import {
+  assessIngredientsDeterministically,
+  deterministicEvidenceForIngredient,
+  type AggregatedDietaryAssessment,
+} from '~/lib/dietary-evidence';
 import {
   type CustomRestrictionSeverity,
   type DietaryEvidenceFinding,
   type DietaryIngredientInput,
 } from '~/lib/dietary-assessment';
-import { type BuiltInDietaryRuleId } from '~/lib/dietary-rules';
-import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
-import { type Allergen } from '~/lib/allergens';
-import {
-  assessIngredientsDeterministically,
-  type AggregatedDietaryAssessment,
-} from '~/lib/dietary-evidence';
-import { type DietaryIngredientInput } from '~/lib/dietary-assessment';
 import { BUILT_IN_DIETARY_RULES, type BuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
 import { Badge, type BadgeProps } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
@@ -95,6 +93,41 @@ export type SubstitutionDietaryImpact = {
   after: Pick<AggregatedDietaryAssessment, 'verdict' | 'confidence'>;
 };
 
+export type SubstitutionDietaryRule = {
+  ruleId: BuiltInDietaryRuleId;
+  dietaryTag: DietaryTag;
+  currentFinding: DietaryEvidenceFinding;
+};
+
+export type SubstitutionCustomRestriction = {
+  id: string;
+  name: string;
+  severity: CustomRestrictionSeverity;
+  terms: readonly string[];
+};
+
+function candidateFinding(
+  item: string,
+  dietaryTags: readonly DietaryTag[],
+  rule: SubstitutionDietaryRule,
+): DietaryEvidenceFinding {
+  const input: DietaryIngredientInput = {
+    ingredientId: 'substitution-preview',
+    item,
+    amount: null,
+    amountMax: null,
+    unit: null,
+    prep: null,
+    linkedFood: null,
+  };
+  const evidence = deterministicEvidenceForIngredient(input, rule.ruleId);
+  if (evidence.some((entry) => entry.finding === 'present')) return 'present';
+  if (dietaryTags.includes(rule.dietaryTag)) return 'absent';
+  if (evidence.some((entry) => entry.finding === 'possible')) return 'possible';
+  if (evidence.some((entry) => entry.finding === 'unresolved')) return 'unresolved';
+  return 'absent';
+}
+
 /**
  * Compare the complete recipe before and after a hypothetical swap. This is a
  * pure preview: it creates a replacement array and never writes or mutates the
@@ -141,6 +174,8 @@ export function IngredientSubstitutions({
   flagged = false,
   presetTags,
   avoidAllergens,
+  dietaryRules = [],
+  customRestrictions = [],
   recipePreview,
 }: {
   item: string;
@@ -155,6 +190,8 @@ export function IngredientSubstitutions({
    * for a member who is also allergic to tree nuts).
    */
   avoidAllergens?: Allergen[];
+  dietaryRules?: readonly SubstitutionDietaryRule[];
+  customRestrictions?: readonly SubstitutionCustomRestriction[];
   /** Complete recipe context enables an in-memory impact preview and authorized apply. */
   recipePreview?: SubstitutionRecipePreview;
 }) {
@@ -307,6 +344,14 @@ export function IngredientSubstitutions({
                     <span className="text-xs leading-relaxed text-muted-foreground">
                       {sub.ratioOrNotes}
                     </span>
+                    <SubstitutionProfileImpact
+                      currentItem={item}
+                      dietaryRules={dietaryRules}
+                      customRestrictions={customRestrictions}
+                      substituteTags={sub.dietaryTags ?? []}
+                      substitute={`${sub.substitute} ${sub.ratioOrNotes}`}
+                      avoidAllergens={avoidAllergens ?? []}
+                    />
                     {sub.dietaryTags && sub.dietaryTags.length > 0 && (
                       <div className="mt-0.5 flex flex-wrap gap-1">
                         {sub.dietaryTags.map((tag) => (
@@ -369,4 +414,88 @@ export function IngredientSubstitutions({
       </p>
     </>
   );
+}
+
+function SubstitutionProfileImpact({
+  currentItem,
+  dietaryRules,
+  customRestrictions,
+  substituteTags,
+  substitute,
+  avoidAllergens,
+}: {
+  currentItem: string;
+  dietaryRules: readonly SubstitutionDietaryRule[];
+  customRestrictions: readonly SubstitutionCustomRestriction[];
+  substituteTags: readonly DietaryTag[];
+  substitute: string;
+  avoidAllergens: readonly Allergen[];
+}) {
+  const t = useTranslations('ingredientSubstitutions.impact');
+  const tNames = useTranslations('classificationNames');
+  const introducedAllergens = safeSubstitutions(
+    [{ substitute, ratioOrNotes: '', dietaryTags: [...substituteTags] }],
+    avoidAllergens,
+  ).length
+    ? []
+    : avoidAllergens;
+  const currentFindings = new Map(
+    dietaryRules.map((rule) => [`rule:${rule.ruleId}`, rule.currentFinding]),
+  );
+  const candidateFindings = new Map(
+    dietaryRules.map((rule) => [
+      `rule:${rule.ruleId}`,
+      candidateFinding(substitute, substituteTags, rule),
+    ]),
+  );
+  for (const restriction of customRestrictions) {
+    currentFindings.set(
+      `custom:${restriction.id}`,
+      matchesCustomRestriction(currentItem, restriction.terms)
+        ? restriction.severity === 'preference'
+          ? 'possible'
+          : 'present'
+        : 'unresolved',
+    );
+    candidateFindings.set(
+      `custom:${restriction.id}`,
+      matchesCustomRestriction(substitute, restriction.terms)
+        ? restriction.severity === 'preference'
+          ? 'possible'
+          : 'present'
+        : 'unresolved',
+    );
+  }
+
+  const currentConflicts = [...currentFindings].filter(([, finding]) => finding === 'present');
+  const candidateConflicts = [...candidateFindings].filter(([, finding]) => finding === 'present');
+  const addedConflict =
+    introducedAllergens.length > 0 ||
+    candidateConflicts.some(([key]) => currentFindings.get(key) !== 'present');
+  const removedConflict = currentConflicts.find(([key]) => candidateFindings.get(key) === 'absent');
+  const needsReview =
+    [...candidateFindings.values()].some(
+      (finding) => finding === 'possible' || finding === 'unresolved',
+    ) || currentConflicts.some(([key]) => candidateFindings.get(key) !== 'absent');
+  const removedLabel = removedConflict
+    ? removedConflict[0].startsWith('custom:')
+      ? customRestrictions.find((restriction) => `custom:${restriction.id}` === removedConflict[0])
+          ?.name
+      : tNames(
+          dietaryRules.find((rule) => `rule:${rule.ruleId}` === removedConflict[0])!.dietaryTag,
+        )
+    : null;
+  const message = addedConflict
+    ? t('addsConflict')
+    : removedLabel && candidateConflicts.length === 0 && !needsReview
+      ? t('removes', { need: removedLabel })
+      : needsReview
+        ? t('review')
+        : null;
+
+  return message ? (
+    <p className="text-xs font-medium text-foreground" role="status">
+      {message}
+    </p>
+  ) : null;
 }

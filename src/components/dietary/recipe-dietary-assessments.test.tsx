@@ -1,4 +1,5 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { IntlWrapper } from '~/test/intl';
@@ -64,5 +65,67 @@ describe('RecipeDietaryAssessments', () => {
     expect(screen.getAllByRole('button')).toHaveLength(4);
     expect(disclosure).not.toBeNull();
     expect(within(disclosure!).getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('withholds medium and needs-review assessments from public viewers', () => {
+    const { container } = render(
+      <IntlWrapper>
+        <RecipeDietaryAssessments
+          limitPublicInferred
+          assessments={[
+            {
+              ruleId: 'composition:vegan',
+              source: 'deterministic',
+              verdict: 'meets',
+              confidence: 'medium',
+              recognizedIngredients: 1,
+              totalIngredients: 2,
+              attentionIngredients: [],
+            },
+            {
+              ruleId: 'allergen:dairy',
+              source: 'deterministic',
+              verdict: 'unknown',
+              confidence: 'needs-review',
+              recognizedIngredients: 1,
+              totalIngredients: 2,
+              attentionIngredients: [{ ingredientId: 'milk', name: 'milk', kind: 'unresolved' }],
+            },
+          ]}
+        />
+      </IntlWrapper>,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('moves authorized correction actions to the matching ingredient control', async () => {
+    const user = userEvent.setup();
+    render(
+      <IntlWrapper>
+        <RecipeDietaryAssessments
+          canReview
+          assessments={[
+            {
+              ruleId: 'allergen:dairy',
+              source: 'deterministic',
+              verdict: 'conflicts',
+              confidence: 'high',
+              recognizedIngredients: 1,
+              totalIngredients: 1,
+              attentionIngredients: [{ ingredientId: 'milk', name: 'milk', kind: 'conflict' }],
+            },
+          ]}
+        />
+        <details id="dietary-correction-milk">
+          <summary>Review milk</summary>
+        </details>
+      </IntlWrapper>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Conflict/ }));
+    await user.click(screen.getByRole('button', { name: 'Correct assessment' }));
+    expect(screen.getByText('Review milk').closest('details')).toHaveAttribute('open');
+    expect(screen.getByText('Review milk')).toHaveFocus();
   });
 });

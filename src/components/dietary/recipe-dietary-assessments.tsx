@@ -29,7 +29,35 @@ function badgeStatus(assessment: DietaryAssessmentView): 'suitability' | 'confli
   return 'suitability';
 }
 
-function AssessmentBadge({ assessment }: { assessment: DietaryAssessmentView }) {
+function focusIngredientCorrection(ingredientId: string): boolean {
+  const focusTarget = () => {
+    const target = document.getElementById(`dietary-correction-${ingredientId}`);
+    if (!(target instanceof HTMLDetailsElement)) return false;
+    target.open = true;
+    target.querySelector<HTMLElement>('summary')?.focus({ preventScroll: true });
+    target.scrollIntoView?.({
+      block: 'center',
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
+    return true;
+  };
+  if (focusTarget()) return true;
+  const recipeTab = document.getElementById('recipe-tab-trigger');
+  if (!(recipeTab instanceof HTMLButtonElement)) return false;
+  recipeTab.click();
+  window.setTimeout(() => {
+    if (!focusTarget()) recipeTab.focus();
+  });
+  return true;
+}
+
+function AssessmentBadge({
+  assessment,
+  canReview,
+}: {
+  assessment: DietaryAssessmentView;
+  canReview: boolean;
+}) {
   const t = useTranslations('dietary.assessments');
   const labelKey = RULE_LABEL_KEYS[assessment.ruleId];
   const label = labelKey && t.has(`rules.${labelKey}`) ? t(`rules.${labelKey}`) : assessment.ruleId;
@@ -49,6 +77,16 @@ function AssessmentBadge({ assessment }: { assessment: DietaryAssessmentView }) 
       recognizedIngredients={assessment.recognizedIngredients}
       totalIngredients={assessment.totalIngredients}
       attentionIngredients={assessment.attentionIngredients}
+      action={
+        canReview && assessment.attentionIngredients[0]
+          ? {
+              kind: assessment.verdict === 'conflicts' ? 'correct' : 'review',
+              restoreFocus: false,
+              onSelect: () =>
+                focusIngredientCorrection(assessment.attentionIngredients[0]!.ingredientId),
+            }
+          : undefined
+      }
     />
   );
 }
@@ -56,26 +94,30 @@ function AssessmentBadge({ assessment }: { assessment: DietaryAssessmentView }) 
 export function RecipeDietaryAssessments({
   assessments,
   limitPublicInferred = false,
+  canReview = false,
 }: {
   assessments: DietaryAssessmentView[];
   limitPublicInferred?: boolean;
+  canReview?: boolean;
 }) {
   const t = useTranslations('dietary.assessments');
-  if (assessments.length === 0) return null;
+  const visibleAssessments = limitPublicInferred
+    ? assessments.filter(
+        (assessment) =>
+          assessment.source === 'author-confirmed' ||
+          (assessment.confidence === 'high' && assessment.verdict !== 'unknown'),
+      )
+    : assessments;
+  if (visibleAssessments.length === 0) return null;
 
-  let inferredPositiveCount = 0;
-  const [primary, remaining] = assessments.reduce<
+  let inferredCount = 0;
+  const [primary, remaining] = visibleAssessments.reduce<
     [DietaryAssessmentView[], DietaryAssessmentView[]]
   >(
     (groups, assessment) => {
-      const inferredPositive =
-        assessment.source !== 'author-confirmed' &&
-        assessment.verdict === 'meets' &&
-        assessment.confidence === 'high';
-      if (inferredPositive) inferredPositiveCount += 1;
-      const deferred = limitPublicInferred
-        ? inferredPositive && inferredPositiveCount > 3
-        : groups[0].length >= 6;
+      const inferred = assessment.source !== 'author-confirmed' && assessment.confidence === 'high';
+      if (inferred) inferredCount += 1;
+      const deferred = limitPublicInferred ? inferred && inferredCount > 3 : groups[0].length >= 6;
       groups[deferred ? 1 : 0].push(assessment);
       return groups;
     },
@@ -91,7 +133,7 @@ export function RecipeDietaryAssessments({
       </div>
       <div className="flex flex-wrap gap-2">
         {primary.map((assessment) => (
-          <AssessmentBadge key={assessment.ruleId} assessment={assessment} />
+          <AssessmentBadge key={assessment.ruleId} assessment={assessment} canReview={canReview} />
         ))}
       </div>
       {remaining.length > 0 && (
@@ -101,7 +143,11 @@ export function RecipeDietaryAssessments({
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
             {remaining.map((assessment) => (
-              <AssessmentBadge key={assessment.ruleId} assessment={assessment} />
+              <AssessmentBadge
+                key={assessment.ruleId}
+                assessment={assessment}
+                canReview={canReview}
+              />
             ))}
           </div>
         </details>

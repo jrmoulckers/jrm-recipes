@@ -39,9 +39,9 @@ describe('CardDietaryBadge', () => {
     useActiveMemberStore.setState({ activeMemberId: null });
   });
 
-  it('renders nothing when no member is active', () => {
-    const { container } = render(<CardDietaryBadge members={MEMBERS} dietary={DIETARY} />);
-    expect(container).toBeEmptyDOMElement();
+  it('shows canonical high-confidence results when no member is active', () => {
+    render(<CardDietaryBadge members={MEMBERS} dietary={DIETARY} />);
+    expect(screen.getByRole('button', { name: /Dairy-free.*Suitable/i })).toBeInTheDocument();
   });
 
   it('renders nothing when the active member has no recorded allergies', () => {
@@ -90,36 +90,58 @@ describe('CardDietaryBadge', () => {
     expect(screen.getByRole('button', { name: /Status: Conflict/i })).toBeInTheDocument();
   });
 
-  it('uses canonical assessments when no member profile is active', () => {
-    render(
-      <CardDietaryBadge members={MEMBERS} assessments={[assessment()]} declared={[]} signedIn />,
+  it('withholds medium-confidence results from signed-out cards', () => {
+    const { container } = render(
+      <CardDietaryBadge
+        members={[]}
+        dietary={{
+          ...DIETARY,
+          assessments: [{ ...DIETARY.assessments[0]!, confidence: 'medium' as const }],
+        }}
+      />,
     );
-
-    expect(screen.getByRole('button', { name: /dairy-free/i })).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('uses real auth context when deciding whether a review assessment is visible', () => {
-    const review = assessment({
-      verdict: 'unknown',
-      confidence: 'needs-review',
-      evidence: [
-        {
-          ingredientId: 'seasoning',
-          ingredient: 'seasoning blend',
-          finding: 'unresolved',
-        },
-      ],
-    });
-    const { rerender } = render(
-      <CardDietaryBadge members={[]} assessments={[review]} declared={[]} signedIn={false} />,
+  it('announces medium-confidence signed-in results as needing review', () => {
+    render(
+      <CardDietaryBadge
+        members={[]}
+        signedIn
+        dietary={{
+          ...DIETARY,
+          assessments: [{ ...DIETARY.assessments[0]!, confidence: 'medium' as const }],
+        }}
+      />,
     );
-    expect(screen.queryByRole('button', { name: /needs review/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Status: Needs review/i })).toBeInTheDocument();
+  });
 
-    rerender(
-      <IntlWrapper>
-        <CardDietaryBadge members={[]} assessments={[review]} declared={[]} signedIn />
-      </IntlWrapper>,
+  it('prioritizes conflicts before limiting profile-less cards to three badges', () => {
+    render(
+      <CardDietaryBadge
+        members={[]}
+        dietary={{
+          ...DIETARY,
+          assessments: [
+            ...Array.from({ length: 3 }, (_, index) => ({
+              ...DIETARY.assessments[0]!,
+              ruleId: `rule:${index}`,
+            })),
+            {
+              ...DIETARY.assessments[0]!,
+              verdict: 'conflicts' as const,
+              attentionIngredients: [
+                { ingredientId: 'milk', name: 'milk', kind: 'conflict' as const },
+              ],
+            },
+          ],
+        }}
+      />,
     );
-    expect(screen.getByRole('button', { name: /needs review/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Dairy-free.*Status: Conflict/i }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(3);
   });
 });

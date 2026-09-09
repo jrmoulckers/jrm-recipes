@@ -2,30 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const {
-  getCurrentUserMock,
-  searchRecipesMock,
-  listMemberProfilesMock,
-  attachCardAllergensMock,
-  attachCardDietaryAssessmentViewsMock,
-} = vi.hoisted(() => ({
+const { getCurrentUserMock, searchRecipesMock, attachCardDietaryDataMock } = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(),
   searchRecipesMock: vi.fn(),
-  listMemberProfilesMock: vi.fn(),
-  attachCardAllergensMock: vi.fn(),
-  attachCardDietaryAssessmentViewsMock: vi.fn(),
+  attachCardDietaryDataMock: vi.fn(),
 }));
 
 vi.mock('~/server/auth', () => ({ getCurrentUser: getCurrentUserMock }));
-vi.mock('~/server/dietary/queries', () => ({
-  listMemberProfiles: listMemberProfilesMock,
-}));
 vi.mock('~/server/dietary/presentation', () => ({
-  attachCardDietaryAssessmentViews: attachCardDietaryAssessmentViewsMock,
+  attachCardDietaryData: attachCardDietaryDataMock,
 }));
 vi.mock('./queries', () => ({
   searchRecipes: searchRecipesMock,
-  attachCardAllergens: attachCardAllergensMock,
 }));
 
 import { loadMorePossibleSearchAction, loadMoreSearchAction } from './search-actions';
@@ -33,9 +21,7 @@ import { loadMorePossibleSearchAction, loadMoreSearchAction } from './search-act
 beforeEach(() => {
   vi.clearAllMocks();
   getCurrentUserMock.mockResolvedValue({ id: 'viewer_1' });
-  listMemberProfilesMock.mockResolvedValue([]);
-  attachCardAllergensMock.mockImplementation(async (recipes) => recipes);
-  attachCardDietaryAssessmentViewsMock.mockImplementation(async (recipes) => recipes);
+  attachCardDietaryDataMock.mockImplementation(async (recipes) => recipes);
 });
 
 describe('search pagination lanes', () => {
@@ -55,10 +41,7 @@ describe('search pagination lanes', () => {
       expect.objectContaining({ diets: ['vegan'] }),
       { offset: 24, lane: 'definite' },
     );
-    expect(attachCardDietaryAssessmentViewsMock).toHaveBeenCalledWith(
-      [{ id: 'definite_1' }],
-      'viewer_1',
-    );
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'definite_1' }]);
     expect(result).toEqual({ items: [{ id: 'definite_1' }], nextOffset: 48 });
   });
 
@@ -78,10 +61,7 @@ describe('search pagination lanes', () => {
       expect.objectContaining({ diets: ['vegan'] }),
       { possibleOffset: 60, lane: 'possible' },
     );
-    expect(attachCardDietaryAssessmentViewsMock).toHaveBeenCalledWith(
-      [{ id: 'possible_1' }],
-      'viewer_1',
-    );
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'possible_1' }]);
     expect(result).toEqual({ items: [{ id: 'possible_1' }], nextOffset: 80 });
   });
 });

@@ -22,10 +22,11 @@ import {
   updateMemberProfile,
 } from './mutations';
 import {
-  customDietaryRestrictionInputSchema,
+  customDietaryRestrictionCopyInputSchema,
+  customDietaryRestrictionMutationInputSchema,
   memberProfileInput,
   nutritionTargetInput,
-  type CustomDietaryRestrictionInputRaw,
+  type CustomDietaryRestrictionMutationInputRaw,
   type MemberProfileInputRaw,
   type NutritionTargetInputRaw,
 } from './validation';
@@ -143,11 +144,11 @@ function customRestrictionMessage(error: unknown): string {
 
 export async function createCustomDietaryRestrictionAction(
   profileId: string,
-  input: CustomDietaryRestrictionInputRaw,
+  input: CustomDietaryRestrictionMutationInputRaw,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
-  const parsed = customDietaryRestrictionInputSchema.safeParse(input);
+  const parsed = customDietaryRestrictionMutationInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -158,7 +159,8 @@ export async function createCustomDietaryRestrictionAction(
 
   try {
     const user = await requireUser();
-    const row = await createCustomDietaryRestriction(profileId, parsed.data, user);
+    const { subjectScope: _subjectScope, ...restriction } = parsed.data;
+    const row = await createCustomDietaryRestriction(profileId, restriction, user);
     revalidateCustomDietaryData();
     return { ok: true, id: row.id };
   } catch (error) {
@@ -168,11 +170,11 @@ export async function createCustomDietaryRestrictionAction(
 
 export async function updateCustomDietaryRestrictionAction(
   id: string,
-  input: CustomDietaryRestrictionInputRaw,
+  input: CustomDietaryRestrictionMutationInputRaw,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
-  const parsed = customDietaryRestrictionInputSchema.safeParse(input);
+  const parsed = customDietaryRestrictionMutationInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -183,7 +185,8 @@ export async function updateCustomDietaryRestrictionAction(
 
   try {
     const user = await requireUser();
-    await updateCustomDietaryRestriction(id, parsed.data, user);
+    const { subjectScope: _subjectScope, ...restriction } = parsed.data;
+    await updateCustomDietaryRestriction(id, restriction, user);
     revalidateCustomDietaryData();
     return { ok: true, id };
   } catch (error) {
@@ -207,8 +210,17 @@ export async function deleteCustomDietaryRestrictionAction(id: string): Promise<
 export async function copyCustomDietaryRestrictionAction(
   id: string,
   targetProfileId: string,
+  subjectScope: 'self' | undefined,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = customDietaryRestrictionCopyInputSchema.safeParse({ subjectScope });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
 
   try {
     const user = await requireUser();

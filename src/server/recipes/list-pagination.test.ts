@@ -31,8 +31,6 @@ vi.mock('~/server/db/resolve-food', () => ({
 
 import type { User } from '~/server/db/schema';
 import { COMPOSITION_COVERED_CATEGORIES } from '~/lib/dietary-rules';
-import { FOOD_ALLERGENS } from '~/lib/food-allergens';
-import { FOOD_ITEMS } from '~/lib/food-db';
 import { listLibrary, listLibraryRecipeIds, searchRecipes } from './queries';
 import type { RecipeSearch } from './search';
 import { LIBRARY_PAGE_SIZE } from './pagination';
@@ -164,7 +162,7 @@ describe('searchRecipes pagination (#58)', () => {
     expect(where && dialect.sqlToQuery(where).sql.toLowerCase()).toContain('false');
   });
 
-  it('evaluates approved custom terms directly with phrase boundaries', async () => {
+  it('requires affirmative curated coverage for blocking custom restrictions', async () => {
     dbMock.query.recipes.findMany.mockResolvedValue([]);
     dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
       id: 'profile_1',
@@ -174,8 +172,7 @@ describe('searchRecipes pagination (#58)', () => {
         {
           id: 'restriction_1',
           severity: 'allergy-intolerance',
-          archivedAt: null,
-          terms: [{ term: 'rosemary oil', source: 'exact', approved: true }],
+          terms: [{ term: 'mushrooms', source: 'exact', approved: true }],
         },
       ],
     });
@@ -184,7 +181,43 @@ describe('searchRecipes pagination (#58)', () => {
 
     const where = lastFindManyArg().where;
     const query = where ? dialect.sqlToQuery(where) : null;
-    expect(query?.sql).toContain('~*');
-    expect(query?.params).toContain('(^|[^[:alnum:]])rosemary[^[:alnum:]]+oil([^[:alnum:]]|$)');
+    expect(query?.sql).toContain('"food_items"."source"');
+    expect(query?.sql).toContain('"food_items"."category" in');
+    expect(query?.params).toContain('curated');
+    expect(query?.params).toEqual(expect.arrayContaining([...COMPOSITION_COVERED_CATEGORIES]));
+    expect(query?.params).toContain('food_mushroom');
+    expect(query?.params).toContain('profile_1');
+  });
+
+  it('pages Possible matches with an independent offset', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      { id: 'possible-a', tags: [] },
+      { id: 'possible-b', tags: [] },
+    ]);
+
+    const page = await searchRecipes(
+      viewer,
+      { ...baseSearch, diets: ['vegan'] },
+      { limit: 2, possibleOffset: 4 },
+    );
+
+    expect(lastFindManyArg().offset).toBe(4);
+    expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a', 'possible-b']);
+    expect(page.possibleNextOffset).toBe(6);
+  });
+
+  it('does not execute the definite lane for a Possible-only page', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([{ id: 'possible-a', tags: [] }]);
+
+    const page = await searchRecipes(
+      viewer,
+      { ...baseSearch, diets: ['vegan'] },
+      { limit: 2, possibleOffset: 8, lane: 'possible' },
+    );
+
+    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(1);
+    expect(lastFindManyArg().offset).toBe(8);
+    expect(page.items).toEqual([]);
+    expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a']);
   });
 });

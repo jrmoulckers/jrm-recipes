@@ -125,21 +125,21 @@ export function SearchResultsFeed({
   }
 
   function onLoadMorePossible() {
-    if (possibleNextOffset == null || pending) return;
+    if (possibleNextOffset == null || possiblePending) return;
     const requestedQuery = queryString;
     const requestedItems = possibleItems;
-    startTransition(async () => {
-      const result = await loadMoreSearchAction(requestedQuery, possibleNextOffset);
+    startPossibleTransition(async () => {
+      const result = await loadMorePossibleSearchAction(requestedQuery, possibleNextOffset);
       if (currentQuery.current !== requestedQuery) return;
       setPossiblePage((previousPage) => {
         const previousItems =
           previousPage.queryString === requestedQuery ? previousPage.items : requestedItems;
         const seen = new Set(previousItems.map((recipe) => recipe.id));
-        const fresh = result.possibleItems.filter((recipe) => !seen.has(recipe.id));
+        const fresh = result.items.filter((recipe) => !seen.has(recipe.id));
         return {
           queryString: requestedQuery,
           items: fresh.length > 0 ? [...previousItems, ...fresh] : previousItems,
-          nextOffset: result.possibleNextOffset,
+          nextOffset: result.nextOffset,
         };
       });
     });
@@ -287,9 +287,9 @@ export function SearchResultsFeed({
                 variant="outline"
                 size="lg"
                 onClick={onLoadMorePossible}
-                disabled={pending}
+                disabled={possiblePending}
               >
-                {pending ? t('common.loading') : t('searchResults.loadMorePossible')}
+                {possiblePending ? t('common.loading') : t('searchResults.loadMorePossible')}
               </Button>
             </div>
           )}

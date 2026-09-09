@@ -74,4 +74,34 @@ describe('SearchResultsFeed', () => {
     expect(screen.getByText('Trusted Soup')).toBeTruthy();
     expect(screen.getByText('Possible Stew')).toBeTruthy();
   });
+
+  it('pages Possible matches with their independent action and cursor', async () => {
+    const user = userEvent.setup();
+    vi.mocked(loadMorePossibleSearchAction).mockResolvedValue({
+      items: [recipe('possible-1', 'Possible One'), recipe('possible-2', 'Possible Two')],
+      nextOffset: null,
+    });
+    render(
+      <SearchResultsFeed
+        initialItems={[recipe('high', 'Trusted Soup')]}
+        initialPossibleItems={[recipe('possible-1', 'Possible One')]}
+        initialNextOffset={null}
+        initialPossibleNextOffset={60}
+        queryString="diet=vegan"
+        showDietaryBands
+      />,
+    );
+
+    const possibleSection = screen.getByRole('region', { name: 'Possible matches' });
+    await user.click(
+      within(possibleSection).getByRole('button', { name: 'Load more possible matches' }),
+    );
+    await waitFor(() =>
+      expect(within(possibleSection).getByText('Possible Two')).toBeInTheDocument(),
+    );
+
+    expect(within(possibleSection).getAllByText('Possible One')).toHaveLength(1);
+    expect(loadMorePossibleSearchAction).toHaveBeenCalledWith('diet=vegan', 60);
+    expect(loadMoreSearchAction).not.toHaveBeenCalled();
+  });
 });

@@ -173,14 +173,11 @@ async function BrowseSections({
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
   const hasLibrary = library.items.length > 0;
   const canFavorite = Boolean(user);
-  const [libraryCards, recentCards, discoverCards] =
-    members.length > 0
-      ? await Promise.all([
-          attachCardDietaryData(library.items),
-          attachCardDietaryData(recentlyViewed),
-          attachCardDietaryData(discoverOnly),
-        ])
-      : [library.items, recentlyViewed, discoverOnly];
+  const [libraryCards, recentCards, discoverCards] = await Promise.all([
+    attachCardDietaryData(library.items),
+    attachCardDietaryData(recentlyViewed),
+    attachCardDietaryData(discoverOnly),
+  ]);
   const t = await getTranslations('recipe.library');
 
   return (
@@ -344,7 +341,7 @@ async function ResultsView({
       favoritedIds={[...favoriteIds]}
       priorityCount={LCP_PRIORITY_COUNT}
       members={members}
-      signedIn={viewerId != null}
+      signedIn={canFavorite}
       quickPlan={quickPlan ?? undefined}
       correction={correction}
       unrankable={page.unrankable}
