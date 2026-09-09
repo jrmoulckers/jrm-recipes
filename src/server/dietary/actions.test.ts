@@ -20,9 +20,13 @@ const {
 
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('~/server/auth', () => ({ requireUser: requireUserMock }));
+vi.mock('~/server/billing/entitlements', () => ({ requireEntitlement: vi.fn() }));
 vi.mock('~/server/db', () => ({ isDbConfigured: () => true }));
+vi.mock('~/server/recipes/queries', () => ({ listLibraryRecipeIds: vi.fn() }));
 vi.mock('./assessments', () => ({
+  getOnDeviceDietaryJob: vi.fn(),
   saveDietaryIngredientCorrection: saveCorrectionMock,
+  saveOnDeviceDietaryAssessment: vi.fn(),
 }));
 vi.mock('./mutations', () => ({
   copyCustomDietaryRestriction: copyCustomRestrictionMock,
@@ -69,6 +73,7 @@ describe('custom dietary restriction actions', () => {
     expect(createCustomRestrictionMock).toHaveBeenCalledWith(
       'profile_1',
       {
+        subjectScope: 'self',
         name: 'Nightshades',
         severity: 'strict-avoidance',
         terms: [

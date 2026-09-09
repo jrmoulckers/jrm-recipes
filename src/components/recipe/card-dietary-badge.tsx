@@ -102,7 +102,15 @@ export function CardDietaryBadge({
   const t = useTranslations('dietary.cardAssessment');
   const tAssessments = useTranslations('dietary.assessments');
   if (!member) {
-    const assessments = publicCardAssessments(dietary.assessments, signedIn);
+    const assessments = publicCardAssessments(
+      dietary.assessments.filter(
+        (assessment) =>
+          assessment.scope == null ||
+          assessment.scope === 'canonical' ||
+          assessment.scope === 'personal',
+      ),
+      signedIn,
+    );
     if (assessments.length === 0) return null;
     return (
       <div className="flex max-w-full flex-wrap gap-1.5">
@@ -142,7 +150,16 @@ export function CardDietaryBadge({
     diets: member.diets ?? [],
     customRestrictions: member.customRestrictions ?? [],
   };
-  const summary = summarizeCardDietaryProfile(profile, dietary);
+  const summary = summarizeCardDietaryProfile(profile, {
+    ...dietary,
+    assessments: dietary.assessments.filter(
+      (assessment) =>
+        assessment.scope == null ||
+        assessment.scope === 'canonical' ||
+        assessment.scope === 'personal' ||
+        (assessment.scope === 'profile' && assessment.profileId === member.id),
+    ),
+  });
   if (!summary) return null;
 
   return (

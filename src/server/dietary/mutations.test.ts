@@ -21,6 +21,7 @@ import {
 } from './mutations';
 
 const input = {
+  subjectScope: 'self' as const,
   name: 'Nightshades',
   severity: 'strict-avoidance' as const,
   terms: [

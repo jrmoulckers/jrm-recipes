@@ -23,11 +23,8 @@ import {
   type MemberProfileInputRaw,
 } from '~/server/dietary/validation';
 import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
-import {
-  customRestrictionSeveritySchema,
-  type CustomDietaryRestrictionInput,
-  type CustomRestrictionSeverity,
-} from '~/lib/dietary-assessment';
+import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
+import { type CustomDietaryRestrictionInput } from '~/lib/dietary-assessment';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
 import { formatNutrient } from '~/lib/nutrition';
 import {
@@ -759,7 +756,7 @@ export function DietaryProfilesManager({
                 onChange={(event) =>
                   setRestrictionDraft((draft) => ({
                     ...draft,
-                    severity: customRestrictionSeveritySchema.parse(event.target.value),
+                    severity: event.target.value as CustomRestrictionSeverity,
                   }))
                 }
               >

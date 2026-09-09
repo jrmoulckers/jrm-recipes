@@ -51,10 +51,8 @@ import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestion
 import { type Nutrition } from '~/lib/nutrition';
 import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
-import {
-  type CustomRestrictionSeverity,
-  type DietaryLinkedFoodInput,
-} from '~/lib/dietary-assessment';
+import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
+import { type DietaryLinkedFoodInput } from '~/lib/dietary-assessment';
 import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
 import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
 import { matchesCustomRestriction } from '~/lib/custom-restriction-match';

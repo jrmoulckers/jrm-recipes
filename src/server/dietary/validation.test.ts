@@ -10,6 +10,7 @@ import {
 describe('custom dietary restriction validation', () => {
   it('keeps exact Free terms approved and suggested aliases structurally distinct', () => {
     const parsed = customDietaryRestrictionInputSchema.parse({
+      subjectScope: 'self',
       name: '  Nightshades  ',
       severity: 'strict-avoidance',
       terms: [
@@ -19,6 +20,7 @@ describe('custom dietary restriction validation', () => {
     });
 
     expect(parsed).toEqual({
+      subjectScope: 'self',
       name: 'Nightshades',
       severity: 'strict-avoidance',
       terms: [
@@ -41,6 +43,7 @@ describe('custom dietary restriction validation', () => {
   it('requires at least one term and rejects unknown term metadata', () => {
     expect(() =>
       customDietaryRestrictionInputSchema.parse({
+        subjectScope: 'self',
         name: 'Nightshades',
         severity: 'preference',
         terms: [],

@@ -99,6 +99,36 @@ describe('RecipeDietaryAssessments', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('offers Family analysis for signed-in review results without the entitlement', async () => {
+    const user = userEvent.setup();
+    render(
+      <IntlWrapper>
+        <RecipeDietaryAssessments
+          signedIn
+          assessments={[
+            {
+              ruleId: 'allergen:dairy',
+              source: 'deterministic',
+              verdict: 'unknown',
+              confidence: 'needs-review',
+              recognizedIngredients: 0,
+              totalIngredients: 1,
+              attentionIngredients: [
+                { ingredientId: 'milk', name: 'milk substitute', kind: 'unresolved' },
+              ],
+            },
+          ]}
+        />
+      </IntlWrapper>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Needs review/ }));
+    expect(screen.getByRole('link', { name: 'Resolve with Family' })).toHaveAttribute(
+      'href',
+      '/pricing',
+    );
+  });
+
   it('moves authorized correction actions to the matching ingredient control', async () => {
     const user = userEvent.setup();
     render(

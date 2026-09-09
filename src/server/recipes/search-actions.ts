@@ -38,7 +38,7 @@ export async function loadMoreSearchAction(
   const search = parseRecipeSearch(paramsFromQueryString(queryString));
   const page = await searchRecipes(user, search, { offset: start, lane: 'definite' });
 
-  const items = await attachCardDietaryData(page.items);
+  const items = await attachCardDietaryData(page.items, user?.id ?? null);
   return { items, nextOffset: page.nextOffset };
 }
 
@@ -55,7 +55,7 @@ export async function loadMorePossibleSearchAction(
     lane: 'possible',
   });
 
-  const items = await attachCardDietaryData(page.possibleItems);
+  const items = await attachCardDietaryData(page.possibleItems, user?.id ?? null);
 
   return { items, nextOffset: page.possibleNextOffset };
 }

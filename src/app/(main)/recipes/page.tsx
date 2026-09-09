@@ -174,9 +174,9 @@ async function BrowseSections({
   const hasLibrary = library.items.length > 0;
   const canFavorite = Boolean(user);
   const [libraryCards, recentCards, discoverCards] = await Promise.all([
-    attachCardDietaryData(library.items),
-    attachCardDietaryData(recentlyViewed),
-    attachCardDietaryData(discoverOnly),
+    attachCardDietaryData(library.items, user?.id ?? null),
+    attachCardDietaryData(recentlyViewed, user?.id ?? null),
+    attachCardDietaryData(discoverOnly, user?.id ?? null),
   ]);
   const t = await getTranslations('recipe.library');
 
@@ -272,6 +272,7 @@ async function SearchResults({
         return (
           <ResultsView
             page={corrected}
+            actorId={user?.id ?? null}
             search={correctedSearch}
             favoriteIds={favoriteIds}
             canFavorite={canFavorite}
@@ -288,6 +289,7 @@ async function SearchResults({
   return (
     <ResultsView
       page={page}
+      actorId={user?.id ?? null}
       search={search}
       favoriteIds={favoriteIds}
       canFavorite={canFavorite}
@@ -304,6 +306,7 @@ async function SearchResults({
  */
 async function ResultsView({
   page,
+  actorId,
   search,
   favoriteIds,
   canFavorite,
@@ -318,6 +321,7 @@ async function ResultsView({
     possibleNextOffset: number | null;
     unrankable?: { lowConfidence: number; unknown: number };
   };
+  actorId: string | null;
   search: RecipeSearch;
   favoriteIds: Set<string>;
   canFavorite: boolean;
@@ -326,8 +330,8 @@ async function ResultsView({
   correction?: { from: string; to: string };
 }) {
   const [cards, possibleCards] = await Promise.all([
-    attachCardDietaryData(page.items),
-    attachCardDietaryData(page.possibleItems),
+    attachCardDietaryData(page.items, actorId),
+    attachCardDietaryData(page.possibleItems, actorId),
   ]);
   return (
     <SearchResultsFeed

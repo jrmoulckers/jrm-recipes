@@ -46,7 +46,7 @@ async function DietaryProfilesPage() {
         listNutritionTargetsForUser(user.id),
         getEntitlements(user),
       ])
-    : [[], [], new Map<string, EffectiveNutritionTarget[]>()];
+    : [[], [], new Map<string, EffectiveNutritionTarget[]>(), null];
   const customRestrictions = user
     ? await listCustomRestrictionsForProfiles(
         profileRows.map((profile) => profile.id),

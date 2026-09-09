@@ -11,7 +11,7 @@ import {
   DIETARY_EVIDENCE_FINDINGS,
   type DietaryEvidenceFinding,
   type DietaryEvidenceSource,
-} from '~/lib/dietary-assessment';
+} from '~/lib/dietary-contracts';
 import { cn } from '~/lib/utils';
 import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
 

@@ -181,6 +181,7 @@ export async function copyCustomDietaryRestriction(
     const source = await requireOwnedCustomRestriction(tx, id, user);
     await requireOwnedProfile(tx, targetProfileId, user);
     const value = customDietaryRestrictionInputSchema.parse({
+      subjectScope: 'self',
       name: source.name,
       severity: source.severity,
       terms: source.terms,

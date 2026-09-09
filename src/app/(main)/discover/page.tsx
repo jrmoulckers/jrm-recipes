@@ -77,7 +77,9 @@ async function DiscoverPage() {
         : [],
     ),
   }));
-  const discoverCards = dbReady ? await attachCardDietaryData(discover.items) : discover.items;
+  const discoverCards = dbReady
+    ? await attachCardDietaryData(discover.items, user?.id ?? null)
+    : discover.items;
   const t = await getTranslations('recipe.discover');
   const tMeta = await getTranslations('metadata');
 

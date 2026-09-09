@@ -53,7 +53,7 @@ export async function loadMorePublicRecipesAction(
   }
 
   return {
-    items: await attachCardDietaryData(items),
+    items: await attachCardDietaryData(items, user?.id ?? null),
     nextOffset,
   };
 }

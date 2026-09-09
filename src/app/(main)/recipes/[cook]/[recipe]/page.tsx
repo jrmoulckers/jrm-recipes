@@ -338,6 +338,7 @@ async function RecipePage({
     ingredientDietaryContext,
     dietaryAssessments,
     dietaryEvidence,
+    entitlements,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -356,7 +357,7 @@ async function RecipePage({
     dbEnabled && user && !shareToken
       ? listRecipeDietaryAssessmentViews(recipe.id, user.id)
       : dbEnabled
-        ? listAuthorizedRecipeDietaryAssessmentViews(recipe.id)
+        ? listAuthorizedRecipeDietaryAssessmentViews(recipe.id, shareToken)
         : Promise.resolve(
             authorConfirmedDietaryAssessmentViews(recipe.dietaryFlags, recipe.ingredients.length),
           ),
@@ -699,6 +700,8 @@ async function RecipePage({
           assessments={dietaryAssessments}
           limitPublicInferred={!user || Boolean(shareToken)}
           canReview={canEdit}
+          signedIn={Boolean(user)}
+          canUseAdvancedAnalysis={Boolean(entitlements?.advancedDietaryAnalysis)}
         />
 
         <Separator />

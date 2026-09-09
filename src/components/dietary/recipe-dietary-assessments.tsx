@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
+import { useActiveMemberStore } from '~/lib/active-member-store';
 import type { DietaryAssessmentView } from '~/lib/dietary-presentation';
 import { DietaryAssessmentBadge } from './dietary-assessment-badge';
 
@@ -54,9 +55,13 @@ function focusIngredientCorrection(ingredientId: string): boolean {
 function AssessmentBadge({
   assessment,
   canReview,
+  signedIn,
+  canUseAdvancedAnalysis,
 }: {
   assessment: DietaryAssessmentView;
   canReview: boolean;
+  signedIn: boolean;
+  canUseAdvancedAnalysis: boolean;
 }) {
   const t = useTranslations('dietary.assessments');
   const labelKey = RULE_LABEL_KEYS[assessment.ruleId];
@@ -85,7 +90,12 @@ function AssessmentBadge({
               onSelect: () =>
                 focusIngredientCorrection(assessment.attentionIngredients[0]!.ingredientId),
             }
-          : undefined
+          : assessment.attentionIngredients[0] &&
+              badgeStatus(assessment) === 'review' &&
+              signedIn &&
+              !canUseAdvancedAnalysis
+            ? { kind: 'upgrade', href: '/pricing' }
+            : undefined
       }
     />
   );
@@ -95,19 +105,31 @@ export function RecipeDietaryAssessments({
   assessments,
   limitPublicInferred = false,
   canReview = false,
+  signedIn = false,
+  canUseAdvancedAnalysis = false,
 }: {
   assessments: DietaryAssessmentView[];
   limitPublicInferred?: boolean;
   canReview?: boolean;
+  signedIn?: boolean;
+  canUseAdvancedAnalysis?: boolean;
 }) {
   const t = useTranslations('dietary.assessments');
+  const activeProfileId = useActiveMemberStore((state) => state.activeMemberId);
+  const viewerAssessments = assessments.filter(
+    (assessment) =>
+      assessment.scope == null ||
+      assessment.scope === 'canonical' ||
+      assessment.scope === 'personal' ||
+      (assessment.scope === 'profile' && assessment.profileId === activeProfileId),
+  );
   const visibleAssessments = limitPublicInferred
-    ? assessments.filter(
+    ? viewerAssessments.filter(
         (assessment) =>
           assessment.source === 'author-confirmed' ||
           (assessment.confidence === 'high' && assessment.verdict !== 'unknown'),
       )
-    : assessments;
+    : viewerAssessments;
   if (visibleAssessments.length === 0) return null;
 
   let inferredCount = 0;
@@ -133,7 +155,13 @@ export function RecipeDietaryAssessments({
       </div>
       <div className="flex flex-wrap gap-2">
         {primary.map((assessment) => (
-          <AssessmentBadge key={assessment.ruleId} assessment={assessment} canReview={canReview} />
+          <AssessmentBadge
+            key={assessment.ruleId}
+            assessment={assessment}
+            canReview={canReview}
+            signedIn={signedIn}
+            canUseAdvancedAnalysis={canUseAdvancedAnalysis}
+          />
         ))}
       </div>
       {remaining.length > 0 && (
@@ -147,6 +175,8 @@ export function RecipeDietaryAssessments({
                 key={assessment.ruleId}
                 assessment={assessment}
                 canReview={canReview}
+                signedIn={signedIn}
+                canUseAdvancedAnalysis={canUseAdvancedAnalysis}
               />
             ))}
           </div>

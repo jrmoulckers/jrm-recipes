@@ -1,10 +1,11 @@
 import type { Allergen } from './allergens';
 import type {
   CustomRestrictionSeverity,
+  DietaryAssessmentScope,
   DietaryAssessmentSource,
   DietaryConfidence,
   DietaryVerdict,
-} from './dietary-assessment';
+} from './dietary-contracts';
 import { dietaryRuleIdsForTag } from './dietary-projection';
 import type { DietaryTag } from './substitutions';
 
@@ -16,6 +17,8 @@ export type DietaryAttentionView = {
 
 export type DietaryAssessmentView = {
   ruleId: string;
+  scope?: DietaryAssessmentScope;
+  profileId?: string | null;
   source: DietaryAssessmentSource;
   verdict: DietaryVerdict;
   confidence: DietaryConfidence | null;

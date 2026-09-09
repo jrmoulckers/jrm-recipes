@@ -41,7 +41,7 @@ describe('search pagination lanes', () => {
       expect.objectContaining({ diets: ['vegan'] }),
       { offset: 24, lane: 'definite' },
     );
-    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'definite_1' }]);
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'definite_1' }], 'viewer_1');
     expect(result).toEqual({ items: [{ id: 'definite_1' }], nextOffset: 48 });
   });
 
@@ -61,7 +61,7 @@ describe('search pagination lanes', () => {
       expect.objectContaining({ diets: ['vegan'] }),
       { possibleOffset: 60, lane: 'possible' },
     );
-    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'possible_1' }]);
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'possible_1' }], 'viewer_1');
     expect(result).toEqual({ items: [{ id: 'possible_1' }], nextOffset: 80 });
   });
 });

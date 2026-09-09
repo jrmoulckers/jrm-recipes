@@ -20,7 +20,7 @@ export async function loadMoreLibraryAction(offset: number): Promise<Paginated<C
   const user = await getCurrentUser();
   const page = await listLibrary(user, { offset: start });
 
-  const items: CardRecipe[] = await attachCardDietaryData(page.items);
+  const items: CardRecipe[] = await attachCardDietaryData(page.items, user?.id ?? null);
 
   return { items, nextOffset: page.nextOffset };
 }

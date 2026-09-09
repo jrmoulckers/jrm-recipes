@@ -5,11 +5,20 @@ import { type z } from 'zod';
 
 import {
   dietaryIngredientCorrectionSchema,
+  onDeviceDietarySubmissionSchema,
   type DietaryIngredientCorrection,
+  type OnDeviceDietarySubmission,
 } from '~/lib/dietary-assessment';
 import { requireUser } from '~/server/auth';
+import { requireEntitlement } from '~/server/billing/entitlements';
 import { isDbConfigured } from '~/server/db';
-import { saveDietaryIngredientCorrection } from './assessments';
+import { listLibraryRecipeIds } from '~/server/recipes/queries';
+import {
+  getOnDeviceDietaryJob,
+  saveDietaryIngredientCorrection,
+  saveOnDeviceDietaryAssessment,
+  type OnDeviceDietaryJob,
+} from './assessments';
 import {
   copyCustomDietaryRestriction,
   createCustomDietaryRestriction,
@@ -159,8 +168,7 @@ export async function createCustomDietaryRestrictionAction(
 
   try {
     const user = await requireUser();
-    const { subjectScope: _subjectScope, ...restriction } = parsed.data;
-    const row = await createCustomDietaryRestriction(profileId, restriction, user);
+    const row = await createCustomDietaryRestriction(profileId, parsed.data, user);
     revalidateCustomDietaryData();
     return { ok: true, id: row.id };
   } catch (error) {
@@ -185,8 +193,7 @@ export async function updateCustomDietaryRestrictionAction(
 
   try {
     const user = await requireUser();
-    const { subjectScope: _subjectScope, ...restriction } = parsed.data;
-    await updateCustomDietaryRestriction(id, restriction, user);
+    await updateCustomDietaryRestriction(id, parsed.data, user);
     revalidateCustomDietaryData();
     return { ok: true, id };
   } catch (error) {

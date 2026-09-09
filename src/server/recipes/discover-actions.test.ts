@@ -107,7 +107,7 @@ describe('library filtering + pagination', () => {
 
     const result = await loadMorePublicRecipesAction(0);
 
-    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'r1' }]);
+    expect(attachCardDietaryDataMock).toHaveBeenCalledWith([{ id: 'r1' }], 'viewer_1');
     expect(result.items[0]).toEqual(
       expect.objectContaining({ dietary: { assessments: [], ingredients: [] } }),
     );

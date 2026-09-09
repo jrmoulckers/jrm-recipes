@@ -22,8 +22,8 @@ import {
 import {
   type CustomRestrictionSeverity,
   type DietaryEvidenceFinding,
-  type DietaryIngredientInput,
-} from '~/lib/dietary-assessment';
+} from '~/lib/dietary-contracts';
+import { type DietaryIngredientInput } from '~/lib/dietary-assessment';
 import { BUILT_IN_DIETARY_RULES, type BuiltInDietaryRuleId } from '~/lib/dietary-rules';
 import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
 import { Badge, type BadgeProps } from '~/components/ui/badge';

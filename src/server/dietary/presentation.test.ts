@@ -2,29 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { assessmentFindMany, ingredientWhere, ingredientRows, listForViewer, recipeFindMany } =
-  vi.hoisted(() => {
-    const assessmentFindMany = vi.fn();
-    const ingredientRows = vi.fn();
-    const ingredientWhere = vi.fn(() => ingredientRows());
-    return {
-      assessmentFindMany,
-      ingredientWhere,
-      ingredientRows,
-      listForViewer: vi.fn(),
-      recipeFindMany: vi.fn(),
-    };
-  });
+const { loadReadBatch, recipeFindMany } = vi.hoisted(() => ({
+  loadReadBatch: vi.fn(),
+  recipeFindMany: vi.fn(),
+}));
 
 vi.mock('~/server/db', () => {
   const executor = {
-    select: () => ({
-      from: () => ({
-        leftJoin: () => ({ where: ingredientWhere }),
-      }),
-    }),
     query: {
-      dietaryAssessments: { findMany: assessmentFindMany },
       recipes: { findMany: recipeFindMany },
     },
   };
@@ -38,7 +23,7 @@ vi.mock('~/server/db', () => {
 });
 
 vi.mock('./assessments', () => ({
-  listDietaryAssessmentsForViewer: listForViewer,
+  loadDietaryAssessmentReadBatch: loadReadBatch,
 }));
 
 import {
@@ -46,9 +31,7 @@ import {
   listAuthorizedRecipeDietaryAssessmentViews,
   listRecipeDietaryAssessmentViews,
 } from './presentation';
-import { dietaryIngredientFingerprint } from '~/lib/dietary-fingerprint';
-
-const currentFingerprint = dietaryIngredientFingerprint([
+const dietaryIngredients = [
   {
     ingredientId: 'ingredient_1',
     item: 'milk',
@@ -67,64 +50,42 @@ const currentFingerprint = dietaryIngredientFingerprint([
     prep: null,
     linkedFood: null,
   },
-]);
+];
+
+function mockAssessmentRows(rows: unknown[]) {
+  loadReadBatch.mockResolvedValue({
+    ingredientsByRecipeId: new Map([['recipe_1', dietaryIngredients]]),
+    assessmentsByRecipeId: new Map([['recipe_1', rows]]),
+  });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  ingredientRows.mockResolvedValue([
-    {
-      id: 'ingredient_1',
-      recipeId: 'recipe_1',
-      name: 'milk',
-      amount: null,
-      amountMax: null,
-      unit: null,
-      prep: null,
-      foodId: null,
-      foodSlug: null,
-      foodCategory: null,
-      foodAllergens: null,
-    },
-    {
-      id: 'ingredient_2',
-      recipeId: 'recipe_1',
-      name: 'salt',
-      amount: null,
-      amountMax: null,
-      unit: null,
-      prep: null,
-      foodId: null,
-      foodSlug: null,
-      foodCategory: null,
-      foodAllergens: null,
-    },
-  ]);
-  assessmentFindMany.mockResolvedValue([]);
+  mockAssessmentRows([]);
   recipeFindMany.mockResolvedValue([{ id: 'recipe_1', dietaryFlags: [] }]);
-  listForViewer.mockResolvedValue([]);
 });
 
 describe('listRecipeDietaryAssessmentViews', () => {
   it('keeps a deterministic conflict ahead of a weaker positive source', async () => {
-    assessmentFindMany.mockResolvedValue([
+    mockAssessmentRows([
       {
         recipeId: 'recipe_1',
         scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'author-confirmed',
         verdict: 'meets',
         confidence: null,
-        ingredientFingerprint: currentFingerprint,
         evidence: [],
       },
       {
         recipeId: 'recipe_1',
         scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'deterministic',
         verdict: 'conflicts',
         confidence: 'high',
-        ingredientFingerprint: currentFingerprint,
         evidence: [{ ingredientId: 'ingredient_1', finding: 'present' }],
       },
     ]);
@@ -136,6 +97,7 @@ describe('listRecipeDietaryAssessmentViews', () => {
         attentionIngredients: [{ ingredientId: 'ingredient_1', name: 'milk', kind: 'conflict' }],
       }),
     ]);
+    expect(loadReadBatch).toHaveBeenCalledWith(['recipe_1'], 'user_1', {});
   });
 });
 
@@ -156,14 +118,15 @@ describe('attachCardDietaryData', () => {
   });
 
   it('maps persisted evidence to recognized and attention ingredients', async () => {
-    assessmentFindMany.mockResolvedValue([
+    mockAssessmentRows([
       {
         recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'deterministic',
         verdict: 'conflicts',
         confidence: 'high',
-        ingredientFingerprint: currentFingerprint,
         evidence: [
           { ingredientId: 'ingredient_1', finding: 'present' },
           { ingredientId: 'ingredient_2', finding: 'absent' },
@@ -171,7 +134,7 @@ describe('attachCardDietaryData', () => {
       },
     ]);
 
-    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }]);
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
     expect(recipe?.dietary.assessments).toEqual([
       expect.objectContaining({
         recognizedIngredients: 2,
@@ -182,14 +145,15 @@ describe('attachCardDietaryData', () => {
   });
 
   it('uses ingredient corrections instead of superseded inferred evidence', async () => {
-    assessmentFindMany.mockResolvedValue([
+    mockAssessmentRows([
       {
         recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'deterministic',
         verdict: 'meets',
         confidence: 'high',
-        ingredientFingerprint: currentFingerprint,
         evidence: [
           { ingredientId: 'ingredient_1', finding: 'present', source: 'text-match' },
           {
@@ -202,7 +166,7 @@ describe('attachCardDietaryData', () => {
       },
     ]);
 
-    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }]);
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
     expect(recipe?.dietary.assessments).toEqual([
       expect.objectContaining({
         recognizedIngredients: 2,
@@ -211,41 +175,84 @@ describe('attachCardDietaryData', () => {
     ]);
   });
 
-  it('drops persisted assessments whose ingredient fingerprint is stale', async () => {
-    assessmentFindMany.mockResolvedValue([
+  it('does not serialize private-confidence rows for anonymous cards', async () => {
+    mockAssessmentRows([
       {
         recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'deterministic',
         verdict: 'meets',
-        confidence: 'high',
-        ingredientFingerprint: 'i1.stale',
+        confidence: 'medium',
         evidence: [],
+      },
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:egg',
+        source: 'deterministic',
+        verdict: 'unknown',
+        confidence: 'needs-review',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'unresolved' }],
       },
     ]);
 
     const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }]);
     expect(recipe?.dietary.assessments).toEqual([]);
+    expect(recipe?.dietary.ingredients).toEqual([]);
+  });
+
+  it('retains authorized personal assessment rows for signed-in cards', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'personal',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'on-device',
+        verdict: 'meets',
+        confidence: 'medium',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'possible' }],
+      },
+    ]);
+
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        scope: 'personal',
+        ruleId: 'allergen:dairy',
+        confidence: 'medium',
+      }),
+    ]);
+    expect(recipe?.dietary.ingredients).toHaveLength(2);
   });
 
   it('uses canonical conflict precedence for an authorized share-token projection', async () => {
-    assessmentFindMany.mockResolvedValue([
+    mockAssessmentRows([
       {
         recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
         ruleId: 'allergen:dairy',
         source: 'deterministic',
         verdict: 'conflicts',
         confidence: 'high',
-        ingredientFingerprint: currentFingerprint,
         evidence: [{ ingredientId: 'ingredient_1', finding: 'present' }],
       },
     ]);
 
-    await expect(listAuthorizedRecipeDietaryAssessmentViews('recipe_1')).resolves.toEqual([
+    await expect(
+      listAuthorizedRecipeDietaryAssessmentViews('recipe_1', 'share-token'),
+    ).resolves.toEqual([
       expect.objectContaining({
         ruleId: 'allergen:dairy',
         verdict: 'conflicts',
       }),
     ]);
+    expect(loadReadBatch).toHaveBeenCalledWith(['recipe_1'], null, {
+      shareToken: 'share-token',
+    });
   });
 });
