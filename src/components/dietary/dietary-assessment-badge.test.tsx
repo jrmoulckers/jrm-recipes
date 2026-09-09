@@ -265,4 +265,23 @@ describe('DietaryAssessmentBadge', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(trigger).toHaveFocus();
   });
+
+  it('supports a contextual Family upgrade action for unresolved evidence', async () => {
+    const user = userEvent.setup();
+    render(
+      <DietaryAssessmentBadge
+        {...BASE_PROPS}
+        status="review"
+        provenance={{ kind: 'ingredient-analyzed', confidence: 'needs-review' }}
+        attentionIngredients={[{ name: 'seasoning blend', kind: 'unresolved' }]}
+        action={{ kind: 'upgrade', href: '/pricing' }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+    expect(await screen.findByRole('link', { name: 'Resolve with Family' })).toHaveAttribute(
+      'href',
+      '/pricing',
+    );
+  });
 });

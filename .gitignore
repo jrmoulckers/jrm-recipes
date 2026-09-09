@@ -23,6 +23,7 @@ next-env.d.ts
 
 # OCR worker, WASM wrapper, and language data copied from pinned npm packages
 /public/ocr/
+/public/dietary-runtime/
 
 # production
 /build

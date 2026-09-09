@@ -52,6 +52,7 @@ import { groupRecipeClassifications } from '~/lib/recipe-classifications';
 import { listMemberProfiles } from '~/server/dietary/queries';
 import { listDietaryAssessmentViews } from '~/server/dietary/presentation';
 import { getNutritionTargetOn } from '~/server/dietary/targets';
+import { getEntitlements } from '~/server/billing/entitlements';
 import { getUnitSettings } from '~/server/units/queries';
 import { toUnitPrefs, toCustomUnitDefs } from '~/lib/unit-prefs';
 import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from '~/lib/recipe-seo';
@@ -330,6 +331,7 @@ async function RecipePage({
     nutritionView,
     ingredientAllergenMap,
     dietaryAssessmentViews,
+    entitlements,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -348,6 +350,7 @@ async function RecipePage({
     dbEnabled
       ? listDietaryAssessmentViews(recipe.id, user?.id ?? null, { shareToken })
       : Promise.resolve([]),
+    user && dbEnabled ? getEntitlements(user) : Promise.resolve(null),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -486,6 +489,7 @@ async function RecipePage({
               dietaryAssessments={dietaryAssessmentViews}
               signedIn={Boolean(user)}
               canReviewDietary={canEdit}
+              canUseAdvancedDietaryAnalysis={Boolean(entitlements?.advancedDietaryAnalysis)}
             />
             {recipe.group && (
               <Link
@@ -646,6 +650,9 @@ async function RecipePage({
                 initialFavorited={favorited}
                 variant="button"
                 canFavorite={Boolean(user)}
+                analyzeOnOpenAccountId={
+                  user && entitlements?.advancedDietaryAnalysis ? user.id : undefined
+                }
               />
               <SaveToCollectionButton
                 recipeId={recipe.id}

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,8 +20,22 @@ type FavoriteButtonProps = {
   variant?: 'icon' | 'button';
   /** When false, the button nudges the visitor to sign in instead of saving. */
   canFavorite?: boolean;
+  analyzeOnOpenAccountId?: string;
   className?: string;
 };
+
+async function analyzeRecipe(
+  recipeId: string,
+  accountId: string,
+  trigger: 'recipe_open' | 'recipe_save',
+) {
+  try {
+    const { analyzeRecipeOnDevice } = await import('~/lib/dietary-analysis-client');
+    return await analyzeRecipeOnDevice(recipeId, accountId, trigger);
+  } catch {
+    console.error('Unable to load private dietary analysis.');
+  }
+}
 
 export function FavoriteButton({
   recipeId,
@@ -28,8 +43,10 @@ export function FavoriteButton({
   initialFavorited = false,
   variant = 'icon',
   canFavorite = true,
+  analyzeOnOpenAccountId,
   className,
 }: FavoriteButtonProps) {
+  const router = useRouter();
   const t = useTranslations('collections.favorite');
   const [favorited, setFavorited] = React.useState(initialFavorited);
   // Snapshot of the pre-click state so a failed toggle can roll the icon back.
@@ -39,7 +56,12 @@ export function FavoriteButton({
   // un-favorite), which remounts the glyph so the pop/burst replays once.
   const [burstKey, setBurstKey] = React.useState(0);
   const toggle = useServerAction(toggleFavoriteAction, {
-    onSuccess: (result) => setFavorited(result.favorited),
+    onSuccess: (result) => {
+      setFavorited(result.favorited);
+      if (result.favorited) {
+        void analyzeRecipe(recipeId, result.accountId, 'recipe_save');
+      }
+    },
     onError: () => setFavorited(previousRef.current),
     successToast: (result) => (result.favorited ? t('toast.saved') : t('toast.removed')),
     errorToast: true,
@@ -50,6 +72,17 @@ export function FavoriteButton({
   React.useEffect(() => {
     setFavorited(initialFavorited);
   }, [initialFavorited]);
+
+  React.useEffect(() => {
+    if (!analyzeOnOpenAccountId) return;
+    let active = true;
+    void analyzeRecipe(recipeId, analyzeOnOpenAccountId, 'recipe_open').then((result) => {
+      if (active && result === 'completed') router.refresh();
+    });
+    return () => {
+      active = false;
+    };
+  }, [analyzeOnOpenAccountId, recipeId, router]);
 
   function onToggle(event: React.MouseEvent) {
     event.preventDefault();

@@ -39,6 +39,7 @@ export function RecipeClassificationBadges({
   dietaryAssessments = [],
   signedIn = false,
   canReviewDietary = false,
+  canUseAdvancedDietaryAnalysis = false,
   linked = true,
   limit,
   className,
@@ -48,6 +49,7 @@ export function RecipeClassificationBadges({
   dietaryAssessments?: DietaryAssessmentView[];
   signedIn?: boolean;
   canReviewDietary?: boolean;
+  canUseAdvancedDietaryAnalysis?: boolean;
   linked?: boolean;
   limit?: number;
   className?: string;
@@ -97,6 +99,7 @@ export function RecipeClassificationBadges({
         declared={dietary}
         signedIn={signedIn}
         canReview={canReviewDietary}
+        canUseAdvancedAnalysis={canUseAdvancedDietaryAnalysis}
       />
     </div>
   );

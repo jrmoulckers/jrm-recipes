@@ -2123,6 +2123,24 @@
     "privacy": {
       "subjectScope": "Los perfiles son privados para ti. El procesamiento asistido por modelos y de restricciones personalizadas es solo para ti hasta que exista un proceso revisado para los derechos de menores y no usuarios."
     },
+    "smartAnalysis": {
+      "title": "Análisis alimentario inteligente y privado",
+      "description": "Aclara más ingredientes ambiguos en este dispositivo. Las comprobaciones deterministas siguen activas.",
+      "download": "Descarga unos 129 MiB después de tu autorización.",
+      "storage": "Necesita al menos 250 MB libres durante la instalación y las actualizaciones.",
+      "privacy": "El texto de recetas y restricciones permanece en este dispositivo. No se usa la nube ni se consumen créditos de IA.",
+      "enable": "Descargar y activar",
+      "disable": "Desactivar y eliminar datos locales",
+      "installing": "Descargando y verificando el modelo… {progress} %",
+      "ready": "El análisis inteligente está listo en este dispositivo.",
+      "unsupported": "Este dispositivo no admite el análisis inteligente. Heirloom seguirá usando comprobaciones deterministas de ingredientes.",
+      "enabled": "Análisis alimentario inteligente activado",
+      "disabled": "Análisis inteligente desactivado y datos locales eliminados",
+      "installFailed": "No se pudo instalar el modelo. Las comprobaciones deterministas siguen disponibles.",
+      "scan": "Analizar la biblioteca de recetas",
+      "scanProgress": "Se analizaron {done} de {total} recetas.",
+      "scanComplete": "Análisis de la biblioteca completado"
+    },
     "assessmentBadge": {
       "detailsTitle": "Evaluación alimentaria: {label}",
       "triggerLabel": "{label}. Estado: {status}. {provenance}",
@@ -2157,7 +2175,8 @@
       },
       "action": {
         "review": "Revisar detalles",
-        "correct": "Corregir evaluación"
+        "correct": "Corregir evaluación",
+        "upgrade": "Resolver con Family"
       }
     },
     "assessments": {

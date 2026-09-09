@@ -7,6 +7,7 @@ import {
   dietaryIngredientInputSchema,
   dietarySubjectScopeSchema,
   isLegalDietaryAssessment,
+  onDeviceDietarySubmissionSchema,
 } from './dietary-assessment';
 
 describe('dietary assessment contracts', () => {
@@ -178,5 +179,31 @@ describe('dietary assessment contracts', () => {
         },
       }).success,
     ).toBe(false);
+  });
+
+  it('accepts only structured on-device evidence and rejects sensitive model payloads', () => {
+    const submission = {
+      recipeId: 'recipe_1',
+      ingredientFingerprint: 'i1.abc',
+      analyzerVersion: 'model.v1',
+      rulesetVersion: 'd1.abc',
+      evidence: [
+        {
+          ingredientId: 'ingredient_1',
+          foodId: 'food_1',
+          ruleId: 'allergen:wheat',
+          finding: 'present',
+        },
+      ],
+    };
+    expect(onDeviceDietarySubmissionSchema.safeParse(submission).success).toBe(true);
+    for (const forbidden of ['ingredientText', 'embedding', 'logits', 'modelProse']) {
+      expect(
+        onDeviceDietarySubmissionSchema.safeParse({
+          ...submission,
+          [forbidden]: 'CANARY shellfish allergy',
+        }).success,
+      ).toBe(false);
+    }
   });
 });

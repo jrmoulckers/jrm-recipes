@@ -2123,6 +2123,24 @@
     "privacy": {
       "subjectScope": "Profiles stay private to you. Model-assisted and custom-restriction processing is self-only until a reviewed child and non-user rights process exists."
     },
+    "smartAnalysis": {
+      "title": "Private smart dietary analysis",
+      "description": "Resolve more ambiguous ingredient wording on this device. Deterministic checks remain in place.",
+      "download": "Downloads about 129 MiB after you opt in.",
+      "storage": "Needs at least 250 MB free during setup and updates.",
+      "privacy": "Recipe and dietary text stays on this device. There is no cloud fallback and this uses no AI credits.",
+      "enable": "Download and enable",
+      "disable": "Disable and remove local data",
+      "installing": "Downloading and checking the model… {progress}%",
+      "ready": "Smart analysis is ready on this device.",
+      "unsupported": "Smart analysis isn't supported on this device. Heirloom will keep using deterministic ingredient checks.",
+      "enabled": "Smart dietary analysis enabled",
+      "disabled": "Smart dietary analysis disabled and local data removed",
+      "installFailed": "The model couldn't be installed. Deterministic checks are still available.",
+      "scan": "Analyze recipe library",
+      "scanProgress": "Analyzed {done} of {total} recipes.",
+      "scanComplete": "Library analysis complete"
+    },
     "assessmentBadge": {
       "detailsTitle": "{label} dietary assessment",
       "triggerLabel": "{label}. Status: {status}. {provenance}",
@@ -2157,7 +2175,8 @@
       },
       "action": {
         "review": "Review details",
-        "correct": "Correct assessment"
+        "correct": "Correct assessment",
+        "upgrade": "Resolve with Family"
       }
     },
     "assessments": {

@@ -27,7 +27,12 @@ export type PlanId = (typeof PLAN_IDS)[number];
  * collaboration.
  */
 export type FeatureFlagKey =
-  'aiGeneration' | 'aiTutor' | 'aiSubstitutions' | 'videoExport' | 'advancedCollaboration';
+  | 'aiGeneration'
+  | 'aiTutor'
+  | 'aiSubstitutions'
+  | 'videoExport'
+  | 'advancedCollaboration'
+  | 'advancedDietaryAnalysis';
 
 /**
  * Numeric caps. A value of `null` means "unlimited" (see {@link isUnlimited} /
@@ -52,6 +57,7 @@ export const FEATURE_FLAG_KEYS: readonly FeatureFlagKey[] = [
   'aiSubstitutions',
   'videoExport',
   'advancedCollaboration',
+  'advancedDietaryAnalysis',
 ];
 
 /** All numeric-limit keys, exported so callers/tests can iterate exhaustively. */
@@ -111,6 +117,7 @@ const free: Plan = {
     aiSubstitutions: false,
     videoExport: false,
     advancedCollaboration: false,
+    advancedDietaryAnalysis: false,
     maxRecipes: 50,
     maxStorageMb: 200,
     maxFamilyMembers: 5,
@@ -144,6 +151,7 @@ const family: Plan = {
     aiSubstitutions: true,
     videoExport: true,
     advancedCollaboration: true,
+    advancedDietaryAnalysis: true,
     maxRecipes: null,
     maxStorageMb: 10 * 1024,
     maxFamilyMembers: 20,

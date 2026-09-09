@@ -284,3 +284,25 @@ export const dietaryAssessmentContractSchema = z
     }
   });
 export type DietaryAssessmentContract = z.infer<typeof dietaryAssessmentContractSchema>;
+
+export const onDeviceDietarySubmissionSchema = z
+  .object({
+    recipeId: z.string().min(1).max(24),
+    ingredientFingerprint: z.string().min(1).max(80),
+    analyzerVersion: z.string().min(1).max(80),
+    rulesetVersion: z.string().min(1).max(80),
+    evidence: z
+      .array(
+        z
+          .object({
+            ingredientId: z.string().min(1).max(24),
+            foodId: z.string().min(1).max(24),
+            ruleId: z.string().min(1).max(80),
+            finding: dietaryEvidenceFindingSchema,
+          })
+          .strict(),
+      )
+      .max(5_000),
+  })
+  .strict();
+export type OnDeviceDietarySubmission = z.infer<typeof onDeviceDietarySubmissionSchema>;

@@ -32,7 +32,8 @@ import {
 export type ActionResult =
   { ok: true } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
-export type ToggleFavoriteResult = { ok: true; favorited: boolean } | { ok: false; error: string };
+export type ToggleFavoriteResult =
+  { ok: true; favorited: boolean; accountId: string } | { ok: false; error: string };
 
 export type CreateCollectionResult =
   { ok: true; id: string } | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
@@ -70,7 +71,7 @@ export async function toggleFavoriteAction(
     if (parsed.data.recipeSlug) {
       await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     }
-    return { ok: true, favorited };
+    return { ok: true, favorited, accountId: user.id };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

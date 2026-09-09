@@ -2123,6 +2123,24 @@
     "privacy": {
       "subjectScope": "Profile bleiben für dich privat. Modellgestützte Verarbeitung und eigene Einschränkungen sind nur für dich selbst verfügbar, bis ein geprüftes Rechteverfahren für Kinder und Nichtnutzer besteht."
     },
+    "smartAnalysis": {
+      "title": "Private intelligente Ernährungsanalyse",
+      "description": "Mehrdeutige Zutatenangaben werden auf diesem Gerät eingeordnet. Deterministische Prüfungen bleiben aktiv.",
+      "download": "Nach deiner Zustimmung werden etwa 129 MiB heruntergeladen.",
+      "storage": "Für Einrichtung und Aktualisierungen müssen mindestens 250 MB frei sein.",
+      "privacy": "Rezept- und Ernährungsangaben bleiben auf diesem Gerät. Es gibt keinen Cloud-Ersatz und es werden keine KI-Credits verbraucht.",
+      "enable": "Herunterladen und aktivieren",
+      "disable": "Deaktivieren und lokale Daten entfernen",
+      "installing": "Modell wird heruntergeladen und geprüft… {progress} %",
+      "ready": "Die intelligente Analyse ist auf diesem Gerät bereit.",
+      "unsupported": "Die intelligente Analyse wird auf diesem Gerät nicht unterstützt. Heirloom verwendet weiterhin deterministische Zutatenprüfungen.",
+      "enabled": "Intelligente Ernährungsanalyse aktiviert",
+      "disabled": "Intelligente Ernährungsanalyse deaktiviert und lokale Daten entfernt",
+      "installFailed": "Das Modell konnte nicht installiert werden. Deterministische Prüfungen sind weiterhin verfügbar.",
+      "scan": "Rezeptbibliothek analysieren",
+      "scanProgress": "{done} von {total} Rezepten analysiert.",
+      "scanComplete": "Bibliotheksanalyse abgeschlossen"
+    },
     "assessmentBadge": {
       "detailsTitle": "Ernährungsbewertung: {label}",
       "triggerLabel": "{label}. Ergebnis: {status}. {provenance}",
@@ -2157,7 +2175,8 @@
       },
       "action": {
         "review": "Details prüfen",
-        "correct": "Bewertung korrigieren"
+        "correct": "Bewertung korrigieren",
+        "upgrade": "Mit Family auflösen"
       }
     },
     "assessments": {
