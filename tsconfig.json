@@ -7,7 +7,6 @@
     "checkJs": true,
 
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
     }
