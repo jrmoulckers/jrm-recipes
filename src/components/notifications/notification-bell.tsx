@@ -71,7 +71,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
           <Bell className="size-5" aria-hidden />
           {count > 0 ? (
             <span
-              className="absolute -end-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
+              className="absolute -inset-e-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-4 font-semibold text-primary-foreground"
               aria-hidden
             >
               {badge}

@@ -75,7 +75,7 @@ export function WelcomeChecklist() {
           : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
       )}
     >
-      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute end-3 top-3" />
+      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute inset-e-3 top-3" />
 
       <div className="max-w-xl">
         <h2

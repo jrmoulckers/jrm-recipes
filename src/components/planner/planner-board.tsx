@@ -185,12 +185,12 @@ export function PlannerBoard({
           >
             <header className="flex items-baseline justify-between gap-2 border-b border-border/70 px-3 py-2.5">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   {day.weekdayLabel}
                 </span>
                 <span
                   className={cn(
-                    'font-display text-lg font-semibold leading-none',
+                    'font-display text-lg leading-none font-semibold',
                     day.isToday && 'text-primary',
                   )}
                 >
@@ -198,7 +198,7 @@ export function PlannerBoard({
                 </span>
               </div>
               {day.isToday && (
-                <span className="bg-primary/12 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
                   {t('today')}
                 </span>
               )}
@@ -209,7 +209,7 @@ export function PlannerBoard({
                 const cellEntries = entriesByCell.get(cellKey(day.dateParam, slot)) ?? [];
                 return (
                   <div key={slot} className="flex flex-col gap-1.5">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
                       {t(`mealSlot.${slot}`)}
                     </p>
 
@@ -236,7 +236,7 @@ export function PlannerBoard({
                           dayLabel: day.fullLabel,
                         })
                       }
-                      className="flex items-center gap-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex items-center gap-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                       aria-label={t('a11y.addToSlot', {
                         slot: t(`mealSlot.${slot}`),
                         day: day.fullLabel,
@@ -366,7 +366,7 @@ function EntryChip({
         <div className="flex items-start gap-1.5">
           <span className="mt-0.5 flex-1 leading-snug">
             {leftovers && (
-              <span className="mb-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="mb-0.5 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
                 <Repeat className="size-3 shrink-0" aria-hidden />
                 {t('leftovers')}
               </span>
@@ -404,7 +404,7 @@ function EntryChip({
             onClick={onRemoveClick}
             disabled={isPending}
             aria-label={t('a11y.removeFromPlan', { title })}
-            className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
+            className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-wait"
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -459,7 +459,7 @@ function EntryChip({
                 type="button"
                 onClick={cookedIt}
                 disabled={isCooking}
-                className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-70 group-hover:opacity-100 motion-reduce:opacity-100"
+                className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors group-hover:opacity-100 hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-wait disabled:opacity-70 motion-reduce:opacity-100"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden />
                 {isCooking ? t('logging') : t('cookedIt')}
@@ -751,7 +751,7 @@ function AddEntryDialog({
             <div className="grid gap-2">
               <Label htmlFor={searchId}>{t('dialog.recipeLabel')}</Label>
               <div className="relative">
-                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={searchId}
                   value={query}
@@ -781,7 +781,7 @@ function AddEntryDialog({
                             type="button"
                             onClick={() => selectRecipe(recipe, selected)}
                             className={cn(
-                              'flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none',
+                              'flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-hidden',
                               selected && 'bg-primary/10 text-foreground',
                             )}
                             aria-pressed={selected}
@@ -938,7 +938,7 @@ function AddEntryDialog({
                         aria-label={t('servingPlan.removeAllocation', {
                           number: index + 1,
                         })}
-                        className="self-end rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="self-end rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                       >
                         <Trash2 className="size-4" aria-hidden />
                       </button>
@@ -992,7 +992,7 @@ export function PlannerEmptyState({ groupName = null }: { groupName?: string | n
   const t = useTranslations('planner.board');
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 py-14 text-center">
-      <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
+      <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         <UtensilsCrossed className="size-6" aria-hidden="true" />
       </span>
       <p className="max-w-sm text-sm text-muted-foreground">

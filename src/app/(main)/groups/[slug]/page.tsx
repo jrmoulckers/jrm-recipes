@@ -126,7 +126,7 @@ async function GroupPage({ params }: { params: Promise<SlugRouteParams> }) {
       <header className="rounded-2xl border border-border bg-card p-5 shadow-token sm:p-7">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="bg-primary/12 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-2xl font-bold text-primary">
+            <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-primary/12 font-display text-2xl font-bold text-primary">
               {/* Decorative: the avatar repeats the group name shown beside it. */}
               {group.avatarUrl ? (
                 <Image
@@ -156,7 +156,7 @@ async function GroupPage({ params }: { params: Promise<SlugRouteParams> }) {
                   {tCard('recipeCount', { count: group.recipes.length })}
                 </span>
               </div>
-              <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight">
+              <h1 className="max-w-3xl font-display text-4xl leading-tight font-bold tracking-tight">
                 {group.name}
               </h1>
               {group.description ? (
@@ -335,9 +335,9 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
-      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
     >
-      <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
+      <div className="relative aspect-video overflow-hidden bg-primary/12">
         {/* Decorative: the cover sits directly above the recipe title, which
             names the enclosing link. */}
         <RecipeImage
@@ -353,9 +353,9 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
           sizes="(max-width: 640px) 100vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
-        <div className="absolute start-3 top-3 flex gap-2">
+        <div className="absolute inset-s-3 top-3 flex gap-2">
           {recipe.visibility !== 'public' ? (
-            <Badge variant="muted" className="capitalize backdrop-blur">
+            <Badge variant="muted" className="capitalize backdrop-blur-sm">
               {recipe.visibility}
             </Badge>
           ) : null}
@@ -367,7 +367,7 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 font-display text-lg leading-tight font-semibold">
           {recipe.title}
         </h3>
         {recipe.description ? (
@@ -397,9 +397,9 @@ async function SharedCollectionCard({
   return (
     <Link
       href={`/collections/${collection.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
     >
-      <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
+      <div className="relative aspect-video overflow-hidden bg-primary/12">
         {/* Decorative: the cover sits directly above the collection name, which
             names the enclosing link. */}
         {collection.coverImageUrl ? (
@@ -415,15 +415,15 @@ async function SharedCollectionCard({
             <BookMarked className="size-10" />
           </div>
         )}
-        <div className="absolute start-3 top-3">
-          <Badge variant="muted" className="gap-1 backdrop-blur">
+        <div className="absolute inset-s-3 top-3">
+          <Badge variant="muted" className="gap-1 backdrop-blur-sm">
             <Users className="size-3" aria-hidden="true" />
             {tCard('sharedWith', { group: groupName })}
           </Badge>
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 font-display text-lg leading-tight font-semibold">
           {collection.name}
         </h3>
         {collection.description ? (

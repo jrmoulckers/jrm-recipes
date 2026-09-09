@@ -16,11 +16,7 @@ const ROOT = process.cwd();
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), 'utf8');
 
 const THEMES_CSS = read('src', 'styles', 'themes.css');
-// Read as *source text*, so the assertions below would otherwise be pinned to
-// whichever quote style the formatter happens to be configured for. Normalize
-// at the read boundary: what these guards care about is the token values, not
-// how the file quotes them.
-const TAILWIND = read('tailwind.config.ts').replace(/'/g, '"');
+const TAILWIND_CSS = read('src', 'styles', 'globals.css');
 
 /**
  * Bans on untokenized motion (#750, #756, #758, #759).
@@ -56,23 +52,23 @@ const RAW_TRANSFORM = 'transform:';
 const durationTokensIn = (source: string) =>
   [...source.matchAll(/\bduration-([A-Za-z0-9.]+)\b/g)].map((m) => m[1]!);
 
-/** The body of a named object literal in the Tailwind config. */
-const blockOf = (config: string, header: string) => {
-  const start = config.indexOf(header);
-  expect(start, `tailwind.config.ts declares ${header}`).toBeGreaterThan(-1);
+/** The declaration body for a named CSS rule. */
+const blockOf = (css: string, header: string) => {
+  const start = css.indexOf(header);
+  expect(start, `globals.css declares ${header}`).toBeGreaterThan(-1);
   let depth = 0;
-  let i = config.indexOf('{', start);
+  let i = css.indexOf('{', start);
   const from = i;
-  for (; i < config.length; i++) {
-    if (config[i] === '{') depth++;
-    else if (config[i] === '}' && --depth === 0) break;
+  for (; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}' && --depth === 0) break;
   }
-  return config.slice(from, i);
+  return css.slice(from, i);
 };
 
-/** Every animation shorthand declared in the Tailwind `animation` block. */
-const animationValues = (config: string) =>
-  [...blockOf(config, 'animation: {').matchAll(/:\s*"([^"]+)"/g)].map((m) => m[1]!);
+/** Every animation shorthand exposed through Tailwind's CSS theme namespace. */
+const animationValues = (css: string) =>
+  [...css.matchAll(/--animate-[\w-]+:\s*([^;]+);/g)].map((m) => m[1]!);
 
 /**
  * The duration token names Tailwind exposes, e.g. fast / base / slow.
@@ -81,10 +77,10 @@ const animationValues = (config: string) =>
  * that declares the tokens and the actual side from the components that use
  * them. Two independent sources, so this is not a self-supplied comparison.
  */
-const tokenizedDurations = (config: string) =>
-  [
-    ...blockOf(config, 'transitionDuration: {').matchAll(/(\w+):\s*"var\(--duration-[\w-]+\)"/g),
-  ].map((m) => m[1]!);
+const tokenizedDurations = (css: string) =>
+  [...css.matchAll(/--transition-duration-([\w-]+):\s*var\(--duration-[\w-]+\);/g)].map(
+    (m) => m[1]!,
+  );
 
 /** Every UI primitive, enumerated rather than listed (#759). */
 const PRIMITIVES = readdirSync(join(ROOT, 'src', 'components', 'ui')).filter(
@@ -93,7 +89,7 @@ const PRIMITIVES = readdirSync(join(ROOT, 'src', 'components', 'ui')).filter(
 
 describe('motion bans (issue #758)', () => {
   it('every UI primitive uses only tokenized durations', () => {
-    const tokenized = tokenizedDurations(TAILWIND);
+    const tokenized = tokenizedDurations(TAILWIND_CSS);
     expect(tokenized.length, 'Tailwind exposes duration tokens').toBeGreaterThan(0);
     expect(PRIMITIVES.length, 'UI primitives were found').toBeGreaterThan(0);
 
@@ -113,7 +109,7 @@ describe('motion bans (issue #758)', () => {
   });
 
   it('every animation is tokenized, including ones added later', () => {
-    const values = animationValues(TAILWIND);
+    const values = animationValues(TAILWIND_CSS);
     // Fails closed: a rotted extractor yields [], which has no length.
     expect(values.length).toBeGreaterThan(0);
     for (const value of values) {
@@ -148,34 +144,36 @@ describe('motion tokens (issue #95)', () => {
   });
 
   it('exposes the tokens through Tailwind and tokenizes keyframe easing', () => {
-    expect(TAILWIND).toContain('fast: "var(--duration-fast)"');
-    expect(TAILWIND).toContain('standard: "var(--ease-standard)"');
+    expect(TAILWIND_CSS).toContain('--transition-duration-fast: var(--duration-fast)');
+    expect(TAILWIND_CSS).toMatch(
+      /@utility ease-standard\s*\{\s*transition-timing-function:\s*var\(--ease-standard\)/,
+    );
     // Untokenized easings are caught by the extract-and-compare check above,
     // which covers animations added later too (#758).
-    expect(TAILWIND).toContain('fade-in 0.2s var(--ease-standard)');
+    expect(TAILWIND_CSS).toContain('--animate-fade-in: fade-in 0.2s var(--ease-standard)');
   });
 
   it('provides direction-aware sheet slide keyframes for RTL (issue #93)', () => {
     // The sheet docks on the logical inline-end edge, so RTL must slide from the
     // opposite physical side. Both directions stay tokenized (no ease-out).
-    expect(TAILWIND).toContain(
-      '"slide-in-from-left": "slide-in-from-left 0.24s var(--ease-standard)"',
+    expect(TAILWIND_CSS).toContain(
+      '--animate-slide-in-from-left: slide-in-from-left 0.24s var(--ease-standard)',
     );
-    expect(TAILWIND).toContain(
-      '"slide-out-to-left": "slide-out-to-left 0.2s var(--ease-standard)"',
+    expect(TAILWIND_CSS).toContain(
+      '--animate-slide-out-to-left: slide-out-to-left 0.2s var(--ease-standard)',
     );
-    expect(TAILWIND).toContain('translateX(-100%)');
+    expect(TAILWIND_CSS).toContain('translateX(-100%)');
   });
 
   it('keeps translated overlays positioned while they pop (issue #620)', () => {
     // Via `blockOf` rather than a bare slice between two markers: a raw slice
     // whose markers stop matching yields "", and `expect("").toContain(...)`
-    // reports a mismatch that reads like the config changed. `blockOf` asserts
+    // reports a mismatch that reads like the CSS changed. `blockOf` asserts
     // the header is present first, so a rotted marker fails as a rotted marker.
-    const popKeyframes = blockOf(TAILWIND, '"pop-in": {');
+    const popKeyframes = blockOf(TAILWIND_CSS, '@keyframes pop-in');
 
-    expect(popKeyframes).toContain('scale: "0.96"');
-    expect(popKeyframes).toContain('scale: "1"');
+    expect(popKeyframes).toContain('scale: 0.96');
+    expect(popKeyframes).toContain('scale: 1');
     expect(popKeyframes).not.toContain(RAW_TRANSFORM);
   });
 

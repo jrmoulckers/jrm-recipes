@@ -54,10 +54,10 @@ export function IngredientsDrawer({
   const { largeTargets } = useThemeBehavior();
   const sizeClasses = prominent
     ? largeTargets
-      ? 'h-[4.5rem] px-8 text-xl sm:h-20'
+      ? 'h-18 px-8 text-xl sm:h-20'
       : 'h-16 px-6 text-lg'
     : largeTargets
-      ? 'h-16 px-5 text-lg sm:h-[4.25rem]'
+      ? 'h-16 px-5 text-lg sm:h-17'
       : 'h-12 px-4 sm:h-14 sm:px-5';
   return (
     <Dialog>
@@ -76,7 +76,7 @@ export function IngredientsDrawer({
       </DialogTrigger>
       <DialogContent
         variant="sheet"
-        className="end-0 start-auto top-0 grid h-dvh max-h-dvh w-full max-w-xl translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-none border-y-0 border-e-0 bg-popover p-0 sm:rounded-s-2xl"
+        className="inset-s-auto inset-e-0 top-0 grid h-dvh max-h-dvh w-full max-w-xl translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-none border-y-0 border-e-0 bg-popover p-0 sm:rounded-s-2xl"
       >
         <DialogHeader className="border-b border-border p-5 pe-14 pt-[max(1.25rem,env(safe-area-inset-top))] text-start">
           <DialogTitle className="flex items-center gap-2 text-2xl">
@@ -86,7 +86,7 @@ export function IngredientsDrawer({
           <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pr-[max(1.25rem,env(safe-area-inset-right))]">
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {recipe.ingredients.length > 0 ? (
             <IngredientsPanel
               ingredients={recipe.ingredients}

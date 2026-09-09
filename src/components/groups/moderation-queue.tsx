@@ -63,7 +63,7 @@ function QueueRow({ groupSlug, item }: { groupSlug: string; item: ModerationQueu
         <span className="text-xs text-muted-foreground">{t('byAuthor', { name: authorName })}</span>
       </div>
 
-      <p className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-muted/50 p-3 text-sm text-foreground">
+      <p className="mt-3 rounded-lg bg-muted/50 p-3 text-sm wrap-break-word whitespace-pre-wrap text-foreground">
         {item.preview}
       </p>
 

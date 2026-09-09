@@ -402,7 +402,7 @@ export function CookExperience({
     <div className="flex min-h-dvh flex-col overscroll-y-contain bg-background text-foreground">
       {celebrating && (
         <div
-          className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
+          className="pointer-events-none fixed inset-0 z-60 flex items-center justify-center"
           aria-hidden="true"
         >
           <span className="relative flex items-center justify-center">
@@ -445,7 +445,7 @@ export function CookExperience({
         {stepAnnouncement}
       </p>
 
-      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem] short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2">
         {/*
           One-handed pointer gestures are a redundant touch affordance, not the only
           path to step navigation. Keyboard users are served by the window-level
@@ -490,7 +490,7 @@ export function CookExperience({
 
           <StepMedia step={currentStep} stepNumber={stepIndex + 1} recipeTitle={recipe.title} />
 
-          <div className="flex flex-col gap-8 p-5 short-landscape:gap-4 short-landscape:p-4 sm:p-8 lg:p-10">
+          <div className="flex flex-col gap-8 p-5 sm:p-8 lg:p-10 short-landscape:gap-4 short-landscape:p-4">
             <div className="flex flex-wrap items-center gap-2">
               {currentStep.section && (
                 <Badge variant="secondary" className="text-sm">
@@ -543,7 +543,7 @@ export function CookExperience({
                 id="current-step-title"
                 ref={stepHeadingRef}
                 tabIndex={-1}
-                className="max-w-4xl text-pretty font-display text-3xl font-semibold leading-tight tracking-tight focus:outline-none short-landscape:text-2xl sm:text-4xl lg:text-5xl"
+                className="max-w-4xl font-display text-3xl leading-tight font-semibold tracking-tight text-pretty focus:outline-hidden sm:text-4xl lg:text-5xl short-landscape:text-2xl"
               >
                 {currentStep.instruction}
               </h1>
@@ -607,7 +607,7 @@ export function CookExperience({
         </aside>
       </main>
 
-      <footer className="sticky bottom-0 z-30 border-t border-border bg-background/95 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pt-3 backdrop-blur sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
+      <footer className="sticky bottom-0 z-30 border-t border-border bg-background/95 pt-3 pr-[max(0.75rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] backdrop-blur-sm sm:pr-[max(1.25rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-3 sm:grid-cols-[1fr_auto_1fr]">
           <Button
             type="button"
@@ -615,7 +615,7 @@ export function CookExperience({
             variant="outline"
             className={cn(
               'justify-start',
-              largeTargets ? 'h-[4.5rem] text-xl sm:h-20' : 'h-16 text-lg sm:h-[4.5rem]',
+              largeTargets ? 'h-18 text-xl sm:h-20' : 'h-16 text-lg sm:h-18',
               'short-landscape:h-12 short-landscape:text-base',
             )}
             onClick={navPrevious}
@@ -651,7 +651,7 @@ export function CookExperience({
             size="xl"
             className={cn(
               'justify-end',
-              largeTargets ? 'h-[4.5rem] text-xl sm:h-20' : 'h-16 text-lg sm:h-[4.5rem]',
+              largeTargets ? 'h-18 text-xl sm:h-20' : 'h-16 text-lg sm:h-18',
               'short-landscape:h-12 short-landscape:text-base',
             )}
             onClick={canGoNext ? navNext : handleFinish}
@@ -705,8 +705,8 @@ function CookHeader({
   const tH = useTranslations('cook.header');
   const { kidSafe } = useThemeBehavior();
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] short-landscape:py-1.5 sm:gap-3 sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-safe-t backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 py-3 pr-[max(0.75rem,env(safe-area-inset-right))] pl-[max(0.75rem,env(safe-area-inset-left))] sm:gap-3 sm:pr-[max(1.25rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] short-landscape:py-1.5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline" className="hidden sm:inline-flex">
@@ -799,7 +799,7 @@ function StepTrail({
   return (
     <nav
       aria-label={label}
-      className="w-full overflow-x-auto px-3 py-2 [scrollbar-width:none] sm:px-5 [&::-webkit-scrollbar]:hidden"
+      className="w-full scrollbar-none overflow-x-auto px-3 py-2 sm:px-5 [&::-webkit-scrollbar]:hidden"
     >
       <ol className="mx-auto flex w-max items-center gap-1.5">
         {Array.from({ length: totalSteps }, (_, i) => {
@@ -816,7 +816,7 @@ function StepTrail({
                 })}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  'flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  'flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden',
                   isDone && 'border-success bg-success text-success-foreground',
                   isCurrent &&
                     'border-primary bg-primary/15 text-primary ring-2 ring-primary/40 motion-safe:animate-pulse',
@@ -1040,7 +1040,7 @@ function TimerRing({ timer }: { timer: TimerRecord }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="font-mono text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
+        <span className="font-mono text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">
           {formatCountdown(timer.remaining)}
         </span>
       </div>
@@ -1114,7 +1114,7 @@ function StepTimerCard({
         ) : (
           <div
             className={cn(
-              'font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl',
+              'font-mono text-5xl font-bold tracking-tight tabular-nums transition-colors sm:text-6xl',
               critical ? 'text-destructive' : urgent ? 'text-warning' : undefined,
             )}
           >
@@ -1224,7 +1224,7 @@ function StepIngredients({
           return (
             <li key={ing.id} className="flex flex-wrap items-baseline gap-x-1.5">
               {amount && (
-                <span className="font-semibold tabular-nums text-foreground">
+                <span className="font-semibold text-foreground tabular-nums">
                   {amount}
                   {unit ? ` ${unit}` : ''}
                 </span>
@@ -1336,7 +1336,7 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
         rows={4}
         placeholder={tNp('placeholder')}
         aria-label={tNp('ariaLabel')}
-        className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+        className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden md:text-sm"
       />
     </section>
   );
@@ -1720,7 +1720,7 @@ function CookNotes({ notes }: { notes: string }) {
         <ChevronDown className="size-5 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
       </summary>
       <Separator className="my-4" />
-      <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">
+      <p className="text-sm leading-relaxed wrap-break-word whitespace-pre-line text-muted-foreground">
         {notes}
       </p>
     </details>
@@ -1831,8 +1831,8 @@ function EmptyCookExperience({
   const tEmpty = useTranslations('cook.empty');
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-safe-t backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 py-3 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Badge variant="outline">{tH('cookMode')}</Badge>
@@ -1860,7 +1860,7 @@ function EmptyCookExperience({
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-10">
         <section className="w-full rounded-2xl border border-border bg-card p-8 text-center text-card-foreground shadow-token-lg">
-          <div className="bg-primary/12 mx-auto flex size-16 items-center justify-center rounded-full text-primary">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/12 text-primary">
             <ChefHat className="size-8" />
           </div>
           <h2 className="mt-6 font-display text-3xl font-semibold tracking-tight">

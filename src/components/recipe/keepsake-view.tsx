@@ -48,19 +48,19 @@ export function KeepsakeView({
       <article className="rounded-3xl border border-border bg-card p-8 shadow-token print:rounded-none print:border-0 print:p-0 print:shadow-none">
         {/* Keepsake header: the personal note comes first, warmly framed. */}
         <header className="mb-8 border-b border-border pb-8 text-center">
-          <span className="bg-primary/12 inline-flex size-12 items-center justify-center rounded-full text-primary">
+          <span className="inline-flex size-12 items-center justify-center rounded-full bg-primary/12 text-primary">
             <Heart className="size-6" aria-hidden="true" />
           </span>
-          <p className="mt-4 font-display text-sm uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="mt-4 font-display text-sm tracking-[0.2em] text-muted-foreground uppercase">
             {t('handedDown')}
           </p>
           {note ? (
-            <p className="mx-auto mt-4 max-w-lg whitespace-pre-line font-display text-xl leading-relaxed text-foreground">
+            <p className="mx-auto mt-4 max-w-lg font-display text-xl leading-relaxed whitespace-pre-line text-foreground">
               {note}
             </p>
           ) : null}
           {from ? (
-            <p className="mt-4 font-display text-lg italic text-muted-foreground">
+            <p className="mt-4 font-display text-lg text-muted-foreground italic">
               {t('withLove', { from })}
             </p>
           ) : null}
@@ -82,7 +82,7 @@ export function KeepsakeView({
             groupIngredients(recipe.ingredients).map((group, groupIndex) => (
               <div key={group.section ?? `ing-${groupIndex}`} className="mt-3">
                 {group.section ? (
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                     {group.section}
                   </h3>
                 ) : null}
@@ -104,7 +104,7 @@ export function KeepsakeView({
             groupSteps(recipe.steps).map((group, groupIndex) => (
               <div key={group.section ?? `step-${groupIndex}`} className="mt-3">
                 {group.section ? (
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                     {group.section}
                   </h3>
                 ) : null}
@@ -137,7 +137,7 @@ export function KeepsakeView({
           <section className="mt-8">
             <h2 className="font-display text-xl font-semibold">{t('story')}</h2>
             {provenance.map((line) => (
-              <p key={line} className="mt-1 text-sm italic text-muted-foreground">
+              <p key={line} className="mt-1 text-sm text-muted-foreground italic">
                 {line}
               </p>
             ))}

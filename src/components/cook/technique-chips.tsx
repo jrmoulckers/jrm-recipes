@@ -59,7 +59,7 @@ function TechniqueChip({ rawLabel, className }: { rawLabel: string; className?: 
               })}
               className={cn(
                 badgeVariants({ variant: 'outline' }),
-                'cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                 className,
               )}
             >
@@ -96,7 +96,7 @@ function TechniqueChip({ rawLabel, className }: { rawLabel: string; className?: 
           aria-label={t('learnAria', { label: match.label })}
           className={cn(
             badgeVariants({ variant: 'outline' }),
-            'cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
             className,
           )}
         >
@@ -107,7 +107,7 @@ function TechniqueChip({ rawLabel, className }: { rawLabel: string; className?: 
       <PopoverContent align="start" className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">{match.label}</span>
-          <Badge variant="muted" className="text-[10px] uppercase tracking-wide">
+          <Badge variant="muted" className="text-[10px] tracking-wide uppercase">
             {t('badge')}
           </Badge>
         </div>

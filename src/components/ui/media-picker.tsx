@@ -261,7 +261,7 @@ function UploadTab({
         <button
           type="button"
           onClick={() => open()}
-          className="flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
         >
           <ImagePlus className="size-6" />
           <span className="text-sm font-medium">{t('uploadPhoto')}</span>
@@ -391,7 +391,7 @@ function LibraryTab({
               onFocus={() => setFocusIndex(index)}
               onClick={() => onSelect({ url: asset.url, assetId: asset.id }, asset.altText ?? '')}
               className={cn(
-                'relative aspect-square overflow-hidden rounded-lg border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'relative aspect-square overflow-hidden rounded-lg border border-border bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                 checked && 'ring-2 ring-primary',
               )}
             >
@@ -406,7 +406,7 @@ function LibraryTab({
                 className="size-full object-cover"
               />
               {checked ? (
-                <span className="absolute end-1 top-1 rounded-full bg-primary p-1 text-primary-foreground">
+                <span className="absolute inset-e-1 top-1 rounded-full bg-primary p-1 text-primary-foreground">
                   <Check className="size-3" aria-hidden="true" />
                 </span>
               ) : null}

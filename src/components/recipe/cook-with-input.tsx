@@ -93,7 +93,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
           placeholder={
             items.length === 0 ? t('cookWithInput.addIngredients') : t('cookWithInput.addMore')
           }
-          className="min-w-[10rem] flex-1 bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground"
+          className="min-w-40 flex-1 bg-transparent px-2 py-1 text-sm outline-hidden placeholder:text-muted-foreground"
           aria-label={t('cookWithInput.addIngredientAria')}
         />
         {items.length > 0 && (

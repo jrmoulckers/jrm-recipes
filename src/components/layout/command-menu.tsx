@@ -236,14 +236,14 @@ export function CommandMenu() {
         aria-label={t('triggerAria')}
         aria-keyshortcuts="Meta+K Control+K"
         title={t('triggerTitle', { shortcut: isMac ? '⌘K' : 'Ctrl K' })}
-        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
       >
         <Search className="size-5" aria-hidden />
       </button>
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in" />
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-xs data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
             className={cn(
@@ -273,7 +273,7 @@ export function CommandMenu() {
                 }}
                 onKeyDown={onInputKeyDown}
                 placeholder={t('placeholder')}
-                className="h-12 w-full border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 md:text-sm"
+                className="h-12 w-full border-0 bg-transparent text-base outline-hidden placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-0 md:text-sm"
               />
             </div>
 

@@ -124,9 +124,9 @@ describe('notification banners', () => {
     // The sample is built from the `card` colour that makes the class
     // writable, so it cannot go stale if that colour is renamed (#756).
     expect(
-      readFileSync(join(root, 'tailwind.config.ts'), 'utf8'),
-      `tailwind.config.ts defines no "${CARD_COLOR}" colour, so the ban below can never fire. If it was renamed, this ban needs revisiting, not just retyping.`,
-    ).toMatch(new RegExp(`\\b${CARD_COLOR}:\\s*\\{`));
+      readFileSync(join(root, 'src/styles/globals.css'), 'utf8'),
+      `globals.css defines no "${CARD_COLOR}" colour, so the ban below can never fire. If it was renamed, this ban needs revisiting, not just retyping.`,
+    ).toMatch(new RegExp(`--color-${CARD_COLOR}:\\s*hsl\\(var\\(--${CARD_COLOR}\\)\\)`));
     expect(`<div className="rounded-lg border bg-${CARD_COLOR}/95 p-4 shadow-lg">`).toContain(
       HAND_ROLLED_CARD,
     );

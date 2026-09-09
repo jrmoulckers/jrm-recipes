@@ -9,9 +9,9 @@ import { recipeClassificationHref } from '~/lib/recipe-classifications';
 type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'>;
 
 const categoryClass: Record<TagCategory, string> = {
-  meal: 'border-transparent bg-primary/12 text-[color:var(--badge-ink-primary)]',
+  meal: 'border-transparent bg-primary/12 text-(--badge-ink-primary)',
   cuisine: 'border-transparent bg-secondary/15 text-foreground',
-  dietary: 'border-transparent bg-success/15 text-[color:var(--badge-ink-success)]',
+  dietary: 'border-transparent bg-success/15 text-(--badge-ink-success)',
   general: 'border-border bg-muted text-muted-foreground',
 };
 
@@ -55,7 +55,7 @@ export function RecipeClassificationBadges({
           'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium',
           categoryClass[item.category],
           linked &&
-            'transition-colors hover:border-primary/45 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'transition-colors hover:border-primary/45 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden',
         );
         return linked ? (
           <Link

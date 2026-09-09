@@ -62,7 +62,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
   return (
     <section className="max-w-2xl rounded-2xl border border-destructive/40 bg-card p-8 shadow-token">
       <div className="flex items-start gap-4">
-        <span className="bg-destructive/12 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-destructive">
+        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-destructive/12 text-destructive">
           <Trash2 className="size-6" aria-hidden="true" />
         </span>
         <div className="min-w-0">

@@ -87,7 +87,7 @@ export function ImageUploadField({
         <figure
           className={cn(
             'relative overflow-hidden rounded-xl border border-border bg-muted',
-            compact ? 'aspect-[3/2] max-w-56' : 'aspect-video',
+            compact ? 'aspect-3/2 max-w-56' : 'aspect-video',
           )}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- editor preview accepts arbitrary user-pasted URLs that can't be pre-allowlisted for next/image */}
@@ -113,16 +113,16 @@ export function ImageUploadField({
             variant="overlay"
             onClick={() => onChange('', null)}
             label={t('remove')}
-            className="absolute end-2 top-2"
+            className="absolute inset-e-2 top-2"
           />
         </figure>
       ) : cloudinaryConfigured ? (
-        <div className={cn(compact ? 'aspect-[3/2] max-w-56' : 'aspect-video')}>
+        <div className={cn(compact ? 'aspect-3/2 max-w-56' : 'aspect-video')}>
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
             className={cn(
-              'flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
               compact ? 'p-3' : 'p-6',
             )}
           >
@@ -171,7 +171,7 @@ export function ImageUploadField({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="self-start rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="self-start rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
         >
           {t('change')}
         </button>

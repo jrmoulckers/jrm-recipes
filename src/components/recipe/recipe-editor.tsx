@@ -348,7 +348,7 @@ function amountOrUndef(s: string): number | undefined {
 }
 
 const selectClass =
-  'h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm';
+  'h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm';
 
 /** Trigger icon for the consolidated visibility settings popdown. */
 const VISIBILITY_ICON = {
@@ -410,7 +410,7 @@ function InfoHint({ label, children }: { label: string; children: React.ReactNod
         <button
           type="button"
           aria-label={t('about', { label })}
-          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
         >
           <Info className="size-4" aria-hidden="true" />
         </button>
@@ -510,7 +510,7 @@ function EditorSectionNav({
       className={cn(
         'overflow-hidden rounded-xl border border-border shadow-token-sm lg:sticky lg:z-20',
         stuck
-          ? 'bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 lg:rounded-t-none lg:border-t-0'
+          ? 'bg-card/85 backdrop-blur-sm supports-backdrop-filter:bg-card/70 lg:rounded-t-none lg:border-t-0'
           : 'bg-card',
       )}
     >
@@ -524,7 +524,7 @@ function EditorSectionNav({
           aria-controls={panelId}
           aria-label={t('progressAria', { done, total })}
           title={t('show')}
-          className="group flex min-h-0 w-full items-center px-3 py-[3px] transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:px-4"
+          className="group flex min-h-0 w-full items-center px-3 py-[3px] transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:ring-inset lg:px-4"
         >
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
             <span
@@ -550,7 +550,7 @@ function EditorSectionNav({
             />
           </span>
           <span
-            className="text-xs font-medium tabular-nums text-muted-foreground"
+            className="text-xs font-medium text-muted-foreground tabular-nums"
             aria-hidden="true"
           >
             {done}/{total}
@@ -560,7 +560,7 @@ function EditorSectionNav({
             onClick={toggle}
             aria-expanded={true}
             aria-controls={panelId}
-            className="-me-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="-me-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
           >
             <span className="sr-only">{t('hide')}</span>
             <ChevronUp className="size-4" aria-hidden="true" />
@@ -591,7 +591,7 @@ function EditorSectionNav({
                       event.preventDefault();
                       onJump(section.id);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
                   >
                     {section.complete ? (
                       <CheckCircle2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -1620,7 +1620,7 @@ export function RecipeEditor({
           tabIndex={-1}
           role="alert"
           aria-labelledby="recipe-error-summary-heading"
-          className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm outline-none"
+          className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm outline-hidden"
         >
           <h2
             id="recipe-error-summary-heading"
@@ -1825,7 +1825,7 @@ export function RecipeEditor({
                             <Layers className="size-3.5 shrink-0" />
                             <span className="shrink-0">{t('group')}</span>
                             <NativeSelect
-                              wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
+                              wrapperClassName="w-auto min-w-32 max-w-52"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -2113,7 +2113,7 @@ export function RecipeEditor({
                             <Layers className="size-3.5 shrink-0" />
                             <span className="shrink-0">{t('section')}</span>
                             <NativeSelect
-                              wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
+                              wrapperClassName="w-auto min-w-32 max-w-52"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -2911,12 +2911,12 @@ export function RecipeEditor({
           settles beneath the content at the end. The transparent gutter is
           click-through (pointer-events-none) with an interactive inner bar. Bottom padding respects the home-indicator safe area. The BottomNav is
           suppressed on editor routes so this bar owns the bottom edge (#294). */}
-      <div className="pointer-events-none sticky bottom-0 z-30 -mx-4 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/85 px-4 py-2 shadow-token-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="pointer-events-none sticky bottom-0 z-30 -mx-4 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/85 px-4 py-2 shadow-token-lg backdrop-blur-sm supports-backdrop-filter:bg-background/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span
               className={cn(
-                'truncate text-sm font-semibold leading-tight',
+                'truncate text-sm leading-tight font-semibold',
                 trimmedTitle === '' ? 'text-muted-foreground' : 'text-foreground',
               )}
             >
@@ -3146,7 +3146,7 @@ function ClassificationField({
               className={cn(
                 'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
                 active
-                  ? 'bg-primary/12 border-primary/30 text-[color:var(--badge-ink-primary)]'
+                  ? 'border-primary/30 bg-primary/12 text-(--badge-ink-primary)'
                   : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >

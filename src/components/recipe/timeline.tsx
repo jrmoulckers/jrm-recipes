@@ -68,7 +68,7 @@ export function RecipeTimeline({
         </div>
       </div>
 
-      <ol className="relative space-y-4 before:absolute before:bottom-3 before:start-5 before:top-3 before:w-px before:bg-border">
+      <ol className="relative space-y-4 before:absolute before:inset-s-5 before:top-3 before:bottom-3 before:w-px before:bg-border">
         {versions.map((version) => {
           const isLatest = version.versionNumber === latestVersion;
           const canRestore = canRevert && !isLatest && versions.length > 1;
@@ -100,7 +100,7 @@ export function RecipeTimeline({
                         version: version.versionNumber,
                       })}
                     </p>
-                    <h3 className="mt-1 font-display text-lg font-semibold leading-tight">
+                    <h3 className="mt-1 font-display text-lg leading-tight font-semibold">
                       {label}
                     </h3>
                     <p className="mt-1 text-sm text-muted-foreground">

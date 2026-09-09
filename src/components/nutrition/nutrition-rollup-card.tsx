@@ -103,7 +103,7 @@ export async function NutritionRollUpCard({
     }
     return (
       <details className="mt-2 text-xs text-muted-foreground">
-        <summary className="cursor-pointer font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <summary className="cursor-pointer font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden">
           <AlertTriangle className="me-1 inline size-3.5 align-[-2px]" aria-hidden="true" />
           {t('whyUncertain')}
         </summary>
@@ -141,7 +141,7 @@ export async function NutritionRollUpCard({
       className={cn('rounded-xl border border-border bg-surface/50 p-4', className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-sm font-semibold uppercase tracking-wide">{title}</h2>
+        <h2 className="font-display text-sm font-semibold tracking-wide uppercase">{title}</h2>
         <Badge variant={confidenceBand(rollUp.confidence)}>
           <Gauge className="size-3.5" aria-hidden="true" />
           {t('confidence', { percent })}
@@ -215,7 +215,7 @@ export async function NutritionRollUpCard({
                   open={adherence.length === 1}
                   className="rounded-lg border border-border bg-background/60 px-3 py-2"
                 >
-                  <summary className="cursor-pointer font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+                  <summary className="cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden">
                     <span className="ms-1 inline-flex w-[calc(100%-1rem)] items-center justify-between gap-3">
                       <span>{member.name}</span>
                       <span className="text-xs font-normal text-muted-foreground">

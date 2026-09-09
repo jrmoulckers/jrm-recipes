@@ -36,7 +36,7 @@ export default async function NotFound() {
         <p className="font-display text-6xl font-bold tracking-tight text-primary">404</p>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {t('heading')}
           </h1>
           <p className="text-pretty text-muted-foreground">{t('body', { brand: brand.name })}</p>
@@ -53,7 +53,7 @@ export default async function NotFound() {
             <div className="relative flex-1">
               <Search
                 aria-hidden
-                className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
               />
               <Input
                 id="not-found-search"

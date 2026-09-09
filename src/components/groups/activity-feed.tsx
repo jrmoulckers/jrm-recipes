@@ -92,7 +92,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
           {event.actor?.avatarUrl ? <AvatarImage src={event.actor.avatarUrl} alt={name} /> : null}
           <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
-        <span className="absolute -bottom-1 -end-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <span className="absolute -inset-e-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Icon className="size-2.5" />
         </span>
       </div>
@@ -106,7 +106,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
           </span>
         ) : null}
         {event.text ? (
-          <p className="mt-1 line-clamp-2 whitespace-pre-wrap break-words text-sm text-foreground">
+          <p className="mt-1 line-clamp-2 text-sm wrap-break-word whitespace-pre-wrap text-foreground">
             {event.text}
           </p>
         ) : null}

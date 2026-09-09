@@ -249,7 +249,7 @@ export function ShoppingListExportMenu({
         >
           <span className="flex min-w-0 flex-col">
             <span>{t('export.includeCompleted')}</span>
-            <span className="whitespace-normal text-xs font-normal text-muted-foreground">
+            <span className="text-xs font-normal whitespace-normal text-muted-foreground">
               {t('export.includeCompletedHint', { count: checkedCount })}
             </span>
           </span>

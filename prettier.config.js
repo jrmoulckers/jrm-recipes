@@ -9,5 +9,6 @@ import base from './config/engineering/prettier/index.js';
 export default {
   ...base,
   plugins: ['prettier-plugin-tailwindcss'],
+  tailwindStylesheet: './src/styles/globals.css',
   tailwindFunctions: ['cn', 'cva'],
 };

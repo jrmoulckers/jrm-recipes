@@ -261,7 +261,7 @@ export function RatingsReviewsSection({
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="bg-primary/12 rounded-full p-2 text-primary">
+        <span className="rounded-full bg-primary/12 p-2 text-primary">
           <NotebookPen className="size-5" aria-hidden />
         </span>
         <div>
@@ -312,7 +312,7 @@ export function RatingsReviewsSection({
                         style={{ width: `${width}%` }}
                       />
                     </span>
-                    <span className="w-8 shrink-0 text-end tabular-nums text-muted-foreground">
+                    <span className="w-8 shrink-0 text-end text-muted-foreground tabular-nums">
                       {row.count}
                     </span>
                   </li>
@@ -370,7 +370,7 @@ export function RatingsReviewsSection({
               aria-expanded={notesOpen}
               aria-controls="tasting-note-composer"
               onClick={() => setNotesOpen((open) => !open)}
-              className="mt-3 flex items-center gap-1 rounded-md text-sm font-medium text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-3 flex items-center gap-1 rounded-md text-sm font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
             >
               <ChevronDown
                 className={cn(
@@ -527,7 +527,7 @@ export function RatingsReviewsSection({
                       <p className="mt-2 font-medium text-foreground">{review.title}</p>
                     ) : null}
                     {review.body ? (
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">
+                      <p className="mt-1 text-sm leading-6 wrap-break-word whitespace-pre-wrap text-foreground">
                         {review.body}
                       </p>
                     ) : null}

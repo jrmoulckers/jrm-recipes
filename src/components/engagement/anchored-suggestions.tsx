@@ -114,7 +114,7 @@ export function AnchoredSuggestions({
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-foreground">
+            <p className="mt-1 wrap-break-word whitespace-pre-wrap text-foreground">
               {suggestion.body}
             </p>
           </li>
@@ -169,7 +169,7 @@ export function AnchoredSuggestions({
         title={compactTrigger ? t('triggerAria', { label: anchorLabel }) : undefined}
         className={cn(
           compactTrigger
-            ? 'col-start-3 row-start-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background'
+            ? 'col-start-3 row-start-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-hidden'
             : 'inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary',
           openSuggestions.length > 0 && 'text-primary',
         )}

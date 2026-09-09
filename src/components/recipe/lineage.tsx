@@ -37,7 +37,7 @@ export function RecipeLineage({
               </p>
               <Link
                 href={`/recipes/${parent.slug}`}
-                className="font-display text-lg font-semibold leading-tight text-foreground underline-offset-4 hover:text-primary hover:underline"
+                className="font-display text-lg leading-tight font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
               >
                 {parent.title}
               </Link>
@@ -61,7 +61,7 @@ export function RecipeLineage({
                 <li key={adaptation.slug}>
                   <Link
                     href={`/recipes/${adaptation.slug}`}
-                    className="group flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="group flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium group-hover:text-primary">

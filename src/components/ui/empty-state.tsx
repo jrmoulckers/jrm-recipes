@@ -10,7 +10,7 @@ import { Heading, Text } from './typography';
  * optional action row. All on tokenized spacing so every empty surface
  * (recipes, collections, meal plan, shopping list, groups) shares one rhythm.
  */
-const emptyStateVariants = cva('flex flex-col items-center text-pretty text-center', {
+const emptyStateVariants = cva('flex flex-col items-center text-center text-pretty', {
   variants: {
     variant: {
       default: 'gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16',
@@ -21,7 +21,7 @@ const emptyStateVariants = cva('flex flex-col items-center text-pretty text-cent
 });
 
 const emptyStateIconVariants = cva(
-  'bg-primary/12 inline-flex items-center justify-center rounded-2xl text-primary',
+  'inline-flex items-center justify-center rounded-2xl bg-primary/12 text-primary',
   {
     variants: {
       variant: {

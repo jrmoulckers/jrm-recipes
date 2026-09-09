@@ -67,7 +67,7 @@ export function CookCompletion({
       role="dialog"
       aria-modal="true"
       aria-labelledby="cook-completion-title"
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-background/95 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm"
     >
       <div
         className={cn(
@@ -90,7 +90,7 @@ export function CookCompletion({
           ref={headingRef}
           tabIndex={-1}
           className={cn(
-            'mt-4 text-pretty font-display font-bold tracking-tight focus:outline-none',
+            'mt-4 font-display font-bold tracking-tight text-pretty focus:outline-hidden',
             celebratory ? 'text-4xl' : 'text-2xl',
           )}
         >

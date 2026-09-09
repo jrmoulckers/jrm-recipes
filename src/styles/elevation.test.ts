@@ -54,8 +54,8 @@ describe('elevation tokens (issue #86)', () => {
     const offenders: string[] = [];
     for (const file of files) {
       const source = readFileSync(join(UI_DIR, file), 'utf8');
-      // Match class usage like `shadow-sm`/`shadow-lg` but not `shadow-token-*`.
-      if (/\bshadow-(sm|md|lg)\b/.test(source)) offenders.push(file);
+      // Tailwind 4 shifted the fixed shadow scale down one step, so include xs.
+      if (/\bshadow-(xs|sm|md|lg)\b/.test(source)) offenders.push(file);
     }
     expect(offenders, `raw shadow utilities in: ${offenders.join(', ')}`).toEqual([]);
   });

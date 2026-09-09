@@ -42,7 +42,7 @@ async function RedeemPage({
   return (
     <div className="container flex max-w-lg flex-col gap-8 py-12">
       <header className="text-center">
-        <span className="bg-primary/12 mx-auto inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+        <span className="mx-auto inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
           <Gift className="size-7" aria-hidden="true" />
         </span>
         <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
@@ -84,7 +84,7 @@ async function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
           <Gift className="size-7" aria-hidden="true" />
         </span>
         <div>

@@ -99,7 +99,7 @@ export function RecipeStory({
         </div>
       </div>
 
-      <ol className="relative space-y-4 before:absolute before:bottom-4 before:start-[1.15rem] before:top-4 before:w-px before:bg-border">
+      <ol className="relative space-y-4 before:absolute before:inset-s-[1.15rem] before:top-4 before:bottom-4 before:w-px before:bg-border">
         {entries.map((entry) => {
           const style = entryStyle(entry);
           const Icon = style.icon;
@@ -124,13 +124,13 @@ export function RecipeStory({
 
               <div className="min-w-0 flex-1 rounded-lg border border-border/70 bg-background p-4">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <h3 className="font-display text-base font-semibold leading-tight">
+                  <h3 className="font-display text-base leading-tight font-semibold">
                     {t(`story.kind.${style.titleKey}`)}
                   </h3>
                   {style.linked && entry.related && (
                     <Link
                       href={`/recipes/${entry.related.slug}`}
-                      className="min-w-0 truncate font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="min-w-0 truncate font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
                     >
                       {entry.related.title}
                     </Link>
@@ -157,7 +157,7 @@ export function RecipeStory({
                 </p>
 
                 {entry.note && (
-                  <p className="mt-3 rounded-md bg-muted/60 px-3 py-2 text-sm italic text-muted-foreground">
+                  <p className="mt-3 rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground italic">
                     “{entry.note}”
                   </p>
                 )}

@@ -236,7 +236,7 @@ function CookLogTimeline({
   const locale = useLocale();
   const t = useTranslations('cookLog.section');
   return (
-    <ol className="relative space-y-4 before:absolute before:bottom-3 before:start-[1.15rem] before:top-3 before:w-px before:bg-border">
+    <ol className="relative space-y-4 before:absolute before:inset-s-[1.15rem] before:top-3 before:bottom-3 before:w-px before:bg-border">
       {entries.map((entry) => {
         const cookedAt = new Date(entry.cookedAt);
         const valid = !Number.isNaN(cookedAt.getTime());
@@ -258,7 +258,7 @@ function CookLogTimeline({
             <div className="min-w-0 flex-1 rounded-lg border border-border/70 bg-background p-4">
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                 <div className="min-w-0">
-                  <p className="font-medium leading-tight">
+                  <p className="leading-tight font-medium">
                     {valid ? formatDate(cookedAt, 'PPP', locale) : t('loggedEarlier')}
                   </p>
                   {valid && (
@@ -279,7 +279,7 @@ function CookLogTimeline({
               </div>
 
               {entry.note && (
-                <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
                   {entry.note}
                 </p>
               )}

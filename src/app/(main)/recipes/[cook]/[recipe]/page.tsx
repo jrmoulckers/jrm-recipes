@@ -469,7 +469,7 @@ async function RecipePage({
         {/* Decorative unless the author described it: the hero cover sits
             directly above the recipe title, so an empty alt stays correct when
             there is nothing extra to say about the photo itself. */}
-        <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
+        <div className="relative aspect-21/9 max-h-[420px] w-full overflow-hidden">
           <RecipeImage
             alt={recipe.coverImageAlt ?? ''}
             src={recipe.coverImageUrl}
@@ -484,11 +484,11 @@ async function RecipePage({
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/40 to-transparent" />
         </div>
       </div>
 
-      <div className="container relative z-10 -mt-16 flex flex-col gap-8">
+      <div className="relative z-10 container -mt-16 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <Breadcrumbs
@@ -504,14 +504,14 @@ async function RecipePage({
             {recipe.group && (
               <Link
                 href={`/groups/${recipe.group.slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/25 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
               >
                 <Users className="size-3.5" /> {recipe.group.name}
               </Link>
             )}
           </div>
 
-          <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="max-w-3xl font-display text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
             {recipe.title}
           </h1>
           {recipe.description && (
@@ -773,7 +773,7 @@ async function RecipePage({
                       <Hourglass className="size-4 text-primary" />
                       {t('ingredients.makeAhead')}
                     </h3>
-                    <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
                       {recipe.makeAheadNote}
                     </p>
                   </div>
@@ -827,17 +827,17 @@ async function RecipePage({
                     <ol className="flex flex-col gap-5">
                       {recipe.steps.map((step, i) => (
                         <li key={step.id} id={`recipe-step-${i}`} className="flex gap-4">
-                          <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 font-display text-lg font-semibold text-primary">
                             {i + 1}
                           </span>
                           <div className="flex flex-1 flex-col gap-2 pt-1">
                             {step.section && (
-                              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 {step.section}
                               </span>
                             )}
                             {step.title && (
-                              <h3 className="font-display text-lg font-semibold leading-snug">
+                              <h3 className="font-display text-lg leading-snug font-semibold">
                                 {step.title}
                               </h3>
                             )}
@@ -923,7 +923,7 @@ async function RecipePage({
                         <Sparkles className="size-4 text-secondary" aria-hidden="true" />
                         {t('storyMemories')}
                       </h3>
-                      <p className="whitespace-pre-line leading-relaxed text-foreground/90">
+                      <p className="leading-relaxed whitespace-pre-line text-foreground/90">
                         {recipe.story}
                       </p>
                     </div>
@@ -934,7 +934,7 @@ async function RecipePage({
                   <>
                     <Separator />
                     <details className="group rounded-xl border border-border bg-surface">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-display text-lg font-semibold transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-display text-lg font-semibold transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-2">
                           <BookOpen className="size-4 text-secondary" aria-hidden="true" />
                           {t('originalImages.title')}
@@ -958,7 +958,7 @@ async function RecipePage({
                                   href={image.imageUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="group/image relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  className="group/image relative block aspect-4/3 overflow-hidden rounded-lg bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                                 >
                                   <RecipeImage
                                     src={image.imageUrl}

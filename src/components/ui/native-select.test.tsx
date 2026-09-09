@@ -38,8 +38,8 @@ describe('NativeSelect', () => {
 
   it('carries the destructive invalid variant', () => {
     const select = renderSelect();
-    expect(select.className).toContain('aria-[invalid=true]:border-destructive');
-    expect(select.className).toContain('aria-[invalid=true]:focus-visible:ring-destructive');
+    expect(select.className).toContain('aria-invalid:border-destructive');
+    expect(select.className).toContain('aria-invalid:focus-visible:ring-destructive');
   });
 
   it('renders a decorative chevron and forwards options', () => {

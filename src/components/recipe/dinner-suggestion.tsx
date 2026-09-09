@@ -117,7 +117,7 @@ export function DinnerSuggestion({
           <div className="flex flex-col sm:flex-row">
             <Link
               href={recipeDetailPath(current)}
-              className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden sm:w-56"
+              className="relative block aspect-16/10 w-full shrink-0 overflow-hidden sm:w-56"
               // This link holds only the cover image, so it has no accessible
               // name of its own and would announce as an empty link. It points
               // at the same recipe as the title link below, so it is hidden
@@ -144,7 +144,7 @@ export function DinnerSuggestion({
               <div className="flex flex-col gap-1">
                 <Link
                   href={recipeDetailPath(current)}
-                  className="font-display text-lg font-semibold leading-tight hover:text-primary"
+                  className="font-display text-lg leading-tight font-semibold hover:text-primary"
                 >
                   {current.title}
                 </Link>

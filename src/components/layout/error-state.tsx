@@ -58,12 +58,12 @@ export function ErrorState({
       />
 
       <div className="flex w-full max-w-md flex-col items-center gap-6">
-        <span className="bg-destructive/12 inline-flex size-16 items-center justify-center rounded-2xl text-destructive">
+        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-destructive/12 text-destructive">
           <TriangleAlert className="size-8" aria-hidden="true" />
         </span>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {title}
           </h1>
           <p className="text-pretty text-muted-foreground">{description}</p>

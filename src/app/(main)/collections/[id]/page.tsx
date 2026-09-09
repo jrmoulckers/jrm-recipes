@@ -85,7 +85,7 @@ async function CollectionPage({ params }: { params: Promise<CollectionRouteParam
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-primary">
             <BookMarked className="size-5" />
-            <span className="text-sm font-semibold uppercase tracking-wide">{t('kicker')}</span>
+            <span className="text-sm font-semibold tracking-wide uppercase">{t('kicker')}</span>
             {collection.isOwner && (
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 <VisibilityIcon className="size-3" />
@@ -93,7 +93,7 @@ async function CollectionPage({ params }: { params: Promise<CollectionRouteParam
               </span>
             )}
             {!collection.isOwner && collection.sharedWithGroups.length > 0 && (
-              <span className="bg-primary/12 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-primary">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">
                 <Users className="size-3" />
                 {tCard('sharedWith', {
                   group: collection.sharedWithGroups[0]!.name,
@@ -145,7 +145,7 @@ async function CollectionPage({ params }: { params: Promise<CollectionRouteParam
                 <RemoveFromCollectionButton
                   collectionId={collection.id}
                   recipeId={recipe.id}
-                  className="absolute end-2 top-2 z-10"
+                  className="absolute inset-e-2 top-2 z-10"
                 />
               )}
               <RecipeCard recipe={recipe} />
@@ -154,7 +154,7 @@ async function CollectionPage({ params }: { params: Promise<CollectionRouteParam
         </section>
       ) : (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-          <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+          <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
             <UtensilsCrossed className="size-7" />
           </span>
           <div>

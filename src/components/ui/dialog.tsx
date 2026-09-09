@@ -22,7 +22,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
+      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-xs data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
       className,
     )}
     {...props}
@@ -31,7 +31,7 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const dialogContentVariants = cva(
-  'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain',
+  'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain',
   {
     variants: {
       // Content-driven widths; `lg` preserves the historical default.
@@ -52,7 +52,7 @@ const dialogContentVariants = cva(
       variant: {
         center: 'data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
         sheet:
-          'ltr:data-[state=closed]:animate-slide-out-to-right ltr:data-[state=open]:animate-slide-in-from-right rtl:data-[state=closed]:animate-slide-out-to-left rtl:data-[state=open]:animate-slide-in-from-left',
+          'data-[state=closed]:ltr:animate-slide-out-to-right data-[state=open]:ltr:animate-slide-in-from-right data-[state=closed]:rtl:animate-slide-out-to-left data-[state=open]:rtl:animate-slide-in-from-left',
       },
     },
     defaultVariants: { size: 'lg', variant: 'center' },
@@ -81,7 +81,7 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute end-4 top-4 inline-flex items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity duration-fast ease-standard hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <DialogPrimitive.Close className="absolute inset-e-4 top-4 inline-flex items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity duration-fast ease-standard hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden">
           <X className="size-4" />
           <span className="sr-only">{t('close')}</span>
         </DialogPrimitive.Close>

@@ -46,13 +46,13 @@ async function OfflinePage() {
       <div className="flex w-full max-w-md flex-col items-center gap-6">
         <div className="relative">
           <LogoMark className="size-14" />
-          <span className="absolute -bottom-1 -end-1 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm">
+          <span className="absolute -inset-e-1 -bottom-1 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-xs">
             <CloudOff className="size-4" />
           </span>
         </div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {t('heading')}
           </h1>
           <p className="text-pretty text-muted-foreground">{t('body')}</p>
@@ -61,13 +61,13 @@ async function OfflinePage() {
         <OfflineReconnect />
 
         <div className="mt-4 w-full rounded-2xl border border-border bg-surface/60 p-4 text-start">
-          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="mb-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {t('stillWorksTitle')}
           </p>
           <ul className="flex flex-col gap-3">
             {stillWorks.map((item) => (
               <li key={item.title} className="flex items-start gap-3">
-                <span className="bg-primary/12 inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-primary">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
                   <item.icon className="size-5" />
                 </span>
                 <span className="flex flex-col">

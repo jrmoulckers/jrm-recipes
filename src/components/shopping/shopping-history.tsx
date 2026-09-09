@@ -44,7 +44,7 @@ export function ShoppingHistory({
       <details className="group rounded-xl border border-border bg-surface/40">
         <summary
           id="shopping-history-summary"
-          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden"
+          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden [&::-webkit-details-marker]:hidden"
         >
           <span className="flex items-center gap-2">
             <History className="size-4 text-primary" aria-hidden="true" />
@@ -71,7 +71,7 @@ export function ShoppingHistory({
                 return (
                   <li key={entry.id} className="rounded-lg border border-border bg-background">
                     <details className="group/entry">
-                      <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                      <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-2 font-medium">
                           <ChevronDown
                             className="size-4 shrink-0 transition-transform group-open/entry:rotate-180 motion-reduce:transition-none"
@@ -86,7 +86,7 @@ export function ShoppingHistory({
                         </span>
                       </summary>
                       <div className="border-t border-border px-3 py-3">
-                        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                           {t('preview')}
                         </p>
                         {entry.items.length === 0 ? (

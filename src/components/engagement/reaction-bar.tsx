@@ -84,7 +84,7 @@ export function ReactionBar({
             className={cn(
               'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
               entry.reacted
-                ? 'bg-primary/12 border-primary/40 text-primary'
+                ? 'border-primary/40 bg-primary/12 text-primary'
                 : 'border-border bg-muted/40 text-foreground hover:bg-muted',
               (!canReact || action.pending) && 'cursor-default opacity-70',
             )}
@@ -115,7 +115,7 @@ export function ReactionBar({
                   onClick={() => toggle(emoji.key)}
                   aria-label={t(`emoji.${emoji.key}`)}
                   title={t(`emoji.${emoji.key}`)}
-                  className="rounded-md p-1 text-lg transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="rounded-md p-1 text-lg transition-transform hover:scale-125 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                 >
                   <span aria-hidden>{emoji.glyph}</span>
                 </button>

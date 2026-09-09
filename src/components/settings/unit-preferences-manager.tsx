@@ -563,7 +563,7 @@ function CustomUnitsSection({
 
       {customUnits.length === 0 ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 px-6 py-10 text-center">
-          <span className="bg-primary/12 inline-flex size-12 items-center justify-center rounded-2xl text-primary">
+          <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
             <Ruler className="size-6" aria-hidden="true" />
           </span>
           <p className="max-w-sm text-sm text-muted-foreground">{t('custom.empty')}</p>

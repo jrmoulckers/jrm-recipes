@@ -230,7 +230,7 @@ describe('DietaryAssessmentBadge', () => {
     const trigger = screen.getByRole('button');
     expect(trigger).toHaveClass('min-h-11', 'max-w-full', 'whitespace-normal', 'text-start');
     expect(trigger).not.toHaveClass('truncate', 'whitespace-nowrap');
-    expect(within(trigger).getByText(/مناسب لنظام/)).toHaveClass('min-w-0', 'break-words');
+    expect(within(trigger).getByText(/مناسب لنظام/)).toHaveClass('min-w-0', 'wrap-break-word');
   });
 
   it('renders an authorized action only when supplied and closes after activation', async () => {

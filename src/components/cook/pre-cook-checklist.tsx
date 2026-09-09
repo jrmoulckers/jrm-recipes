@@ -29,7 +29,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
         aria-pressed={done}
         onClick={() => setDone((value) => !value)}
         className={cn(
-          'flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5',
+          'flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-start transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden sm:p-5',
           highlight
             ? 'border-warning/55 bg-warning/15 text-foreground'
             : 'border-border bg-card text-card-foreground',
@@ -40,7 +40,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
           {emoji}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-xl font-bold leading-tight">{title}</span>
+          <span className="text-xl leading-tight font-bold">{title}</span>
           <span className="text-base text-muted-foreground">{detail}</span>
         </span>
         {/* eslint-disable i18next/no-literal-string -- decorative checkmark symbol, not a translatable string */}
@@ -91,7 +91,7 @@ export function PreCookChecklist({
           <span aria-hidden="true" className="text-6xl">
             🧑‍🍳
           </span>
-          <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="font-display text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
             {t('heading')}
           </h1>
           <p className="text-lg text-muted-foreground">{t('subtitle', { title: recipeTitle })}</p>
@@ -117,7 +117,7 @@ export function PreCookChecklist({
             size={largeTargets ? 'xl' : 'lg'}
             className={cn(
               'w-full gap-2 rounded-2xl font-bold',
-              largeTargets && 'h-[4.5rem] text-xl sm:h-20',
+              largeTargets && 'h-18 text-xl sm:h-20',
             )}
           >
             <ChefHat aria-hidden="true" />
@@ -126,7 +126,7 @@ export function PreCookChecklist({
           <button
             type="button"
             onClick={onReady}
-            className="rounded-md px-2 py-1 text-base text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md px-2 py-1 text-base text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           >
             {t('skip')}
           </button>

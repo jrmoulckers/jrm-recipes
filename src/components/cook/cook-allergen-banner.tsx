@@ -47,12 +47,12 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
         <AlertTriangle className="size-7 shrink-0" aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-0.5">
           {labels.length > 0 && (
-            <p className="text-lg font-semibold leading-tight sm:text-xl">
+            <p className="text-lg leading-tight font-semibold sm:text-xl">
               <span className="font-bold">{t('contains')}</span> {formatList(labels, locale)}
             </p>
           )}
           {hiddenLabels.length > 0 && (
-            <p className="text-sm font-medium leading-tight sm:text-base">
+            <p className="text-sm leading-tight font-medium sm:text-base">
               <span className="font-semibold">{t('mayContain')}</span>{' '}
               {formatList(hiddenLabels, locale)}
             </p>

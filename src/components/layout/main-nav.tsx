@@ -104,7 +104,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   return (
     <nav
       aria-label={t('landmarks.primaryMobile')}
-      className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur xl:hidden"
+      className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm xl:hidden"
     >
       <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-safe-b">
         {/* A pill that glides along the top edge to the active tab. */}

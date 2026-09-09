@@ -36,7 +36,7 @@ export function CookbookPrintView({
   if (recipes.length === 0) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-5 py-24 text-center">
-        <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
+        <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/12 text-primary">
           <BookMarked className="size-7" aria-hidden="true" />
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight">
@@ -77,11 +77,11 @@ export function CookbookPrintView({
             className="mb-8 h-48 w-48 rounded-2xl object-cover shadow-token"
           />
         ) : (
-          <span className="bg-primary/12 mb-8 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+          <span className="mb-8 inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
             <BookMarked className="size-8" aria-hidden="true" />
           </span>
         )}
-        <p className="font-display text-sm uppercase tracking-[0.25em] text-muted-foreground">
+        <p className="font-display text-sm tracking-[0.25em] text-muted-foreground uppercase">
           {t('cookbook.cover.subtitle')}
         </p>
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
@@ -91,7 +91,7 @@ export function CookbookPrintView({
           <p className="mt-4 max-w-xl text-muted-foreground">{collection.description}</p>
         ) : null}
         {dedication ? (
-          <p className="mx-auto mt-8 max-w-lg whitespace-pre-line font-display text-xl italic leading-relaxed">
+          <p className="mx-auto mt-8 max-w-lg font-display text-xl leading-relaxed whitespace-pre-line italic">
             {dedication}
           </p>
         ) : null}

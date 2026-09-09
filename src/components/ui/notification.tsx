@@ -17,7 +17,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
  * banners in `components/pwa/*` apply them directly.
  */
 export const notificationSurface = cva(
-  'pointer-events-auto flex w-full items-center gap-3 rounded-2xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-token-lg backdrop-blur',
+  'pointer-events-auto flex w-full items-center gap-3 rounded-2xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-token-lg backdrop-blur-sm',
 );
 
 /**

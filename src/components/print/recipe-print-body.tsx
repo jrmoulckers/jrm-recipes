@@ -40,7 +40,7 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
           groupIngredients(recipe.ingredients).map((group, groupIndex) => (
             <div key={group.section ?? `ing-${groupIndex}`} className="mt-2">
               {group.section ? (
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {group.section}
                 </h4>
               ) : null}
@@ -62,7 +62,7 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
           groupSteps(recipe.steps).map((group, groupIndex) => (
             <div key={group.section ?? `step-${groupIndex}`} className="mt-2">
               {group.section ? (
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {group.section}
                 </h4>
               ) : null}
@@ -93,7 +93,7 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
         <section className="mt-6">
           <h3 className="font-display text-lg font-semibold">{t('story')}</h3>
           {provenance.map((line) => (
-            <p key={line} className="mt-1 text-sm italic text-muted-foreground">
+            <p key={line} className="mt-1 text-sm text-muted-foreground italic">
               {line}
             </p>
           ))}

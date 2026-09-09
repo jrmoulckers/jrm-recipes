@@ -6,7 +6,7 @@ import { Button, buttonVariants } from './button';
 afterEach(cleanup);
 
 // Token-driven, always-visible keyboard focus indicator (issue #113). The base
-// variant string previously stripped the outline (`focus-visible:outline-none`)
+// variant string previously stripped the outline (`focus-visible:outline-hidden`)
 // without re-adding a ring, so every <Button> had an invisible focus state.
 const FOCUS_RING_CLASSES = [
   'focus-visible:ring-2',
@@ -19,7 +19,7 @@ describe('Button focus-visible indicator', () => {
     const base = buttonVariants();
 
     // The outline is still cleared so browsers don't double up on indicators...
-    expect(base).toContain('focus-visible:outline-none');
+    expect(base).toContain('focus-visible:outline-hidden');
     // ...but a visible ring replaces it, keyed off semantic tokens only.
     for (const cls of FOCUS_RING_CLASSES) {
       expect(base).toContain(cls);

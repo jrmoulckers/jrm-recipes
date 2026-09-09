@@ -321,14 +321,14 @@ export function GuidedRecipeEntry({ draftOwnerId }: { draftOwnerId?: string }) {
 
       <section
         aria-labelledby={`guided-step-${stepKey}`}
-        className="flex min-h-[20rem] flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-8"
+        className="flex min-h-80 flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-8"
       >
         <div>
           <h2
             ref={headingRef}
             id={`guided-step-${stepKey}`}
             tabIndex={-1}
-            className="font-display text-2xl font-bold outline-none"
+            className="font-display text-2xl font-bold outline-hidden"
           >
             {t(`steps.${stepKey}.title`)}
           </h2>
@@ -550,7 +550,7 @@ export function GuidedRecipeEntry({ draftOwnerId }: { draftOwnerId?: string }) {
                 ref={saveErrorRef}
                 role="alert"
                 tabIndex={-1}
-                className="flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm font-medium text-foreground outline-none"
+                className="flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm font-medium text-foreground outline-hidden"
               >
                 <AlertCircle className="size-4 shrink-0 text-destructive" aria-hidden="true" />
                 {errors.save}
@@ -561,7 +561,7 @@ export function GuidedRecipeEntry({ draftOwnerId }: { draftOwnerId?: string }) {
         ) : null}
       </section>
 
-      <div className="sticky bottom-0 z-20 -mx-4 bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+      <div className="sticky bottom-0 z-20 -mx-4 bg-background/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           {draftValue.currentStep === 0 ? (
             <Button type="button" variant="ghost" size={actionSize} onClick={leaveFlow}>

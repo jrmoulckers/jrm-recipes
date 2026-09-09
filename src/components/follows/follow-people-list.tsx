@@ -37,7 +37,7 @@ function PersonRow({ person, fallbackName }: { person: FollowPerson; fallbackNam
       {person.handle ? (
         <Link
           href={`/cooks/${person.handle}`}
-          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="block rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           {row}
         </Link>

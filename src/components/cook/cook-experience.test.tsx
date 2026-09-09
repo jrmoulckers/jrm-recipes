@@ -163,7 +163,7 @@ describe('Cook Mode chrome safe-area insets (issue #283)', () => {
     const row = header?.querySelector('div');
 
     expect(header).not.toBeNull();
-    expect(header?.className).toContain('pt-[env(safe-area-inset-top)]');
+    expect(header?.className).toContain('pt-safe-t');
     expect(row?.className).toContain('pl-[max(0.75rem,env(safe-area-inset-left))]');
     expect(row?.className).toContain('pr-[max(0.75rem,env(safe-area-inset-right))]');
     expect(row?.className).toContain('sm:pl-[max(1.25rem,env(safe-area-inset-left))]');
@@ -176,7 +176,7 @@ describe('Cook Mode chrome safe-area insets (issue #283)', () => {
     const row = header?.querySelector('div');
 
     expect(header).not.toBeNull();
-    expect(header?.className).toContain('pt-[env(safe-area-inset-top)]');
+    expect(header?.className).toContain('pt-safe-t');
     expect(row?.className).toContain('pl-[max(1rem,env(safe-area-inset-left))]');
     expect(row?.className).toContain('pr-[max(1rem,env(safe-area-inset-right))]');
   });

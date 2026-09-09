@@ -26,7 +26,7 @@ const tooltipVariants = cva(
         soft: 'border border-border bg-popover text-popover-foreground',
       },
       multiline: {
-        true: 'max-w-xs text-pretty leading-relaxed',
+        true: 'max-w-xs leading-relaxed text-pretty',
         false: '',
       },
     },

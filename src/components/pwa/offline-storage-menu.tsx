@@ -108,7 +108,7 @@ export function OfflineStorageMenu({ label }: { label?: string } = {}) {
               <>
                 <div className="flex items-baseline justify-between text-sm">
                   <span className="font-medium">{t('used')}</span>
-                  <span className="tabular-nums text-muted-foreground">
+                  <span className="text-muted-foreground tabular-nums">
                     {formatBytes(estimate.usage)}
                     {estimate.quota > 0 && (
                       <>

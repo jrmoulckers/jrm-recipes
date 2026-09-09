@@ -26,9 +26,9 @@ export async function CollectionCard({ collection }: { collection: CollectionSum
   return (
     <Link
       href={`/collections/${collection.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
     >
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative aspect-16/10 overflow-hidden">
         {/* Decorative: the cover sits directly above the collection name, which
             names the enclosing link. */}
         {collection.coverImageUrl ? (
@@ -41,7 +41,7 @@ export async function CollectionCard({ collection }: { collection: CollectionSum
           />
         ) : (
           <div
-            className={cn('flex size-full items-center justify-center bg-gradient-to-br', gradient)}
+            className={cn('flex size-full items-center justify-center bg-linear-to-br', gradient)}
           >
             <BookMarked className="size-10 text-foreground/25" />
           </div>
@@ -49,7 +49,7 @@ export async function CollectionCard({ collection }: { collection: CollectionSum
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 font-display text-lg leading-tight font-semibold">
           {collection.name}
         </h3>
         {collection.description && (

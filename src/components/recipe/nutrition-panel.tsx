@@ -137,7 +137,7 @@ export function NutritionPanel({
       className={cn('rounded-xl border border-border bg-surface/50 p-4', className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
+        <h3 className="font-display text-sm font-semibold tracking-wide uppercase">
           {t('heading')}
         </h3>
         <ToggleGroup
@@ -172,7 +172,7 @@ export function NutritionPanel({
               noun,
               calories: formatNutrient(wholeCalories, 0),
               value: (chunks) => (
-                <span className="font-medium tabular-nums text-foreground">{chunks}</span>
+                <span className="font-medium text-foreground tabular-nums">{chunks}</span>
               ),
             })}
           </p>
@@ -181,7 +181,7 @@ export function NutritionPanel({
       {caloriePercent != null && activeMember && (
         <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
           <span>
-            ≈ <span className="font-semibold tabular-nums text-foreground">{caloriePercent}%</span>{' '}
+            ≈ <span className="font-semibold text-foreground tabular-nums">{caloriePercent}%</span>{' '}
             {t('ofDailyCaloriesFor')}
           </span>
           {calorieCandidates.length > 1 ? (
@@ -189,7 +189,7 @@ export function NutritionPanel({
               aria-label={t('memberSelectAria')}
               value={activeMember.id}
               onChange={(e) => setActiveMemberId(e.target.value)}
-              className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
             >
               {calorieCandidates.map((m) => (
                 <option key={m.id} value={m.id}>

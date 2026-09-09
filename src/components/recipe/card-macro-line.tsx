@@ -37,7 +37,7 @@ export function CardMacroLine({
           : 'text-xs text-muted-foreground'
       }
     >
-      <span className="font-medium tabular-nums text-foreground/80">
+      <span className="font-medium text-foreground/80 tabular-nums">
         {parts
           .map(({ key, value }) => t(`recipeCard.macroValue.${key}`, { value: Math.round(value) }))
           .join(' · ')}
