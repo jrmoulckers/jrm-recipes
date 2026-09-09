@@ -90,7 +90,6 @@ import { TabSectionSkeleton } from '~/components/recipe/sections/section-skeleto
 import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
 import { listRecipeCreators } from '~/server/recipes/creators';
 import { RecipeCreatorManager } from '~/components/recipe/creator-manager';
-import { DietaryAnalysisTrigger } from '~/components/dietary/dietary-analysis-trigger';
 import { LeaveRecipeButton } from '~/components/recipe/leave-recipe-button';
 import { ClaimRecipeButton } from '~/components/recipe/claim-recipe-button';
 import { getRecipeNutritionView } from '~/server/recipes/nutrition';
@@ -436,9 +435,6 @@ async function RecipePage({
 
   return (
     <article className="pb-16">
-      {user && entitlements?.advancedDietaryAnalysis ? (
-        <DietaryAnalysisTrigger accountId={user.id} recipeId={recipe.id} />
-      ) : null}
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -654,6 +650,9 @@ async function RecipePage({
                 initialFavorited={favorited}
                 variant="button"
                 canFavorite={Boolean(user)}
+                analyzeOnOpenAccountId={
+                  user && entitlements?.advancedDietaryAnalysis ? user.id : undefined
+                }
               />
               <SaveToCollectionButton
                 recipeId={recipe.id}
