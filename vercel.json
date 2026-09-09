@@ -17,6 +17,10 @@
     {
       "path": "/api/cron/erasure-backlog",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/dietary-retention",
+      "schedule": "0 10 * * *"
     }
   ]
 }

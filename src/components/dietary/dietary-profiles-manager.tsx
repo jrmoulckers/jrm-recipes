@@ -7,6 +7,7 @@ import { Pencil, Plus, ShieldAlert, Target, Trash2, UtensilsCrossed } from 'luci
 import { toast } from 'sonner';
 import { useFriendlyError } from '~/lib/error-copy';
 import { useDialogInitialFocus } from '~/lib/use-initial-focus';
+import { cleanupAccountBoundClientData } from '~/lib/account-bound-cleanup';
 
 import {
   createMemberProfileAction,
@@ -173,12 +174,17 @@ export function DietaryProfilesManager({
     });
     if (!ok) return;
     startTransition(() => {
-      void deleteMemberProfileAction(profile.id).then((result) => {
+      void deleteMemberProfileAction(profile.id).then(async (result) => {
         if (!result.ok) {
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(t('toasts.removed'));
+        const cleanup = await cleanupAccountBoundClientData();
+        if (cleanup.ok) {
+          toast.success(t('toasts.removed'));
+        } else {
+          toast.warning(t('toasts.removedCleanupIncomplete'));
+        }
         router.refresh();
       });
     });
@@ -186,6 +192,7 @@ export function DietaryProfilesManager({
 
   return (
     <div className="flex flex-col gap-6">
+      <p className="text-sm text-muted-foreground">{t('privacy.subjectScope')}</p>
       <div className="flex justify-end">
         <Button onClick={openAdd}>
           <Plus /> {t('actions.addFamilyMember')}

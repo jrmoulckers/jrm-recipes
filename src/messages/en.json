@@ -2019,7 +2019,8 @@
     "toasts": {
       "added": "Profile added",
       "updated": "Profile updated",
-      "removed": "Profile removed"
+      "removed": "Profile removed",
+      "removedCleanupIncomplete": "Profile removed, but some offline dietary data could not be cleared. Clear this site's stored data before sharing this device."
     },
     "actions": {
       "addFamilyMember": "Add family member",
@@ -2076,7 +2077,7 @@
     "confirm": {
       "remove": {
         "title": "Remove the dietary profile for “{name}”?",
-        "description": "Their dietary details and goals are deleted. This can't be undone.",
+        "description": "This deletes the profile's dietary details, goals, private assessments, and local analysis data. Recipe-level built-in facts are not changed. This can't be undone.",
         "confirmLabel": "Remove profile"
       }
     },
@@ -2118,6 +2119,9 @@
         "strict-avoidance": "Matches are excluded and uncertainty is disclosed.",
         "preference": "Matches remain available but rank lower."
       }
+    },
+    "privacy": {
+      "subjectScope": "Profiles stay private to you. Model-assisted and custom-restriction processing is self-only until a reviewed child and non-user rights process exists."
     },
     "assessmentBadge": {
       "detailsTitle": "{label} dietary assessment",
@@ -3308,7 +3312,8 @@
           "cancel": "Keep my account"
         },
         "toasts": {
-          "deleted": "Your account and personal profile have been deleted. Take care."
+          "deleted": "Your account and personal profile have been deleted. Take care.",
+          "deletedCleanupIncomplete": "Your account was deleted, but some offline data could not be cleared. Clear this site's stored data before sharing this device."
         }
       }
     }
@@ -3532,7 +3537,8 @@
     "localMode": "Local mode",
     "avatarAlt": "You",
     "signIn": "Sign in",
-    "startCookbook": "Start your cookbook"
+    "startCookbook": "Start your cookbook",
+    "accountCleanupFailed": "Some offline data from the previous account could not be cleared. Heirloom will keep retrying. Clear this site's stored data before sharing this device."
   },
   "marketing": {
     "waitlist": {

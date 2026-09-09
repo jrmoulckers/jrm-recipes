@@ -66,7 +66,13 @@ The service worker uses `NetworkFirst`, deliberately not stale-while-revalidate.
 
 Network-first protects connected requests, but a shared browser profile can still reuse an offline response after the active account changes. When Clerk is configured, [`AccountBoundCleanup`](../src/components/auth/account-bound-cleanup.tsx) observes the loaded live Clerk user id from the shared [`Providers`](../src/app/providers.tsx) boundary. A signed-in-to-signed-out transition or account A-to-account B transition starts best-effort cleanup of `heirloom-recipes` and `heirloom-recipe-images`. Cleanup begins without blocking rendering or navigation, and failures in an unavailable or locked Cache Storage implementation do not break the session.
 
-The first loaded identity only establishes the baseline, and an unchanged identity does nothing. Local mode mounts no Clerk observer. The Serwist precache is not registered for account cleanup, so app-shell assets and `/~offline` remain available after the personalized caches are removed.
+The coordinator trusts account-bound storage only when a local one-way owner marker matches the
+loaded identity. Missing, unreadable, or mismatched ownership triggers cleanup even on the first
+observation; a completed signed-out cleanup writes a non-personal clean-state sentinel. Failed
+cleanup produces a fixed warning and retries without committing the new identity. An unchanged,
+verified identity does nothing. Local mode mounts no Clerk observer. The Serwist precache is not
+registered for account cleanup, so app-shell assets and `/~offline` remain available after the
+personalized caches are removed.
 
 [`ACCOUNT_BOUND_CLEANUP_HANDLERS`](../src/lib/account-bound-cleanup.ts) is the single registry for account-scoped browser data. Future dietary-model or IndexedDB storage must add its cleanup handler there rather than introducing another identity observer.
 

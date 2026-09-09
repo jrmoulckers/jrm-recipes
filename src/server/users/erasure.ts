@@ -389,10 +389,40 @@ export async function eraseUserAccount(
         .where(eq(memberDietaryProfiles.userId, userId))
         .returning({ id: memberDietaryProfiles.id }),
     );
+    counts.dietary_assessments_invalidated_deleted = await deleteCounted(t, () =>
+      t
+        .delete(dietaryAssessments)
+        .where(
+          and(
+            eq(dietaryAssessments.createdById, userId),
+            isNotNull(dietaryAssessments.invalidatedAt),
+          ),
+        )
+        .returning({ id: dietaryAssessments.id }),
+    );
+    counts.dietary_corrections_revoked_deleted = await deleteCounted(t, () =>
+      t
+        .delete(dietaryIngredientCorrections)
+        .where(
+          and(
+            eq(dietaryIngredientCorrections.actorId, userId),
+            isNotNull(dietaryIngredientCorrections.revokedAt),
+          ),
+        )
+        .returning({ id: dietaryIngredientCorrections.id }),
+    );
     const clearedAssessmentAttribution = await t
       .update(dietaryAssessments)
       .set({ createdById: null })
-      .where(eq(dietaryAssessments.createdById, userId))
+      .where(
+        and(
+          eq(dietaryAssessments.createdById, userId),
+          eq(dietaryAssessments.scope, 'canonical'),
+          isNotNull(dietaryAssessments.ruleId),
+          isNull(dietaryAssessments.customRestrictionId),
+          isNull(dietaryAssessments.invalidatedAt),
+        ),
+      )
       .returning({ id: dietaryAssessments.id });
     counts.dietary_assessment_attribution_cleared = clearedAssessmentAttribution.length;
     const clearedCorrectionAttribution = await t
@@ -403,6 +433,7 @@ export async function eraseUserAccount(
           eq(dietaryIngredientCorrections.actorId, userId),
           isNotNull(dietaryIngredientCorrections.ruleId),
           isNull(dietaryIngredientCorrections.customRestrictionId),
+          isNull(dietaryIngredientCorrections.revokedAt),
         ),
       )
       .returning({ id: dietaryIngredientCorrections.id });

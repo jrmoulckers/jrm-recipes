@@ -14,6 +14,9 @@ import {
 
 export * from './dietary-contracts';
 
+export const DIETARY_SUBJECT_SCOPES = ['self'] as const;
+export type DietarySubjectScope = (typeof DIETARY_SUBJECT_SCOPES)[number];
+
 export const dietaryVerdictSchema = z.enum(DIETARY_VERDICTS);
 export const dietaryConfidenceSchema = z.enum(DIETARY_CONFIDENCES);
 export const dietaryEvidenceFindingSchema = z.enum(DIETARY_EVIDENCE_FINDINGS);
@@ -21,6 +24,7 @@ export const dietaryEvidenceSourceSchema = z.enum(DIETARY_EVIDENCE_SOURCES);
 export const dietaryAssessmentSourceSchema = z.enum(DIETARY_ASSESSMENT_SOURCES);
 export const dietaryAssessmentScopeSchema = z.enum(DIETARY_ASSESSMENT_SCOPES);
 export const customRestrictionSeveritySchema = z.enum(CUSTOM_RESTRICTION_SEVERITIES);
+export const dietarySubjectScopeSchema = z.enum(DIETARY_SUBJECT_SCOPES);
 
 export const dietaryRuleTargetSchema = z.union([
   z
@@ -57,6 +61,7 @@ export const customDietaryRestrictionTermSchema = z
 
 export const customDietaryRestrictionInputSchema = z
   .object({
+    subjectScope: dietarySubjectScopeSchema,
     name: z.string().trim().min(1).max(80),
     severity: customRestrictionSeveritySchema,
     terms: z.array(customDietaryRestrictionTermSchema).min(1).max(100),

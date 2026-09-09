@@ -137,9 +137,10 @@ it. The implementation requirements are recorded in
 - the versioned deletion notice must distinguish deleted profile-personal data from retained
   built-in recipe facts before this behavior is enabled.
 
-This is a requirement for #1101/#1106, not a claim that the pending dietary schema already satisfies
-it. The same qualified-lawful-basis and public-policy review required for retained shared
-contributions applies before dietary processing is enabled.
+The #1116 schema and #1106 erasure path implement this boundary: stale facts are deleted,
+profile-personal rows cascade, and only current structured built-in facts are de-attributed. The
+same qualified-lawful-basis and public-policy review required for retained shared contributions
+applies before dietary processing is enabled.
 
 ## Consequences
 

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, count, eq, inArray, isNotNull, ne, or } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
 
 import { db, isDbConfigured } from '~/server/db';
 import {
@@ -268,6 +268,7 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
           and(
             eq(dietaryAssessments.scope, 'canonical'),
             eq(dietaryAssessments.createdById, userId),
+            isNull(dietaryAssessments.invalidatedAt),
             retainedRecipeIds.length === 0
               ? eq(dietaryAssessments.recipeId, '__none__')
               : inArray(dietaryAssessments.recipeId, retainedRecipeIds),
@@ -286,6 +287,8 @@ export async function getDeletionPreview(userId: string): Promise<DeletionPrevie
           and(
             eq(dietaryIngredientCorrections.actorId, userId),
             isNotNull(dietaryIngredientCorrections.ruleId),
+            isNull(dietaryIngredientCorrections.customRestrictionId),
+            isNull(dietaryIngredientCorrections.revokedAt),
             retainedRecipeIds.length === 0
               ? eq(recipeIngredients.recipeId, '__none__')
               : inArray(recipeIngredients.recipeId, retainedRecipeIds),

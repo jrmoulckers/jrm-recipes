@@ -2019,7 +2019,8 @@
     "toasts": {
       "added": "Profil hinzugefügt",
       "updated": "Profil aktualisiert",
-      "removed": "Profil entfernt"
+      "removed": "Profil entfernt",
+      "removedCleanupIncomplete": "Das Profil wurde entfernt, aber einige Offline-Ernährungsdaten konnten nicht gelöscht werden. Lösche die gespeicherten Daten dieser Website, bevor du dieses Gerät weitergibst."
     },
     "actions": {
       "addFamilyMember": "Familienmitglied hinzufügen",
@@ -2076,7 +2077,7 @@
     "confirm": {
       "remove": {
         "title": "Ernährungsprofil für „{name}“ entfernen?",
-        "description": "Die Ernährungsdetails und Ziele werden gelöscht. Das kann nicht rückgängig gemacht werden.",
+        "description": "Ernährungsdetails, Ziele, private Bewertungen und lokale Analysedaten des Profils werden gelöscht. Rezeptbezogene integrierte Fakten bleiben unverändert. Das kann nicht rückgängig gemacht werden.",
         "confirmLabel": "Profil entfernen"
       }
     },
@@ -2118,6 +2119,9 @@
         "strict-avoidance": "Treffer werden ausgeschlossen und Unsicherheit wird offengelegt.",
         "preference": "Treffer bleiben verfügbar, werden aber weiter unten einsortiert."
       }
+    },
+    "privacy": {
+      "subjectScope": "Profile bleiben für dich privat. Modellgestützte Verarbeitung und eigene Einschränkungen sind nur für dich selbst verfügbar, bis ein geprüftes Rechteverfahren für Kinder und Nichtnutzer besteht."
     },
     "assessmentBadge": {
       "detailsTitle": "Ernährungsbewertung: {label}",
@@ -3308,7 +3312,8 @@
           "cancel": "Mein Konto behalten"
         },
         "toasts": {
-          "deleted": "Dein Konto und dein persönliches Profil wurden gelöscht. Mach's gut."
+          "deleted": "Dein Konto und dein persönliches Profil wurden gelöscht. Mach's gut.",
+          "deletedCleanupIncomplete": "Dein Konto wurde gelöscht, aber einige Offline-Daten konnten nicht entfernt werden. Lösche die gespeicherten Daten dieser Website, bevor du dieses Gerät weitergibst."
         }
       }
     }
@@ -3532,7 +3537,8 @@
     "localMode": "Lokaler Modus",
     "avatarAlt": "Du",
     "signIn": "Anmelden",
-    "startCookbook": "Starte dein Kochbuch"
+    "startCookbook": "Starte dein Kochbuch",
+    "accountCleanupFailed": "Einige Offline-Daten des vorherigen Kontos konnten nicht entfernt werden. Heirloom versucht es weiter. Lösche die gespeicherten Daten dieser Website, bevor du dieses Gerät weitergibst."
   },
   "marketing": {
     "waitlist": {

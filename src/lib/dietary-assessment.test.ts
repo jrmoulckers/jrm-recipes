@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   algorithmicDietaryAssessmentSchema,
+  customDietaryRestrictionInputSchema,
   dietaryAssessmentContractSchema,
   dietaryIngredientInputSchema,
+  dietarySubjectScopeSchema,
   isLegalDietaryAssessment,
 } from './dietary-assessment';
 
@@ -37,6 +39,26 @@ describe('dietary assessment contracts', () => {
         reasoning: 'hidden model prose',
       }),
     ).toBe(false);
+  });
+
+  it('fails closed when custom processing is not declared self-scoped', () => {
+    expect(dietarySubjectScopeSchema.safeParse('self').success).toBe(true);
+    expect(dietarySubjectScopeSchema.safeParse(undefined).success).toBe(false);
+    expect(dietarySubjectScopeSchema.safeParse('non-self').success).toBe(false);
+    expect(dietarySubjectScopeSchema.safeParse('disputed').success).toBe(false);
+
+    const restriction = {
+      name: 'Avoid this ingredient',
+      severity: 'strict-avoidance',
+      terms: [{ term: 'example', source: 'exact', approved: true }],
+    };
+    expect(customDietaryRestrictionInputSchema.safeParse(restriction).success).toBe(false);
+    expect(
+      customDietaryRestrictionInputSchema.safeParse({
+        ...restriction,
+        subjectScope: 'self',
+      }).success,
+    ).toBe(true);
   });
 
   it('keeps confirmed suitability separate from algorithmic confidence', () => {

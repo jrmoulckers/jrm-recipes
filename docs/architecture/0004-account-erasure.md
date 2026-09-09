@@ -257,7 +257,7 @@ a no-op.
 ### Dietary data extension
 
 ADR-0011 adds profile-personal dietary data and recipe-level built-in facts. The account-erasure
-contract for those pending tables is defined in
+contract for those tables is defined in
 [`docs/privacy/dietary-retention-and-rights.md`](../privacy/dietary-retention-and-rights.md):
 
 - profiles, custom restrictions, personalized assessments, and private corrections are deleted;
@@ -269,9 +269,9 @@ contract for those pending tables is defined in
 - the tombstone receives aggregate counts only and post-erasure assertions cover every personal
   and actor-attributed dietary table.
 
-This is a requirement for #1101/#1106, not evidence that the current erasure implementation already
-covers unmerged dietary tables. The versioned deletion notice must change when the behavior becomes
-real, and qualified legal review remains a production-enable gate.
+The implementation deletes profile-personal rows, purges invalidated/revoked history before
+de-attribution, retains only current built-in recipe facts, records aggregate counts, and uses the
+versioned deletion notice. Qualified legal review remains a production-enable gate.
 
 ## Consequences
 

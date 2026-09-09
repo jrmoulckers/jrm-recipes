@@ -2,8 +2,9 @@
 
 **Status:** Required behavior for issue
 [#1106](https://github.com/jrmoulckers/jrm-recipes/issues/1106). The implementation-specific
-statements below were reconciled with the merged #1101, #1107, and #1109 controls. Proposed
-retention periods and production-enable decisions remain conditional on the human gates below.
+statements below were reconciled with the merged schema/authorization, analytics, and account-bound
+cleanup controls. Proposed retention periods and production-enable decisions remain conditional on
+the human gates below.
 
 This is an engineering and product contract, not legal advice. Qualified legal review remains a
 production-enable gate in
@@ -70,7 +71,7 @@ portable, no-store, rate-limited, and scoped to the requester.
 
 Required dietary sections:
 
-- profiles and custom restrictions owned by the requester;
+- profiles, nutrition-target history, and custom restrictions owned by the requester;
 - the requester's current personalized assessments and corrections;
 - the requester's creator/actor-attributed recipe-level facts and corrections when they can be
   exported without revealing another person's profile;
@@ -170,10 +171,10 @@ Dietary rows use the same Neon database backup boundary as the rest of the accou
 - deleted data is beyond use and available only to the restricted recovery process;
 - a restored instance cannot serve traffic until the existing salted-hash re-erasure gate reports
   no resurrected subjects;
-- restore verification must include the dietary profile/personal tables introduced by #1101 and
+- restore verification must include the dietary profile/personal tables delivered in #1116 and
   confirm retained recipe facts contain no erased profile or actor link;
-- client model/IndexedDB/cache data is not restored from Neon and must be handled by the #1109
-  cleanup coordinator.
+- client model/IndexedDB/cache data is not restored from Neon and is handled by the account-bound
+  cleanup coordinator delivered in #1115 and extended by #1106.
 
 The production notice must use the actual longest retention period, not the current unpinned
 recommendation in [the backup runbook](../db-backup-and-recovery.md).
@@ -182,6 +183,16 @@ recommendation in [the backup runbook](../db-backup-and-recovery.md).
 
 One account-bound cleanup coordinator owns transition cleanup. Dietary code registers handlers
 rather than creating a second identity observer.
+
+The current coordinator runs on sign-out/account switch, successful account deletion, and profile
+deletion. It stops registered dietary runtime work with a bounded acknowledgement before deleting
+named Cache Storage and IndexedDB data, and returns fixed handler outcomes without exposing raw
+storage errors. A one-way local owner marker binds persistent stores to the current account across
+browser restarts; unknown or mismatched ownership purges before it is trusted, and unavailable
+Web Crypto or local storage fails closed by purging again on the next mount. A successful signed-out
+purge writes a non-personal clean-state sentinel, so a missing marker is never interpreted as proof
+that account-bound storage is empty. Model-assisted analysis has no production enable/disable
+surface yet; introducing one requires invoking the same coordinator before that surface may ship.
 
 On disable, sign-out, account A to B switch, and deletion completion, the implementation must:
 
@@ -198,7 +209,7 @@ future resubscription is a product decision; keeping personalized cache data is 
 
 ## Analytics and logs
 
-Issue #1107 owns the runtime boundary. The merged implementation has been verified to provide:
+The merged runtime boundary is reused and verified here rather than duplicated:
 
 - an exhaustive typed event map for coarse enablement, download, device support, analysis outcome,
   trigger, and fixed errors;
@@ -250,14 +261,15 @@ Implementation must:
 
 Release evidence must link:
 
-- #1101 schema/authorization/export/erasure and public-projection tests;
+- #1116 schema/authorization/export/erasure and public-projection tests;
 - projection and erasure tests proving retained correction values are schema-constrained and that
   free-text/private/identifying content is deleted rather than merely de-attributed;
 - server-boundary tests proving missing, non-self, and disputed subject scope cannot run or persist
   custom/model-assisted processing;
-- #1107 analytics allowlist and canary tests;
-- #1109 account-transition cleanup and cache-isolation tests;
+- #1113 analytics allowlist and canary tests;
+- #1115 account-transition cleanup and cache-isolation tests;
 - retention enforcement for every persisted stale/rejected category;
+- the authenticated daily dietary-retention job and its aggregate-only result;
 - localized notice/version tests;
 - a named model asset distributor decision;
 - the actual Neon backup horizon and restore drill evidence;

@@ -108,9 +108,8 @@ identifying from their content or family context. See
 
 ### Dietary privacy boundary (ADR-0011 and issue #1106)
 
-The evidence-based dietary schema is still being delivered by #1101. Its final table names and
-foreign keys must be documented here after that issue lands; this section records the required
-shape rather than claiming the pending implementation exists.
+The evidence-based dietary schema delivered in #1116 separates recipe-level built-in facts from
+profile-personal data. Issue #1106 reconciles its export, retention, and erasure behavior.
 
 - Recipe-level built-in-rule facts and profile-personal assessments are structurally separate.
 - Profiles and custom restrictions are creator-controlled in v1. An optional `groupId` is context,
@@ -174,6 +173,12 @@ The data inventory, DPIA and human production gates are recorded in
 | `meal_plan_entries`                      | [`planner.ts`](../src/server/db/schema/planner.ts)             | Weekly meal-plan slots for a user, optionally scoped to a group and/or recipe.                                                |
 | `member_dietary_profiles`                | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Per-person dietary/allergen profiles owned by a user and optionally scoped to a group.                                        |
 | `nutrition_targets`                      | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Versioned daily macro targets per profile, keyed by effective-from date so past weeks keep the target they were cooked under. |
+| `dietary_rules`                          | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Persisted identifiers and versions for registry-defined built-in dietary rules.                                               |
+| `custom_dietary_restrictions`            | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Creator-owned named restrictions and bounded severity attached to one dietary profile.                                        |
+| `custom_dietary_restriction_terms`       | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Exact or approved suggested terms for a custom restriction.                                                                   |
+| `dietary_ingredient_corrections`         | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Schema-constrained recipe-ingredient corrections with revocation and optional actor attribution.                              |
+| `dietary_assessments`                    | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Versioned canonical, personal, or profile-scoped recipe assessments with explicit freshness fields.                           |
+| `dietary_evidence`                       | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Structured ingredient-level evidence belonging to an assessment.                                                              |
 | `billing_customers`                      | [`billing.ts`](../src/server/db/schema/billing.ts)             | Stripe customer mapping for exactly one user or group owner.                                                                  |
 | `subscriptions`                          | [`billing.ts`](../src/server/db/schema/billing.ts)             | Synced Stripe subscription state, plan, trial, period, cancellation, and seats.                                               |
 | `usage_counters`                         | [`billing.ts`](../src/server/db/schema/billing.ts)             | Metered usage keyed by owner id/type, metric, and period.                                                                     |
