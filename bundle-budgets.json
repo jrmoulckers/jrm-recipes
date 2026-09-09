@@ -17,15 +17,16 @@
   "//dietary-analytics-contract": "Issue #1107 adds a synchronous runtime allowlist and final PostHog reconstruction boundary to the shared analytics client, without adding any dietary feature emission or runtime. Linux baseline run 34212920694 for latest main after merged #1108 measures 254/280/331/246 kB; rebased Linux run 34215825794 on this branch measures 255/281/332/247 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit. Route-chunk attribution finds dietary_analysis_enablement_changed in the same shared first-load chunk on all four routes, so the coordinated +1 kB movement on every route is attributed to this contract rather than treated as unrelated drift. All budgets remain unchanged and retain 2/5/5/3 kB headroom.",
   "//dietary-assessment-ux": "Issue #1102 replaces card text-derived allergen reassurance with the shared interactive assessment badge and adds evidence review to the recipe reader. Linux CI run 34257227930 on the rebased integration measures 246/282/337/247 kB for /, /recipes, /recipes/[cook]/[recipe], and /recipes/[cook]/[recipe]/edit. The card badge reaches home recipe rails and /recipes; the evidence and correction controls reach the reader. The editor is unchanged; its prior one-kilobyte movement was the established whole-kB build variance. These measurements also include the route-headroom work that landed on main after the prior #1107 claims, so they record the integrated tree rather than attributing every net change to #1102. Existing budgets and tolerance remain unchanged.",
   "//zod-4": "PR #1097 moves validation to Zod 4 while keeping schemas out of shared client bundles. After #1122 added its final dietary correction controls, Linux CI run 34289380328 measures /recipes at 286 kB and the recipe reader at 341 kB. Their limits move 286 -> 288 kB and 337 -> 344 kB to retain the minimum 2 kB blocking margin required by #821.",
+  "//on-device-dietary-analysis": "Issue #1100 adds progressive on-device analysis after a recipe is saved. The trigger shares the existing favorite control used by recipe cards, so it reaches the home recipe rails while the model and analyzer remain behind a dynamic boundary. Linux CI run 34296606097 measures / at 224 kB, up 1 kB from the Zod 4 baseline; the existing 257 kB budget remains unchanged with 33 kB headroom.",
   "//measured": {
     "//": "Machine-checked measurement claims (#858). check-bundle-budget.mjs verifies each of these against the same build that enforces the budgets below, and FAILS when one no longer matches. The prose notes above explain reasoning; these entries are what CI holds to reality. Four claims in this file have been corrected after the fact -- #674/#690, #763, #820 and #857 -- each found by a person who happened to look, because nothing compared them to a build. A claim is only about the platform that produced it: Linux CI reads ~1 kB above a local Windows build, so entries for other platforms are skipped rather than failed, and an entry with no platform fails as malformed. Update the number and the runId together; a value you cannot re-derive is a value you cannot audit. This guard closes DECAY only -- it compares a claim's kb to a build and never reads the prose around it, so it would have caught #820 and could not have caught #674, #763 or #857, where the number was already right. Attributing a regression to a module is a human obligation: see docs/performance-budgets.md.",
     "claims": [
       {
         "route": "/",
-        "kb": 223,
+        "kb": 224,
         "platform": "linux",
-        "runId": "34286061210",
-        "issue": 1097
+        "runId": "34296606097",
+        "issue": 1100
       },
       {
         "route": "/recipes",
