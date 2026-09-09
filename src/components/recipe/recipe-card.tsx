@@ -5,7 +5,7 @@ import { Clock3, Play, Star, Users } from 'lucide-react';
 
 import { cn, formatMinutes } from '~/lib/utils';
 import { ratingDisplay, ratingSummary, summaryFromAggregates } from '~/lib/ratings';
-import { type Allergen } from '~/lib/allergens';
+import { type CardDietaryData } from '~/lib/dietary-presentation';
 import { recipeCookPath, recipeDetailPath } from '~/lib/recipe-path';
 import { matchFieldLabel, splitHighlight, type RecipeMatchReason } from '~/lib/search-match';
 import { Badge } from '~/components/ui/badge';
@@ -16,8 +16,6 @@ import { CardDietaryBadge, type CardDietaryMember } from '~/components/recipe/ca
 import { CardMacroLine } from '~/components/recipe/card-macro-line';
 import { type MacroNutrientKey } from '~/server/recipes/search';
 import { type MacroCardSummary } from '~/server/recipes/macro-search';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-import { isDietaryTag } from '~/lib/substitutions';
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
@@ -54,13 +52,7 @@ export type CardRecipe = {
   ratingSum?: number;
   /** Legacy raw ratings, used only when aggregates aren't provided. */
   ratings?: { value: number }[];
-  /**
-   * Detected allergens rolled up from ingredients (conservative direct+hidden
-   * union), for the safe-for badge. `null` = no structured ingredient data to
-   * analyze (badge withholds the "safe" verdict); `[]` = analyzed, none found.
-   */
-  allergens?: Allergen[] | null;
-  dietaryAssessments?: DietaryAssessmentView[];
+  dietary?: CardDietaryData;
 };
 
 export function RecipeCard({
@@ -71,7 +63,6 @@ export function RecipeCard({
   priority = false,
   matchReason,
   members,
-  signedIn = false,
   macro,
   macroNutrients,
 }: {
@@ -121,6 +112,7 @@ export function RecipeCard({
       : ratingSummary(recipe.ratings ?? []);
   const rating = ratingDisplay(summary);
   const titleSegments = matchReason ? splitHighlight(recipe.title, matchReason.term) : null;
+  const titleId = React.useId();
   const classificationTags = (recipe.tags ?? []).map(({ tag }) => tag);
   const cardClassifications = [
     ...classificationTags.filter((tag) => tag.category === 'meal'),
@@ -128,7 +120,19 @@ export function RecipeCard({
   ].slice(0, 2);
 
   return (
-    <div className="group/card relative">
+    <div className="group/card group relative h-full rounded-xl transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none">
+      {/* Keep the detail destination as a native, card-sized link while visible
+          content and controls remain its siblings. This preserves link browser
+          affordances without nesting future interactive card controls. */}
+      <Link
+        href={recipeDetailPath({
+          id: recipe.id,
+          slug: recipe.slug,
+          cook: recipe.author?.slug,
+        })}
+        aria-labelledby={titleId}
+        className="absolute inset-0 z-[1] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      />
       {canFavorite && (
         <FavoriteButton
           recipeId={recipe.id}
@@ -164,17 +168,9 @@ export function RecipeCard({
           {t('common.cook')}
         </Link>
       </div>
-      <Link
-        href={recipeDetailPath({
-          id: recipe.id,
-          slug: recipe.slug,
-          cook: recipe.author?.slug,
-        })}
-        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted/40 active:shadow-token"
-      >
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[box-shadow,background-color,border-color] duration-200 group-hover/card:shadow-token-lg group-active/card:bg-muted/40 group-active/card:shadow-token">
         <div className="relative aspect-[16/10] overflow-hidden">
-          {/* Decorative: the cover sits directly above the recipe title, which
-              names the enclosing link. */}
+          {/* Decorative: the adjacent recipe title names the stretched link. */}
           <RecipeImage
             alt=""
             src={recipe.coverImageUrl}
@@ -199,7 +195,10 @@ export function RecipeCard({
         </div>
 
         <div className="flex flex-1 flex-col gap-2 p-4">
-          <h3 className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight">
+          <h3
+            id={titleId}
+            className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight"
+          >
             {titleSegments
               ? titleSegments.map((seg, i) =>
                   seg.hit ? (
@@ -240,6 +239,18 @@ export function RecipeCard({
               ))}
             </div>
           )}
+          {recipe.dietary && (
+            // This is the sibling slot for dietary UI. The current read-only
+            // badge passes pointer input through to the card link; native
+            // links/buttons added here remain independently operable.
+            <div className="pointer-events-none relative z-10 w-fit [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
+              <CardDietaryBadge
+                members={members ?? []}
+                dietary={recipe.dietary}
+                signedIn={canFavorite}
+              />
+            </div>
+          )}
           <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
             {recipe.totalMinutes != null && (
               <span className="inline-flex items-center gap-1">
@@ -265,19 +276,7 @@ export function RecipeCard({
             {recipe.difficulty && <span className="capitalize">{recipe.difficulty}</span>}
           </div>
         </div>
-      </Link>
-      {((members && members.length > 0) ||
-        (recipe.dietaryFlags?.length ?? 0) > 0 ||
-        (recipe.dietaryAssessments?.length ?? 0) > 0) && (
-        <div className="mt-2">
-          <CardDietaryBadge
-            members={members ?? []}
-            assessments={recipe.dietaryAssessments ?? []}
-            declared={(recipe.dietaryFlags ?? []).filter(isDietaryTag)}
-            signedIn={signedIn}
-          />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -285,7 +284,7 @@ export function RecipeCard({
 /** Compact, read-only 5-star row summarising a recipe's average rating. */
 function StarRating({ filled, label }: { filled: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-0.5" aria-label={label}>
+    <span className="inline-flex items-center gap-0.5" aria-label={label} role="img">
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}

@@ -30,6 +30,7 @@ export function SearchResultsFeed({
   initialPossibleItems = [],
   initialNextOffset,
   initialPossibleNextOffset = null,
+  showDietaryBands = false,
   queryString,
   canFavorite = false,
   favoritedIds = [],
@@ -46,6 +47,7 @@ export function SearchResultsFeed({
   initialPossibleItems?: RecipeSearchResult[];
   initialNextOffset: number | null;
   initialPossibleNextOffset?: number | null;
+  showDietaryBands?: boolean;
   /** Canonical query string of the effective search, re-parsed server-side. */
   queryString: string;
   canFavorite?: boolean;
@@ -144,6 +146,7 @@ export function SearchResultsFeed({
   }
 
   const hasMore = nextOffset != null;
+  const hasMorePossible = possibleNextOffset != null;
 
   // The escape hatch. Withholding is the default because a filtered list is
   // read as an answer, but the viewer is entitled to overrule us and see what
@@ -164,7 +167,7 @@ export function SearchResultsFeed({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            {t('searchResults.title')}
+            {showDietaryBands ? t('searchResults.highTitle') : t('searchResults.title')}
           </h2>
           {correction && (
             <p className="text-sm text-muted-foreground">
@@ -231,34 +234,53 @@ export function SearchResultsFeed({
           />
         ))}
       </div>
-      {possibleItems.length > 0 ? (
-        <section className="mt-3 grid gap-4" aria-labelledby="possible-dietary-matches">
-          <div>
-            <h3
-              id="possible-dietary-matches"
-              className="font-display text-xl font-semibold text-foreground"
-            >
-              {t('searchResults.possible.title')}
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              {t('searchResults.possible.description')}
-            </p>
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>
+            {pending ? t('common.loading') : t('common.loadMoreRecipes')}
+          </Button>
+        </div>
+      )}
+      {showDietaryBands && possibleItems.length > 0 && (
+        <section
+          className="flex flex-col gap-5 border-t border-border pt-5"
+          aria-labelledby="possible-dietary-matches"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-col gap-1">
+              <h2
+                id="possible-dietary-matches"
+                className="font-display text-2xl font-bold tracking-tight"
+              >
+                {t('searchResults.possibleTitle')}
+              </h2>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {t('searchResults.possibleDescription')}
+              </p>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {t('searchResults.count', {
+                count: possibleItems.length,
+                plus: hasMorePossible ? '+' : '',
+              })}
+            </span>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {possibleItems.map((recipe) => (
               <RecipeCard
-                key={`possible:${recipe.id}`}
+                key={recipe.id}
                 recipe={recipe}
                 canFavorite={canFavorite}
                 favorited={favoritedSet.has(recipe.id)}
                 quickPlan={quickPlan}
                 matchReason={recipe.matchReason}
+                macro={recipe.macro}
+                macroNutrients={macroNutrients}
                 members={members}
-                signedIn={signedIn}
               />
             ))}
           </div>
-          {possibleNextOffset != null && (
+          {hasMorePossible && (
             <div className="flex justify-center pt-2">
               <Button
                 type="button"
@@ -267,18 +289,11 @@ export function SearchResultsFeed({
                 onClick={onLoadMorePossible}
                 disabled={possiblePending}
               >
-                {possiblePending ? t('common.loading') : t('common.loadMoreRecipes')}
+                {possiblePending ? t('common.loading') : t('searchResults.loadMorePossible')}
               </Button>
             </div>
           )}
         </section>
-      ) : null}
-      {hasMore && (
-        <div className="flex justify-center pt-2">
-          <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>
-            {pending ? t('common.loading') : t('common.loadMoreRecipes')}
-          </Button>
-        </div>
       )}
     </section>
   );

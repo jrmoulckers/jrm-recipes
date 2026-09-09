@@ -112,46 +112,26 @@ describe('searchFilterConditions (scoped facet counts, #274)', () => {
 });
 
 describe('searchFilterConditions. Dietary filter (#273)', () => {
-  it('matches a derivable diet against current evidence and declarations', () => {
+  it('matches a diet against current assessments and author declarations', () => {
     const sql = render(parseRecipeSearch({ diet: 'gluten-free' }));
-    expect(sql).not.toContain('dietary_tags');
     expect(sql).toContain('dietary_flags');
     expect(sql).toContain('ruleset_version');
     expect(sql).toContain('dietary_assessments');
     expect(sql).toContain(' or ');
   });
 
-  it('uses declarations only for diets with no compatibility projection', () => {
+  it('vetoes positive matches when a current deterministic conflict exists', () => {
     const sql = render(parseRecipeSearch({ diet: 'vegan' }));
     expect(sql).toContain('dietary_flags');
     expect(sql).not.toContain('dietary_tags');
     expect(sql).toContain('not exists');
   });
 
-  it('AND-combines multiple selected diets (one predicate each)', () => {
+  it('AND-combines multiple selected diets in one dietary predicate', () => {
     const search = parseRecipeSearch({ diet: ['vegan', 'gluten-free'] });
-    // One assessment-aware condition per diet; legacy compatibility tags are no longer trusted.
-    expect(searchFilterConditions(search)).toHaveLength(2);
+    expect(searchFilterConditions(search)).toHaveLength(1);
     const sql = render(search);
-    expect(sql).not.toContain('dietary_tags');
     expect((sql.match(/dietary_flags/g) ?? []).length).toBe(2);
-  });
-
-  it('isolates medium-confidence assessments for Possible matches', () => {
-    const search = parseRecipeSearch({ diet: 'gluten-free' });
-    const query = renderQuery(search, { dietaryMode: 'possible' });
-    expect(query.params).toContain('medium');
-    expect(query.sql.toLowerCase()).toContain('not');
-    expect(query.sql.toLowerCase()).not.toContain('dietary_tags');
-  });
-
-  it('allows definite or medium evidence when composing combined Possible matches', () => {
-    const query = renderQuery(parseRecipeSearch({ diet: 'gluten-free' }), {
-      dietaryMode: 'eligible',
-    });
-    expect(query.params).toContain('high');
-    expect(query.params).toContain('medium');
-    expect(query.sql.toLowerCase()).not.toContain('dietary_tags');
   });
 
   it('OR-combines multiple selected diets when requested', () => {
@@ -161,6 +141,13 @@ describe('searchFilterConditions. Dietary filter (#273)', () => {
     });
     expect(searchFilterConditions(search)).toHaveLength(1);
     expect(render(search)).toContain(' or ');
+  });
+
+  it('isolates medium-confidence possible matches from the high-confidence band', () => {
+    const search = parseRecipeSearch({ diet: 'vegan' });
+    const sql = render(search, { dietaryMatchBand: 'possible' });
+    expect(sql).toContain('dietary_assessments');
+    expect(sql).toContain('not (');
   });
 
   it('adds no dietary predicate when none is selected', () => {

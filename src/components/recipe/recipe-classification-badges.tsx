@@ -1,23 +1,12 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { Globe2, Leaf, Utensils } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '~/lib/utils';
 import { type CanonicalTag, type TagCategory } from '~/lib/tag-taxonomy';
-import { type DietaryTag } from '~/lib/substitutions';
 import { recipeClassificationHref } from '~/lib/recipe-classifications';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
 
-const RecipeDietaryAssessments = dynamic(() =>
-  import('~/components/dietary/recipe-dietary-assessments').then(
-    (module) => module.RecipeDietaryAssessments,
-  ),
-);
-
-type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'> & {
-  trustedDietary?: boolean;
-};
+type ClassificationItem = Pick<CanonicalTag, 'slug' | 'name' | 'category'>;
 
 const categoryClass: Record<TagCategory, string> = {
   meal: 'border-transparent bg-primary/12 text-[color:var(--badge-ink-primary)]',
@@ -35,32 +24,22 @@ function ClassificationIcon({ category }: { category: TagCategory }) {
 
 export function RecipeClassificationBadges({
   items,
-  dietary = [],
-  dietaryAssessments = [],
-  signedIn = false,
-  canReviewDietary = false,
-  canUseAdvancedDietaryAnalysis = false,
   linked = true,
   limit,
   className,
 }: {
   items: ClassificationItem[];
-  dietary?: DietaryTag[];
-  dietaryAssessments?: DietaryAssessmentView[];
-  signedIn?: boolean;
-  canReviewDietary?: boolean;
-  canUseAdvancedDietaryAnalysis?: boolean;
   linked?: boolean;
   limit?: number;
   className?: string;
 }) {
   const tNames = useTranslations('classificationNames');
   const deduped = new Map<string, ClassificationItem>();
-  for (const item of items) {
+  for (const item of items.filter((candidate) => candidate.category !== 'dietary')) {
     deduped.set(`${item.category}:${item.slug}`, item);
   }
   const visible = [...deduped.values()].slice(0, limit);
-  if (visible.length === 0 && dietary.length === 0 && dietaryAssessments.length === 0) return null;
+  if (visible.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -81,9 +60,7 @@ export function RecipeClassificationBadges({
         return linked ? (
           <Link
             key={`${item.category}:${item.slug}`}
-            href={recipeClassificationHref(item, {
-              trustedDietary: item.trustedDietary,
-            })}
+            href={recipeClassificationHref(item)}
             className={styles}
           >
             {content}
@@ -94,13 +71,6 @@ export function RecipeClassificationBadges({
           </span>
         );
       })}
-      <RecipeDietaryAssessments
-        assessments={dietaryAssessments}
-        declared={dietary}
-        signedIn={signedIn}
-        canReview={canReviewDietary}
-        canUseAdvancedAnalysis={canUseAdvancedDietaryAnalysis}
-      />
     </div>
   );
 }

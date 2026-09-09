@@ -3,25 +3,30 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Pencil, Plus, ShieldAlert, Target, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Copy, Pencil, Plus, Target, Trash2, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFriendlyError } from '~/lib/error-copy';
 import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { cleanupAccountBoundClientData } from '~/lib/account-bound-cleanup';
 
 import {
+  copyCustomDietaryRestrictionAction,
+  createCustomDietaryRestrictionAction,
   createMemberProfileAction,
+  deleteCustomDietaryRestrictionAction,
   deleteMemberProfileAction,
+  updateCustomDietaryRestrictionAction,
   updateMemberProfileAction,
 } from '~/server/dietary/actions';
-import { type MemberProfileInputRaw } from '~/server/dietary/validation';
+import {
+  type CustomDietaryRestrictionMutationInputRaw,
+  type MemberProfileInputRaw,
+} from '~/server/dietary/validation';
 import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
+import { type CustomDietaryRestrictionInput } from '~/lib/dietary-assessment';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
 import { formatNutrient } from '~/lib/nutrition';
-import {
-  CUSTOM_RESTRICTION_SEVERITIES,
-  type CustomRestrictionSeverity,
-} from '~/lib/dietary-contracts';
 import {
   selectEffectiveTarget,
   targetRows,
@@ -40,6 +45,7 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog';
 import { Input } from '~/components/ui/input';
+import { Textarea } from '~/components/ui/textarea';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
 import { NativeSelect } from '~/components/ui/native-select';
@@ -57,7 +63,7 @@ export type MemberProfileView = {
     id: string;
     name: string;
     severity: CustomRestrictionSeverity;
-    terms: string[];
+    terms: CustomDietaryRestrictionInput['terms'];
   }[];
 };
 
@@ -65,14 +71,23 @@ type GroupOption = { id: string; name: string };
 
 /** Which form the dialog is showing: adding a new member or editing one. */
 type EditingState = { kind: 'add' } | { kind: 'edit'; id: string };
+type RestrictionEditingState =
+  | { kind: 'add'; profileId: string }
+  | {
+      kind: 'edit';
+      profileId: string;
+      restriction: MemberProfileView['customRestrictions'][number];
+    };
+type RestrictionCopyState = {
+  sourceProfileId: string;
+  restriction: MemberProfileView['customRestrictions'][number];
+};
 
 type Draft = {
   name: string;
   allergens: Allergen[];
   diets: DietaryTag[];
   groupId: string;
-  subjectScope: 'self' | undefined;
-  customRestrictions: MemberProfileView['customRestrictions'];
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -80,9 +95,34 @@ const EMPTY_DRAFT: Draft = {
   allergens: [],
   diets: [],
   groupId: '',
-  subjectScope: undefined,
-  customRestrictions: [],
 };
+
+type RestrictionDraft = {
+  name: string;
+  severity: CustomRestrictionSeverity;
+  exactTerms: string;
+  suggestedTerms: CustomDietaryRestrictionInput['terms'];
+  subjectConfirmed: boolean;
+};
+
+const EMPTY_RESTRICTION_DRAFT: RestrictionDraft = {
+  name: '',
+  severity: 'allergy-intolerance',
+  exactTerms: '',
+  suggestedTerms: [],
+  subjectConfirmed: false,
+};
+
+function exactTerms(value: string): CustomDietaryRestrictionInput['terms'] {
+  return [
+    ...new Set(
+      value
+        .split(/[\n,]+/)
+        .map((term) => term.trim())
+        .filter(Boolean),
+    ),
+  ].map((term) => ({ term, source: 'exact' as const, approved: true }));
+}
 
 function toDraft(profile: MemberProfileView): Draft {
   return {
@@ -90,8 +130,6 @@ function toDraft(profile: MemberProfileView): Draft {
     allergens: profile.allergens,
     diets: profile.diets,
     groupId: profile.groupId ?? '',
-    subjectScope: undefined,
-    customRestrictions: profile.customRestrictions,
   };
 }
 
@@ -109,10 +147,27 @@ export function DietaryProfilesManager({
   const router = useRouter();
   const nameId = React.useId();
   const { ref: nameRef, onOpenAutoFocus } = useDialogInitialFocus<HTMLInputElement>();
+  const { ref: restrictionNameRef, onOpenAutoFocus: onRestrictionOpenAutoFocus } =
+    useDialogInitialFocus<HTMLInputElement>();
   const groupSelectId = React.useId();
+  const restrictionNameId = React.useId();
+  const restrictionSeverityId = React.useId();
+  const restrictionTermsId = React.useId();
+  const copyTargetId = React.useId();
 
   // `null` = dialog closed.
   const [editing, setEditing] = React.useState<EditingState | null>(null);
+  const [restrictionEditing, setRestrictionEditing] =
+    React.useState<RestrictionEditingState | null>(null);
+  const [copyingRestriction, setCopyingRestriction] = React.useState<RestrictionCopyState | null>(
+    null,
+  );
+  const [copyTargetProfileId, setCopyTargetProfileId] = React.useState('');
+  const [copySubjectConfirmed, setCopySubjectConfirmed] = React.useState(false);
+  const [copyErrors, setCopyErrors] = React.useState<Record<string, string[]>>({});
+  const [restrictionDraft, setRestrictionDraft] =
+    React.useState<RestrictionDraft>(EMPTY_RESTRICTION_DRAFT);
+  const [restrictionErrors, setRestrictionErrors] = React.useState<Record<string, string[]>>({});
   const [targetsFor, setTargetsFor] = React.useState<MemberProfileView | null>(null);
   const [draft, setDraft] = React.useState<Draft>(EMPTY_DRAFT);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
@@ -135,6 +190,42 @@ export function DietaryProfilesManager({
     setEditing({ kind: 'edit', id: profile.id });
   }
 
+  function openAddRestriction(profileId: string) {
+    setRestrictionDraft(EMPTY_RESTRICTION_DRAFT);
+    setRestrictionErrors({});
+    setRestrictionEditing({ kind: 'add', profileId });
+  }
+
+  function openEditRestriction(
+    profileId: string,
+    restriction: MemberProfileView['customRestrictions'][number],
+  ) {
+    setRestrictionDraft({
+      name: restriction.name,
+      severity: restriction.severity,
+      exactTerms: restriction.terms
+        .filter((term) => term.source === 'exact')
+        .map((term) => term.term)
+        .join('\n'),
+      suggestedTerms: restriction.terms.filter((term) => term.source === 'suggested'),
+      subjectConfirmed: false,
+    });
+    setRestrictionErrors({});
+    setRestrictionEditing({ kind: 'edit', profileId, restriction });
+  }
+
+  function openCopyRestriction(
+    sourceProfileId: string,
+    restriction: MemberProfileView['customRestrictions'][number],
+  ) {
+    const target = profiles.find((profile) => profile.id !== sourceProfileId);
+    if (!target) return;
+    setCopyTargetProfileId(target.id);
+    setCopySubjectConfirmed(false);
+    setCopyErrors({});
+    setCopyingRestriction({ sourceProfileId, restriction });
+  }
+
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editing) return;
@@ -143,8 +234,6 @@ export function DietaryProfilesManager({
       allergens: draft.allergens,
       diets: draft.diets,
       groupId: draft.groupId || undefined,
-      subjectScope: draft.subjectScope,
-      customRestrictions: draft.customRestrictions,
     };
     setFieldErrors({});
 
@@ -185,6 +274,79 @@ export function DietaryProfilesManager({
         } else {
           toast.warning(t('toasts.removedCleanupIncomplete'));
         }
+        router.refresh();
+      });
+    });
+  }
+
+  function onRestrictionSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!restrictionEditing) return;
+    const input: CustomDietaryRestrictionMutationInputRaw = {
+      name: restrictionDraft.name,
+      severity: restrictionDraft.severity,
+      terms: [...exactTerms(restrictionDraft.exactTerms), ...restrictionDraft.suggestedTerms],
+      subjectScope: restrictionDraft.subjectConfirmed ? 'self' : undefined,
+    };
+    setRestrictionErrors({});
+    startTransition(() => {
+      const run =
+        restrictionEditing.kind === 'add'
+          ? createCustomDietaryRestrictionAction(restrictionEditing.profileId, input)
+          : updateCustomDietaryRestrictionAction(restrictionEditing.restriction.id, input);
+      void run.then((result) => {
+        if (!result.ok) {
+          setRestrictionErrors(result.fieldErrors ?? {});
+          toast.error(friendlyError(result.error));
+          return;
+        }
+        toast.success(
+          restrictionEditing.kind === 'add' ? t('custom.toasts.added') : t('custom.toasts.updated'),
+        );
+        setRestrictionEditing(null);
+        router.refresh();
+      });
+    });
+  }
+
+  async function onDeleteRestriction(restriction: MemberProfileView['customRestrictions'][number]) {
+    const ok = await confirm({
+      title: t('custom.confirm.title', { name: restriction.name }),
+      description: t('custom.confirm.description'),
+      confirmLabel: t('custom.actions.remove'),
+    });
+    if (!ok) return;
+    startTransition(() => {
+      void deleteCustomDietaryRestrictionAction(restriction.id).then((result) => {
+        if (!result.ok) {
+          toast.error(friendlyError(result.error));
+          return;
+        }
+        toast.success(t('custom.toasts.removed'));
+        router.refresh();
+      });
+    });
+  }
+
+  function onCopyRestriction(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!copyingRestriction || !copyTargetProfileId) return;
+    setCopyErrors({});
+    startTransition(() => {
+      void copyCustomDietaryRestrictionAction(
+        copyingRestriction.restriction.id,
+        copyTargetProfileId,
+        copySubjectConfirmed ? 'self' : undefined,
+      ).then((result) => {
+        if (!result.ok) {
+          setCopyErrors(result.fieldErrors ?? {});
+          toast.error(friendlyError(result.error));
+          return;
+        }
+        toast.success(t('custom.toasts.copied'));
+        setCopyingRestriction(null);
+        setCopySubjectConfirmed(false);
+        setCopyErrors({});
         router.refresh();
       });
     });
@@ -270,25 +432,117 @@ export function DietaryProfilesManager({
                 </div>
               ) : null}
 
-              {profile.customRestrictions.length > 0 ? (
-                <div className="grid gap-2">
-                  {profile.customRestrictions.map((restriction) => (
-                    <div
-                      key={restriction.id}
-                      className="rounded-lg border border-border bg-muted/30 px-3 py-2"
-                    >
-                      <p className="flex items-center gap-1.5 text-sm font-medium">
-                        <ShieldAlert className="size-3.5 text-warning" aria-hidden="true" />
-                        {restriction.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {t(`customRestrictions.severity.${restriction.severity}`)} ·{' '}
-                        {restriction.terms.join(', ')}
-                      </p>
-                    </div>
-                  ))}
+              <section
+                className="rounded-xl border border-border bg-muted/25 p-3"
+                aria-labelledby={`custom-restrictions-${profile.id}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 id={`custom-restrictions-${profile.id}`} className="text-sm font-semibold">
+                      {t('custom.title')}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">{t('custom.freeBoundary')}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openAddRestriction(profile.id)}
+                  >
+                    <Plus className="size-4" /> {t('custom.actions.add')}
+                  </Button>
                 </div>
-              ) : null}
+                {profile.customRestrictions.length > 0 ? (
+                  <ul className="mt-3 grid gap-2">
+                    {profile.customRestrictions.map((restriction) => {
+                      const exact = restriction.terms.filter((term) => term.source === 'exact');
+                      const suggested = restriction.terms.filter(
+                        (term) => term.source === 'suggested',
+                      );
+                      return (
+                        <li
+                          key={restriction.id}
+                          className="rounded-lg border border-border bg-card p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-medium">{restriction.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t(`custom.severity.${restriction.severity}`)}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              {profiles.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t('custom.actions.copyNamed', {
+                                    name: restriction.name,
+                                  })}
+                                  onClick={() => openCopyRestriction(profile.id, restriction)}
+                                >
+                                  <Copy className="size-4" />
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('custom.actions.edit', {
+                                  name: restriction.name,
+                                })}
+                                onClick={() => openEditRestriction(profile.id, restriction)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('custom.actions.removeNamed', {
+                                  name: restriction.name,
+                                })}
+                                onClick={() => onDeleteRestriction(restriction)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {exact.map((term) => (
+                              <Badge key={term.term} variant="secondary">
+                                {term.term}
+                              </Badge>
+                            ))}
+                          </div>
+                          {suggested.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium">{t('custom.smartAliases')}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t('custom.smartAliasesHelp')}
+                              </p>
+                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                {suggested.map((term) => (
+                                  <Badge
+                                    key={term.term}
+                                    variant={term.approved ? 'secondary' : 'muted'}
+                                  >
+                                    {term.term} ·{' '}
+                                    {term.approved ? t('custom.approved') : t('custom.suggested')}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">{t('custom.empty')}</p>
+                )}
+              </section>
 
               {profile.targets.length > 0 ? (
                 <TargetSummary profile={profile} />
@@ -374,164 +628,6 @@ export function DietaryProfilesManager({
               </div>
             </fieldset>
 
-            <fieldset className="grid gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <legend className="text-sm font-medium text-foreground">
-                    {t('customRestrictions.title')}
-                  </legend>
-                  <p className="text-xs text-muted-foreground">
-                    {t('customRestrictions.description')}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setDraft((current) => ({
-                      ...current,
-                      customRestrictions: [
-                        ...current.customRestrictions,
-                        {
-                          id: '',
-                          name: '',
-                          severity: 'strict-avoidance',
-                          terms: [],
-                        },
-                      ],
-                    }))
-                  }
-                >
-                  <Plus className="size-4" aria-hidden="true" />
-                  {t('customRestrictions.add')}
-                </Button>
-              </div>
-              {draft.customRestrictions.map((restriction, index) => {
-                const restrictionNameId = `${nameId}-restriction-${index}`;
-                const severityId = `${nameId}-restriction-severity-${index}`;
-                const termsId = `${nameId}-restriction-terms-${index}`;
-                const updateRestriction = (
-                  update: Partial<(typeof draft.customRestrictions)[number]>,
-                ) =>
-                  setDraft((current) => ({
-                    ...current,
-                    customRestrictions: current.customRestrictions.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, ...update } : item,
-                    ),
-                  }));
-                return (
-                  <div
-                    key={restriction.id || `new-${index}`}
-                    className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="grid flex-1 gap-2">
-                        <Label htmlFor={restrictionNameId}>{t('customRestrictions.name')}</Label>
-                        <Input
-                          id={restrictionNameId}
-                          value={restriction.name}
-                          onChange={(event) => updateRestriction({ name: event.target.value })}
-                          placeholder={t('customRestrictions.namePlaceholder')}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="mt-6"
-                        aria-label={t('customRestrictions.remove', {
-                          name: restriction.name || t('customRestrictions.unnamed'),
-                        })}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            customRestrictions: current.customRestrictions.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
-                          }))
-                        }
-                      >
-                        <Trash2 className="size-4" aria-hidden="true" />
-                      </Button>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={severityId}>{t('customRestrictions.effect')}</Label>
-                      <NativeSelect
-                        id={severityId}
-                        value={restriction.severity}
-                        onChange={(event) =>
-                          updateRestriction({
-                            severity: event.target.value as CustomRestrictionSeverity,
-                          })
-                        }
-                      >
-                        {CUSTOM_RESTRICTION_SEVERITIES.map((severity) => (
-                          <option key={severity} value={severity}>
-                            {t(`customRestrictions.severity.${severity}`)}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                      <p className="text-xs text-muted-foreground">
-                        {t(`customRestrictions.help.${restriction.severity}`)}
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={termsId}>{t('customRestrictions.ingredients')}</Label>
-                      <Input
-                        id={termsId}
-                        value={restriction.terms.join(', ')}
-                        onChange={(event) =>
-                          updateRestriction({
-                            terms: event.target.value
-                              .split(',')
-                              .map((term) => term.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        placeholder={t('customRestrictions.ingredientsPlaceholder')}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t('customRestrictions.ingredientsHelp')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {fieldErrors.customRestrictions?.[0] ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {fieldErrors.customRestrictions[0]}
-                </p>
-              ) : null}
-              {draft.customRestrictions.length > 0 ? (
-                <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-4">
-                  <label className="flex items-start gap-3">
-                    <Checkbox
-                      checked={draft.subjectScope === 'self'}
-                      onCheckedChange={(checked) =>
-                        setDraft((current) => ({
-                          ...current,
-                          subjectScope: checked === true ? 'self' : undefined,
-                        }))
-                      }
-                      aria-invalid={Boolean(fieldErrors.subjectScope)}
-                    />
-                    <span className="text-sm font-medium">
-                      {t('customRestrictions.subjectScope')}
-                    </span>
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    {t('customRestrictions.subjectScopeHelp')}
-                  </p>
-                  {fieldErrors.subjectScope?.[0] ? (
-                    <p className="text-sm text-destructive" role="alert">
-                      {t('customRestrictions.subjectScopeRequired')}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </fieldset>
-
             <fieldset className="grid gap-2">
               <legend className="text-sm font-medium text-foreground">{t('fields.diets')}</legend>
               <div className="flex flex-wrap gap-2">
@@ -600,6 +696,243 @@ export function DietaryProfilesManager({
                   : editing?.kind === 'add'
                     ? t('actions.addMember')
                     : t('actions.saveChanges')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={restrictionEditing !== null}
+        onOpenChange={(open) => !open && setRestrictionEditing(null)}
+      >
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={onRestrictionOpenAutoFocus}
+        >
+          <form onSubmit={onRestrictionSubmit} className="grid gap-5">
+            <DialogHeader>
+              <DialogTitle>
+                {restrictionEditing?.kind === 'add'
+                  ? t('custom.dialog.addTitle')
+                  : t('custom.dialog.editTitle')}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="grid gap-2">
+              <Label htmlFor={restrictionNameId}>{t('custom.fields.name')}</Label>
+              <Input
+                id={restrictionNameId}
+                ref={restrictionNameRef}
+                value={restrictionDraft.name}
+                onChange={(event) =>
+                  setRestrictionDraft((draft) => ({
+                    ...draft,
+                    name: event.target.value,
+                  }))
+                }
+                placeholder={t('custom.fields.namePlaceholder')}
+                aria-invalid={Boolean(restrictionErrors.name)}
+                aria-describedby={
+                  restrictionErrors.name?.[0] ? `${restrictionNameId}-error` : undefined
+                }
+              />
+              {restrictionErrors.name?.[0] && (
+                <p id={`${restrictionNameId}-error`} className="text-sm text-destructive">
+                  {restrictionErrors.name[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor={restrictionSeverityId}>{t('custom.fields.severity')}</Label>
+              <NativeSelect
+                id={restrictionSeverityId}
+                value={restrictionDraft.severity}
+                aria-invalid={Boolean(restrictionErrors.severity)}
+                aria-describedby={
+                  restrictionErrors.severity?.[0] ? `${restrictionSeverityId}-error` : undefined
+                }
+                onChange={(event) =>
+                  setRestrictionDraft((draft) => ({
+                    ...draft,
+                    severity: event.target.value as CustomRestrictionSeverity,
+                  }))
+                }
+              >
+                <option value="allergy-intolerance">
+                  {t('custom.severity.allergy-intolerance')}
+                </option>
+                <option value="strict-avoidance">{t('custom.severity.strict-avoidance')}</option>
+                <option value="preference">{t('custom.severity.preference')}</option>
+              </NativeSelect>
+              <p className="text-xs text-muted-foreground">{t('custom.fields.severityHelp')}</p>
+              {restrictionErrors.severity?.[0] && (
+                <p id={`${restrictionSeverityId}-error`} className="text-sm text-destructive">
+                  {restrictionErrors.severity[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor={restrictionTermsId}>{t('custom.fields.exactTerms')}</Label>
+              <Textarea
+                id={restrictionTermsId}
+                value={restrictionDraft.exactTerms}
+                onChange={(event) =>
+                  setRestrictionDraft((draft) => ({
+                    ...draft,
+                    exactTerms: event.target.value,
+                  }))
+                }
+                placeholder={t('custom.fields.exactTermsPlaceholder')}
+                aria-describedby={[
+                  `${restrictionTermsId}-help`,
+                  restrictionErrors.terms?.[0] ? `${restrictionTermsId}-error` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-invalid={Boolean(restrictionErrors.terms)}
+              />
+              <p id={`${restrictionTermsId}-help`} className="text-xs text-muted-foreground">
+                {t('custom.fields.exactTermsHelp')}
+              </p>
+              {restrictionErrors.terms?.[0] && (
+                <p id={`${restrictionTermsId}-error`} className="text-sm text-destructive">
+                  {restrictionErrors.terms[0]}
+                </p>
+              )}
+            </div>
+
+            {restrictionDraft.suggestedTerms.length > 0 && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                <p className="font-medium">{t('custom.smartAliases')}</p>
+                <p className="mt-1 text-muted-foreground">{t('custom.smartAliasesEditHelp')}</p>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id={`${restrictionNameId}-subject`}
+                  checked={restrictionDraft.subjectConfirmed}
+                  onCheckedChange={(checked) =>
+                    setRestrictionDraft((draft) => ({
+                      ...draft,
+                      subjectConfirmed: checked === true,
+                    }))
+                  }
+                  aria-describedby={`${restrictionNameId}-subject-help`}
+                  aria-invalid={Boolean(restrictionErrors.subjectScope)}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor={`${restrictionNameId}-subject`}>
+                    {t('customRestrictions.subjectScope')}
+                  </Label>
+                  <p
+                    id={`${restrictionNameId}-subject-help`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    {t('customRestrictions.subjectScopeHelp')}
+                  </p>
+                </div>
+              </div>
+              {restrictionErrors.subjectScope?.[0] && (
+                <p role="alert" className="text-sm text-destructive">
+                  {t('customRestrictions.subjectScopeRequired')}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRestrictionEditing(null)}
+                disabled={isPending}
+              >
+                {t('actions.cancel')}
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? t('actions.saving') : t('custom.actions.save')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={copyingRestriction !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCopyingRestriction(null);
+            setCopySubjectConfirmed(false);
+            setCopyErrors({});
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={onCopyRestriction} className="grid gap-5">
+            <DialogHeader>
+              <DialogTitle>
+                {t('custom.dialog.copyTitle', {
+                  name: copyingRestriction?.restriction.name ?? '',
+                })}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">{t('custom.dialog.copyDescription')}</p>
+            <div className="grid gap-2">
+              <Label htmlFor={copyTargetId}>{t('custom.fields.targetProfile')}</Label>
+              <NativeSelect
+                id={copyTargetId}
+                value={copyTargetProfileId}
+                onChange={(event) => setCopyTargetProfileId(event.target.value)}
+                disabled={isPending}
+              >
+                {profiles
+                  .filter((profile) => profile.id !== copyingRestriction?.sourceProfileId)
+                  .map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.name}
+                    </option>
+                  ))}
+              </NativeSelect>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id={`${copyTargetId}-subject`}
+                  checked={copySubjectConfirmed}
+                  onCheckedChange={(checked) => setCopySubjectConfirmed(checked === true)}
+                  aria-describedby={`${copyTargetId}-subject-help`}
+                  aria-invalid={Boolean(copyErrors.subjectScope)}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor={`${copyTargetId}-subject`}>
+                    {t('customRestrictions.subjectScope')}
+                  </Label>
+                  <p id={`${copyTargetId}-subject-help`} className="text-xs text-muted-foreground">
+                    {t('customRestrictions.subjectScopeHelp')}
+                  </p>
+                </div>
+              </div>
+              {copyErrors.subjectScope?.[0] && (
+                <p role="alert" className="text-sm text-destructive">
+                  {t('customRestrictions.subjectScopeRequired')}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCopyingRestriction(null)}
+                disabled={isPending}
+              >
+                {t('actions.cancel')}
+              </Button>
+              <Button type="submit" disabled={isPending || !copyTargetProfileId}>
+                {isPending ? t('actions.saving') : t('custom.actions.copy')}
               </Button>
             </DialogFooter>
           </form>

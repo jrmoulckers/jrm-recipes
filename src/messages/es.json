@@ -2180,37 +2180,79 @@
       }
     },
     "assessments": {
-      "recipeAuthor": "Autor de la receta",
-      "more": "+{count} detalles alimentarios",
-      "less": "Mostrar menos detalles alimentarios",
-      "labels": {
-        "allergenMeets": "Sin {rule}",
-        "conflicts": "Contiene {rule}",
-        "notSuitable": "No es {rule}",
-        "review": "{rule}: requiere revisión"
-      },
+      "title": "Evaluaciones dietéticas",
+      "description": "Abre una insignia para revisar la confianza, la cobertura de ingredientes y lo que requiere atención.",
+      "authorSource": "autor de la receta",
+      "more": "Mostrar {count} evaluaciones más",
       "rules": {
-        "allergen": {
-          "peanut": "cacahuate",
-          "tree-nut": "frutos secos",
-          "dairy": "lácteos",
-          "egg": "huevo",
-          "soy": "soya",
-          "wheat": "trigo y gluten",
-          "fish": "pescado",
-          "shellfish": "mariscos",
-          "sesame": "sésamo"
-        },
-        "composition": {
-          "vegan": "Vegano",
-          "vegetarian": "Vegetariano",
-          "pescatarian": "Pescetariano"
-        },
-        "confirmation": {
-          "celiac-safe": "Apto para celíacos",
-          "kosher": "Kósher",
-          "halal": "Permitido halal"
-        }
+        "allergenPeanut": "Sin cacahuate",
+        "allergenTreeNut": "Sin frutos secos",
+        "allergenDairy": "Sin lácteos",
+        "allergenEgg": "Sin huevo",
+        "allergenSoy": "Sin soja",
+        "allergenWheat": "Sin trigo",
+        "allergenFish": "Sin pescado",
+        "allergenShellfish": "Sin mariscos",
+        "allergenSesame": "Sin sésamo",
+        "vegan": "Vegana",
+        "vegetarian": "Vegetariana",
+        "pescatarian": "Pescetariana",
+        "celiacSafe": "Apta para celíacos",
+        "kosher": "Apta para dieta kosher",
+        "halal": "Apta para dieta halal"
+      }
+    },
+    "cardAssessment": {
+      "label": "{name}: {count} {count, plural, one {comprobación dietética} other {comprobaciones dietéticas}}"
+    },
+    "custom": {
+      "title": "Restricciones personalizadas",
+      "freeBoundary": "Las reglas exactas de Free solo coinciden con los términos que introduces.",
+      "empty": "Aún no hay restricciones personalizadas.",
+      "smartAliases": "Alias inteligentes de Family",
+      "smartAliasesHelp": "Los alias siguen siendo sugerencias y no afectan las coincidencias hasta que se aprueban.",
+      "smartAliasesEditHelp": "Las sugerencias de Family se conservan separadas de tus términos exactos de Free.",
+      "approved": "aprobado",
+      "suggested": "sugerido",
+      "severity": {
+        "allergy-intolerance": "Alergia o intolerancia",
+        "strict-avoidance": "Evitación estricta",
+        "preference": "Preferencia"
+      },
+      "actions": {
+        "add": "Añadir restricción",
+        "copy": "Copiar restricción",
+        "copyNamed": "Copiar {name}",
+        "edit": "Editar {name}",
+        "remove": "Eliminar",
+        "removeNamed": "Eliminar {name}",
+        "save": "Guardar restricción"
+      },
+      "dialog": {
+        "addTitle": "Añadir restricción personalizada",
+        "editTitle": "Editar restricción personalizada",
+        "copyTitle": "Copiar «{name}»",
+        "copyDescription": "Elige otro perfil. Los términos exactos y las sugerencias de alias guardadas se copiarán sin cambiar el original."
+      },
+      "fields": {
+        "name": "Nombre de la restricción",
+        "namePlaceholder": "p. ej., Evitar romero",
+        "severity": "¿Cómo deben comportarse las coincidencias?",
+        "severityHelp": "Las alergias y la evitación estricta excluyen recetas inciertas. Las preferencias solo reducen su posición.",
+        "exactTerms": "Términos exactos",
+        "targetProfile": "Copiar a",
+        "exactTermsPlaceholder": "romero\nextracto de romero",
+        "exactTermsHelp": "Escribe un término por línea o sepáralos con comas. Free no añade sinónimos ni ingredientes relacionados."
+      },
+      "confirm": {
+        "title": "¿Eliminar “{name}”?",
+        "description": "Esta restricción y sus pruebas guardadas se eliminarán. No se puede deshacer."
+      },
+      "toasts": {
+        "added": "Restricción añadida",
+        "copied": "Restricción copiada",
+        "updated": "Restricción actualizada",
+        "removed": "Restricción eliminada"
       }
     }
   },
@@ -2903,6 +2945,10 @@
     },
     "searchResults": {
       "title": "Resultados",
+      "highTitle": "Coincidencias",
+      "possibleTitle": "Coincidencias posibles",
+      "possibleDescription": "Estas recetas podrían servir, pero todavía hay que revisar algunas pruebas de los ingredientes.",
+      "loadMorePossible": "Cargar más coincidencias posibles",
       "correction": "No hay coincidencias exactas para <strong>«{from}»</strong>. Mostramos resultados de <strong>«{to}»</strong>.",
       "count": "{count}{plus} {count, plural, one {receta} other {recetas}}",
       "possible": {
@@ -3724,12 +3770,10 @@
       "glutenFree": "Sin gluten",
       "eggFree": "Sin huevo"
     },
-    "impact": {
-      "removes": "Elimina el conflicto de {need}",
-      "addsConflict": "Agrega un conflicto alimentario",
-      "review": "El impacto alimentario aún requiere revisión"
-    },
-    "noMatches": "Ninguna sustitución cumple todas las necesidades dietéticas elegidas."
+    "noMatches": "Ninguna sustitución cumple todas las necesidades dietéticas elegidas.",
+    "applying": "Aplicando…",
+    "applied": "Se aplicó {substitute}. Se están recalculando las evaluaciones dietéticas.",
+    "applyError": "No pudimos aplicar esa sustitución. Actualiza la receta e inténtalo de nuevo."
   },
   "ingredientsPanel": {
     "fewerServings": "Menos raciones",
@@ -3774,41 +3818,27 @@
     "reasonContains": "contiene {list}",
     "reasonNot": "no es {list}",
     "rangeTo": "{low} a {high}",
-    "dietaryReview": {
-      "summary": "Revisar evidencia alimentaria de {ingredient}",
-      "rule": "Hallazgo para {rule}",
-      "finding": {
-        "absent": "Apto para esta regla",
-        "present": "En conflicto con esta regla",
-        "possible": "Posible conflicto",
-        "unresolved": "Sigue sin resolverse"
+    "dietaryEvidence": {
+      "ariaLabel": "Evidencia dietética de {ingredient}",
+      "review": "Evidencia",
+      "correctionGroup": "Corregir la evidencia de {rule}",
+      "sourceLabel": "Fuente: {source}",
+      "source": {
+        "food-link": "datos del alimento enlazado",
+        "text-match": "texto del ingrediente",
+        "on-device": "análisis en el dispositivo",
+        "author-confirmed": "autor de la receta",
+        "ingredient-correction": "corrección guardada",
+        "certification": "certificación"
       },
-      "save": "Guardar corrección",
-      "saving": "Guardando…",
-      "saved": "Corrección alimentaria guardada",
-      "rules": {
-        "allergen": {
-          "peanut": "cacahuate",
-          "tree-nut": "frutos secos",
-          "dairy": "lácteos",
-          "egg": "huevo",
-          "soy": "soya",
-          "wheat": "trigo y gluten",
-          "fish": "pescado",
-          "shellfish": "mariscos",
-          "sesame": "sésamo"
-        },
-        "composition": {
-          "vegan": "vegano",
-          "vegetarian": "vegetariano",
-          "pescatarian": "pescetariano"
-        },
-        "confirmation": {
-          "celiac-safe": "apto para celíacos",
-          "kosher": "kósher",
-          "halal": "permitido halal"
-        }
-      }
+      "finding": {
+        "present": "Presente",
+        "absent": "No presente",
+        "possible": "Posible",
+        "unresolved": "Sin resolver"
+      },
+      "saved": "Corrección guardada. Se están recalculando las evaluaciones dietéticas.",
+      "saveError": "No pudimos guardar esa corrección. Inténtalo de nuevo."
     }
   },
   "nutritionPanel": {

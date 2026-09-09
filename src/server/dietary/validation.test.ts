@@ -1,6 +1,64 @@
 import { describe, expect, it } from 'vitest';
 
-import { memberProfileInput, nutritionTargetInput } from './validation';
+import {
+  customDietaryRestrictionInputSchema,
+  customDietaryRestrictionTermSchema,
+  memberProfileInput,
+  nutritionTargetInput,
+} from './validation';
+
+describe('custom dietary restriction validation', () => {
+  it('keeps exact Free terms approved and suggested aliases structurally distinct', () => {
+    const parsed = customDietaryRestrictionInputSchema.parse({
+      subjectScope: 'self',
+      name: '  Nightshades  ',
+      severity: 'strict-avoidance',
+      terms: [
+        { term: '  tomato  ', source: 'exact', approved: true },
+        { term: 'aubergine', source: 'suggested', approved: false },
+      ],
+    });
+
+    expect(parsed).toEqual({
+      subjectScope: 'self',
+      name: 'Nightshades',
+      severity: 'strict-avoidance',
+      terms: [
+        { term: 'tomato', source: 'exact', approved: true },
+        { term: 'aubergine', source: 'suggested', approved: false },
+      ],
+    });
+  });
+
+  it('rejects an unapproved exact term', () => {
+    expect(() =>
+      customDietaryRestrictionTermSchema.parse({
+        term: 'tomato',
+        source: 'exact',
+        approved: false,
+      }),
+    ).toThrow('exact restriction terms are approved by definition');
+  });
+
+  it('requires at least one term and rejects unknown term metadata', () => {
+    expect(() =>
+      customDietaryRestrictionInputSchema.parse({
+        subjectScope: 'self',
+        name: 'Nightshades',
+        severity: 'preference',
+        terms: [],
+      }),
+    ).toThrow();
+    expect(() =>
+      customDietaryRestrictionTermSchema.parse({
+        term: 'tomato',
+        source: 'exact',
+        approved: true,
+        inferred: true,
+      }),
+    ).toThrow();
+  });
+});
 
 describe('memberProfileInput', () => {
   it('accepts a minimal profile and defaults the lists', () => {

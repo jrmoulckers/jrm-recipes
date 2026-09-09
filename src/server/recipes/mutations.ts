@@ -485,7 +485,12 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
   };
 }
 
-async function syncIngredients(tx: Tx, recipeId: string, input: RecipeInput) {
+async function syncIngredients(
+  tx: Tx,
+  recipeId: string,
+  input: RecipeInput,
+  ingredientIdsByPosition?: readonly (string | null)[],
+) {
   const existing = await tx.query.recipeIngredients.findMany({
     where: eq(recipeIngredients.recipeId, recipeId),
     columns: { id: true, position: true, item: true },
@@ -496,6 +501,7 @@ async function syncIngredients(tx: Tx, recipeId: string, input: RecipeInput) {
   );
   const retained = new Set<string>();
   const additions: Array<typeof recipeIngredients.$inferInsert> = [];
+  const existingById = new Map(existing.map((row) => [row.id, row]));
   const existingByItem = new Map<string, typeof existing>();
   for (const row of [...existing].sort((left, right) => left.position - right.position)) {
     const matches = existingByItem.get(row.item) ?? [];
@@ -504,7 +510,13 @@ async function syncIngredients(tx: Tx, recipeId: string, input: RecipeInput) {
   }
 
   for (const [position, ingredient] of input.ingredients.entries()) {
-    const current = existingByItem.get(ingredient.item)?.shift();
+    const requestedId = ingredientIdsByPosition?.[position];
+    const current = ingredientIdsByPosition
+      ? requestedId
+        ? existingById.get(requestedId)
+        : undefined
+      : existingByItem.get(ingredient.item)?.shift();
+    if (requestedId && !current) throw new DomainError('INVALID');
     const values = {
       recipeId,
       position,
@@ -536,8 +548,13 @@ async function syncIngredients(tx: Tx, recipeId: string, input: RecipeInput) {
   }
 }
 
-async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
-  await syncIngredients(tx, recipeId, input);
+async function insertChildren(
+  tx: Tx,
+  recipeId: string,
+  input: RecipeInput,
+  ingredientIdsByPosition?: readonly (string | null)[],
+) {
+  await syncIngredients(tx, recipeId, input, ingredientIdsByPosition);
   if (input.steps.length > 0) {
     await tx.insert(recipeSteps).values(
       input.steps.map((step, i) => ({
@@ -728,6 +745,7 @@ async function applyRecipeInput(
   ownerId: string | null,
   groupId: string | null,
   trustHistoricalSourceImageIds = false,
+  ingredientIdsByPosition?: readonly (string | null)[],
 ) {
   const nowPublished = input.status === 'published';
   const publishedAt = nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
@@ -746,7 +764,7 @@ async function applyRecipeInput(
   const canonicalInput = withCanonicalSourceImageIds(input, true);
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
   await tx.delete(recipeSourceImages).where(eq(recipeSourceImages.recipeId, id));
-  await insertChildren(tx, id, canonicalInput);
+  await insertChildren(tx, id, canonicalInput, ingredientIdsByPosition);
   await refreshDeterministicDietaryAssessmentsForAuthorizedWrite(
     tx as unknown as typeof db,
     id,
@@ -912,9 +930,20 @@ async function assertRecipeEditAccess(
  * revalidate the canonical `/recipes/<cook>/<slug>` path and the editor is not
  * necessarily the cook that path names.
  */
-export async function updateRecipe(id: string, input: RecipeInput, actor: User) {
+export async function updateRecipe(
+  id: string,
+  input: RecipeInput,
+  actor: User,
+  options: {
+    expectedUpdatedAt?: Date;
+    ingredientIdsByPosition?: readonly (string | null)[];
+  } = {},
+) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      if (options.expectedUpdatedAt) {
+        await tx.execute(sql`select 1 from ${recipes} where ${recipes.id} = ${id} for update`);
+      }
       // Deliberately *not* filtered by `authorId`: the owner check moved into
       // `assertRecipeEditAccess`, which also admits accepted co-creators.
       const current = await tx.query.recipes.findFirst({
@@ -928,11 +957,24 @@ export async function updateRecipe(id: string, input: RecipeInput, actor: User) 
           visibility: true,
           groupId: true,
           authorId: true,
+          updatedAt: true,
         },
         with: { author: { columns: { slug: true } } },
       });
       if (!current) throw new DomainError('NOT_FOUND');
       await assertRecipeEditAccess(tx, id, actor.id, current.authorId);
+      if (
+        options.expectedUpdatedAt &&
+        current.updatedAt.getTime() !== options.expectedUpdatedAt.getTime()
+      ) {
+        throw new DomainError('CONFLICT');
+      }
+      if (
+        options.ingredientIdsByPosition &&
+        options.ingredientIdsByPosition.length !== input.ingredients.length
+      ) {
+        throw new DomainError('INVALID');
+      }
 
       const isOwner = current.authorId === actor.id;
       const effective = isOwner ? input : pinOwnerOnlyFields(input, current);
@@ -950,6 +992,8 @@ export async function updateRecipe(id: string, input: RecipeInput, actor: User) 
         current,
         current.authorId,
         groupId,
+        false,
+        options.ingredientIdsByPosition,
       );
       const newlyPublished = effective.status === 'published' && current.status !== 'published';
       await recordEvent(tx, {

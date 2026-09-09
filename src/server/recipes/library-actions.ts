@@ -1,12 +1,10 @@
 'use server';
 
 import { getCurrentUser } from '~/server/auth';
-import { isAllergen } from '~/lib/allergens';
-import { listMemberProfiles } from '~/server/dietary/queries';
-import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
+import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { type CardRecipe } from '~/components/recipe/recipe-card';
 import { type Paginated } from './pagination';
-import { attachCardAllergens, listLibrary } from './queries';
+import { listLibrary } from './queries';
 
 /**
  * Fetch a further page of the viewer's personal library for the cookbook's
@@ -22,12 +20,7 @@ export async function loadMoreLibraryAction(offset: number): Promise<Paginated<C
   const user = await getCurrentUser();
   const page = await listLibrary(user, { offset: start });
 
-  const members = user ? await listMemberProfiles(user.id) : [];
-  const showBadges = members.some((m) => (m.allergens ?? []).some(isAllergen));
-  const itemsWithAllergens: CardRecipe[] = showBadges
-    ? await attachCardAllergens(page.items)
-    : page.items;
-  const items = await attachCardDietaryAssessmentViews(itemsWithAllergens, user?.id ?? null);
+  const items: CardRecipe[] = await attachCardDietaryData(page.items, user?.id ?? null);
 
   return { items, nextOffset: page.nextOffset };
 }

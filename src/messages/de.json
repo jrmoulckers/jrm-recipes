@@ -2180,37 +2180,79 @@
       }
     },
     "assessments": {
-      "recipeAuthor": "Rezeptautor",
-      "more": "+{count} Ernährungsdetails",
-      "less": "Weniger Ernährungsdetails zeigen",
-      "labels": {
-        "allergenMeets": "Ohne {rule}",
-        "conflicts": "Enthält {rule}",
-        "notSuitable": "Nicht {rule}",
-        "review": "{rule} muss geprüft werden"
-      },
+      "title": "Ernährungsbewertungen",
+      "description": "Öffne ein Abzeichen, um Sicherheit, Zutatenabdeckung und Hinweise zu prüfen.",
+      "authorSource": "Rezeptautor",
+      "more": "{count} weitere Bewertungen anzeigen",
       "rules": {
-        "allergen": {
-          "peanut": "Erdnüsse",
-          "tree-nut": "Schalenfrüchte",
-          "dairy": "Milchprodukte",
-          "egg": "Ei",
-          "soy": "Soja",
-          "wheat": "Gluten",
-          "fish": "Fisch",
-          "shellfish": "Schalentiere",
-          "sesame": "Sesam"
-        },
-        "composition": {
-          "vegan": "Vegan",
-          "vegetarian": "Vegetarisch",
-          "pescatarian": "Pescetarisch"
-        },
-        "confirmation": {
-          "celiac-safe": "Für Zöliakie geeignet",
-          "kosher": "Koscher",
-          "halal": "Halal-konform"
-        }
+        "allergenPeanut": "Erdnussfrei",
+        "allergenTreeNut": "Schalenfruchtfrei",
+        "allergenDairy": "Milchfrei",
+        "allergenEgg": "Eifrei",
+        "allergenSoy": "Sojafrei",
+        "allergenWheat": "Weizenfrei",
+        "allergenFish": "Fischfrei",
+        "allergenShellfish": "Schalentierfrei",
+        "allergenSesame": "Sesamfrei",
+        "vegan": "Vegan",
+        "vegetarian": "Vegetarisch",
+        "pescatarian": "Pescetarisch",
+        "celiacSafe": "Für Zöliakie geeignet",
+        "kosher": "Koscher",
+        "halal": "Halal-konform"
+      }
+    },
+    "cardAssessment": {
+      "label": "{name}: {count} {count, plural, one {Ernährungsprüfung} other {Ernährungsprüfungen}}"
+    },
+    "custom": {
+      "title": "Eigene Einschränkungen",
+      "freeBoundary": "Kostenlose exakte Regeln prüfen nur die eingegebenen Begriffe.",
+      "empty": "Noch keine eigenen Einschränkungen.",
+      "smartAliases": "Intelligente Family-Aliasse",
+      "smartAliasesHelp": "Aliasse bleiben Vorschläge und beeinflussen Treffer erst nach der Freigabe.",
+      "smartAliasesEditHelp": "Vorhandene Family-Vorschläge bleiben von deinen exakten Free-Begriffen getrennt.",
+      "approved": "freigegeben",
+      "suggested": "vorgeschlagen",
+      "severity": {
+        "allergy-intolerance": "Allergie oder Unverträglichkeit",
+        "strict-avoidance": "Strikte Vermeidung",
+        "preference": "Vorliebe"
+      },
+      "actions": {
+        "add": "Einschränkung hinzufügen",
+        "copy": "Einschränkung kopieren",
+        "copyNamed": "{name} kopieren",
+        "edit": "{name} bearbeiten",
+        "remove": "Entfernen",
+        "removeNamed": "{name} entfernen",
+        "save": "Einschränkung speichern"
+      },
+      "dialog": {
+        "addTitle": "Eigene Einschränkung hinzufügen",
+        "editTitle": "Eigene Einschränkung bearbeiten",
+        "copyTitle": "„{name}“ kopieren",
+        "copyDescription": "Wähle ein anderes Profil. Exakte Begriffe und gespeicherte Alias-Vorschläge werden kopiert, ohne das Original zu verändern."
+      },
+      "fields": {
+        "name": "Name der Einschränkung",
+        "namePlaceholder": "z. B. Rosmarin vermeiden",
+        "severity": "Wie sollen Treffer behandelt werden?",
+        "severityHelp": "Allergien und strikte Vermeidung schließen unsichere Rezepte aus. Vorlieben senken nur deren Rang.",
+        "exactTerms": "Exakte Begriffe",
+        "targetProfile": "Kopieren nach",
+        "exactTermsPlaceholder": "Rosmarin\nRosmarinextrakt",
+        "exactTermsHelp": "Ein Begriff pro Zeile oder mit Kommas trennen. Free ergänzt keine Synonyme oder verwandten Zutaten."
+      },
+      "confirm": {
+        "title": "„{name}“ entfernen?",
+        "description": "Diese Einschränkung und ihre gespeicherten Nachweise werden gelöscht. Das kann nicht rückgängig gemacht werden."
+      },
+      "toasts": {
+        "added": "Einschränkung hinzugefügt",
+        "copied": "Einschränkung kopiert",
+        "updated": "Einschränkung aktualisiert",
+        "removed": "Einschränkung entfernt"
       }
     }
   },
@@ -2903,6 +2945,10 @@
     },
     "searchResults": {
       "title": "Ergebnisse",
+      "highTitle": "Treffer",
+      "possibleTitle": "Mögliche Treffer",
+      "possibleDescription": "Diese Rezepte könnten passen, aber einige Zutatenhinweise müssen noch geprüft werden.",
+      "loadMorePossible": "Weitere mögliche Treffer laden",
       "correction": "Keine genauen Treffer für <strong>„{from}“</strong>. Wir zeigen Ergebnisse für <strong>„{to}“</strong>.",
       "count": "{count}{plus} {count, plural, one {Rezept} other {Rezepte}}",
       "possible": {
@@ -3724,12 +3770,10 @@
       "glutenFree": "Glutenfrei",
       "eggFree": "Ohne Ei"
     },
-    "impact": {
-      "removes": "Beseitigt den Konflikt mit {need}",
-      "addsConflict": "Fügt einen Ernährungskonflikt hinzu",
-      "review": "Die Ernährungswirkung muss noch geprüft werden"
-    },
-    "noMatches": "Keine Alternative erfüllt alle gewählten Ernährungsbedürfnisse."
+    "noMatches": "Keine Alternative erfüllt alle gewählten Ernährungsbedürfnisse.",
+    "applying": "Wird übernommen…",
+    "applied": "{substitute} wurde übernommen. Die Ernährungsbewertungen werden neu berechnet.",
+    "applyError": "Diese Alternative konnte nicht übernommen werden. Aktualisiere das Rezept und versuche es erneut."
   },
   "ingredientsPanel": {
     "fewerServings": "Weniger Portionen",
@@ -3774,41 +3818,27 @@
     "reasonContains": "enthält {list}",
     "reasonNot": "nicht {list}",
     "rangeTo": "{low} bis {high}",
-    "dietaryReview": {
-      "summary": "Ernährungsnachweise für {ingredient} prüfen",
-      "rule": "Bewertung für {rule}",
-      "finding": {
-        "absent": "Für diese Regel geeignet",
-        "present": "Konflikt mit dieser Regel",
-        "possible": "Möglicher Konflikt",
-        "unresolved": "Weiterhin ungeklärt"
+    "dietaryEvidence": {
+      "ariaLabel": "Ernährungsnachweis für {ingredient}",
+      "review": "Nachweis",
+      "correctionGroup": "Nachweis für {rule} korrigieren",
+      "sourceLabel": "Quelle: {source}",
+      "source": {
+        "food-link": "verknüpfte Lebensmitteldaten",
+        "text-match": "Zutatentext",
+        "on-device": "Analyse auf dem Gerät",
+        "author-confirmed": "Rezeptautor",
+        "ingredient-correction": "gespeicherte Korrektur",
+        "certification": "Zertifizierung"
       },
-      "save": "Korrektur speichern",
-      "saving": "Speichern…",
-      "saved": "Ernährungskorrektur gespeichert",
-      "rules": {
-        "allergen": {
-          "peanut": "Erdnüsse",
-          "tree-nut": "Schalenfrüchte",
-          "dairy": "Milchprodukte",
-          "egg": "Ei",
-          "soy": "Soja",
-          "wheat": "Gluten",
-          "fish": "Fisch",
-          "shellfish": "Schalentiere",
-          "sesame": "Sesam"
-        },
-        "composition": {
-          "vegan": "pflanzlich",
-          "vegetarian": "vegetarisch",
-          "pescatarian": "pescetarisch"
-        },
-        "confirmation": {
-          "celiac-safe": "für Zöliakie geeignet",
-          "kosher": "koscher",
-          "halal": "halal-konform"
-        }
-      }
+      "finding": {
+        "present": "Enthalten",
+        "absent": "Nicht enthalten",
+        "possible": "Möglich",
+        "unresolved": "Ungeklärt"
+      },
+      "saved": "Korrektur gespeichert. Die Ernährungsbewertungen werden neu berechnet.",
+      "saveError": "Die Korrektur konnte nicht gespeichert werden. Versuche es erneut."
     }
   },
   "nutritionPanel": {

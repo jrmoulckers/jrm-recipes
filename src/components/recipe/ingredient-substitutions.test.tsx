@@ -1,11 +1,24 @@
 import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 
 import { IntlWrapper } from '~/test/intl';
 import esMessages from '~/messages/es.json';
-import { IngredientSubstitutions } from './ingredient-substitutions';
+import { assessSubstitutionImpact, IngredientSubstitutions } from './ingredient-substitutions';
+
+const { applyMock, refreshMock } = vi.hoisted(() => ({
+  applyMock: vi.fn(),
+  refreshMock: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: refreshMock }),
+}));
+
+vi.mock('~/server/dietary/substitution-actions', () => ({
+  applyIngredientSubstitutionAction: applyMock,
+}));
 
 afterEach(cleanup);
 
@@ -97,5 +110,78 @@ describe('IngredientSubstitutions localization', () => {
         .getAllByRole('button')
         .map((chip) => chip.textContent),
     ).toEqual(['Vegano', 'Vegetariano', 'Sin lácteos', 'Sin gluten', 'Sin huevo']);
+  });
+});
+
+describe('IngredientSubstitutions dietary impact', () => {
+  it('assesses a replacement in memory without mutating the recipe ingredients', () => {
+    const ingredients = [
+      {
+        ingredientId: 'butter',
+        item: 'butter',
+        amount: 1,
+        amountMax: null,
+        unit: 'cup',
+        prep: null,
+        linkedFood: null,
+      },
+    ];
+    const original = structuredClone(ingredients);
+
+    const impact = assessSubstitutionImpact(ingredients, 'butter', 'Neutral or olive oil');
+
+    expect(ingredients).toEqual(original);
+    expect(impact).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleId: 'allergen:dairy',
+          before: expect.objectContaining({ verdict: 'conflicts' }),
+          after: expect.not.objectContaining({ verdict: 'conflicts' }),
+        }),
+      ]),
+    );
+  });
+
+  it('does not persist while browsing and applies through the authorized action', async () => {
+    applyMock.mockResolvedValueOnce({ ok: true, updatedItem: 'Neutral or olive oil' });
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    render(
+      <IngredientSubstitutions
+        item="butter"
+        recipePreview={{
+          recipeId: 'recipe_1',
+          ingredientId: 'ingredient_1',
+          updatedAt: '2026-09-08T12:00:00.000Z',
+          canApply: true,
+          ingredients: [
+            {
+              ingredientId: 'ingredient_1',
+              item: 'butter',
+              amount: 1,
+              amountMax: null,
+              unit: 'cup',
+              prep: null,
+              linkedFood: null,
+            },
+          ],
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /substitutions for/i }));
+    expect(applyMock).not.toHaveBeenCalled();
+    expect(
+      (await screen.findAllByLabelText('Neutral or olive oil dietary assessment')).length,
+    ).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
+    expect(applyMock).toHaveBeenCalledWith({
+      recipeId: 'recipe_1',
+      ingredientId: 'ingredient_1',
+      expectedItem: 'butter',
+      expectedRecipeUpdatedAt: '2026-09-08T12:00:00.000Z',
+      substitute: 'Neutral or olive oil',
+    });
+    expect(refreshMock).toHaveBeenCalled();
   });
 });

@@ -8,7 +8,7 @@ import { isDbConfigured } from '~/server/db';
 import { listPublicRecipes } from '~/server/recipes/queries';
 import { getFavoriteRecipeIds } from '~/server/collections/queries';
 import { listMemberProfiles } from '~/server/dietary/queries';
-import { attachCardDietaryAssessmentViews } from '~/server/dietary/presentation';
+import { attachCardDietaryData } from '~/server/dietary/presentation';
 import { brand } from '~/config/brand';
 import { absoluteUrl } from '~/lib/utils';
 import { isAllergen } from '~/lib/allergens';
@@ -67,14 +67,18 @@ async function DiscoverPage() {
         ? [
             {
               id: restriction.id,
+              name: restriction.name,
               severity: restriction.severity as CustomRestrictionSeverity,
+              terms: restriction.terms
+                .filter((term) => term.source === 'exact' || term.approved)
+                .map((term) => term.term),
             },
           ]
         : [],
     ),
   }));
   const discoverCards = dbReady
-    ? await attachCardDietaryAssessmentViews(discover.items, user?.id ?? null)
+    ? await attachCardDietaryData(discover.items, user?.id ?? null)
     : discover.items;
   const t = await getTranslations('recipe.discover');
   const tMeta = await getTranslations('metadata');
@@ -115,7 +119,6 @@ async function DiscoverPage() {
           favoritedIds={[...favoriteIds]}
           priorityCount={LCP_PRIORITY_COUNT}
           members={members}
-          signedIn={Boolean(user)}
         />
       )}
     </div>

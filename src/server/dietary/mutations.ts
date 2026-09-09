@@ -1,18 +1,23 @@
 import 'server-only';
 
-import { createId } from '@paralleldrive/cuid2';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
+import {
+  customDietaryRestrictionInputSchema,
+  type CustomDietaryRestrictionInput,
+} from '~/lib/dietary-assessment';
 import { todayIso } from '~/lib/nutrition-targets';
 import { db } from '~/server/db';
 import {
-  groupMembers,
   customDietaryRestrictions,
   customDietaryRestrictionTerms,
+  dietaryAssessments,
+  groupMembers,
   memberDietaryProfiles,
   nutritionTargets,
   type User,
 } from '~/server/db/schema';
+import { DomainError } from '~/server/errors';
 import { type MemberProfileInput, type NutritionTargetInput } from './validation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -45,74 +50,6 @@ function profileFields(input: MemberProfileInput, groupId: string | null) {
   };
 }
 
-async function syncCustomRestrictions(
-  tx: Tx,
-  profileId: string,
-  restrictions: MemberProfileInput['customRestrictions'],
-) {
-  const existing = await tx.query.customDietaryRestrictions.findMany({
-    where: eq(customDietaryRestrictions.profileId, profileId),
-    columns: { id: true },
-  });
-  const existingIds = new Set(existing.map((restriction) => restriction.id));
-  const retainedIds = new Set(
-    restrictions.flatMap((restriction) =>
-      restriction.id && existingIds.has(restriction.id) ? [restriction.id] : [],
-    ),
-  );
-  const removedIds = existing
-    .map((restriction) => restriction.id)
-    .filter((id) => !retainedIds.has(id));
-  if (removedIds.length > 0) {
-    await tx
-      .delete(customDietaryRestrictions)
-      .where(
-        and(
-          eq(customDietaryRestrictions.profileId, profileId),
-          inArray(customDietaryRestrictions.id, removedIds),
-        ),
-      );
-  }
-
-  for (const restriction of restrictions) {
-    const id = restriction.id && existingIds.has(restriction.id) ? restriction.id : createId();
-    if (existingIds.has(id)) {
-      await tx
-        .update(customDietaryRestrictions)
-        .set({
-          name: restriction.name,
-          severity: restriction.severity,
-          archivedAt: null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(customDietaryRestrictions.id, id),
-            eq(customDietaryRestrictions.profileId, profileId),
-          ),
-        );
-      await tx
-        .delete(customDietaryRestrictionTerms)
-        .where(eq(customDietaryRestrictionTerms.restrictionId, id));
-    } else {
-      await tx.insert(customDietaryRestrictions).values({
-        id,
-        profileId,
-        name: restriction.name,
-        severity: restriction.severity,
-      });
-    }
-    await tx.insert(customDietaryRestrictionTerms).values(
-      restriction.terms.map((term) => ({
-        restrictionId: id,
-        term,
-        source: 'exact',
-        approved: true,
-      })),
-    );
-  }
-}
-
 /** Load a profile the user owns, or throw NOT_FOUND. */
 async function requireOwnedProfile(tx: Tx, id: string, user: User) {
   const profile = await tx.query.memberDietaryProfiles.findFirst({
@@ -121,6 +58,146 @@ async function requireOwnedProfile(tx: Tx, id: string, user: User) {
   });
   if (!profile) throw new Error('NOT_FOUND');
   return profile;
+}
+
+async function requireOwnedCustomRestriction(tx: Tx, id: string, user: User) {
+  const restriction = await tx.query.customDietaryRestrictions.findFirst({
+    where: eq(customDietaryRestrictions.id, id),
+    columns: {
+      id: true,
+      profileId: true,
+      name: true,
+      severity: true,
+    },
+    with: {
+      profile: { columns: { userId: true } },
+      terms: {
+        columns: { term: true, source: true, approved: true },
+      },
+    },
+  });
+  if (!restriction || restriction.profile.userId !== user.id) {
+    throw new DomainError('NOT_FOUND');
+  }
+  return restriction;
+}
+
+async function insertCustomRestrictionTerms(
+  tx: Tx,
+  restrictionId: string,
+  terms: CustomDietaryRestrictionInput['terms'],
+) {
+  await tx.insert(customDietaryRestrictionTerms).values(
+    terms.map((term) => ({
+      restrictionId,
+      term: term.term,
+      source: term.source,
+      approved: term.approved,
+    })),
+  );
+}
+
+/**
+ * Create a profile-owned restriction. Exact/free-form terms remain explicitly
+ * user-entered (`exact`, approved); suggested aliases retain their separate
+ * source and approval fields.
+ */
+export async function createCustomDietaryRestriction(
+  profileId: string,
+  input: CustomDietaryRestrictionInput,
+  user: User,
+) {
+  const value = customDietaryRestrictionInputSchema.parse(input);
+  return db.transaction(async (tx) => {
+    await requireOwnedProfile(tx, profileId, user);
+    const [row] = await tx
+      .insert(customDietaryRestrictions)
+      .values({
+        profileId,
+        name: value.name,
+        severity: value.severity,
+      })
+      .returning({ id: customDietaryRestrictions.id });
+    if (!row) throw new DomainError('CONFLICT');
+    await insertCustomRestrictionTerms(tx, row.id, value.terms);
+    return row;
+  });
+}
+
+/**
+ * Replace a restriction and its term set atomically. Active dependent
+ * assessments are invalidated because safe-for recipe SQL cannot perform the
+ * in-memory term-fingerprint comparison used by full assessment reads.
+ */
+export async function updateCustomDietaryRestriction(
+  id: string,
+  input: CustomDietaryRestrictionInput,
+  user: User,
+) {
+  const value = customDietaryRestrictionInputSchema.parse(input);
+  return db.transaction(async (tx) => {
+    await requireOwnedCustomRestriction(tx, id, user);
+    const now = new Date();
+    await tx
+      .update(customDietaryRestrictions)
+      .set({ name: value.name, severity: value.severity, updatedAt: now })
+      .where(eq(customDietaryRestrictions.id, id));
+    await tx
+      .delete(customDietaryRestrictionTerms)
+      .where(eq(customDietaryRestrictionTerms.restrictionId, id));
+    await insertCustomRestrictionTerms(tx, id, value.terms);
+    await tx
+      .update(dietaryAssessments)
+      .set({ invalidatedAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(dietaryAssessments.customRestrictionId, id),
+          isNull(dietaryAssessments.invalidatedAt),
+        ),
+      );
+    return { id };
+  });
+}
+
+/** Hard-delete an owned restriction; its terms and dependent rows cascade. */
+export async function deleteCustomDietaryRestriction(id: string, user: User) {
+  return db.transaction(async (tx) => {
+    await requireOwnedCustomRestriction(tx, id, user);
+    await tx.delete(customDietaryRestrictions).where(eq(customDietaryRestrictions.id, id));
+    return { id };
+  });
+}
+
+/**
+ * Copy a restriction without collapsing suggested aliases into exact terms.
+ * Both source and target are independently owner-checked.
+ */
+export async function copyCustomDietaryRestriction(
+  id: string,
+  targetProfileId: string,
+  user: User,
+) {
+  return db.transaction(async (tx) => {
+    const source = await requireOwnedCustomRestriction(tx, id, user);
+    await requireOwnedProfile(tx, targetProfileId, user);
+    const value = customDietaryRestrictionInputSchema.parse({
+      subjectScope: 'self',
+      name: source.name,
+      severity: source.severity,
+      terms: source.terms,
+    });
+    const [row] = await tx
+      .insert(customDietaryRestrictions)
+      .values({
+        profileId: targetProfileId,
+        name: value.name,
+        severity: value.severity,
+      })
+      .returning({ id: customDietaryRestrictions.id });
+    if (!row) throw new DomainError('CONFLICT');
+    await insertCustomRestrictionTerms(tx, row.id, value.terms);
+    return row;
+  });
 }
 
 export async function createMemberProfile(input: MemberProfileInput, user: User) {
@@ -144,7 +221,6 @@ export async function createMemberProfile(input: MemberProfileInput, user: User)
         targets: { calories: input.calorieGoal },
       });
     }
-    await syncCustomRestrictions(tx, row.id, input.customRestrictions);
     return row;
   });
 }
@@ -160,7 +236,6 @@ export async function updateMemberProfile(id: string, input: MemberProfileInput,
       .where(and(eq(memberDietaryProfiles.id, id), eq(memberDietaryProfiles.userId, user.id)))
       .returning({ id: memberDietaryProfiles.id });
     if (!row) throw new Error('NOT_FOUND');
-    await syncCustomRestrictions(tx, id, input.customRestrictions);
     return row;
   });
 }

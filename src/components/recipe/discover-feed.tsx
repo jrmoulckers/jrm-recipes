@@ -25,7 +25,6 @@ export function DiscoverFeed({
   favoritedIds = [],
   priorityCount = 0,
   members,
-  signedIn = false,
 }: {
   initialItems: CardRecipe[];
   initialNextOffset: number | null;
@@ -39,7 +38,6 @@ export function DiscoverFeed({
    */
   priorityCount?: number;
   members?: CardDietaryMember[];
-  signedIn?: boolean;
 }) {
   const t = useTranslations('recipe');
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
@@ -71,7 +69,6 @@ export function DiscoverFeed({
             favorited={favoritedSet.has(recipe.id)}
             priority={i < priorityCount}
             members={members}
-            signedIn={signedIn}
           />
         ))}
       </div>

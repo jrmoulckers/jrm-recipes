@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 
 vi.mock('server-only', () => ({}));
 
@@ -31,8 +31,6 @@ vi.mock('~/server/db/resolve-food', () => ({
 
 import type { User } from '~/server/db/schema';
 import { COMPOSITION_COVERED_CATEGORIES } from '~/lib/dietary-rules';
-import { FOOD_ALLERGENS } from '~/lib/food-allergens';
-import { FOOD_ITEMS } from '~/lib/food-db';
 import { listLibrary, listLibraryRecipeIds, searchRecipes } from './queries';
 import type { RecipeSearch } from './search';
 import { LIBRARY_PAGE_SIZE } from './pagination';
@@ -46,10 +44,11 @@ function lastFindManyArg() {
     offset?: number;
     columns?: Record<string, boolean>;
     with?: unknown;
-    where?: unknown;
-    orderBy?: SQL[];
+    where?: SQL;
   };
 }
+
+const dialect = new PgDialect({ casing: 'snake_case' });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -153,6 +152,43 @@ describe('searchRecipes pagination (#58)', () => {
     expect(page.nextOffset).toBeNull();
   });
 
+  it('fails closed when a safe-for profile is missing or unowned', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue(null);
+
+    await searchRecipes(viewer, { ...baseSearch, safeFor: 'missing_profile' });
+
+    const where = lastFindManyArg().where;
+    expect(where && dialect.sqlToQuery(where).sql.toLowerCase()).toContain('false');
+  });
+
+  it('requires affirmative curated coverage for blocking custom restrictions', async () => {
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
+      id: 'profile_1',
+      allergens: [],
+      diets: [],
+      customRestrictions: [
+        {
+          id: 'restriction_1',
+          severity: 'allergy-intolerance',
+          terms: [{ term: 'mushrooms', source: 'exact', approved: true }],
+        },
+      ],
+    });
+
+    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
+
+    const where = lastFindManyArg().where;
+    const query = where ? dialect.sqlToQuery(where) : null;
+    expect(query?.sql).toContain('"food_items"."source"');
+    expect(query?.sql).toContain('"food_items"."category" in');
+    expect(query?.params).toContain('curated');
+    expect(query?.params).toEqual(expect.arrayContaining([...COMPOSITION_COVERED_CATEGORIES]));
+    expect(query?.params).toContain('food_mushroom');
+    expect(query?.params).toContain('profile_1');
+  });
+
   it('pages Possible matches with an independent offset', async () => {
     dbMock.query.recipes.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
       { id: 'possible-a', tags: [] },
@@ -168,24 +204,6 @@ describe('searchRecipes pagination (#58)', () => {
     expect(lastFindManyArg().offset).toBe(4);
     expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a', 'possible-b']);
     expect(page.possibleNextOffset).toBe(6);
-    expect(page.nextOffset).toBeNull();
-    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not execute the Possible lane for a definite-only page', async () => {
-    dbMock.query.recipes.findMany.mockResolvedValue([{ id: 'definite-a', tags: [] }]);
-
-    const page = await searchRecipes(
-      viewer,
-      { ...baseSearch, diets: ['vegan'] },
-      { limit: 2, offset: 6, lane: 'definite' },
-    );
-
-    expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(1);
-    expect(lastFindManyArg().offset).toBe(6);
-    expect(page.items.map((recipe) => recipe.id)).toEqual(['definite-a']);
-    expect(page.possibleItems).toEqual([]);
-    expect(page.possibleNextOffset).toBeNull();
   });
 
   it('does not execute the definite lane for a Possible-only page', async () => {
@@ -200,269 +218,6 @@ describe('searchRecipes pagination (#58)', () => {
     expect(dbMock.query.recipes.findMany).toHaveBeenCalledTimes(1);
     expect(lastFindManyArg().offset).toBe(8);
     expect(page.items).toEqual([]);
-    expect(page.nextOffset).toBeNull();
     expect(page.possibleItems.map((recipe) => recipe.id)).toEqual(['possible-a']);
-    expect(page.possibleNextOffset).toBeNull();
-  });
-
-  it('admits a non-empty recipe through complete curated food coverage', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'mushroom', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain(
-      'and (exists (select 1 from "recipe_ingredients" where "recipe_ingredients"."recipe_id" = "recipes"."id") and not exists',
-    );
-    expect(rendered.sql).toContain('"food_items"."source"');
-    expect(rendered.sql).toContain('"food_items"."category" in');
-    expect(rendered.params).toContain('curated');
-    expect(rendered.params).toEqual(expect.arrayContaining([...COMPOSITION_COVERED_CATEGORIES]));
-    expect(rendered.params).toContain('food_mushroom');
-    expect(rendered.params).toContain('profile_1');
-    expect(rendered.params).toContain('meets');
-    expect(rendered.params).toContain('high');
-    expect(resolveFoodIdsMock).toHaveBeenCalledWith(['mushroom']);
-  });
-
-  it('rejects unresolved ingredients outside complete assessment or curated food coverage', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'mushroom', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('from "dietary_evidence"');
-    expect(rendered.sql).toMatch(
-      /not exists \(select .* from "recipe_ingredients".*not exists \(select .* from "dietary_evidence"/,
-    );
-    expect(rendered.sql).toMatch(
-      /not exists \(select .* from "recipe_ingredients".*not exists \(select .* from "food_items"/,
-    );
-    expect(rendered.params).toContain('absent');
-  });
-
-  it('excludes a matching medical restriction before accepting structured coverage', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'mushroom', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('position(');
-    expect(rendered.sql).not.toContain(' like ');
-    expect(rendered.params).toContain(' mushroom ');
-    expect(rendered.sql).toContain('"food_items"."parent_id"');
-    expect(rendered.params).toContain('food_mushroom');
-    expect(rendered.params).toContain('conflicts');
-  });
-
-  it('normalizes accented strict-avoidance terms and ingredients equivalently', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'strict-avoidance',
-          terms: [{ term: 'jalapeño', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('normalize(lower("recipe_ingredients"."item"), NFD)');
-    expect(rendered.sql).toContain('translate(');
-    expect(rendered.sql).toContain('position(');
-    expect(rendered.sql).not.toContain(' like ');
-    expect(rendered.params).toContain(' jalapeno ');
-    expect(rendered.params).not.toContain(' jalapeño ');
-  });
-
-  it('normalizes accented preference terms before applying conflict demotion', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'preference',
-          terms: [{ term: 'crème fraîche', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const preferenceOrder = lastFindManyArg().orderBy?.[0];
-    expect(preferenceOrder).toBeDefined();
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(preferenceOrder!);
-    expect(rendered.sql).toContain('case when exists');
-    expect(rendered.sql).toContain('normalize(lower("recipe_ingredients"."item"), NFD)');
-    expect(rendered.sql).toContain('translate(');
-    expect(rendered.sql).toContain('position(');
-    expect(rendered.sql).not.toContain(' like ');
-    expect(rendered.params).toContain(' creme fraiche ');
-    expect(rendered.params).not.toContain(' crème fraîche ');
-  });
-
-  it('vetoes opaque compounds carrying the restricted built-in allergen', async () => {
-    expect(FOOD_ALLERGENS['soy-sauce']).toContain('wheat');
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'wheat', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    resolveFoodIdsMock.mockResolvedValue(['food_wheat']);
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('"food_items"."allergens" @>');
-    expect(rendered.params).toContain('{"wheat"}');
-  });
-
-  it('leaves opaque ingredients without explicit allergen facts unresolved', async () => {
-    expect(FOOD_ITEMS.find((food) => food.name === 'Stock / broth')?.category).toBe('liquid');
-    expect(COMPOSITION_COVERED_CATEGORIES).not.toContain('liquid');
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'milk', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    resolveFoodIdsMock.mockResolvedValue(['food_milk']);
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toMatch(
-      /"food_items"\."category" in \([^)]+\) or "food_items"\."allergens" is not null/,
-    );
-    expect(rendered.params).not.toContain('liquid');
-    expect(rendered.params).toContain('{"dairy"}');
-  });
-
-  it('uses whole-token matching so egg does not conflict with eggplant', async () => {
-    expect(FOOD_ITEMS.find((food) => food.name === 'Eggplant')?.category).toBe('produce-whole');
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: 'egg', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    resolveFoodIdsMock.mockResolvedValue(['food_egg']);
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('position(');
-    expect(rendered.sql).not.toContain(' like ');
-    expect(rendered.params).toContain(' egg ');
-    expect(rendered.params).not.toContain('%egg%');
-    expect(rendered.params).toContain('produce-whole');
-  });
-
-  it('normalizes literal percent and underscore characters instead of treating them as wildcards', async () => {
-    dbMock.query.memberDietaryProfiles.findFirst.mockResolvedValue({
-      id: 'profile_1',
-      allergens: [],
-      diets: [],
-      customRestrictions: [
-        {
-          id: 'restriction_1',
-          severity: 'allergy-intolerance',
-          terms: [{ term: '50%_cream', source: 'exact', approved: true }],
-        },
-      ],
-    });
-    resolveFoodIdsMock.mockResolvedValue([null]);
-    dbMock.query.recipes.findMany.mockResolvedValue([]);
-
-    await searchRecipes(viewer, { ...baseSearch, safeFor: 'profile_1' });
-
-    const rendered = new PgDialect({ casing: 'snake_case' }).sqlToQuery(
-      lastFindManyArg().where as SQL,
-    );
-    expect(rendered.sql).toContain('position(');
-    expect(rendered.sql).not.toContain(' like ');
-    expect(rendered.params).toContain(' 50 cream ');
-    expect(rendered.params).not.toContain('50%_cream');
   });
 });

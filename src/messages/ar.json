@@ -2180,37 +2180,79 @@
       }
     },
     "assessments": {
-      "recipeAuthor": "مؤلف الوصفة",
-      "more": "+{count} من التفاصيل الغذائية",
-      "less": "عرض تفاصيل غذائية أقل",
-      "labels": {
-        "allergenMeets": "خالٍ من {rule}",
-        "conflicts": "يحتوي على {rule}",
-        "notSuitable": "غير {rule}",
-        "review": "يحتاج {rule} إلى مراجعة"
-      },
+      "title": "التقييمات الغذائية",
+      "description": "افتح شارة لمراجعة مستوى الثقة وتغطية المكونات وما يحتاج إلى الانتباه.",
+      "authorSource": "مؤلف الوصفة",
+      "more": "عرض {count} تقييمات إضافية",
       "rules": {
-        "allergen": {
-          "peanut": "الفول السوداني",
-          "tree-nut": "المكسرات الشجرية",
-          "dairy": "منتجات الألبان",
-          "egg": "البيض",
-          "soy": "الصويا",
-          "wheat": "الغلوتين",
-          "fish": "السمك",
-          "shellfish": "المحار",
-          "sesame": "السمسم"
-        },
-        "composition": {
-          "vegan": "نباتي صرف",
-          "vegetarian": "نباتي",
-          "pescatarian": "نباتي مع الأسماك"
-        },
-        "confirmation": {
-          "celiac-safe": "مناسب للداء البطني",
-          "kosher": "كوشر",
-          "halal": "حلال"
-        }
+        "allergenPeanut": "خالٍ من الفول السوداني",
+        "allergenTreeNut": "خالٍ من المكسرات الشجرية",
+        "allergenDairy": "خالٍ من الألبان",
+        "allergenEgg": "خالٍ من البيض",
+        "allergenSoy": "خالٍ من الصويا",
+        "allergenWheat": "خالٍ من القمح",
+        "allergenFish": "خالٍ من السمك",
+        "allergenShellfish": "خالٍ من المحار",
+        "allergenSesame": "خالٍ من السمسم",
+        "vegan": "نباتي صرف",
+        "vegetarian": "نباتي",
+        "pescatarian": "نباتي مع الأسماك",
+        "celiacSafe": "مناسب لمرضى السيلياك",
+        "kosher": "كوشر",
+        "halal": "حلال"
+      }
+    },
+    "cardAssessment": {
+      "label": "{name}: {count} {count, plural, one {فحص غذائي} other {فحوص غذائية}}"
+    },
+    "custom": {
+      "title": "قيود مخصصة",
+      "freeBoundary": "تطابق قواعد Free الدقيقة المصطلحات التي تدخلها فقط.",
+      "empty": "لا توجد قيود مخصصة بعد.",
+      "smartAliases": "أسماء Family الذكية البديلة",
+      "smartAliasesHelp": "تبقى الأسماء البديلة اقتراحات ولا تؤثر في المطابقة حتى تتم الموافقة عليها.",
+      "smartAliasesEditHelp": "تُحفظ اقتراحات Family الحالية منفصلة عن مصطلحات Free الدقيقة.",
+      "approved": "موافق عليه",
+      "suggested": "مقترح",
+      "severity": {
+        "allergy-intolerance": "حساسية أو عدم تحمّل",
+        "strict-avoidance": "تجنب صارم",
+        "preference": "تفضيل"
+      },
+      "actions": {
+        "add": "إضافة قيد",
+        "copy": "نسخ القيد",
+        "copyNamed": "نسخ {name}",
+        "edit": "تعديل {name}",
+        "remove": "إزالة",
+        "removeNamed": "إزالة {name}",
+        "save": "حفظ القيد"
+      },
+      "dialog": {
+        "addTitle": "إضافة قيد مخصص",
+        "editTitle": "تعديل قيد مخصص",
+        "copyTitle": "نسخ «{name}»",
+        "copyDescription": "اختر ملفًا شخصيًا آخر. ستُنسخ المصطلحات الدقيقة واقتراحات الأسماء البديلة المحفوظة دون تغيير الأصل."
+      },
+      "fields": {
+        "name": "اسم القيد",
+        "namePlaceholder": "مثال: تجنب إكليل الجبل",
+        "severity": "كيف يجب التعامل مع المطابقات؟",
+        "severityHelp": "تستبعد الحساسية والتجنب الصارم الوصفات غير المؤكدة، بينما تخفض التفضيلات ترتيبها فقط.",
+        "exactTerms": "المصطلحات الدقيقة",
+        "targetProfile": "نسخ إلى",
+        "exactTermsPlaceholder": "إكليل الجبل\nمستخلص إكليل الجبل",
+        "exactTermsHelp": "أدخل مصطلحًا في كل سطر أو افصل بينها بفواصل. لا يضيف Free مرادفات أو مكونات مرتبطة."
+      },
+      "confirm": {
+        "title": "إزالة «{name}»؟",
+        "description": "سيُحذف هذا القيد وأدلته المحفوظة، ولا يمكن التراجع عن ذلك."
+      },
+      "toasts": {
+        "added": "تمت إضافة القيد",
+        "copied": "تم نسخ القيد",
+        "updated": "تم تحديث القيد",
+        "removed": "تمت إزالة القيد"
       }
     }
   },
@@ -2903,6 +2945,10 @@
     },
     "searchResults": {
       "title": "النتائج",
+      "highTitle": "التطابقات",
+      "possibleTitle": "تطابقات محتملة",
+      "possibleDescription": "قد تناسب هذه الوصفات، لكن بعض أدلة المكونات لا تزال بحاجة إلى مراجعة.",
+      "loadMorePossible": "تحميل المزيد من التطابقات المحتملة",
       "correction": "لا توجد نتائج مطابقة تمامًا لـ <strong>«{from}»</strong>. نعرض نتائج لـ <strong>«{to}»</strong>.",
       "count": "{count}{plus} {count, plural, zero {وصفة} one {وصفة} two {وصفتان} few {وصفات} many {وصفة} other {وصفة}}",
       "possible": {
@@ -3724,12 +3770,10 @@
       "glutenFree": "خال من الغلوتين",
       "eggFree": "خال من البيض"
     },
-    "impact": {
-      "removes": "يزيل تعارض {need}",
-      "addsConflict": "يضيف تعارضًا غذائيًا",
-      "review": "ما زال الأثر الغذائي يحتاج إلى مراجعة"
-    },
-    "noMatches": "لا يوجد بديل يلبي كل الاحتياجات الغذائية المحددة."
+    "noMatches": "لا يوجد بديل يلبي كل الاحتياجات الغذائية المحددة.",
+    "applying": "جارٍ التطبيق…",
+    "applied": "تم تطبيق {substitute}. تجري إعادة حساب التقييمات الغذائية.",
+    "applyError": "تعذر تطبيق هذا البديل. حدّث الوصفة وحاول مرة أخرى."
   },
   "ingredientsPanel": {
     "fewerServings": "حصص أقل",
@@ -3774,41 +3818,27 @@
     "reasonContains": "يحتوي على {list}",
     "reasonNot": "ليس {list}",
     "rangeTo": "{low} إلى {high}",
-    "dietaryReview": {
-      "summary": "مراجعة الدليل الغذائي للمكوّن {ingredient}",
-      "rule": "النتيجة لـ {rule}",
-      "finding": {
-        "absent": "مناسب لهذه القاعدة",
-        "present": "يتعارض مع هذه القاعدة",
-        "possible": "تعارض محتمل",
-        "unresolved": "ما زال غير محسوم"
+    "dietaryEvidence": {
+      "ariaLabel": "الأدلة الغذائية للمكوّن {ingredient}",
+      "review": "الأدلة",
+      "correctionGroup": "تصحيح أدلة {rule}",
+      "sourceLabel": "المصدر: {source}",
+      "source": {
+        "food-link": "بيانات الطعام المرتبط",
+        "text-match": "نص المكوّن",
+        "on-device": "تحليل على الجهاز",
+        "author-confirmed": "مؤلف الوصفة",
+        "ingredient-correction": "تصحيح محفوظ",
+        "certification": "شهادة"
       },
-      "save": "حفظ التصحيح",
-      "saving": "جارٍ الحفظ…",
-      "saved": "تم حفظ التصحيح الغذائي",
-      "rules": {
-        "allergen": {
-          "peanut": "الفول السوداني",
-          "tree-nut": "المكسرات الشجرية",
-          "dairy": "منتجات الألبان",
-          "egg": "البيض",
-          "soy": "الصويا",
-          "wheat": "الغلوتين",
-          "fish": "السمك",
-          "shellfish": "المحار",
-          "sesame": "السمسم"
-        },
-        "composition": {
-          "vegan": "نباتي صرف",
-          "vegetarian": "نباتي",
-          "pescatarian": "نباتي مع الأسماك"
-        },
-        "confirmation": {
-          "celiac-safe": "مناسب للداء البطني",
-          "kosher": "كوشر",
-          "halal": "حلال"
-        }
-      }
+      "finding": {
+        "present": "موجود",
+        "absent": "غير موجود",
+        "possible": "محتمل",
+        "unresolved": "غير محسوم"
+      },
+      "saved": "تم حفظ التصحيح. تجري إعادة حساب التقييمات الغذائية.",
+      "saveError": "تعذر حفظ التصحيح. حاول مرة أخرى."
     }
   },
   "nutritionPanel": {

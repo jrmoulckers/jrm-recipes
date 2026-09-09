@@ -2180,37 +2180,79 @@
       }
     },
     "assessments": {
-      "recipeAuthor": "Recipe author",
-      "more": "+{count} dietary details",
-      "less": "Show fewer dietary details",
-      "labels": {
-        "allergenMeets": "{rule}-free",
-        "conflicts": "Contains {rule}",
-        "notSuitable": "Not {rule}",
-        "review": "{rule} needs review"
-      },
+      "title": "Dietary assessments",
+      "description": "Open a badge to review confidence, ingredient coverage, and anything that needs attention.",
+      "authorSource": "recipe author",
+      "more": "Show {count} more assessments",
       "rules": {
-        "allergen": {
-          "peanut": "peanut",
-          "tree-nut": "tree nut",
-          "dairy": "dairy",
-          "egg": "egg",
-          "soy": "soy",
-          "wheat": "gluten",
-          "fish": "fish",
-          "shellfish": "shellfish",
-          "sesame": "sesame"
-        },
-        "composition": {
-          "vegan": "Vegan",
-          "vegetarian": "Vegetarian",
-          "pescatarian": "Pescatarian"
-        },
-        "confirmation": {
-          "celiac-safe": "Celiac-safe",
-          "kosher": "Kosher",
-          "halal": "Halal"
-        }
+        "allergenPeanut": "Peanut-free",
+        "allergenTreeNut": "Tree-nut-free",
+        "allergenDairy": "Dairy-free",
+        "allergenEgg": "Egg-free",
+        "allergenSoy": "Soy-free",
+        "allergenWheat": "Wheat-free",
+        "allergenFish": "Fish-free",
+        "allergenShellfish": "Shellfish-free",
+        "allergenSesame": "Sesame-free",
+        "vegan": "Vegan",
+        "vegetarian": "Vegetarian",
+        "pescatarian": "Pescatarian",
+        "celiacSafe": "Celiac-safe",
+        "kosher": "Kosher",
+        "halal": "Halal"
+      }
+    },
+    "cardAssessment": {
+      "label": "{name}: {count} dietary {count, plural, one {check} other {checks}}"
+    },
+    "custom": {
+      "title": "Custom restrictions",
+      "freeBoundary": "Free exact rules match only the terms you enter.",
+      "empty": "No custom restrictions yet.",
+      "smartAliases": "Family smart aliases",
+      "smartAliasesHelp": "Aliases stay suggestions and do not affect matching until approved.",
+      "smartAliasesEditHelp": "Existing Family suggestions are preserved separately from your exact Free terms.",
+      "approved": "approved",
+      "suggested": "suggested",
+      "severity": {
+        "allergy-intolerance": "Allergy or intolerance",
+        "strict-avoidance": "Strict avoidance",
+        "preference": "Preference"
+      },
+      "actions": {
+        "add": "Add restriction",
+        "copy": "Copy restriction",
+        "copyNamed": "Copy {name}",
+        "edit": "Edit {name}",
+        "remove": "Remove",
+        "removeNamed": "Remove {name}",
+        "save": "Save restriction"
+      },
+      "dialog": {
+        "addTitle": "Add custom restriction",
+        "editTitle": "Edit custom restriction",
+        "copyTitle": "Copy “{name}”",
+        "copyDescription": "Choose another profile. The exact terms and any saved alias suggestions will be copied without changing the original."
+      },
+      "fields": {
+        "name": "Restriction name",
+        "namePlaceholder": "e.g. Avoid rosemary",
+        "severity": "How should matches behave?",
+        "severityHelp": "Allergies and strict avoidance exclude uncertain recipes. Preferences lower their rank instead.",
+        "exactTerms": "Exact terms",
+        "targetProfile": "Copy to",
+        "exactTermsPlaceholder": "rosemary\nrosemary extract",
+        "exactTermsHelp": "Enter one term per line or separate terms with commas. Free does not add synonyms or related ingredients."
+      },
+      "confirm": {
+        "title": "Remove “{name}”?",
+        "description": "This restriction and its saved evidence will be deleted. This can't be undone."
+      },
+      "toasts": {
+        "added": "Restriction added",
+        "copied": "Restriction copied",
+        "updated": "Restriction updated",
+        "removed": "Restriction removed"
       }
     }
   },
@@ -2903,6 +2945,10 @@
     },
     "searchResults": {
       "title": "Results",
+      "highTitle": "Matches",
+      "possibleTitle": "Possible matches",
+      "possibleDescription": "These recipes may fit, but some ingredient evidence still needs review.",
+      "loadMorePossible": "Load more possible matches",
       "correction": "No exact matches for <strong>“{from}”</strong>. Showing results for <strong>“{to}”</strong>.",
       "count": "{count}{plus} {count, plural, one {recipe} other {recipes}}",
       "possible": {
@@ -3724,12 +3770,10 @@
       "glutenFree": "Gluten-free",
       "eggFree": "Egg-free"
     },
-    "impact": {
-      "removes": "Removes the {need} conflict",
-      "addsConflict": "Adds a dietary conflict",
-      "review": "Dietary impact still needs review"
-    },
-    "noMatches": "No swaps match every selected dietary need."
+    "noMatches": "No swaps match every selected dietary need.",
+    "applying": "Applying…",
+    "applied": "Applied {substitute}. Dietary assessments are being recalculated.",
+    "applyError": "We couldn't apply that substitution. Refresh the recipe and try again."
   },
   "ingredientsPanel": {
     "fewerServings": "Fewer servings",
@@ -3774,41 +3818,27 @@
     "reasonContains": "contains {list}",
     "reasonNot": "not {list}",
     "rangeTo": "{low} to {high}",
-    "dietaryReview": {
-      "summary": "Review dietary evidence for {ingredient}",
-      "rule": "Finding for {rule}",
-      "finding": {
-        "absent": "Suitable for this rule",
-        "present": "Conflicts with this rule",
-        "possible": "Possible conflict",
-        "unresolved": "Still unresolved"
+    "dietaryEvidence": {
+      "ariaLabel": "Dietary evidence for {ingredient}",
+      "review": "Evidence",
+      "correctionGroup": "Correct {rule} evidence",
+      "sourceLabel": "Source: {source}",
+      "source": {
+        "food-link": "linked food data",
+        "text-match": "ingredient text",
+        "on-device": "on-device analysis",
+        "author-confirmed": "recipe author",
+        "ingredient-correction": "saved correction",
+        "certification": "certification"
       },
-      "save": "Save correction",
-      "saving": "Saving…",
-      "saved": "Dietary correction saved",
-      "rules": {
-        "allergen": {
-          "peanut": "peanut",
-          "tree-nut": "tree nut",
-          "dairy": "dairy",
-          "egg": "egg",
-          "soy": "soy",
-          "wheat": "gluten",
-          "fish": "fish",
-          "shellfish": "shellfish",
-          "sesame": "sesame"
-        },
-        "composition": {
-          "vegan": "vegan",
-          "vegetarian": "vegetarian",
-          "pescatarian": "pescatarian"
-        },
-        "confirmation": {
-          "celiac-safe": "celiac-safe",
-          "kosher": "kosher",
-          "halal": "halal"
-        }
-      }
+      "finding": {
+        "present": "Present",
+        "absent": "Not present",
+        "possible": "Possible",
+        "unresolved": "Unresolved"
+      },
+      "saved": "Correction saved. Dietary assessments are being recalculated.",
+      "saveError": "We couldn't save that correction. Try again."
     }
   },
   "nutritionPanel": {

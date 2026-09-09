@@ -2,100 +2,257 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { loadDietaryAssessmentReadBatchMock } = vi.hoisted(() => ({
-  loadDietaryAssessmentReadBatchMock: vi.fn(),
+const { loadReadBatch, recipeFindMany } = vi.hoisted(() => ({
+  loadReadBatch: vi.fn(),
+  recipeFindMany: vi.fn(),
 }));
+
+vi.mock('~/server/db', () => {
+  const executor = {
+    query: {
+      recipes: { findMany: recipeFindMany },
+    },
+  };
+  return {
+    isDbConfigured: () => true,
+    db: {
+      ...executor,
+      transaction: (callback: (tx: typeof executor) => unknown) => callback(executor),
+    },
+  };
+});
 
 vi.mock('./assessments', () => ({
-  loadDietaryAssessmentReadBatch: loadDietaryAssessmentReadBatchMock,
+  loadDietaryAssessmentReadBatch: loadReadBatch,
 }));
 
-import { attachCardDietaryAssessmentViews, listDietaryAssessmentViews } from './presentation';
+import {
+  attachCardDietaryData,
+  listAuthorizedRecipeDietaryAssessmentViews,
+  listRecipeDietaryAssessmentViews,
+} from './presentation';
+const dietaryIngredients = [
+  {
+    ingredientId: 'ingredient_1',
+    item: 'milk',
+    amount: null,
+    amountMax: null,
+    unit: null,
+    prep: null,
+    linkedFood: null,
+  },
+  {
+    ingredientId: 'ingredient_2',
+    item: 'salt',
+    amount: null,
+    amountMax: null,
+    unit: null,
+    prep: null,
+    linkedFood: null,
+  },
+];
+
+function mockAssessmentRows(rows: unknown[]) {
+  loadReadBatch.mockResolvedValue({
+    ingredientsByRecipeId: new Map([['recipe_1', dietaryIngredients]]),
+    assessmentsByRecipeId: new Map([['recipe_1', rows]]),
+  });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAssessmentRows([]);
+  recipeFindMany.mockResolvedValue([{ id: 'recipe_1', dietaryFlags: [] }]);
 });
 
-describe('attachCardDietaryAssessmentViews', () => {
-  it('loads and projects the full card set through one batch call', async () => {
-    const recipes = Array.from({ length: 120 }, (_, index) => ({ id: `recipe_${index}` }));
-    loadDietaryAssessmentReadBatchMock.mockResolvedValue({
-      ingredientsByRecipeId: new Map([
-        [
-          'recipe_0',
-          [
-            {
-              ingredientId: 'ingredient_1',
-              item: 'rice',
-              amount: null,
-              amountMax: null,
-              unit: null,
-              prep: null,
-              linkedFood: null,
-            },
-          ],
-        ],
-      ]),
-      assessmentsByRecipeId: new Map([
-        [
-          'recipe_0',
-          [
-            {
-              ruleId: 'allergen:wheat',
-              scope: 'canonical',
-              profileId: null,
-              source: 'deterministic',
-              verdict: 'meets',
-              confidence: 'high',
-              evidence: [
-                {
-                  ingredientId: 'ingredient_1',
-                  finding: 'absent',
-                },
-              ],
-            },
-          ],
-        ],
-      ]),
-    });
+describe('listRecipeDietaryAssessmentViews', () => {
+  it('keeps a deterministic conflict ahead of a weaker positive source', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'author-confirmed',
+        verdict: 'meets',
+        confidence: null,
+        evidence: [],
+      },
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'conflicts',
+        confidence: 'high',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'present' }],
+      },
+    ]);
 
-    const result = await attachCardDietaryAssessmentViews(recipes, 'viewer_1');
-
-    expect(loadDietaryAssessmentReadBatchMock).toHaveBeenCalledTimes(1);
-    expect(loadDietaryAssessmentReadBatchMock).toHaveBeenCalledWith(
-      recipes.map((recipe) => recipe.id),
-      'viewer_1',
-      {},
-    );
-    expect(result[0]?.dietaryAssessments).toEqual([
+    await expect(listRecipeDietaryAssessmentViews('recipe_1', 'user_1')).resolves.toEqual([
       expect.objectContaining({
-        ruleId: 'allergen:wheat',
-        recognizedIngredients: 1,
-        totalIngredients: 1,
-        evidence: [
-          {
-            ingredientId: 'ingredient_1',
-            ingredient: 'rice',
-            finding: 'absent',
-          },
-        ],
+        ruleId: 'allergen:dairy',
+        verdict: 'conflicts',
+        attentionIngredients: [{ ingredientId: 'ingredient_1', name: 'milk', kind: 'conflict' }],
       }),
     ]);
-    expect(result[119]?.dietaryAssessments).toEqual([]);
+    expect(loadReadBatch).toHaveBeenCalledWith(['recipe_1'], 'user_1', {});
+  });
+});
+
+describe('attachCardDietaryData', () => {
+  it('projects author declarations into assessment views', async () => {
+    recipeFindMany.mockResolvedValue([{ id: 'recipe_1', dietaryFlags: ['dairy-free'] }]);
+    const [recipe] = await attachCardDietaryData([
+      { id: 'recipe_1', dietaryFlags: ['dairy-free'] },
+    ]);
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        ruleId: 'allergen:dairy',
+        source: 'author-confirmed',
+        verdict: 'meets',
+        confidence: null,
+      }),
+    ]);
   });
 
-  it('forwards share-link authorization for a single recipe view', async () => {
-    loadDietaryAssessmentReadBatchMock.mockResolvedValue({
-      ingredientsByRecipeId: new Map([['shared_recipe', []]]),
-      assessmentsByRecipeId: new Map([['shared_recipe', []]]),
-    });
+  it('maps persisted evidence to recognized and attention ingredients', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'conflicts',
+        confidence: 'high',
+        evidence: [
+          { ingredientId: 'ingredient_1', finding: 'present' },
+          { ingredientId: 'ingredient_2', finding: 'absent' },
+        ],
+      },
+    ]);
 
-    await listDietaryAssessmentViews('shared_recipe', null, {
-      shareToken: 'live_token',
-    });
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        recognizedIngredients: 2,
+        totalIngredients: 2,
+        attentionIngredients: [{ ingredientId: 'ingredient_1', name: 'milk', kind: 'conflict' }],
+      }),
+    ]);
+  });
 
-    expect(loadDietaryAssessmentReadBatchMock).toHaveBeenCalledWith(['shared_recipe'], null, {
-      shareToken: 'live_token',
+  it('uses ingredient corrections instead of superseded inferred evidence', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'meets',
+        confidence: 'high',
+        evidence: [
+          { ingredientId: 'ingredient_1', finding: 'present', source: 'text-match' },
+          {
+            ingredientId: 'ingredient_1',
+            finding: 'absent',
+            source: 'ingredient-correction',
+          },
+          { ingredientId: 'ingredient_2', finding: 'absent', source: 'text-match' },
+        ],
+      },
+    ]);
+
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        recognizedIngredients: 2,
+        attentionIngredients: [],
+      }),
+    ]);
+  });
+
+  it('does not serialize private-confidence rows for anonymous cards', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'meets',
+        confidence: 'medium',
+        evidence: [],
+      },
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:egg',
+        source: 'deterministic',
+        verdict: 'unknown',
+        confidence: 'needs-review',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'unresolved' }],
+      },
+    ]);
+
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }]);
+    expect(recipe?.dietary.assessments).toEqual([]);
+    expect(recipe?.dietary.ingredients).toEqual([]);
+  });
+
+  it('retains authorized personal assessment rows for signed-in cards', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'personal',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'on-device',
+        verdict: 'meets',
+        confidence: 'medium',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'possible' }],
+      },
+    ]);
+
+    const [recipe] = await attachCardDietaryData([{ id: 'recipe_1' }], 'user_1');
+    expect(recipe?.dietary.assessments).toEqual([
+      expect.objectContaining({
+        scope: 'personal',
+        ruleId: 'allergen:dairy',
+        confidence: 'medium',
+      }),
+    ]);
+    expect(recipe?.dietary.ingredients).toHaveLength(2);
+  });
+
+  it('uses canonical conflict precedence for an authorized share-token projection', async () => {
+    mockAssessmentRows([
+      {
+        recipeId: 'recipe_1',
+        scope: 'canonical',
+        profileId: null,
+        ruleId: 'allergen:dairy',
+        source: 'deterministic',
+        verdict: 'conflicts',
+        confidence: 'high',
+        evidence: [{ ingredientId: 'ingredient_1', finding: 'present' }],
+      },
+    ]);
+
+    await expect(
+      listAuthorizedRecipeDietaryAssessmentViews('recipe_1', 'share-token'),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        ruleId: 'allergen:dairy',
+        verdict: 'conflicts',
+      }),
+    ]);
+    expect(loadReadBatch).toHaveBeenCalledWith(['recipe_1'], null, {
+      shareToken: 'share-token',
     });
   });
 });

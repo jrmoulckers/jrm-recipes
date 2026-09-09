@@ -3,14 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { type z } from 'zod';
 
-import { requireUser } from '~/server/auth';
-import { isDbConfigured } from '~/server/db';
 import {
   dietaryIngredientCorrectionSchema,
   onDeviceDietarySubmissionSchema,
+  type DietaryIngredientCorrection,
   type OnDeviceDietarySubmission,
 } from '~/lib/dietary-assessment';
+import { requireUser } from '~/server/auth';
 import { requireEntitlement } from '~/server/billing/entitlements';
+import { isDbConfigured } from '~/server/db';
 import { listLibraryRecipeIds } from '~/server/recipes/queries';
 import {
   getOnDeviceDietaryJob,
@@ -19,15 +20,22 @@ import {
   type OnDeviceDietaryJob,
 } from './assessments';
 import {
+  copyCustomDietaryRestriction,
+  createCustomDietaryRestriction,
   createMemberProfile,
+  deleteCustomDietaryRestriction,
   deleteMemberProfile,
   deleteNutritionTarget,
   setNutritionTarget,
+  updateCustomDietaryRestriction,
   updateMemberProfile,
 } from './mutations';
 import {
+  customDietaryRestrictionCopyInputSchema,
+  customDietaryRestrictionMutationInputSchema,
   memberProfileInput,
   nutritionTargetInput,
+  type CustomDietaryRestrictionMutationInputRaw,
   type MemberProfileInputRaw,
   type NutritionTargetInputRaw,
 } from './validation';
@@ -39,6 +47,7 @@ const NO_DB =
   'Dietary profiles need a database. Set DATABASE_URL (see .env.example) to start saving.';
 
 const SETTINGS_PATH = '/settings/dietary';
+const RECIPES_PATH = '/recipes';
 
 function messageFor(error: unknown): string {
   const code = error instanceof Error ? error.message : '';
@@ -131,6 +140,141 @@ function flattenTargetErrors(error: z.ZodError): Record<string, string[]> {
   return out;
 }
 
+function revalidateCustomDietaryData() {
+  revalidatePath(SETTINGS_PATH);
+  revalidatePath(RECIPES_PATH);
+}
+
+function customRestrictionMessage(error: unknown): string {
+  return error instanceof Error && error.message === 'UNAUTHENTICATED'
+    ? 'Sign in to manage dietary profiles.'
+    : "We couldn't save that dietary restriction.";
+}
+
+export async function createCustomDietaryRestrictionAction(
+  profileId: string,
+  input: CustomDietaryRestrictionMutationInputRaw,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = customDietaryRestrictionMutationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
+
+  try {
+    const user = await requireUser();
+    const row = await createCustomDietaryRestriction(profileId, parsed.data, user);
+    revalidateCustomDietaryData();
+    return { ok: true, id: row.id };
+  } catch (error) {
+    return { ok: false, error: customRestrictionMessage(error) };
+  }
+}
+
+export async function updateCustomDietaryRestrictionAction(
+  id: string,
+  input: CustomDietaryRestrictionMutationInputRaw,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = customDietaryRestrictionMutationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
+
+  try {
+    const user = await requireUser();
+    await updateCustomDietaryRestriction(id, parsed.data, user);
+    revalidateCustomDietaryData();
+    return { ok: true, id };
+  } catch (error) {
+    return { ok: false, error: customRestrictionMessage(error) };
+  }
+}
+
+export async function deleteCustomDietaryRestrictionAction(id: string): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  try {
+    const user = await requireUser();
+    await deleteCustomDietaryRestriction(id, user);
+    revalidateCustomDietaryData();
+    return { ok: true, id };
+  } catch (error) {
+    return { ok: false, error: customRestrictionMessage(error) };
+  }
+}
+
+export async function copyCustomDietaryRestrictionAction(
+  id: string,
+  targetProfileId: string,
+  subjectScope: 'self' | undefined,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = customDietaryRestrictionCopyInputSchema.safeParse({ subjectScope });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
+
+  try {
+    const user = await requireUser();
+    const row = await copyCustomDietaryRestriction(id, targetProfileId, user);
+    revalidateCustomDietaryData();
+    return { ok: true, id: row.id };
+  } catch (error) {
+    return { ok: false, error: customRestrictionMessage(error) };
+  }
+}
+
+/**
+ * Authenticate and delegate correction validation and authorization to the
+ * dietary assessment service. All non-auth failures intentionally share one
+ * message so recipe or restriction ownership cannot be inferred.
+ */
+export async function saveDietaryIngredientCorrectionAction(
+  input: DietaryIngredientCorrection,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = dietaryIngredientCorrectionSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Please fix the highlighted fields.',
+      fieldErrors: flattenTargetErrors(parsed.error),
+    };
+  }
+
+  try {
+    const user = await requireUser();
+    await saveDietaryIngredientCorrection(user.id, parsed.data);
+    revalidatePath(RECIPES_PATH);
+    revalidatePath('/recipes/[cook]/[recipe]', 'page');
+    return { ok: true, id: parsed.data.ingredientId };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error && error.message === 'UNAUTHENTICATED'
+          ? 'Sign in to manage dietary profiles.'
+          : "We couldn't save that dietary correction.",
+    };
+  }
+}
+
 export async function createMemberProfileAction(
   input: MemberProfileInputRaw,
 ): Promise<ActionResult> {
@@ -196,30 +340,6 @@ export async function deleteMemberProfileAction(id: string): Promise<ActionResul
     await deleteMemberProfile(id, user);
     revalidatePath(SETTINGS_PATH);
     return { ok: true, id };
-  } catch (error) {
-    return { ok: false, error: messageFor(error) };
-  }
-}
-
-export async function saveDietaryIngredientCorrectionAction(input: {
-  ingredientId: string;
-  ruleId: string;
-  finding: 'present' | 'absent' | 'possible' | 'unresolved';
-}): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
-  const parsed = dietaryIngredientCorrectionSchema.safeParse({
-    ...input,
-    customRestrictionId: null,
-    correctedFoodId: null,
-  });
-  if (!parsed.success) {
-    return { ok: false, error: 'Choose a valid dietary finding.' };
-  }
-  try {
-    const user = await requireUser();
-    await saveDietaryIngredientCorrection(user.id, parsed.data);
-    revalidatePath('/recipes', 'layout');
-    return { ok: true, id: input.ingredientId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

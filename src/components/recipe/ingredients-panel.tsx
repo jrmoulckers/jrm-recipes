@@ -1,11 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import dynamic from 'next/dynamic';
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 
 import { cn } from '~/lib/utils';
 import { HAPTICS, vibrate } from '~/lib/haptics';
@@ -47,33 +44,26 @@ import { useThemeBehavior } from '~/components/theme/theme-provider';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
-import { NativeSelect } from '~/components/ui/native-select';
-import type {
-  SubstitutionCustomRestriction,
-  SubstitutionDietaryRule,
-} from '~/components/recipe/ingredient-substitutions';
-import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
-import { saveDietaryIngredientCorrectionAction } from '~/server/dietary/actions';
-import {
-  DIETARY_EVIDENCE_FINDINGS,
-  type CustomRestrictionSeverity,
-  type DietaryEvidenceFinding,
-} from '~/lib/dietary-contracts';
-import { type DietaryAssessmentView } from '~/lib/dietary-presentation';
-import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
-import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions-lazy';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
 import { type Nutrition } from '~/lib/nutrition';
 import { resolveNutritionView, type RecipeNutritionView } from '~/lib/recipe-nutrition';
 import { type AnchoredSuggestion } from '~/server/engagement/queries';
-
-const IngredientSubstitutions = dynamic(() =>
-  import('~/components/recipe/ingredient-substitutions').then(
-    (module) => module.IngredientSubstitutions,
-  ),
-);
+import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
+import { type DietaryLinkedFoodInput } from '~/lib/dietary-assessment';
+import { dietaryRuleIdsForTag } from '~/lib/dietary-projection';
+import { isBuiltInDietaryRuleId } from '~/lib/dietary-rules';
+import { matchesCustomRestriction } from '~/lib/custom-restriction-match';
+import type {
+  SubstitutionCustomRestriction,
+  SubstitutionDietaryRule,
+} from '~/components/recipe/ingredient-substitutions';
+import {
+  IngredientEvidenceControl,
+  type IngredientDietaryEvidence,
+} from '~/components/recipe/ingredient-evidence-control-lazy';
 
 /**
  * Serializable payload for the per-ingredient anchored-suggestion slot (#346).
@@ -106,6 +96,13 @@ type PanelIngredient = {
    * on {@link item}.
    */
   allergens?: Allergen[] | null;
+  linkedFood?: DietaryLinkedFoodInput | null;
+};
+
+export type IngredientsPanelRecipeContext = {
+  recipeId: string;
+  updatedAt: string;
+  canEdit: boolean;
 };
 
 /**
@@ -159,99 +156,6 @@ function effectivePrefs(prefs: UnitPrefs, system: 'us' | 'metric'): UnitPrefs {
     temperatureUnit: prefs.temperatureUnit,
     autoConvert: true,
   };
-}
-
-function DietaryIngredientReview({
-  ingredientId,
-  ingredient,
-  findings,
-}: {
-  ingredientId: string;
-  ingredient: string;
-  findings: { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[];
-}) {
-  const t = useTranslations('ingredientsPanel.dietaryReview');
-  return (
-    <details
-      id={`dietary-correction-${ingredientId}`}
-      className="col-span-3 mb-2 ms-9 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2"
-    >
-      <summary className="cursor-pointer text-xs font-medium text-foreground">
-        {t('summary', { ingredient })}
-      </summary>
-      <div className="mt-3 grid gap-3">
-        {findings.map((finding) => (
-          <DietaryFindingEditor
-            key={finding.ruleId}
-            ingredientId={ingredientId}
-            ruleId={finding.ruleId}
-            initialFinding={finding.finding}
-          />
-        ))}
-      </div>
-    </details>
-  );
-}
-
-function DietaryFindingEditor({
-  ingredientId,
-  ruleId,
-  initialFinding,
-}: {
-  ingredientId: string;
-  ruleId: string;
-  initialFinding: 'present' | 'possible' | 'unresolved';
-}) {
-  const t = useTranslations('ingredientsPanel.dietaryReview');
-  const router = useRouter();
-  const selectId = React.useId();
-  const [finding, setFinding] = React.useState<DietaryEvidenceFinding>(initialFinding);
-  const [pending, startTransition] = React.useTransition();
-  const ruleKey = ruleId.replace(':', '.');
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-      <div className="grid gap-1">
-        <label htmlFor={selectId} className="text-xs font-medium text-muted-foreground">
-          {t('rule', { rule: t(`rules.${ruleKey}`) })}
-        </label>
-        <NativeSelect
-          id={selectId}
-          data-dietary-rule={ruleId}
-          value={finding}
-          onChange={(event) => setFinding(event.target.value as DietaryEvidenceFinding)}
-        >
-          {DIETARY_EVIDENCE_FINDINGS.map((value) => (
-            <option key={value} value={value}>
-              {t(`finding.${value}`)}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
-      <Button
-        type="button"
-        size="sm"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            const result = await saveDietaryIngredientCorrectionAction({
-              ingredientId,
-              ruleId,
-              finding,
-            });
-            if (!result.ok) {
-              toast.error(result.error);
-              return;
-            }
-            toast.success(t('saved'));
-            router.refresh();
-          })
-        }
-      >
-        {pending ? t('saving') : t('save')}
-      </Button>
-    </div>
-  );
 }
 
 function measure(
@@ -391,10 +295,10 @@ export function IngredientsPanel({
   nutritionView: nutritionViewProp,
   members,
   ingredientSuggestions,
-  dietaryAssessments = [],
-  canReviewDietary = false,
   unitPrefs,
   customUnits,
+  dietaryEvidence = [],
+  recipeContext,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -418,12 +322,14 @@ export function IngredientsPanel({
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
   ingredientSuggestions?: IngredientSuggestions;
-  dietaryAssessments?: DietaryAssessmentView[];
-  canReviewDietary?: boolean;
   /** Viewer's saved unit preferences: seeds the initial system + per-dimension conversion. */
   unitPrefs?: UnitPrefs;
   /** Viewer's custom units (e.g. "pinch"), consulted during live conversion. */
   customUnits?: readonly CustomUnitDef[];
+  /** Current ingredient evidence, preserving present/possible/unresolved semantics. */
+  dietaryEvidence?: IngredientDietaryEvidence[];
+  /** Detail-page write context for authorized corrections and substitution apply. */
+  recipeContext?: IngredientsPanelRecipeContext;
 }) {
   const canScale = baseServings != null && baseServings > 0;
   // Props win, but fall back to the ambient viewer prefs (Cook Mode threads them
@@ -461,43 +367,6 @@ export function IngredientsPanel({
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
   const tNames = useTranslations('classificationNames');
-  const dietaryEvidenceByIngredient = React.useMemo(() => {
-    const map = new Map<
-      string,
-      { ruleId: string; finding: 'present' | 'possible' | 'unresolved' }[]
-    >();
-    for (const assessment of dietaryAssessments) {
-      for (const evidence of assessment.evidence) {
-        if (evidence.finding === 'absent') continue;
-        const rows = map.get(evidence.ingredientId) ?? [];
-        if (!rows.some((row) => row.ruleId === assessment.ruleId)) {
-          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
-        }
-        map.set(evidence.ingredientId, rows);
-      }
-    }
-    return map;
-  }, [dietaryAssessments]);
-  const canonicalEvidenceByIngredient = React.useMemo(() => {
-    const map = new Map<string, { ruleId: string; finding: DietaryEvidenceFinding }[]>();
-    for (const assessment of dietaryAssessments) {
-      if (assessment.scope !== 'canonical') continue;
-      for (const evidence of assessment.evidence) {
-        const rows = map.get(evidence.ingredientId) ?? [];
-        const existing = rows.find((row) => row.ruleId === assessment.ruleId);
-        if (!existing) {
-          rows.push({ ruleId: assessment.ruleId, finding: evidence.finding });
-        } else if (
-          ['absent', 'unresolved', 'possible', 'present'].indexOf(evidence.finding) >
-          ['absent', 'unresolved', 'possible', 'present'].indexOf(existing.finding)
-        ) {
-          existing.finding = evidence.finding;
-        }
-        map.set(evidence.ingredientId, rows);
-      }
-    }
-    return map;
-  }, [dietaryAssessments]);
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
@@ -547,11 +416,33 @@ export function IngredientsPanel({
   );
   const hasActiveRestrictions =
     memberNeeds != null || (activeMember?.customRestrictions?.length ?? 0) > 0;
+  const dietaryEvidenceByIngredient = React.useMemo(() => {
+    const byIngredient = new Map<string, IngredientDietaryEvidence[]>();
+    for (const evidence of dietaryEvidence) {
+      const entries = byIngredient.get(evidence.ingredientId) ?? [];
+      entries.push(evidence);
+      byIngredient.set(evidence.ingredientId, entries);
+    }
+    return byIngredient;
+  }, [dietaryEvidence]);
   const cookingForId = React.useId();
 
   const servings = controls ? controls.servings : servingsInternal;
   const system = controls ? controls.system : systemInternal;
   const checked = controls ? controls.checked : checkedInternal;
+  const previewIngredients = React.useMemo(
+    () =>
+      ingredients.map((ingredient) => ({
+        ingredientId: ingredient.id,
+        item: ingredient.item,
+        amount: ingredient.quantity,
+        amountMax: ingredient.quantityMax,
+        unit: ingredient.unit,
+        prep: ingredient.prep ?? null,
+        linkedFood: ingredient.linkedFood ?? null,
+      })),
+    [ingredients],
+  );
 
   const factor = canScale ? servings / baseServings : 1;
 
@@ -1033,7 +924,7 @@ export function IngredientsPanel({
                   : null;
                 const ingredientAllergens = ing.allergens ?? detectAllergensForSafety(ing.item);
                 const assessmentRules = activeDietaryRules.flatMap((rule) => {
-                  const finding = canonicalEvidenceByIngredient
+                  const finding = dietaryEvidenceByIngredient
                     .get(ing.id)
                     ?.find((item) => item.ruleId === rule.ruleId)?.finding;
                   return finding ? [{ ...rule, currentFinding: finding }] : [];
@@ -1102,7 +993,6 @@ export function IngredientsPanel({
                     .filter((rule) => rule.currentFinding === 'present')
                     .map((rule) => rule.dietaryTag),
                 ].filter((tag, index, tags) => tags.indexOf(tag) === index);
-                const reviewFindings = dietaryEvidenceByIngredient.get(ing.id) ?? [];
                 return (
                   <li
                     key={ing.id}
@@ -1220,7 +1110,14 @@ export function IngredientsPanel({
                           ))}
                         </span>
                       </button>
-                      <div className="col-start-2 row-start-1 flex items-center">
+                      <div className="col-start-2 row-start-1 flex items-center gap-0.5">
+                        <IngredientEvidenceControl
+                          ingredient={ing}
+                          evidence={dietaryEvidence.filter(
+                            (entry) => entry.ingredientId === ing.id,
+                          )}
+                          canCorrect={recipeContext?.canEdit ?? false}
+                        />
                         <IngredientSubstitutions
                           item={ing.item}
                           flagged={flagged}
@@ -1228,6 +1125,17 @@ export function IngredientsPanel({
                           avoidAllergens={memberNeeds?.allergens}
                           dietaryRules={assessmentRules}
                           customRestrictions={activeCustomRestrictions}
+                          recipePreview={
+                            recipeContext
+                              ? {
+                                  recipeId: recipeContext.recipeId,
+                                  updatedAt: recipeContext.updatedAt,
+                                  ingredientId: ing.id,
+                                  ingredients: previewIngredients,
+                                  canApply: recipeContext.canEdit,
+                                }
+                              : undefined
+                          }
                         />
                       </div>
                     </div>
@@ -1240,13 +1148,6 @@ export function IngredientsPanel({
                         </span>
                       </p>
                     )}
-                    {canReviewDietary && reviewFindings.length > 0 ? (
-                      <DietaryIngredientReview
-                        ingredientId={ing.id}
-                        ingredient={ing.item}
-                        findings={reviewFindings}
-                      />
-                    ) : null}
                     {nudge && (
                       <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />

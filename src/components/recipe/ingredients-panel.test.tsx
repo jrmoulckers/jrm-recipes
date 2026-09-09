@@ -11,6 +11,23 @@ import {
   type IngredientSuggestions,
 } from './ingredients-panel';
 
+const { refreshMock, saveCorrectionMock } = vi.hoisted(() => ({
+  refreshMock: vi.fn(),
+  saveCorrectionMock: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: refreshMock }),
+}));
+
+vi.mock('~/server/dietary/actions', () => ({
+  saveDietaryIngredientCorrectionAction: saveCorrectionMock,
+}));
+
+vi.mock('~/server/dietary/substitution-actions', () => ({
+  applyIngredientSubstitutionAction: vi.fn(),
+}));
+
 // Stub the lazy anchored-suggestions client bundle so we can assert the panel
 // renders it itself from serializable data. The fix for the production RSC
 // crash where a `renderSuggestions` function prop was passed across the
@@ -233,204 +250,90 @@ describe('IngredientsPanel display-time unit conversion', () => {
     expect(container.textContent).not.toMatch(/\bml\b/i);
   });
 
-  describe('IngredientsPanel dietary substitution previews', () => {
-    it('uses canonical composition evidence to show that a swap removes a vegan conflict', async () => {
+  describe('IngredientsPanel dietary evidence', () => {
+    it('shows exact evidence wording from a sibling control, not inside check-off', async () => {
       const user = userEvent.setup({ pointerEventsCheck: 0 });
-      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
-
       render(
         <IngredientsPanel
-          ingredients={[
-            {
-              id: 'honey',
-              section: null,
-              quantity: 1,
-              quantityMax: null,
-              unit: 'tbsp',
-              item: 'honey',
-              note: null,
-              optional: false,
-            },
-          ]}
-          baseServings={1}
+          ingredients={ingredients}
+          baseServings={4}
           servingsNoun={null}
-          members={[
+          dietaryEvidence={[
             {
-              id: 'member-1',
-              name: 'Ada',
-              calorieTarget: null,
-              allergens: [],
-              diets: ['vegan'],
+              ingredientId: 'flour',
+              ruleId: 'allergen:wheat',
+              finding: 'present',
+              source: 'text-match',
             },
-          ]}
-          dietaryAssessments={[
             {
+              ingredientId: 'flour',
               ruleId: 'composition:vegan',
-              scope: 'canonical',
-              profileId: null,
-              source: 'deterministic',
-              verdict: 'conflicts',
-              confidence: 'high',
-              recognizedIngredients: 1,
-              totalIngredients: 1,
-              evidence: [{ ingredientId: 'honey', ingredient: 'honey', finding: 'present' }],
+              finding: 'possible',
+              source: 'on-device',
+            },
+            {
+              ingredientId: 'flour',
+              ruleId: 'confirmation:celiac-safe',
+              finding: 'unresolved',
+              source: 'text-match',
             },
           ]}
         />,
       );
 
-      await user.click(
-        await screen.findByRole('button', { name: /safe swaps for honey/i }, { timeout: 10_000 }),
-      );
-      const mapleSyrup = (await screen.findByText('Maple syrup')).closest('li');
-      expect(mapleSyrup).not.toBeNull();
-      expect(within(mapleSyrup!).getByText('Removes the Vegan conflict')).toBeInTheDocument();
+      const evidenceTrigger = await screen.findByRole('button', {
+        name: 'Dietary evidence for flour',
+      });
+      const checkOff = screen
+        .getAllByRole('button')
+        .find((button) => button.textContent?.includes('flour'));
+      expect(checkOff).toBeDefined();
+      expect(checkOff?.contains(evidenceTrigger)).toBe(false);
+
+      await user.click(evidenceTrigger);
+      expect(await screen.findByText('Present')).toBeInTheDocument();
+      expect(screen.getByText('Possible')).toBeInTheDocument();
+      expect(screen.getByText('Unresolved')).toBeInTheDocument();
     });
 
-    it('flags a candidate that matches an active custom restriction', async () => {
+    it('sends authorized corrections through the canonical correction action', async () => {
+      saveCorrectionMock.mockResolvedValueOnce({ ok: true });
       const user = userEvent.setup({ pointerEventsCheck: 0 });
-      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
-
       render(
         <IngredientsPanel
-          ingredients={[
-            {
-              id: 'butter',
-              section: null,
-              quantity: 1,
-              quantityMax: null,
-              unit: 'tbsp',
-              item: 'butter',
-              note: null,
-              optional: false,
-            },
-          ]}
-          baseServings={1}
+          ingredients={ingredients}
+          baseServings={4}
           servingsNoun={null}
-          members={[
+          dietaryEvidence={[
             {
-              id: 'member-1',
-              name: 'Ada',
-              calorieTarget: null,
-              allergens: [],
-              diets: [],
-              customRestrictions: [
-                {
-                  id: 'no-coconut',
-                  name: 'No coconut',
-                  severity: 'strict-avoidance',
-                  terms: ['coconut'],
-                },
-              ],
+              ingredientId: 'flour',
+              ruleId: 'allergen:wheat',
+              finding: 'present',
+              source: 'text-match',
             },
           ]}
+          recipeContext={{
+            recipeId: 'recipe_1',
+            updatedAt: '2026-09-08T12:00:00.000Z',
+            canEdit: true,
+          }}
         />,
       );
 
-      await user.click(await screen.findByRole('button', { name: /substitutions for butter/i }));
-      const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
-      expect(coconutOil).not.toBeNull();
-      expect(within(coconutOil!).getByText('Adds a dietary conflict')).toBeInTheDocument();
+      await user.click(await screen.findByRole('button', { name: 'Dietary evidence for flour' }));
+      const correctionGroup = await screen.findByRole('group', {
+        name: 'Correct Wheat-free evidence',
+      });
+      await user.click(within(correctionGroup).getByRole('button', { name: 'Not present' }));
 
-      const oliveOil = screen.getByText('Neutral or olive oil').closest('li');
-      expect(oliveOil).not.toBeNull();
-      expect(within(oliveOil!).getByText('Dietary impact still needs review')).toBeInTheDocument();
-    });
-
-    it('does not claim an opaque candidate removes a medical custom restriction', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: 0 });
-      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
-
-      render(
-        <IngredientsPanel
-          ingredients={[
-            {
-              id: 'milk',
-              section: null,
-              quantity: 1,
-              quantityMax: null,
-              unit: 'cup',
-              item: 'milk',
-              note: null,
-              optional: false,
-            },
-          ]}
-          baseServings={1}
-          servingsNoun={null}
-          members={[
-            {
-              id: 'member-1',
-              name: 'Ada',
-              calorieTarget: null,
-              allergens: [],
-              diets: [],
-              customRestrictions: [
-                {
-                  id: 'no-milk',
-                  name: 'No milk',
-                  severity: 'allergy-intolerance',
-                  terms: ['milk'],
-                },
-              ],
-            },
-          ]}
-        />,
-      );
-
-      await user.click(await screen.findByRole('button', { name: /safe swaps for milk/i }));
-      const broth = (await screen.findByText('Water or broth')).closest('li');
-      expect(broth).not.toBeNull();
-      expect(within(broth!).getByText('Dietary impact still needs review')).toBeInTheDocument();
-      expect(within(broth!).queryByText(/removes/i)).not.toBeInTheDocument();
-    });
-
-    it('keeps custom preference matches at review severity', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: 0 });
-      useActiveMemberStore.setState({ activeMemberId: 'member-1' });
-
-      render(
-        <IngredientsPanel
-          ingredients={[
-            {
-              id: 'butter',
-              section: null,
-              quantity: 1,
-              quantityMax: null,
-              unit: 'tbsp',
-              item: 'butter',
-              note: null,
-              optional: false,
-            },
-          ]}
-          baseServings={1}
-          servingsNoun={null}
-          members={[
-            {
-              id: 'member-1',
-              name: 'Ada',
-              calorieTarget: null,
-              allergens: [],
-              diets: [],
-              customRestrictions: [
-                {
-                  id: 'prefer-no-coconut',
-                  name: 'Prefer no coconut',
-                  severity: 'preference',
-                  terms: ['coconut'],
-                },
-              ],
-            },
-          ]}
-        />,
-      );
-
-      await user.click(await screen.findByRole('button', { name: /substitutions for butter/i }));
-      const coconutOil = (await screen.findByText('Coconut oil')).closest('li');
-      expect(coconutOil).not.toBeNull();
-      expect(
-        within(coconutOil!).getByText('Dietary impact still needs review'),
-      ).toBeInTheDocument();
-      expect(within(coconutOil!).queryByText('Adds a dietary conflict')).not.toBeInTheDocument();
+      expect(saveCorrectionMock).toHaveBeenCalledWith({
+        ingredientId: 'flour',
+        ruleId: 'allergen:wheat',
+        customRestrictionId: null,
+        finding: 'absent',
+        correctedFoodId: null,
+      });
+      expect(refreshMock).toHaveBeenCalled();
     });
   });
 
