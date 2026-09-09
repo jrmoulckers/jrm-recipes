@@ -78,6 +78,12 @@ describe('RecipeCard interactions', () => {
     expect(detailLink).not.toContainElement(heading);
   });
 
+  it('exposes the read-only star summary with an image role', () => {
+    render(<RecipeCard recipe={makeRecipe({ ratingCount: 2, ratingSum: 9 })} />);
+
+    expect(screen.getByRole('img', { name: '4.5 out of 5 stars, 2 ratings' })).toBeVisible();
+  });
+
   it('keeps links and buttons as siblings in a predictable keyboard order', async () => {
     const user = userEvent.setup();
     const { container } = render(

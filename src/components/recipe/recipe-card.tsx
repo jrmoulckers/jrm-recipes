@@ -284,7 +284,7 @@ export function RecipeCard({
 /** Compact, read-only 5-star row summarising a recipe's average rating. */
 function StarRating({ filled, label }: { filled: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-0.5" aria-label={label}>
+    <span className="inline-flex items-center gap-0.5" aria-label={label} role="img">
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
