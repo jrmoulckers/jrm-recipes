@@ -16,7 +16,7 @@ export async function SiteHeader() {
   const t = await getTranslations('nav');
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 [@media(display-mode:standalone)]:pt-safe-t">
+    <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-sm supports-backdrop-filter:bg-card/70 [@media(display-mode:standalone)]:pt-safe-t">
       <div className="container flex min-h-16 items-center gap-2 sm:gap-4">
         <Link href="/" className="shrink-0" aria-label={t('homeLink')}>
           {/* Drop the wordmark on the very narrowest phones (<360px) so the

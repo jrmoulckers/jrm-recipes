@@ -15,12 +15,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <div className="flex min-h-dvh flex-col">
       <a
         href="#main-content"
-        className="sr-only z-[60] rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground shadow-token-lg outline-none focus-visible:not-sr-only focus-visible:absolute focus-visible:start-4 focus-visible:top-4 focus-visible:ring-2 focus-visible:ring-ring"
+        className="sr-only z-60 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground shadow-token-lg outline-hidden focus-visible:not-sr-only focus-visible:absolute focus-visible:inset-s-4 focus-visible:top-4 focus-visible:ring-2 focus-visible:ring-ring"
       >
         {t('skipToContent')}
       </a>
       <SiteHeader />
-      <main id="main-content" tabIndex={-1} className="flex-1 pb-24 outline-none xl:pb-0">
+      <main id="main-content" tabIndex={-1} className="flex-1 pb-24 outline-hidden xl:pb-0">
         {children}
       </main>
       <SiteFooter />

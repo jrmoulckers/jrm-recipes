@@ -174,7 +174,7 @@
   }
 
   /* Focus outline must survive forced colors. Do not rely on box-shadow rings.
-     !important defeats the utility `outline-none` that ring-based primitives set. */
+     !important defeats the utility `outline-hidden` that ring-based primitives set. */
   a:focus-visible,
   button:focus-visible,
   input:focus-visible,

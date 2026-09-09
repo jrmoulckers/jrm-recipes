@@ -321,7 +321,7 @@ export function DesignGallery() {
           {RADIUS_STEPS.map((r) => (
             <div key={r.label} className="flex flex-col items-center gap-2">
               <div
-                className={cn('bg-primary/12 size-20 border border-border', r.cls)}
+                className={cn('size-20 border border-border bg-primary/12', r.cls)}
                 aria-hidden="true"
               />
               <code className="font-mono text-xs text-muted-foreground">rounded-{r.label}</code>
@@ -454,7 +454,7 @@ export function DesignGallery() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="dg-search">With icon</Label>
             <div className="relative">
-              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input id="dg-search" className="ps-9" placeholder="Search recipes" />
             </div>
           </div>

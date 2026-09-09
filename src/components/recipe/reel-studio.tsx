@@ -242,7 +242,7 @@ export function ReelStudio({
       </DialogHeader>
 
       <div className="flex flex-col items-center gap-3">
-        <div className="relative aspect-[9/16] w-full max-w-[260px] overflow-hidden rounded-xl border border-border bg-muted">
+        <div className="relative aspect-9/16 w-full max-w-[260px] overflow-hidden rounded-xl border border-border bg-muted">
           {state === 'loading' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-6 animate-spin" aria-hidden="true" />

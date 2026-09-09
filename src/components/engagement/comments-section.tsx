@@ -178,7 +178,7 @@ export function CommentsSection(props: CommentsSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="bg-primary/12 rounded-full p-2 text-primary">
+        <span className="rounded-full bg-primary/12 p-2 text-primary">
           <MessageCircle className="size-5" />
         </span>
         <div>
@@ -394,7 +394,7 @@ function CommentItem({
 
           <p
             className={cn(
-              'mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-foreground',
+              'mt-3 text-sm leading-6 wrap-break-word whitespace-pre-wrap text-foreground',
               isResolved && 'text-muted-foreground',
             )}
           >

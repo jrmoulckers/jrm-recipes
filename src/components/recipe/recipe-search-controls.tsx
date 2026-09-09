@@ -598,7 +598,7 @@ export function RecipeSearchControls({
       className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4"
     >
       <div className="relative">
-        <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Label htmlFor={searchId} className="sr-only">
           {t('searchLabel')}
         </Label>
@@ -608,9 +608,9 @@ export function RecipeSearchControls({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="pe-10 ps-10"
+          className="ps-10 pe-10"
         />
-        <span className="absolute end-3 top-1/2 -translate-y-1/2">
+        <span className="absolute inset-e-3 top-1/2 -translate-y-1/2">
           {isPending ? (
             <Spinner label={t('updating')} className="text-muted-foreground" />
           ) : query ? (
@@ -618,7 +618,7 @@ export function RecipeSearchControls({
               type="button"
               onClick={() => setQuery('')}
               aria-label={t('clearSearch')}
-              className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
             >
               <X className="size-3.5" />
             </button>
@@ -695,7 +695,7 @@ export function RecipeSearchControls({
           </Button>
 
           <Select value={activeSearch.sort} onValueChange={(value) => pushParams({ sort: value })}>
-            <SelectTrigger className="min-w-[8rem]" aria-label={t('field.sort')}>
+            <SelectTrigger className="min-w-32" aria-label={t('field.sort')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -771,7 +771,7 @@ export function RecipeSearchControls({
               value={activeSearch.difficulty ?? ANY}
               onValueChange={(value) => pushParams({ difficulty: value })}
             >
-              <SelectTrigger className="min-w-[8rem]">
+              <SelectTrigger className="min-w-32">
                 <SelectValue placeholder={t('anyLevel')} />
               </SelectTrigger>
               <SelectContent>
@@ -790,7 +790,7 @@ export function RecipeSearchControls({
               value={activeSearch.maxTime != null ? String(activeSearch.maxTime) : ANY}
               onValueChange={(value) => pushParams({ maxTime: value })}
             >
-              <SelectTrigger className="min-w-[8rem]">
+              <SelectTrigger className="min-w-32">
                 <SelectValue placeholder={t('anyTime')} />
               </SelectTrigger>
               <SelectContent>
@@ -841,7 +841,7 @@ export function RecipeSearchControls({
               onChange={(event) => setIngredient(event.target.value)}
               placeholder={t('ingredientPlaceholder')}
               aria-label={t('ingredientAria')}
-              className="min-w-[9rem]"
+              className="min-w-36"
             />
           </FilterField>
 
@@ -851,7 +851,7 @@ export function RecipeSearchControls({
                 value={activeSearch.safeFor ?? ANY}
                 onValueChange={(value) => pushParams({ safeFor: value })}
               >
-                <SelectTrigger className="min-w-[9rem]">
+                <SelectTrigger className="min-w-36">
                   <SelectValue placeholder={t('anyone')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -864,7 +864,7 @@ export function RecipeSearchControls({
                 </SelectContent>
               </Select>
             ) : (
-              <Button asChild variant="outline" className="min-w-[9rem] justify-start font-normal">
+              <Button asChild variant="outline" className="min-w-36 justify-start font-normal">
                 <Link href="/settings/dietary">
                   <ShieldCheck className="text-muted-foreground" /> {t('addProfile')}
                 </Link>
@@ -878,7 +878,7 @@ export function RecipeSearchControls({
                 value={activeSearch.group ?? ANY}
                 onValueChange={(value) => pushParams({ group: value })}
               >
-                <SelectTrigger className="min-w-[9rem]">
+                <SelectTrigger className="min-w-36">
                   <SelectValue placeholder={t('anyFamily')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -899,7 +899,7 @@ export function RecipeSearchControls({
                 value={activeSearch[def.param] != null ? String(activeSearch[def.param]) : ANY}
                 onValueChange={(value) => pushParams({ [def.param]: value })}
               >
-                <SelectTrigger className="min-w-[9rem]">
+                <SelectTrigger className="min-w-36">
                   <SelectValue placeholder={t('anyAmount')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -954,9 +954,9 @@ export function RecipeSearchControls({
                 <button
                   type="button"
                   onClick={chip.onRemove}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 pe-1.5 ps-3 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 ps-3 pe-1.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                 >
-                  <span className="max-w-[14rem] truncate">{chip.label}</span>
+                  <span className="max-w-56 truncate">{chip.label}</span>
                   <span
                     aria-hidden
                     className="inline-flex size-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
@@ -1015,7 +1015,7 @@ function ChipButton({
       aria-pressed={active}
       title={title}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent',
@@ -1070,7 +1070,7 @@ function FacetMultiSelect({
           <Button
             type="button"
             variant="outline"
-            className="min-w-[9rem] justify-between font-normal"
+            className="min-w-36 justify-between font-normal"
             aria-label={
               count === 0
                 ? t('facetAriaEmpty', { label })

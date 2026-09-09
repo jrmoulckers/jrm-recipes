@@ -26,7 +26,7 @@ const A11Y_CSS = readFileSync(join(ROOT, 'src', 'styles', 'a11y.css'), 'utf8')
  * cannot rot independently (#750).
  *
  * Each is the only check that can notice its violation: a `box-shadow` focus
- * ring coexists with the required `outline`, and a system-color keyword outside
+ * ring coexists with the required outline, and a system-color keyword outside
  * the media blocks coexists with the same keyword inside them, so every
  * positive assertion in this file passes with the violation present. A negative
  * over source text passes whenever the literal is absent, and a misspelled
@@ -106,7 +106,7 @@ describe('forced-colors + prefers-contrast (issue #96)', () => {
 
   it('draws a real focus outline that survives forced-colors', () => {
     const css = block(A11Y_CSS, '@media (forced-colors: active)');
-    // Outline (not box-shadow) in a system color, and it must beat outline-none.
+    // Outline (not box-shadow) in a system color, and it must beat outline-hidden.
     expect(css).toMatch(/outline:\s*2px solid Highlight\s*!important/);
     expect(css).toContain(':focus-visible');
     // The focus indicator is an outline, never a box-shadow declaration.

@@ -293,7 +293,7 @@ export function IngredientSubstitutions({
             }
             title={flagged ? t('safeSwapsTitle') : t('substitutionsTitle')}
             className={cn(
-              'inline-flex size-11 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+              'inline-flex size-11 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-hidden',
               flagged
                 ? 'text-warning hover:bg-warning/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-primary',
@@ -340,7 +340,7 @@ export function IngredientSubstitutions({
                     key={`${sub.substitute}-${i}`}
                     className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border/70 p-2.5"
                   >
-                    <span className="font-medium [overflow-wrap:anywhere]">{sub.substitute}</span>
+                    <span className="font-medium wrap-anywhere">{sub.substitute}</span>
                     <span className="text-xs leading-relaxed text-muted-foreground">
                       {sub.ratioOrNotes}
                     </span>
@@ -374,7 +374,7 @@ export function IngredientSubstitutions({
                           <Badge
                             key={impact.ruleId}
                             variant={impact.after.verdict === 'conflicts' ? 'warning' : 'muted'}
-                            className="max-w-full whitespace-normal px-1.5 py-0 text-[10px]"
+                            className="max-w-full px-1.5 py-0 text-[10px] whitespace-normal"
                           >
                             {impactLabel(impact)}
                           </Badge>

@@ -236,12 +236,12 @@ async function HomePage() {
                 <Sparkles className="size-3.5" />
                 {t('hero.badge')}
               </Badge>
-              <h1 className="max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+              <h1 className="max-w-3xl font-display text-4xl leading-[1.05] font-bold tracking-tight sm:text-6xl">
                 {t.rich('hero.heading', {
                   highlight: (chunks) => <span className="text-primary">{chunks}</span>,
                 })}
               </h1>
-              <p className="max-w-xl text-pretty text-lg text-muted-foreground">
+              <p className="max-w-xl text-lg text-pretty text-muted-foreground">
                 {t('hero.body', { brand: brand.name })}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -292,7 +292,7 @@ async function HomePage() {
               {features.map((f) => (
                 <Card key={f.id} interactive className="h-full">
                   <CardContent className="flex flex-col gap-3 p-6">
-                    <span className="bg-primary/12 inline-flex size-11 items-center justify-center rounded-xl text-primary">
+                    <span className="inline-flex size-11 items-center justify-center rounded-xl bg-primary/12 text-primary">
                       <f.icon className="size-5" />
                     </span>
                     <div className="flex items-center gap-2">

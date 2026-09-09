@@ -23,7 +23,7 @@ export function RecipeEditorSkeleton() {
         <div className="flex flex-col gap-6">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-24 w-full" />
-          <Skeleton className="aspect-[16/10] w-full" />
+          <Skeleton className="aspect-16/10 w-full" />
           <div className="flex flex-col gap-3">
             <Skeleton className="h-5 w-32" />
             {Array.from({ length: 4 }).map((_, i) => (

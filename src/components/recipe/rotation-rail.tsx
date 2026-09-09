@@ -36,7 +36,7 @@ export function RotationRail({
         </div>
         <p className="text-sm text-muted-foreground">{t('rotation.description')}</p>
       </div>
-      <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+      <div className="flex snap-x scrollbar-thin gap-4 overflow-x-auto pb-2">
         {recipes.map((recipe) => (
           <div key={recipe.id} className="flex w-64 shrink-0 snap-start flex-col gap-2">
             <RecipeCard recipe={recipe} />

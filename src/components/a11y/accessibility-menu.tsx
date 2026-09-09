@@ -101,7 +101,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
           <Button variant="outline" size="icon" aria-label={t('trigger')} className="relative">
             <Accessibility className="size-5" />
             {active && (
-              <span className="absolute -end-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
+              <span className="absolute -inset-e-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
             )}
           </Button>
         )}
@@ -137,7 +137,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
                 >
                   <span
                     className={cn(
-                      'font-display font-semibold leading-none',
+                      'font-display leading-none font-semibold',
                       TEXT_SIZE_SAMPLE[size],
                     )}
                   >

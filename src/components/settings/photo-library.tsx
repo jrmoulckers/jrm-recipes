@@ -264,7 +264,7 @@ export function PhotoLibrary({
               onFocus={() => setFocusIndex(index)}
               onClick={() => select(asset)}
               className={cn(
-                'relative aspect-square overflow-hidden rounded-xl border border-border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'relative aspect-square overflow-hidden rounded-xl border border-border bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                 isSelected && 'ring-2 ring-primary',
               )}
             >

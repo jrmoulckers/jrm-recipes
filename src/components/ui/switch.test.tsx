@@ -37,7 +37,7 @@ describe('Switch large-target sizing', () => {
     // Travel = inner width - thumb = (2.75 - 0.25)s - 1.25s = 1.5s - 0.25rem, where
     // the fixed 0.25rem is the preserved 2px border on each edge.
     expect(thumb.className).toContain(
-      'data-[state=checked]:translate-x-[calc(1.5rem*var(--control-scale)_-_0.25rem)]',
+      'data-[state=checked]:translate-x-[calc(1.5rem*var(--control-scale)-0.25rem)]',
     );
     expect(thumb.className).toContain('data-[state=unchecked]:translate-x-0');
   });

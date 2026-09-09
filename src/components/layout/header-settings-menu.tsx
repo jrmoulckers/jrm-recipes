@@ -35,7 +35,7 @@ export function HeaderSettingsMenu() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-1.5">
-        <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="px-2 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           {t('settings')}
         </p>
         <ul className="grid gap-0.5">

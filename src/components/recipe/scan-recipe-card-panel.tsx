@@ -339,7 +339,7 @@ export function ScanRecipeCardPanel({
 
       {state === 'reading' && (
         <div className="space-y-3 rounded-lg border border-border p-4">
-          <h3 ref={readingHeadingRef} tabIndex={-1} className="font-medium focus:outline-none">
+          <h3 ref={readingHeadingRef} tabIndex={-1} className="font-medium focus:outline-hidden">
             {t('reading')}
           </h3>
           <div
@@ -379,7 +379,7 @@ export function ScanRecipeCardPanel({
             <h3
               ref={reviewHeadingRef}
               tabIndex={-1}
-              className="font-display text-lg font-semibold focus:outline-none"
+              className="font-display text-lg font-semibold focus:outline-hidden"
             >
               {t('reviewTitle')}
             </h3>

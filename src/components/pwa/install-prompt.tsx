@@ -220,8 +220,8 @@ export function InstallPrompt() {
       aria-describedby={descriptionId}
       tabIndex={-1}
       className={cn(
-        'no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-none',
-        'bottom-[calc(theme(spacing.safe-b)+5rem)] md:bottom-6',
+        'no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-hidden',
+        'bottom-[calc(var(--spacing-safe-b)+5rem)] md:bottom-6',
       )}
     >
       <div

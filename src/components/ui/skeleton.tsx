@@ -55,7 +55,7 @@ function Skeleton({
         <span
           data-skeleton-shimmer=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-foreground/10 to-transparent"
+          className="pointer-events-none absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-foreground/10 to-transparent"
         />
       ) : null}
     </div>
@@ -77,7 +77,7 @@ function RecipeCardSkeleton() {
       aria-label={t('loadingRecipe')}
       className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token"
     >
-      <Skeleton decorative className="aspect-[16/10] w-full rounded-none" />
+      <Skeleton decorative className="aspect-16/10 w-full rounded-none" />
       <div className="flex flex-col gap-3 p-4">
         <Skeleton decorative className="h-5 w-3/4" />
         <Skeleton decorative className="h-4 w-full" />

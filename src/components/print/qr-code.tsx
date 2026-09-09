@@ -39,7 +39,7 @@ export function PrintQr({
         <path d={qr.path} fill="#000000" />
       </svg>
       {caption ? (
-        <figcaption className="max-w-[8rem] text-[0.6rem] leading-tight text-muted-foreground print:text-black">
+        <figcaption className="max-w-32 text-[0.6rem] leading-tight text-muted-foreground print:text-black">
           {caption}
         </figcaption>
       ) : null}

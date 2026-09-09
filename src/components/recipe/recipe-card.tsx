@@ -131,14 +131,14 @@ export function RecipeCard({
           cook: recipe.author?.slug,
         })}
         aria-labelledby={titleId}
-        className="absolute inset-0 z-[1] rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute inset-0 z-1 rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
       />
       {canFavorite && (
         <FavoriteButton
           recipeId={recipe.id}
           recipeSlug={recipe.slug}
           initialFavorited={favorited}
-          className="absolute end-2 top-2 z-10"
+          className="absolute inset-e-2 top-2 z-10"
         />
       )}
       {quickPlan && (
@@ -147,14 +147,17 @@ export function RecipeCard({
           recipeTitle={recipe.title}
           days={quickPlan.days}
           defaultDate={quickPlan.defaultDate}
-          className={cn('absolute start-2 top-2 z-10', recipe.visibility !== 'public' && 'top-11')}
+          className={cn(
+            'absolute inset-s-2 top-2 z-10',
+            recipe.visibility !== 'public' && 'top-11',
+          )}
         />
       )}
       {/* One-tap Cook (#118): a real, focusable link that jumps straight to the
           immersive cook route. Kept a sibling of the card link (never nested) to
           avoid anchor-in-anchor. Overlays the image region via a pointer-events
           gate. Always visible on touch, hover/focus-revealed on desktop. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-16/10">
         <Link
           href={recipeCookPath({
             id: recipe.id,
@@ -162,14 +165,14 @@ export function RecipeCard({
             cook: recipe.author?.slug,
           })}
           aria-label={t('recipeCard.cookAria', { title: recipe.title })}
-          className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
+          className="pointer-events-auto absolute inset-e-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur-sm transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
           <Play className="size-3.5" aria-hidden />
           {t('common.cook')}
         </Link>
       </div>
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[box-shadow,background-color,border-color] duration-200 group-hover/card:shadow-token-lg group-active/card:bg-muted/40 group-active/card:shadow-token">
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="relative aspect-16/10 overflow-hidden">
           {/* Decorative: the adjacent recipe title names the stretched link. */}
           <RecipeImage
             alt=""
@@ -186,8 +189,8 @@ export function RecipeCard({
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
           {recipe.visibility !== 'public' && (
-            <span className="absolute start-2 top-2">
-              <Badge variant="muted" className="capitalize backdrop-blur">
+            <span className="absolute inset-s-2 top-2">
+              <Badge variant="muted" className="capitalize backdrop-blur-sm">
                 {recipe.visibility}
               </Badge>
             </span>
@@ -197,7 +200,7 @@ export function RecipeCard({
         <div className="flex flex-1 flex-col gap-2 p-4">
           <h3
             id={titleId}
-            className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight"
+            className="line-clamp-1 font-display text-lg leading-tight font-semibold wrap-break-word"
           >
             {titleSegments
               ? titleSegments.map((seg, i) =>
@@ -223,7 +226,7 @@ export function RecipeCard({
             <CardMacroLine macro={macro} nutrients={macroNutrients} />
           )}
           {recipe.description && (
-            <p className="line-clamp-2 break-words text-sm text-muted-foreground">
+            <p className="line-clamp-2 text-sm wrap-break-word text-muted-foreground">
               {recipe.description}
             </p>
           )}

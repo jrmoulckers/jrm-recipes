@@ -113,15 +113,15 @@ export function DietaryAssessmentBadge({
           })}
           className={cn(
             badgeVariants({ variant }),
-            'min-h-11 max-w-full cursor-pointer whitespace-normal px-3 py-2 text-start leading-snug',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'min-h-11 max-w-full cursor-pointer px-3 py-2 text-start leading-snug whitespace-normal',
+            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden',
             className,
           )}
           data-assessment-status={status}
           data-assessment-provenance={provenance.kind}
         >
           <StatusIcon className="size-4 shrink-0" aria-hidden="true" data-status-icon={status} />
-          <span className="min-w-0 break-words">{label}</span>
+          <span className="min-w-0 wrap-break-word">{label}</span>
           <ProvenanceIcon
             className="size-3.5 shrink-0 opacity-80"
             aria-hidden="true"
@@ -132,7 +132,7 @@ export function DietaryAssessmentBadge({
 
       <PopoverContent
         align="start"
-        className="max-h-[calc(var(--radix-popover-content-available-height)-1rem)] w-80 space-y-3 overflow-y-auto overscroll-contain break-words text-sm"
+        className="max-h-[calc(var(--radix-popover-content-available-height)-1rem)] w-80 space-y-3 overflow-y-auto overscroll-contain text-sm wrap-break-word"
         aria-labelledby={headingId}
         aria-describedby={limitationId}
         onCloseAutoFocus={(event) => {
@@ -159,7 +159,7 @@ export function DietaryAssessmentBadge({
               aria-hidden="true"
             />
             <dt className="sr-only">{t('provenance.label')}</dt>
-            <dd className="min-w-0 break-words" data-provenance={provenance.kind}>
+            <dd className="min-w-0 wrap-break-word" data-provenance={provenance.kind}>
               {provenance.kind === 'author-confirmed' ? (
                 provenanceLabel
               ) : (
@@ -202,7 +202,7 @@ export function DietaryAssessmentBadge({
                     className="flex items-start gap-2 text-muted-foreground"
                   >
                     <AttentionIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                    <span className="min-w-0 break-words">
+                    <span className="min-w-0 wrap-break-word">
                       {t('ingredientFinding', {
                         ingredient: ingredient.name,
                         finding: t(`finding.${ingredient.kind}`),
@@ -217,7 +217,7 @@ export function DietaryAssessmentBadge({
 
         <p id={limitationId} className="flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 break-words">{t(`limitation.${limitation}`)}</span>
+          <span className="min-w-0 wrap-break-word">{t(`limitation.${limitation}`)}</span>
         </p>
 
         {action &&

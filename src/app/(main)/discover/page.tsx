@@ -88,7 +88,7 @@ async function DiscoverPage() {
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-primary">
           <Compass className="size-6" />
-          <span className="text-sm font-medium uppercase tracking-wide">{t('kicker')}</span>
+          <span className="text-sm font-medium tracking-wide uppercase">{t('kicker')}</span>
         </div>
         <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
           {t('heading', { brand: brand.name })}

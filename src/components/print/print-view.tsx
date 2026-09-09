@@ -336,7 +336,7 @@ function IngredientsList({
                     dense && 'rounded-none border-0 bg-transparent px-0 py-0 text-sm',
                   )}
                 >
-                  <span className="font-medium tabular-nums text-foreground print:text-black">
+                  <span className="font-medium text-foreground tabular-nums print:text-black">
                     {amount}
                     {amount ? ' ' : ''}
                   </span>
@@ -402,7 +402,7 @@ function StepsList({ steps, dense = false }: { steps: PrintRecipeStep[]; dense?:
                 >
                   <span
                     className={cn(
-                      'bg-primary/12 flex size-8 shrink-0 items-center justify-center rounded-full font-display font-semibold text-primary print:size-auto print:min-w-5 print:bg-white print:text-black',
+                      'flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/12 font-display font-semibold text-primary print:size-auto print:min-w-5 print:bg-white print:text-black',
                       dense && 'size-6 text-sm',
                     )}
                   >
@@ -452,7 +452,7 @@ function FullPage({
             {t('body.recipeSheet', { brand: brand.name })}
           </p>
           <div className="space-y-3">
-            <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground print:text-3xl print:text-black">
+            <h1 className="max-w-3xl font-display text-4xl leading-tight font-bold tracking-tight text-foreground print:text-3xl print:text-black">
               {recipe.title}
             </h1>
             {recipe.description && (
@@ -466,7 +466,7 @@ function FullPage({
         </div>
 
         {recipe.coverImageUrl && (
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted print:mb-4 print:max-h-[2.2in] print:rounded-none print:border-black/30">
+          <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-border bg-muted print:mb-4 print:max-h-[2.2in] print:rounded-none print:border-black/30">
             {/* Decorative unless the author described it: the cover sits
                 directly above the recipe title in the printed header. */}
             <RecipeImage
@@ -507,7 +507,7 @@ function FullPage({
           <h2 className="font-display text-xl font-bold print:text-lg print:text-black">
             {t('body.notes')}
           </h2>
-          <p className="mt-2 whitespace-pre-line leading-relaxed text-muted-foreground print:text-black">
+          <p className="mt-2 leading-relaxed whitespace-pre-line text-muted-foreground print:text-black">
             {recipe.notes}
           </p>
         </section>
@@ -535,7 +535,7 @@ function CompactPage({
           <p className="text-sm font-medium text-muted-foreground print:text-black">{brand.name}</p>
           <MetaPills recipe={recipe} />
         </div>
-        <h1 className="max-w-4xl font-display text-4xl font-bold leading-tight tracking-tight print:text-2xl print:text-black">
+        <h1 className="max-w-4xl font-display text-4xl leading-tight font-bold tracking-tight print:text-2xl print:text-black">
           {recipe.title}
         </h1>
         {recipe.description && (
@@ -557,7 +557,7 @@ function CompactPage({
               <h2 className="font-display text-lg font-bold print:text-sm print:text-black">
                 {t('body.notes')}
               </h2>
-              <p className="whitespace-pre-line text-sm text-muted-foreground print:text-black">
+              <p className="text-sm whitespace-pre-line text-muted-foreground print:text-black">
                 {recipe.notes}
               </p>
             </section>
@@ -596,7 +596,7 @@ function IndexCard({
           <span>{brand.name}</span>
           {recipe.author?.name && <span>{t('body.byAuthor', { name: recipe.author.name })}</span>}
         </div>
-        <h1 className="font-display text-2xl font-bold leading-tight tracking-tight print:text-[15pt] print:text-black">
+        <h1 className="font-display text-2xl leading-tight font-bold tracking-tight print:text-[15pt] print:text-black">
           {recipe.title}
         </h1>
         {meta.length > 0 && (
@@ -618,7 +618,7 @@ function IndexCard({
               {recipe.ingredients.map((ingredient) => (
                 <li
                   key={ingredient.id}
-                  className="heirloom-print-ingredient text-xs leading-snug print:text-[inherit]"
+                  className="heirloom-print-ingredient text-xs leading-snug print:text-inherit"
                 >
                   {formatIngredientLine(ingredient)}
                 </li>
@@ -638,7 +638,7 @@ function IndexCard({
               {recipe.steps.map((step, index) => (
                 <li
                   key={step.id}
-                  className="heirloom-print-step text-xs leading-snug print:text-[inherit]"
+                  className="heirloom-print-step text-xs leading-snug print:text-inherit"
                 >
                   <span className="font-semibold tabular-nums">{index + 1}.</span>{' '}
                   {formatStepLine(step)}
@@ -874,7 +874,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                 aria-pressed={largePrint}
                 onClick={() => setLargePrint((on) => !on)}
                 className={cn(
-                  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden',
                   largePrint
                     ? 'border-transparent bg-card text-foreground shadow-token'
                     : 'border-border text-muted-foreground hover:text-foreground',

@@ -13,7 +13,7 @@ afterEach(cleanup);
  * Standardized focus-visible treatment (issue #85).
  *
  * One canonical, token-driven focus pattern: `ring-2` (which resolves to
- * `--ring-width`) + `ring-ring`, with `outline-none` so the global fallback
+ * `--ring-width`) + `ring-ring`, with `outline-hidden` so the global fallback
  * outline never doubles up. Inputs must show a real ring, not just a border
  * color swap.
  */
@@ -22,7 +22,7 @@ afterEach(cleanup);
 // config change cannot turn these assertions into ones that match nothing.
 const read = (...p: string[]) => readFileSync(join(process.cwd(), ...p), 'utf8').replace(/'/g, '"');
 
-const RING = ['focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visible:ring-ring'];
+const RING = ['focus-visible:outline-hidden', 'focus-visible:ring-2', 'focus-visible:ring-ring'];
 
 /**
  * Bans on the always-on `focus:` treatments the ring replaced, written once so
@@ -32,16 +32,16 @@ const RING = ['focus-visible:outline-none', 'focus-visible:ring-2', 'focus-visib
  * These bans are the only checks that can notice their violation. An extra
  * class *adds* to a className rather than displacing the `focus-visible:`
  * classes asserted above, so `RING` is fully satisfied with the violation
- * present — proven by adding `focus:outline-none` beside the existing
- * `focus-visible:outline-none` in `select.tsx` and changing the pattern to
- * `focus:outline-nonee`, which took this file from 1 failed to 4 passed with
+ * present — proven by adding `focus:outline-hidden` beside the existing
+ * `focus-visible:outline-hidden` in `select.tsx` and changing the pattern to
+ * `focus:outline-hiddenn`, which took this file from 1 failed to 4 passed with
  * the offending class still there.
  *
  * Note the probes must not be matched by the `focus-visible:` prefix, which is
  * why each is written as a standalone class rather than a fragment.
  */
 const FOCUS_BORDER_SWAP = /focus:border-ring/;
-const FOCUS_OUTLINE_RESET = /focus:outline-none/;
+const FOCUS_OUTLINE_RESET = /focus:outline-hidden/;
 
 const BANS: { what: string; pattern: RegExp; probe: string }[] = [
   {
@@ -52,7 +52,7 @@ const BANS: { what: string; pattern: RegExp; probe: string }[] = [
   {
     what: 'the always-on focus outline reset',
     pattern: FOCUS_OUTLINE_RESET,
-    probe: 'focus:outline-none focus-visible:ring-2',
+    probe: 'focus:outline-hidden focus-visible:ring-2',
   },
 ];
 
@@ -87,7 +87,7 @@ describe('focus-visible standardization (issue #85)', () => {
 
   it('drives the ring width from --ring-width so it scales 2->3px', () => {
     // `ring-2` is remapped to the token in Tailwind rather than a literal 2px.
-    expect(read('tailwind.config.ts')).toMatch(/ringWidth:\s*\{\s*2:\s*"var\(--ring-width\)"/);
+    expect(read('src/styles/globals.css')).toMatch(/--ring-width-2:\s*var\(--ring-width\)/);
   });
 
   it('unifies the Select trigger and Dialog close on the ring, dropping border-only focus', () => {
@@ -98,8 +98,8 @@ describe('focus-visible standardization (issue #85)', () => {
     expect(select).not.toMatch(FOCUS_OUTLINE_RESET);
 
     const dialog = read('src', 'components', 'ui', 'dialog.tsx');
-    expect(dialog).toContain('focus-visible:outline-none');
-    // Close button no longer uses the always-on `focus:outline-none`.
+    expect(dialog).toContain('focus-visible:outline-hidden');
+    // Close button no longer uses the always-on `focus:outline-hidden`.
     expect(dialog).not.toMatch(FOCUS_OUTLINE_RESET);
   });
 });

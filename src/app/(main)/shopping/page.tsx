@@ -118,7 +118,7 @@ async function ShoppingPage({
     <div className="container flex max-w-3xl flex-col gap-8 py-10">
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <span className="bg-primary/12 inline-flex size-9 items-center justify-center rounded-xl text-primary">
+          <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/12 text-primary">
             <ShoppingCart className="size-5" />
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>

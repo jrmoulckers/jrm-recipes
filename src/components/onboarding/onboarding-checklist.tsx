@@ -90,7 +90,7 @@ export function OnboardingChecklist({ progress }: { progress: OnboardingProgress
           : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
       )}
     >
-      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute end-3 top-3" />
+      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute inset-e-3 top-3" />
 
       <div className="max-w-xl pe-8">
         <h2
@@ -116,7 +116,7 @@ export function OnboardingChecklist({ progress }: { progress: OnboardingProgress
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="text-xs font-medium tabular-nums text-muted-foreground" aria-hidden="true">
+        <span className="text-xs font-medium text-muted-foreground tabular-nums" aria-hidden="true">
           {doneCount}/{total}
         </span>
       </div>
@@ -135,7 +135,7 @@ export function OnboardingChecklist({ progress }: { progress: OnboardingProgress
                 // Only the recommended next step is lifted. A subtle tint plus
                 // an inset ring. So the card reads as one surface, not a stack
                 // of nested cards.
-                isNext && 'bg-primary/5 ring-1 ring-inset ring-primary/15',
+                isNext && 'bg-primary/5 ring-1 ring-primary/15 ring-inset',
               )}
             >
               <div className="flex items-start gap-3">

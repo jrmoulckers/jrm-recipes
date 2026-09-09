@@ -22,10 +22,10 @@ export async function GroupCard({ group }: { group: MyGroup }) {
   return (
     <Link
       href={`/groups/${group.slug}`}
-      className="group flex min-h-56 flex-col rounded-2xl border border-border bg-card p-5 shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex min-h-56 flex-col rounded-2xl border border-border bg-card p-5 shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="bg-primary/12 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-lg font-bold text-primary">
+        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-primary/12 font-display text-lg font-bold text-primary">
           {/* Decorative: the avatar repeats the group name shown beside it. */}
           {group.avatarUrl ? (
             <CloudinaryImage
@@ -43,7 +43,7 @@ export async function GroupCard({ group }: { group: MyGroup }) {
       </div>
 
       <div className="mt-5 flex flex-1 flex-col gap-2">
-        <h2 className="font-display text-xl font-bold leading-tight tracking-tight">
+        <h2 className="font-display text-xl leading-tight font-bold tracking-tight">
           {group.name}
         </h2>
         <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">

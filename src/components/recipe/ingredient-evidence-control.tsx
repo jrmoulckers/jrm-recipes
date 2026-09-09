@@ -99,15 +99,13 @@ export function IngredientEvidenceControl({
       <summary
         role="button"
         aria-label={t('ariaLabel', { ingredient: ingredient.item })}
-        className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background [&::-webkit-details-marker]:hidden"
+        className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-hidden [&::-webkit-details-marker]:hidden"
       >
         <Info className="size-3.5" />
         <span>{t('review')}</span>
       </summary>
-      <div className="absolute end-0 z-30 mt-1 max-h-[min(28rem,80vh)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-md border border-border bg-popover p-4 text-sm text-popover-foreground shadow-md">
-        <h4 className="font-display text-sm font-semibold [overflow-wrap:anywhere]">
-          {ingredient.item}
-        </h4>
+      <div className="absolute inset-e-0 z-30 mt-1 max-h-[min(28rem,80vh)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-md border border-border bg-popover p-4 text-sm text-popover-foreground shadow-md">
+        <h4 className="font-display text-sm font-semibold wrap-anywhere">{ingredient.item}</h4>
         <ul className="mt-3 space-y-3">
           {evidence.map((entry) => (
             <li key={`${entry.ruleId}-${entry.finding}-${entry.source}`} className="space-y-2">

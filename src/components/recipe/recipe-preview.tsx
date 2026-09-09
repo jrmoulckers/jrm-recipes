@@ -136,7 +136,7 @@ export function RecipePreview({
 
       {/* Hero. Decorative unless the author described it: the cover sits
           directly above the recipe title. */}
-      <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
+      <div className="relative aspect-21/9 max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
         <RecipeImage
           alt={recipe.coverImageAlt ?? ''}
           src={recipe.coverImageUrl}
@@ -150,7 +150,7 @@ export function RecipePreview({
           sizes="(max-width: 1280px) 100vw, 1200px"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/10 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background/70 via-background/10 to-transparent" />
       </div>
 
       <header className="flex flex-col gap-4">
@@ -181,7 +181,7 @@ export function RecipePreview({
           </div>
         )}
 
-        <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+        <h1 className="max-w-3xl font-display text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
           {recipe.title || (
             <span className="text-muted-foreground">
               {mode === 'edit' ? t('untitled') : t('titlePlaceholder')}
@@ -227,7 +227,7 @@ export function RecipePreview({
               {ingredientGroups.map((group, gi) => (
                 <div key={gi} className="flex flex-col gap-2">
                   {group.section && (
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                       {group.section}
                     </h3>
                   )}
@@ -240,7 +240,7 @@ export function RecipePreview({
                           className="flex gap-3 border-b border-border/50 py-2 last:border-0"
                         >
                           {qty && (
-                            <span className="min-w-16 shrink-0 font-medium tabular-nums text-foreground">
+                            <span className="min-w-16 shrink-0 font-medium text-foreground tabular-nums">
                               {qty}
                             </span>
                           )}
@@ -277,7 +277,7 @@ export function RecipePreview({
                 <Hourglass className="size-4 text-primary" />
                 {td('ingredients.makeAhead')}
               </h3>
-              <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+              <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
                 {recipe.makeAheadNote}
               </p>
             </div>
@@ -311,17 +311,17 @@ export function RecipePreview({
             <ol className="flex flex-col gap-5">
               {recipe.steps.map((step: StepInput, i) => (
                 <li key={i} className="flex gap-4">
-                  <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 font-display text-lg font-semibold text-primary">
                     {i + 1}
                   </span>
                   <div className="flex flex-1 flex-col gap-2 pt-1">
                     {step.section && (
-                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         {step.section}
                       </span>
                     )}
                     {step.title && (
-                      <h3 className="font-display text-lg font-semibold leading-snug">
+                      <h3 className="font-display text-lg leading-snug font-semibold">
                         {step.title}
                       </h3>
                     )}
@@ -388,7 +388,7 @@ export function RecipePreview({
                 <Sparkles className="size-4 text-secondary" aria-hidden="true" />
                 {t('storyMemories')}
               </h3>
-              <p className="whitespace-pre-line leading-relaxed text-foreground/90">
+              <p className="leading-relaxed whitespace-pre-line text-foreground/90">
                 {recipe.story}
               </p>
             </div>
@@ -398,7 +398,7 @@ export function RecipePreview({
             <div className="flex flex-col gap-2 border-t border-border pt-6">
               <h3 className="font-display text-lg font-semibold">{td('notes')}</h3>
               {recipe.notes && (
-                <p className="whitespace-pre-line leading-relaxed text-foreground/90">
+                <p className="leading-relaxed whitespace-pre-line text-foreground/90">
                   {recipe.notes}
                 </p>
               )}

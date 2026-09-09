@@ -4,9 +4,9 @@ export default function RecipeDetailLoading() {
   return (
     <div className="pb-16">
       {/* Hero */}
-      <Skeleton className="aspect-[21/9] max-h-72 w-full rounded-none" />
+      <Skeleton className="aspect-21/9 max-h-72 w-full rounded-none" />
 
-      <div className="container relative z-10 -mt-16 flex flex-col gap-8">
+      <div className="relative z-10 container -mt-16 flex flex-col gap-8">
         <div className="flex flex-col gap-4">
           <Skeleton className="h-8 w-24" />
           <Skeleton className="h-12 w-3/4 max-w-2xl" />

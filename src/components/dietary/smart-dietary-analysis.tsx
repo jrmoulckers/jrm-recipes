@@ -101,7 +101,7 @@ export function SmartDietaryAnalysis({ accountId }: { accountId: string }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
       <div className="flex items-start gap-3">
-        <span className="bg-primary/12 inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-primary">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
           <Sparkles className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">

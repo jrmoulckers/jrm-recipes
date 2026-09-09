@@ -20,7 +20,7 @@ export async function PrepAheadNote({ reminders }: { reminders: PrepAheadReminde
         <AlarmClock className="size-5" aria-hidden="true" />
         <h2
           id="prep-ahead-heading"
-          className="font-display text-sm font-semibold uppercase tracking-wide"
+          className="font-display text-sm font-semibold tracking-wide uppercase"
         >
           {t('heading')}
         </h2>

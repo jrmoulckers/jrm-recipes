@@ -166,7 +166,7 @@ export function RecipeDietaryAssessments({
       </div>
       {remaining.length > 0 && (
         <details className="group">
-          <summary className="min-h-11 w-fit cursor-pointer content-center rounded-md px-2 text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <summary className="min-h-11 w-fit cursor-pointer content-center rounded-md px-2 text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden">
             {t('more', { count: remaining.length })}
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">

@@ -119,7 +119,7 @@ export function BottomNavCustomizer({ trigger }: { trigger?: React.ReactNode }) 
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">
                       {label(key)}
                     </span>
-                    <span className="text-xs tabular-nums text-muted-foreground">{index + 1}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{index + 1}</span>
                     <Button
                       type="button"
                       variant="ghost"

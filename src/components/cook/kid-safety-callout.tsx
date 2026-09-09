@@ -45,7 +45,7 @@ export function KidSafetyCallout({
             role="note"
             aria-label={info.label}
             className={cn(
-              'flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-lg font-semibold leading-snug',
+              'flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-lg leading-snug font-semibold',
               HAZARD_STYLES[hazard],
             )}
           >

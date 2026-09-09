@@ -4,7 +4,7 @@ Heirloom's visual system is intentionally semantic. Components should ask for
 roles like `bg-background`, `text-foreground`, `bg-primary`, `border-input`, and
 `shadow-token`, not for one mode's literal color. The source of truth is
 `src/styles/themes.css`, with the registry in `src/config/themes.ts` and Tailwind
-bindings in `tailwind.config.ts`.
+bindings in `src/styles/globals.css`.
 
 ## The two theme axes
 
@@ -99,7 +99,9 @@ defaults on `.dark`. Kitchen is defined on both `:root` and
 
 ## How Tailwind consumes tokens
 
-`tailwind.config.ts` maps semantic utilities to CSS variables:
+The `@theme inline` block in `src/styles/globals.css` maps semantic utilities to
+CSS variables. Keeping the bindings inline lets each utility resolve the active
+mode, color scheme, and accessibility overrides at the element where it is used:
 
 - Colors: `border`, `input`, `ring`, `background`, `foreground`, `surface`,
   `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
@@ -112,6 +114,13 @@ defaults on `.dark`. Kitchen is defined on both `:root` and
 - Shadows: `shadow-token-sm`, `shadow-token`, and `shadow-token-lg`
 - Focus width: `ring-2` resolves to `--ring-width`
 - Motion: transition durations and easing utilities use the duration/ease tokens
+
+Tailwind 4 discovers class usage automatically, so there is no JavaScript
+configuration or content-glob list. Custom keyframes and animation shorthands
+also live in `src/styles/globals.css`; the old `tailwindcss-animate` plugin was
+removed because the app did not consume any of its plugin-only utilities. The
+Cook Mode `short-landscape:` variant is registered there with
+`@custom-variant`.
 
 `src/styles/globals.css` applies the tokens globally: the body uses
 `bg-background font-body text-foreground`, headings use `font-display`, focus

@@ -101,7 +101,7 @@ export function WeekMenuPrintView({
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <article className="heirloom-menu-document mx-auto max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-token print:rounded-none print:border-0 print:p-0 print:shadow-none">
           <header className="flex flex-col items-center gap-1 border-b border-border pb-5 text-center">
-            <span className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            <span className="flex items-center gap-1.5 text-sm font-semibold tracking-[0.2em] text-primary uppercase">
               <CalendarDays className="size-4" aria-hidden /> {brand.name}
             </span>
             <h2 className="font-display text-3xl font-bold tracking-tight">{t('heading')}</h2>
@@ -117,13 +117,13 @@ export function WeekMenuPrintView({
                 <div className="w-28 shrink-0">
                   <p
                     className={cn(
-                      'font-display text-lg font-semibold leading-tight',
+                      'font-display text-lg leading-tight font-semibold',
                       day.isToday && 'text-primary',
                     )}
                   >
                     {day.weekday}
                   </p>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <p className="text-xs tracking-wide text-muted-foreground uppercase">
                     {day.date}
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export function WeekMenuPrintView({
                             className={cn(
                               'text-base font-medium',
                               dinner.leftovers &&
-                                'inline-flex items-center gap-1 italic text-muted-foreground',
+                                'inline-flex items-center gap-1 text-muted-foreground italic',
                             )}
                           >
                             {dinner.leftovers && (

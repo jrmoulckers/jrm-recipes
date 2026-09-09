@@ -20,7 +20,7 @@ import { cn } from '~/lib/utils';
  * it sits in.
  */
 const closeButtonVariants = cva(
-  'inline-flex shrink-0 touch-manipulation items-center justify-center rounded-full ring-offset-background transition-[background,color,box-shadow,transform] duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+  'inline-flex shrink-0 touch-manipulation items-center justify-center rounded-full ring-offset-background transition-[background,color,box-shadow,transform] duration-fast ease-standard focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:translate-y-px disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -30,7 +30,7 @@ const closeButtonVariants = cva(
         soft: 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground',
         // A raised, legible button for corners floating over imagery or content.
         overlay:
-          'border border-border bg-card/85 text-muted-foreground shadow-token backdrop-blur hover:bg-card hover:text-foreground',
+          'border border-border bg-card/85 text-muted-foreground shadow-token backdrop-blur-sm hover:bg-card hover:text-foreground',
       },
       tone: {
         neutral: '',

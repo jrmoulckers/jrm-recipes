@@ -131,7 +131,7 @@ export function SaveToCollectionButton({
                   aria-label={t(collection.contains ? 'remove' : 'add', {
                     name: collection.name,
                   })}
-                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-start text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-start text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden disabled:opacity-60"
                 >
                   <span className="line-clamp-1 font-medium">{collection.name}</span>
                   <span

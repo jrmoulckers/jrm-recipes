@@ -131,9 +131,9 @@ async function SharedWithYouCard({ collection }: { collection: ViewerSharedColle
   return (
     <Link
       href={`/collections/${collection.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
     >
-      <div className="bg-primary/12 relative aspect-[16/10] overflow-hidden">
+      <div className="relative aspect-16/10 overflow-hidden bg-primary/12">
         {/* Decorative: the cover sits directly above the collection name, which
             names the enclosing link. */}
         {collection.coverImageUrl ? (
@@ -150,14 +150,14 @@ async function SharedWithYouCard({ collection }: { collection: ViewerSharedColle
           </div>
         )}
         {collection.groupName ? (
-          <div className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-primary backdrop-blur">
+          <div className="absolute inset-s-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-primary backdrop-blur-sm">
             <Users className="size-3" aria-hidden="true" />
             {tCard('sharedWith', { group: collection.groupName })}
           </div>
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 font-display text-lg leading-tight font-semibold">
           {collection.name}
         </h3>
         {collection.description && (
@@ -189,7 +189,7 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-      <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         {icon}
       </span>
       <div>
@@ -206,7 +206,7 @@ async function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
           <Heart className="size-7" aria-hidden="true" />
         </span>
         <div>

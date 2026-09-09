@@ -96,10 +96,10 @@ describe('DialogContent sheet variant motion', () => {
     );
     const content = screen.getByRole('dialog');
     // LTR: dock + slide on the right edge.
-    expect(content.className).toContain('ltr:data-[state=open]:animate-slide-in-from-right');
-    expect(content.className).toContain('ltr:data-[state=closed]:animate-slide-out-to-right');
-    // RTL: end-0 resolves to the left, so the slide must flip too (issue #93).
-    expect(content.className).toContain('rtl:data-[state=open]:animate-slide-in-from-left');
-    expect(content.className).toContain('rtl:data-[state=closed]:animate-slide-out-to-left');
+    expect(content.className).toContain('data-[state=open]:ltr:animate-slide-in-from-right');
+    expect(content.className).toContain('data-[state=closed]:ltr:animate-slide-out-to-right');
+    // RTL: inset-e-0 resolves to the left, so the slide must flip too (issue #93).
+    expect(content.className).toContain('data-[state=open]:rtl:animate-slide-in-from-left');
+    expect(content.className).toContain('data-[state=closed]:rtl:animate-slide-out-to-left');
   });
 });

@@ -1,9 +1,438 @@
-@import './themes.css';
-@import './a11y.css';
+@import './themes.css' layer(base);
+@import './a11y.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant short-landscape (@media (orientation: landscape) and (max-height: 640px));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1200px) {
+    max-width: 1200px;
+  }
+}
+
+/*
+ * Tailwind 4's CSS-first bridge to the semantic source in themes.css.
+ * `inline` is required because these bindings reference variables whose values
+ * change on <html> across UI mode, scheme, and accessibility axes.
+ */
+@theme inline {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-surface: hsl(var(--surface));
+  --color-surface-foreground: hsl(var(--surface-foreground));
+  --color-surface-muted: hsl(var(--surface-muted));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --spacing-safe-t: env(safe-area-inset-top);
+  --spacing-safe-b: env(safe-area-inset-bottom);
+  --spacing-safe-l: env(safe-area-inset-left);
+  --spacing-safe-r: env(safe-area-inset-right);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --text-display: 3rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: 1.75rem;
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: 1.375rem;
+  --text-h3--line-height: 1.3;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h4: 1.125rem;
+  --text-h4--line-height: 1.4;
+  --text-h4--letter-spacing: -0.005em;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.7;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.55;
+
+  --shadow-token-sm: var(--shadow-sm);
+  --shadow-token: var(--shadow);
+  --shadow-token-lg: var(--shadow-lg);
+
+  --ring-width-2: var(--ring-width);
+
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-base: var(--duration-base);
+  --transition-duration-slow: var(--duration-slow);
+
+  --animate-accordion-down: accordion-down 0.2s var(--ease-standard);
+  --animate-accordion-up: accordion-up 0.2s var(--ease-standard);
+  --animate-fade-in: fade-in 0.2s var(--ease-standard);
+  --animate-fade-out: fade-out 0.15s var(--ease-standard);
+  --animate-pop-in: pop-in 0.18s var(--ease-standard);
+  --animate-pop-out: pop-out 0.15s var(--ease-standard);
+  --animate-slide-in-from-right: slide-in-from-right 0.24s var(--ease-standard);
+  --animate-slide-out-to-right: slide-out-to-right 0.2s var(--ease-standard);
+  --animate-slide-in-from-left: slide-in-from-left 0.24s var(--ease-standard);
+  --animate-slide-out-to-left: slide-out-to-left 0.2s var(--ease-standard);
+  --animate-step-in-from-right: step-in-from-right 0.2s var(--ease-standard);
+  --animate-step-in-from-left: step-in-from-left 0.2s var(--ease-standard);
+  --animate-celebrate-pop: celebrate-pop 0.5s var(--ease-emphasized);
+  --animate-celebrate-burst: celebrate-burst 0.7s var(--ease-standard);
+  --animate-progress-flourish: progress-flourish 0.6s var(--ease-standard);
+  --animate-heart-pop: heart-pop 0.4s var(--ease-emphasized);
+  --animate-heart-burst: heart-burst 0.45s var(--ease-standard);
+  --animate-star-pop: star-pop 0.35s var(--ease-emphasized) both;
+  --animate-check-pop: check-pop 0.28s var(--ease-emphasized) both;
+  --animate-check-box-pop: check-box-pop 0.3s var(--ease-emphasized);
+  --animate-strike-in: strike-in 0.3s var(--ease-standard) both;
+  --animate-number-roll: number-roll 0.28s var(--ease-emphasized);
+  --animate-amount-flash: amount-flash 0.9s var(--ease-standard) both;
+  --animate-timer-done-pulse: timer-done-pulse 0.9s var(--ease-emphasized) 3;
+  --animate-tick-pulse: tick-pulse 0.5s var(--ease-emphasized);
+  --animate-shimmer: shimmer 1.6s var(--ease-standard) infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      scale: 0.96;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes pop-out {
+    0% {
+      opacity: 1;
+      scale: 1;
+    }
+    100% {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+  @keyframes slide-in-from-right {
+    0% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes slide-out-to-right {
+    0% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-in-from-left {
+    0% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes slide-out-to-left {
+    0% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes step-in-from-right {
+    0% {
+      opacity: 0;
+      transform: translateX(1.25rem);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes step-in-from-left {
+    0% {
+      opacity: 0;
+      transform: translateX(-1.25rem);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes celebrate-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes celebrate-burst {
+    0% {
+      opacity: 0.6;
+      transform: scale(0.5);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2.3);
+    }
+  }
+  @keyframes progress-flourish {
+    0%,
+    100% {
+      filter: brightness(1);
+    }
+    50% {
+      filter: brightness(1.4);
+    }
+  }
+  @keyframes heart-pop {
+    0% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(0.8);
+    }
+    55% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes heart-burst {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+  @keyframes star-pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0.4;
+    }
+    60% {
+      transform: scale(1.15);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes check-pop {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes check-box-pop {
+    0% {
+      transform: scale(1);
+    }
+    45% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes strike-in {
+    0% {
+      transform: scaleX(0);
+    }
+    100% {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes number-roll {
+    0% {
+      transform: translateY(70%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes amount-flash {
+    0% {
+      background-color: hsl(var(--primary) / 0.25);
+    }
+    100% {
+      background-color: hsl(var(--primary) / 0);
+    }
+  }
+  @keyframes timer-done-pulse {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+  @keyframes tick-pulse {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.08);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/*
+ * These utility names intentionally match runtime design tokens. Declaring
+ * them in @theme would emit self-referential custom properties
+ * (`--font-body: var(--font-body)`), so they stay as utilities instead.
+ */
+@utility font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+@utility font-body {
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+@utility ease-standard {
+  transition-timing-function: var(--ease-standard);
+}
+
+@utility ease-emphasized {
+  transition-timing-function: var(--ease-emphasized);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-pretty {
+  text-wrap: pretty;
+}
+
+@utility motion-safe-anim {
+  /* Respect the active mode's motion preference (Simple mode = 0). */
+  animation-duration: calc(var(--motion-scale, 1) * 1s);
+}
 
 @layer base {
   * {
@@ -18,6 +447,10 @@
      * across all five UI modes (issue #289). */
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
@@ -47,8 +480,8 @@
    *      any interactive element that doesn't opt into a token ring.
    *   2. Primitives that need an offset ring against a filled surface (Button,
    *      inputs, Switch, Slider, Tabs, Dialog close…) use
-   *      `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`
-   *     . `ring-2` resolves to `--ring-width` via Tailwind, and `outline-none`
+   *      `focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring`
+   *     . `ring-2` resolves to `--ring-width` via Tailwind, and `outline-hidden`
    *      suppresses this fallback so a control never shows a double ring.
    * Both tiers are driven by `--ring` + `--ring-width`, so focus scales 2→3px
    * consistently in Kids, Simple, and high-contrast. */
@@ -101,19 +534,6 @@
 
   ::selection {
     background: hsl(var(--primary) / 0.2);
-  }
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  .text-pretty {
-    text-wrap: pretty;
-  }
-  /* Respect the active mode's motion preference (Simple mode = 0). */
-  .motion-safe-anim {
-    animation-duration: calc(var(--motion-scale, 1) * 1s);
   }
 }
 

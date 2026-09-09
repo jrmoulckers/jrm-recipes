@@ -59,7 +59,7 @@ function TreeNode({ node, depth }: { node: FamilyTreeNode; depth: number }) {
         ) : (
           <Link
             href={`/recipes/${node.slug}`}
-            className="inline-flex min-w-0 rounded-md px-2 py-1 underline-offset-4 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-w-0 rounded-md px-2 py-1 underline-offset-4 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           >
             {label}
           </Link>

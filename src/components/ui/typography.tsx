@@ -4,7 +4,7 @@ import { cn } from '~/lib/utils';
 
 /**
  * Typographic primitives backed by the tokenized type scale in
- * `tailwind.config.ts` (issue #98). Because the scale is defined in `rem`, every
+ * `src/styles/globals.css` (issue #98). Because the scale is defined in `rem`, every
  * step honours the per-mode `--text-scale` and the a11y text-size axis
  * (`--a11y-text-mult`) automatically. No per-component overrides required.
  */
@@ -38,7 +38,7 @@ const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
       <Tag
         ref={ref}
         className={cn(
-          'text-balance font-display font-semibold text-foreground',
+          'font-display font-semibold text-balance text-foreground',
           HEADING_SIZE[visual],
           className,
         )}

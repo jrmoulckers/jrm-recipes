@@ -40,7 +40,7 @@ export function RecipeMatchRules({
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
         aria-controls={contentId}
-        className="inline-flex items-center gap-2 rounded-md text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex items-center gap-2 rounded-md text-sm font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
       >
         {t('advancedMatchRules')}
         <ChevronDown

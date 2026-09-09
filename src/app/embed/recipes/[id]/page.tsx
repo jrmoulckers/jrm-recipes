@@ -70,7 +70,7 @@ async function EmbedRecipePage({ params }: { params: Promise<EmbedRecipeRoutePar
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex w-full overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-shadow hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group flex w-full overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-shadow hover:shadow-token-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
       >
         <div className="relative hidden w-2/5 shrink-0 bg-primary/10 sm:block">
           {/* Decorative: the cover sits directly above the recipe title, which
@@ -92,11 +92,11 @@ async function EmbedRecipePage({ params }: { params: Promise<EmbedRecipeRoutePar
 
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
           <div className="min-w-0">
-            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-primary uppercase">
               <ChefHat className="size-3.5" aria-hidden="true" />
               {brand.name}
             </div>
-            <h1 className="line-clamp-2 font-display text-xl font-bold leading-tight tracking-tight">
+            <h1 className="line-clamp-2 font-display text-xl leading-tight font-bold tracking-tight">
               {recipe.title}
             </h1>
             {authorName ? (
@@ -125,7 +125,7 @@ async function EmbedRecipePage({ params }: { params: Promise<EmbedRecipeRoutePar
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
               {t('viewFullRecipe')}
               <ArrowUpRight
-                className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 aria-hidden="true"
               />
             </span>

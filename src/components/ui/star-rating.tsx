@@ -100,7 +100,7 @@ export function StarRating({
           onFocus={() => interactive && setPreview(n)}
           onBlur={() => setPreview(null)}
           className={cn(
-            'rounded-full p-1 transition-transform duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
+            'rounded-full p-1 transition-transform duration-fast focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden motion-reduce:transition-none',
             interactive && 'hover:scale-110',
             !interactive && 'cursor-default',
           )}

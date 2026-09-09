@@ -24,7 +24,7 @@ export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
     <div className="mt-6">
       {newlyEarned.length > 0 && (
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-foreground">
+          <p className="text-sm font-bold tracking-wide text-foreground uppercase">
             {t(newlyEarned.length > 1 ? 'newMultiple' : 'newSingle')}
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-4">
@@ -46,7 +46,7 @@ export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
             type="button"
             onClick={() => setShowShelf((open) => !open)}
             aria-expanded={showShelf}
-            className="text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
           >
             {showShelf ? t('hide') : t('show', { count: allBadges.length })}
           </button>

@@ -63,7 +63,7 @@ export function RecipeCreationFlow({
             <Button
               asChild
               size={largeTargets ? 'xl' : 'lg'}
-              className="h-auto min-h-24 flex-col whitespace-normal px-6 py-5 text-center"
+              className="h-auto min-h-24 flex-col px-6 py-5 text-center whitespace-normal"
             >
               <Link href="/recipes/new?flow=guided">
                 <ListChecks aria-hidden="true" />
@@ -75,7 +75,7 @@ export function RecipeCreationFlow({
               asChild
               size={largeTargets ? 'xl' : 'lg'}
               variant="outline"
-              className="h-auto min-h-24 flex-col whitespace-normal px-6 py-5 text-center"
+              className="h-auto min-h-24 flex-col px-6 py-5 text-center whitespace-normal"
             >
               <Link href="/recipes/new?flow=full">
                 <BookOpenText aria-hidden="true" />

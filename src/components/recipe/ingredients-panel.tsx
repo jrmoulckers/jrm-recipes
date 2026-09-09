@@ -738,7 +738,7 @@ export function IngredientsPanel({
                 setPinId(e.target.value);
                 setPinUnit(next?.unit ?? '');
               }}
-              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
             >
               {pinnable.map((i) => (
                 <option key={i.id} value={i.id}>
@@ -805,7 +805,7 @@ export function IngredientsPanel({
               {bakersFormula.hydration != null && (
                 <span className="text-muted-foreground">
                   {t('hydration')}{' '}
-                  <span className="tabular-nums text-foreground">
+                  <span className="text-foreground tabular-nums">
                     {`${Math.round(bakersFormula.hydration)}%`}
                   </span>
                 </span>
@@ -816,7 +816,7 @@ export function IngredientsPanel({
             <>
               <span className="text-muted-foreground">
                 {t('batchWeight')}{' '}
-                <span className="tabular-nums text-foreground">
+                <span className="text-foreground tabular-nums">
                   {formatGrams(batchYield.totalWeight, locale)}
                 </span>
               </span>
@@ -834,7 +834,7 @@ export function IngredientsPanel({
                   className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
                 />
                 {batchYield.perUnit != null && (
-                  <span className="tabular-nums text-foreground">
+                  <span className="text-foreground tabular-nums">
                     {t('each', {
                       weight: formatGrams(batchYield.perUnit, locale),
                     })}
@@ -862,7 +862,7 @@ export function IngredientsPanel({
             id={cookingForId}
             value={activeMember?.id ?? ''}
             onChange={(e) => setActiveMemberId(e.target.value || null)}
-            className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
           >
             <option value="">{t('everyone')}</option>
             {memberList.map((m) => (
@@ -888,7 +888,7 @@ export function IngredientsPanel({
         {sections.map(([section, items]) => (
           <li key={section || 'default'}>
             {section && (
-              <h3 className="mb-1 mt-3 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="mt-3 mb-1 font-display text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 {section}
               </h3>
             )}
@@ -1038,7 +1038,7 @@ export function IngredientsPanel({
                         )}
                         <span
                           className={cn(
-                            'relative flex-1 text-[0.95rem] [overflow-wrap:anywhere]',
+                            'relative flex-1 text-[0.95rem] wrap-anywhere',
                             isChecked && 'text-muted-foreground',
                           )}
                         >
@@ -1140,7 +1140,7 @@ export function IngredientsPanel({
                       </div>
                     </div>
                     {flagged && (
-                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
+                      <p className="col-span-3 ms-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
                           <span className="sr-only">{t('dietaryWarningSr')}</span>
@@ -1149,13 +1149,13 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {nudge && (
-                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="col-span-3 ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
                       </p>
                     )}
                     {breakdown && (
-                      <p className="col-span-3 mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="col-span-3 ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         <span>
                           <span className="sr-only">{t('measureAsSr')}</span>≈ {breakdown}

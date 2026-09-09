@@ -220,7 +220,7 @@ async function PlanPage({
       <header className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-primary">
           <CalendarDays className="size-5" aria-hidden="true" />
-          <span className="text-sm font-semibold uppercase tracking-wide">{t('kicker')}</span>
+          <span className="text-sm font-semibold tracking-wide uppercase">{t('kicker')}</span>
         </div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -364,7 +364,7 @@ async function SignInNudge() {
   const t = await getTranslations('planner.page.signIn');
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-      <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
+      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         <CalendarDays className="size-7" aria-hidden="true" />
       </span>
       <div>

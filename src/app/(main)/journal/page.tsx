@@ -181,7 +181,7 @@ async function InsightsStrip({ insights, locale }: { insights: JournalInsights; 
           <CookingPot className="size-5" aria-hidden="true" />
         </span>
         <div>
-          <p className="text-2xl font-semibold leading-none">{insights.totalCooks}</p>
+          <p className="text-2xl leading-none font-semibold">{insights.totalCooks}</p>
           <p className="text-sm text-muted-foreground">
             {t('cooksLogged', { count: insights.totalCooks })}
           </p>
@@ -193,7 +193,7 @@ async function InsightsStrip({ insights, locale }: { insights: JournalInsights; 
           <CalendarClock className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="truncate font-medium leading-tight">
+          <p className="truncate leading-tight font-medium">
             {mostRecentValid ? formatRelativeTime(mostRecent, locale) : '—'}
           </p>
           <p className="text-sm text-muted-foreground">{t('mostRecent')}</p>
@@ -254,7 +254,7 @@ async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
 
   const body = (
     <article className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-token transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-token-lg">
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-gradient-to-br from-primary/20 to-accent/15">
+      <div className="relative size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-linear-to-br from-primary/20 to-accent/15">
         {cook.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- cook photos may be arbitrary user-pasted URLs (Cloudinary optional) that can't be pre-allowlisted for next/image
           <img src={cook.photoUrl} alt="" className="size-full object-cover" />
@@ -267,7 +267,7 @@ async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="font-display text-lg font-semibold leading-tight">{title}</h2>
+          <h2 className="font-display text-lg leading-tight font-semibold">{title}</h2>
           {servingsMade != null && (
             <Badge variant="muted" className="gap-1">
               <UtensilsCrossed className="size-3" aria-hidden="true" />
@@ -284,7 +284,7 @@ async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
             : t('loggedEarlier')}
         </p>
         {cook.note && (
-          <p className="mt-1 line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">
+          <p className="mt-1 line-clamp-2 text-sm whitespace-pre-line text-muted-foreground">
             {cook.note}
           </p>
         )}
@@ -300,7 +300,7 @@ async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
     <li>
       <Link
         href={`/recipes/${cook.recipe.slug}`}
-        className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group block rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden"
       >
         {body}
       </Link>

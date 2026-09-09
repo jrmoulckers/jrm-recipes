@@ -278,7 +278,7 @@ function ItemRow({
         disabled={disabled}
         onChange={(e) => onSetCategory(item.id, e.target.value as ShoppingCategory)}
         title={t('item.changeAisle')}
-        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus:border-border focus:opacity-100 focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:border-border hover:text-foreground focus:border-border focus:opacity-100 focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 [@media(hover:none)]:opacity-100"
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
@@ -291,7 +291,7 @@ function ItemRow({
         disabled={disabled}
         onClick={() => onRemove(item.id)}
         label={t('item.remove', { item: item.item })}
-        className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
       />
     </li>
   );
@@ -400,7 +400,7 @@ function PackagePreferenceDialog({
           disabled={disabled}
           aria-label={t('package.editAria', { item: item.item })}
           title={t('package.edit')}
-          className="opacity-0 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+          className="opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <Package aria-hidden="true" />
         </Button>
@@ -577,7 +577,7 @@ function MoveRouteDialog({
           disabled={disabled}
           aria-label={t('routing.moveItem', { item: item.item })}
           title={t('routing.move')}
-          className="opacity-0 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+          className="opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <Route aria-hidden="true" />
         </Button>
@@ -961,7 +961,7 @@ export function ShoppingListView({
           <div className="flex flex-col gap-5">
             {groups.map((group) => (
               <section key={group.category}>
-                <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                <h2 className="mb-1 font-display text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {categoryLabels[group.category]}
                 </h2>
                 <ul className="flex flex-col">
@@ -988,7 +988,7 @@ export function ShoppingListView({
 
           {checked.length > 0 && (
             <section>
-              <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <h2 className="mb-1 font-display text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                 {t('sections.inCart')}
               </h2>
               <ul className="flex flex-col">

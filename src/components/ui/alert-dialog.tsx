@@ -28,7 +28,7 @@ const AlertDialogOverlay = React.forwardRef<
   <AlertDialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
+      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-xs data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
       className,
     )}
     {...props}
@@ -45,7 +45,7 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
+        'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
         OVERLAY_SURFACE,
         OVERLAY_PADDING.dialog,
         // Clear the home indicator on notched phones (issue #291).
