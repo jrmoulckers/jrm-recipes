@@ -340,9 +340,12 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 
 > **`main` is gated on green CI.** The active `Protect main` repository ruleset
 > requires every change to arrive through a pull request with the **Quality
-> gate** check passing against the latest `main`. It also blocks branch deletion
-> and non-fast-forward updates. Vercel therefore deploys only commits that passed
-> the complete CI gate.
+> gate** check passing against the latest `main`. It requires zero approving
+> reviews, does not require extra approval for unattributed commits, and grants
+> no bypass actors. Release Please bot PRs therefore rely on their verified,
+> dispatched exact-head CI rather than an approval that automation cannot
+> obtain. The ruleset also blocks branch deletion and non-fast-forward updates.
+> Vercel therefore deploys only commits that passed the complete CI gate.
 
 ## Troubleshooting
 
