@@ -20,6 +20,19 @@ readable: `Base freshness` and `Quality gate`. A dispatched release run also
 publishes the aggregate verdict as the `Release PR CI` commit status on the
 release PR head.
 
+## Active `main` protection
+
+The active `Protect main` ruleset (`22511124`) permits changes only through pull
+requests and requires `Quality gate` to pass against the latest `main`. It
+requires zero approving reviews, does not require extra approval for
+unattributed commits, and has no bypass actors. Branch deletion and
+non-fast-forward updates are also blocked.
+
+Release Please bot PRs use the verified `workflow_dispatch` path described
+below to run exact-head CI. Once that required check passes and the PR is
+mergeable, the zero-review policy does not introduce a separate approval
+deadlock.
+
 ## Why the pull request trigger has no branch filter
 
 It used to be `pull_request: branches: [main]`, so a PR based on any other branch
