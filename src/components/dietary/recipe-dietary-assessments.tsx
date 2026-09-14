@@ -25,6 +25,7 @@ const RULE_LABEL_KEYS: Readonly<Record<string, string>> = {
 };
 
 function badgeStatus(assessment: DietaryAssessmentView): 'suitability' | 'conflict' | 'review' {
+  if (assessment.source !== 'author-confirmed') return 'review';
   if (assessment.verdict === 'conflicts') return 'conflict';
   if (assessment.verdict === 'unknown' || assessment.confidence === 'medium') return 'review';
   return 'suitability';
@@ -33,9 +34,10 @@ function badgeStatus(assessment: DietaryAssessmentView): 'suitability' | 'confli
 function focusIngredientCorrection(ingredientId: string): boolean {
   const focusTarget = () => {
     const target = document.getElementById(`dietary-correction-${ingredientId}`);
-    if (!(target instanceof HTMLDetailsElement)) return false;
-    target.open = true;
-    target.querySelector<HTMLElement>('summary')?.focus({ preventScroll: true });
+    if (!(target instanceof HTMLElement)) return false;
+    const disclosure = target.closest('details');
+    if (disclosure) disclosure.open = true;
+    target.focus({ preventScroll: true });
     target.scrollIntoView?.({
       block: 'center',
       behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
@@ -132,19 +134,14 @@ export function RecipeDietaryAssessments({
     : viewerAssessments;
   if (visibleAssessments.length === 0) return null;
 
-  let inferredCount = 0;
-  const [primary, remaining] = visibleAssessments.reduce<
-    [DietaryAssessmentView[], DietaryAssessmentView[]]
-  >(
-    (groups, assessment) => {
-      const inferred = assessment.source !== 'author-confirmed' && assessment.confidence === 'high';
-      if (inferred) inferredCount += 1;
-      const deferred = limitPublicInferred ? inferred && inferredCount > 3 : groups[0].length >= 6;
-      groups[deferred ? 1 : 0].push(assessment);
-      return groups;
-    },
-    [[], []],
+  const confirmed = visibleAssessments.filter(
+    (assessment) => assessment.source === 'author-confirmed',
   );
+  const inferred = visibleAssessments.filter(
+    (assessment) => assessment.source !== 'author-confirmed',
+  );
+  const primary = confirmed.slice(0, 3);
+  const remaining = confirmed.slice(3);
   return (
     <section className="flex flex-col gap-3" aria-labelledby="dietary-assessments-heading">
       <div>
@@ -171,6 +168,27 @@ export function RecipeDietaryAssessments({
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
             {remaining.map((assessment) => (
+              <AssessmentBadge
+                key={assessment.ruleId}
+                assessment={assessment}
+                canReview={canReview}
+                signedIn={signedIn}
+                canUseAdvancedAnalysis={canUseAdvancedAnalysis}
+              />
+            ))}
+          </div>
+        </details>
+      )}
+      {inferred.length > 0 && (
+        <details className="group rounded-lg border border-border">
+          <summary className="min-h-11 cursor-pointer content-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden">
+            {t('automatedReview', { count: inferred.length })}
+          </summary>
+          <p className="border-t border-border px-3 pt-3 text-xs leading-relaxed text-muted-foreground">
+            {t('automatedDescription')}
+          </p>
+          <div className="flex flex-wrap gap-2 px-3 pt-3 pb-4">
+            {inferred.map((assessment) => (
               <AssessmentBadge
                 key={assessment.ruleId}
                 assessment={assessment}

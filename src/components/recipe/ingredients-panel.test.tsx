@@ -277,13 +277,17 @@ describe('IngredientsPanel display-time unit conversion', () => {
               finding: 'unresolved',
               source: 'text-match',
             },
+            {
+              ingredientId: 'sugar',
+              ruleId: 'composition:vegan',
+              finding: 'absent',
+              source: 'text-match',
+            },
           ]}
         />,
       );
 
-      const evidenceTrigger = await screen.findByRole('button', {
-        name: 'Dietary evidence for flour',
-      });
+      const evidenceTrigger = await screen.findByText('Review ingredient analysis (2)');
       const checkOff = screen
         .getAllByRole('button')
         .find((button) => button.textContent?.includes('flour'));
@@ -294,6 +298,13 @@ describe('IngredientsPanel display-time unit conversion', () => {
       expect(await screen.findByText('Present')).toBeInTheDocument();
       expect(screen.getByText('Possible')).toBeInTheDocument();
       expect(screen.getByText('Unresolved')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'flour' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'sugar' })).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "This automated ingredient analysis supports the recipe's dietary suggestions. It does not change your personal dietary profile.",
+        ),
+      ).toBeInTheDocument();
     });
 
     it('sends authorized corrections through the canonical correction action', async () => {
@@ -320,11 +331,17 @@ describe('IngredientsPanel display-time unit conversion', () => {
         />,
       );
 
-      await user.click(await screen.findByRole('button', { name: 'Dietary evidence for flour' }));
-      const correctionGroup = await screen.findByRole('group', {
-        name: 'Correct Wheat-free evidence',
+      await user.click(await screen.findByText('Review ingredient analysis (1)'));
+      expect(
+        screen.getByText(
+          "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone. Personal dietary profiles are not changed.",
+        ),
+      ).toBeInTheDocument();
+      const correctionGroup = await screen.findByRole('radiogroup', {
+        name: 'Set the ingredient evidence for Wheat-free',
       });
-      await user.click(within(correctionGroup).getByRole('button', { name: 'Not present' }));
+      expect(within(correctionGroup).getByRole('radio', { name: 'Applies' })).toBeChecked();
+      await user.click(within(correctionGroup).getByRole('radio', { name: 'Does not apply' }));
 
       expect(saveCorrectionMock).toHaveBeenCalledWith({
         ingredientId: 'flour',

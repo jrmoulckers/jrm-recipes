@@ -66,7 +66,7 @@ describe('CardDietaryBadge', () => {
         dietary={{ ingredients: DIETARY.ingredients, assessments: [] }}
       />,
     );
-    expect(screen.getByRole('button', { name: /Status: Needs review/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Status: Review suggested/i })).toBeInTheDocument();
   });
 
   it('keeps deterministic conflict precedence', () => {
@@ -103,7 +103,7 @@ describe('CardDietaryBadge', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('announces medium-confidence signed-in results as needing review', () => {
+  it('announces medium-confidence signed-in results as suggested for review', () => {
     render(
       <CardDietaryBadge
         members={[]}
@@ -114,7 +114,7 @@ describe('CardDietaryBadge', () => {
         }}
       />,
     );
-    expect(screen.getByRole('button', { name: /Status: Needs review/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Status: Review suggested/i })).toBeInTheDocument();
   });
 
   it('prioritizes conflicts before limiting profile-less cards to three badges', () => {

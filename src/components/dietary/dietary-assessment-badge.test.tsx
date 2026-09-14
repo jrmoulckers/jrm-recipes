@@ -124,7 +124,7 @@ describe('DietaryAssessmentBadge', () => {
   it.each([
     ['suitability', 'Suitable', 'success'],
     ['conflict', 'Conflict', 'destructive'],
-    ['review', 'Needs review', 'warning'],
+    ['review', 'Review suggested', 'warning'],
   ] as const)(
     'pairs %s status with text, icon, and %s styling',
     async (status, statusLabel, variant) => {
@@ -171,7 +171,7 @@ describe('DietaryAssessmentBadge', () => {
     const attention = within(details).getByRole('heading', {
       name: 'Needs attention',
     }).parentElement;
-    expect(attention).toHaveTextContent('soy sauce: Conflict');
+    expect(attention).toHaveTextContent('soy sauce: May conflict');
     expect(attention).toHaveTextContent('spice mix: Needs review');
     expect(attention).not.toHaveTextContent('olive oil');
   });

@@ -61,7 +61,7 @@ import type {
   SubstitutionDietaryRule,
 } from '~/components/recipe/ingredient-substitutions';
 import {
-  IngredientEvidenceControl,
+  IngredientEvidenceReview,
   type IngredientDietaryEvidence,
 } from '~/components/recipe/ingredient-evidence-control-lazy';
 
@@ -425,6 +425,14 @@ export function IngredientsPanel({
     }
     return byIngredient;
   }, [dietaryEvidence]);
+  const dietaryEvidenceItems = React.useMemo(
+    () =>
+      ingredients.flatMap((ingredient) => {
+        const evidence = dietaryEvidenceByIngredient.get(ingredient.id);
+        return evidence?.length ? [{ ingredient, evidence }] : [];
+      }),
+    [dietaryEvidenceByIngredient, ingredients],
+  );
   const cookingForId = React.useId();
 
   const servings = controls ? controls.servings : servingsInternal;
@@ -1111,13 +1119,6 @@ export function IngredientsPanel({
                         </span>
                       </button>
                       <div className="col-start-2 row-start-1 flex items-center gap-0.5">
-                        <IngredientEvidenceControl
-                          ingredient={ing}
-                          evidence={dietaryEvidence.filter(
-                            (entry) => entry.ingredientId === ing.id,
-                          )}
-                          canCorrect={recipeContext?.canEdit ?? false}
-                        />
                         <IngredientSubstitutions
                           item={ing.item}
                           flagged={flagged}
@@ -1181,6 +1182,11 @@ export function IngredientsPanel({
           </li>
         ))}
       </ul>
+
+      <IngredientEvidenceReview
+        items={dietaryEvidenceItems}
+        canCorrect={recipeContext?.canEdit ?? false}
+      />
 
       {nutritionView.provenance.source !== 'none' && (
         <NutritionPanel
