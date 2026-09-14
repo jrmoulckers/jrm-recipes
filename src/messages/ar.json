@@ -2147,7 +2147,7 @@
       "status": {
         "suitability": "مناسب",
         "conflict": "تعارض",
-        "review": "يحتاج إلى مراجعة"
+        "review": "يُنصح بالمراجعة"
       },
       "provenance": {
         "label": "مصدر التقييم",
@@ -2165,7 +2165,7 @@
       "recognized": "تم التعرف على {recognized} من أصل {total} {total, plural, one {مكوّن} two {مكوّنين} few {مكونات} many {مكوّنًا} other {مكوّن}}",
       "attentionTitle": "يحتاج إلى انتباه",
       "finding": {
-        "conflict": "تعارض",
+        "conflict": "قد يتعارض",
         "unresolved": "يحتاج إلى مراجعة"
       },
       "ingredientFinding": "حالة {ingredient}: {finding}",
@@ -2180,10 +2180,12 @@
       }
     },
     "assessments": {
-      "title": "التقييمات الغذائية",
-      "description": "افتح شارة لمراجعة مستوى الثقة وتغطية المكونات وما يحتاج إلى الانتباه.",
+      "title": "الملاءمة الغذائية",
+      "description": "تظهر تفاصيل الوصفة المؤكدة أولاً. الفحوصات الآلية اقتراحات وليست ضمانات.",
       "authorSource": "مؤلف الوصفة",
       "more": "عرض {count} تقييمات إضافية",
+      "automatedReview": "مراجعة {count, plural, one {نتيجة آلية واحدة} two {نتيجتين آليتين} few {# نتائج آلية} many {# نتيجة آلية} other {# نتيجة آلية}}",
+      "automatedDescription": "قد تساعد هذه الفحوصات في مراجعة الوصفة، لكنها لا تؤكد العلامات التجارية أو طريقة التحضير أو انتقال المكونات بين الأطعمة.",
       "rules": {
         "allergenPeanut": "خالٍ من الفول السوداني",
         "allergenTreeNut": "خالٍ من المكسرات الشجرية",
@@ -3819,9 +3821,10 @@
     "reasonNot": "ليس {list}",
     "rangeTo": "{low} إلى {high}",
     "dietaryEvidence": {
-      "ariaLabel": "الأدلة الغذائية للمكوّن {ingredient}",
-      "review": "الأدلة",
-      "correctionGroup": "تصحيح أدلة {rule}",
+      "review": "مراجعة تحليل المكونات ({count})",
+      "sharedScope": "يمكن للمحررين تحديث تحليل مكونات هذه الوصفة. تنطبق التغييرات على هذه الوصفة للجميع، ولا تتغير الملفات الغذائية الشخصية.",
+      "readOnlyScope": "يدعم تحليل المكونات الآلي هذا الاقتراحات الغذائية للوصفة، ولا يغير ملفك الغذائي الشخصي.",
+      "correctionGroup": "تعيين دليل المكوّن لـ {rule}",
       "sourceLabel": "المصدر: {source}",
       "source": {
         "food-link": "بيانات الطعام المرتبط",
@@ -3836,6 +3839,12 @@
         "absent": "غير موجود",
         "possible": "محتمل",
         "unresolved": "غير محسوم"
+      },
+      "correction": {
+        "present": "ينطبق",
+        "absent": "لا ينطبق",
+        "possible": "قد ينطبق",
+        "unresolved": "غير متأكد"
       },
       "saved": "تم حفظ التصحيح. تجري إعادة حساب التقييمات الغذائية.",
       "saveError": "تعذر حفظ التصحيح. حاول مرة أخرى."

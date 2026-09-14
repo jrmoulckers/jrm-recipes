@@ -2147,7 +2147,7 @@
       "status": {
         "suitability": "Geeignet",
         "conflict": "Konflikt",
-        "review": "Prüfung erforderlich"
+        "review": "Prüfung empfohlen"
       },
       "provenance": {
         "label": "Quelle der Bewertung",
@@ -2165,7 +2165,7 @@
       "recognized": "{recognized} von {total} {total, plural, one {Zutat erkannt} other {Zutaten erkannt}}",
       "attentionTitle": "Zu beachten",
       "finding": {
-        "conflict": "Konflikt",
+        "conflict": "Möglicher Konflikt",
         "unresolved": "Prüfung erforderlich"
       },
       "ingredientFinding": "Bewertung für {ingredient}: {finding}",
@@ -2180,10 +2180,12 @@
       }
     },
     "assessments": {
-      "title": "Ernährungsbewertungen",
-      "description": "Öffne ein Abzeichen, um Sicherheit, Zutatenabdeckung und Hinweise zu prüfen.",
+      "title": "Ernährungseignung",
+      "description": "Bestätigte Rezeptangaben stehen zuerst. Automatische Prüfungen sind Hinweise, keine Garantien.",
       "authorSource": "Rezeptautor",
       "more": "{count} weitere Bewertungen anzeigen",
+      "automatedReview": "{count, plural, one {# automatischen Hinweis prüfen} other {# automatische Hinweise prüfen}}",
+      "automatedDescription": "Diese Prüfungen können bei der Rezeptprüfung helfen, aber Marken, Zubereitung oder Kreuzkontakt nicht bestätigen.",
       "rules": {
         "allergenPeanut": "Erdnussfrei",
         "allergenTreeNut": "Schalenfruchtfrei",
@@ -3819,9 +3821,10 @@
     "reasonNot": "nicht {list}",
     "rangeTo": "{low} bis {high}",
     "dietaryEvidence": {
-      "ariaLabel": "Ernährungsnachweis für {ingredient}",
-      "review": "Nachweis",
-      "correctionGroup": "Nachweis für {rule} korrigieren",
+      "review": "Zutatenanalyse prüfen ({count})",
+      "sharedScope": "Personen mit Bearbeitungsrechten können die Zutatenanalyse dieses Rezepts ändern. Änderungen gelten für dieses Rezept für alle. Persönliche Ernährungsprofile bleiben unverändert.",
+      "readOnlyScope": "Diese automatische Zutatenanalyse unterstützt die Ernährungshinweise des Rezepts. Dein persönliches Ernährungsprofil wird nicht geändert.",
+      "correctionGroup": "Zutatennachweis für {rule} festlegen",
       "sourceLabel": "Quelle: {source}",
       "source": {
         "food-link": "verknüpfte Lebensmitteldaten",
@@ -3836,6 +3839,12 @@
         "absent": "Nicht enthalten",
         "possible": "Möglich",
         "unresolved": "Ungeklärt"
+      },
+      "correction": {
+        "present": "Trifft zu",
+        "absent": "Trifft nicht zu",
+        "possible": "Trifft möglicherweise zu",
+        "unresolved": "Nicht sicher"
       },
       "saved": "Korrektur gespeichert. Die Ernährungsbewertungen werden neu berechnet.",
       "saveError": "Die Korrektur konnte nicht gespeichert werden. Versuche es erneut."

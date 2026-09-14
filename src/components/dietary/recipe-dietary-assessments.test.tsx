@@ -8,11 +8,20 @@ import { RecipeDietaryAssessments } from './recipe-dietary-assessments';
 afterEach(cleanup);
 
 describe('RecipeDietaryAssessments', () => {
-  it('prioritizes attention results and keeps additional rules available', () => {
+  it('shows confirmed results first and keeps automated findings secondary', () => {
     render(
       <IntlWrapper>
         <RecipeDietaryAssessments
           assessments={[
+            {
+              ruleId: 'composition:vegetarian',
+              source: 'author-confirmed',
+              verdict: 'meets',
+              confidence: null,
+              recognizedIngredients: 2,
+              totalIngredients: 2,
+              attentionIngredients: [],
+            },
             {
               ruleId: 'allergen:dairy',
               source: 'deterministic',
@@ -36,14 +45,18 @@ describe('RecipeDietaryAssessments', () => {
       </IntlWrapper>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Dietary assessments' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Dietary fit' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Dairy-free\. Status: Conflict/ }),
+      screen.getByRole('button', { name: /Vegetarian\. Status: Suitable/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Show 1 more assessments')).toBeInTheDocument();
+    const automated = screen.getByText('Review 7 automated findings').closest('details');
+    expect(automated).not.toBeNull();
+    expect(
+      within(automated!).getByRole('button', { name: /Dairy-free\. Status: Review suggested/ }),
+    ).toBeInTheDocument();
   });
 
-  it('keeps public inferred results beyond the first three in the disclosure', () => {
+  it('keeps public inferred results in one qualified disclosure', () => {
     render(
       <IntlWrapper>
         <RecipeDietaryAssessments
@@ -61,10 +74,10 @@ describe('RecipeDietaryAssessments', () => {
       </IntlWrapper>,
     );
 
-    const disclosure = screen.getByText('Show 1 more assessments').closest('details');
+    const disclosure = screen.getByText('Review 4 automated findings').closest('details');
     expect(screen.getAllByRole('button')).toHaveLength(4);
     expect(disclosure).not.toBeNull();
-    expect(within(disclosure!).getAllByRole('button')).toHaveLength(1);
+    expect(within(disclosure!).getAllByRole('button')).toHaveLength(4);
   });
 
   it('withholds medium and needs-review assessments from public viewers', () => {
@@ -122,7 +135,7 @@ describe('RecipeDietaryAssessments', () => {
       </IntlWrapper>,
     );
 
-    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Needs review/ }));
+    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Review suggested/ }));
     expect(screen.getByRole('link', { name: 'Resolve with Family' })).toHaveAttribute(
       'href',
       '/pricing',
@@ -147,15 +160,20 @@ describe('RecipeDietaryAssessments', () => {
             },
           ]}
         />
-        <details id="dietary-correction-milk">
-          <summary>Review milk</summary>
+        <details>
+          <summary>Review ingredient analysis</summary>
+          <section id="dietary-correction-milk" tabIndex={-1}>
+            Review milk
+          </section>
         </details>
       </IntlWrapper>,
     );
 
-    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Conflict/ }));
+    await user.click(screen.getByRole('button', { name: /Dairy-free\. Status: Review suggested/ }));
     await user.click(screen.getByRole('button', { name: 'Correct assessment' }));
-    expect(screen.getByText('Review milk').closest('details')).toHaveAttribute('open');
+    expect(screen.getByText('Review ingredient analysis').closest('details')).toHaveAttribute(
+      'open',
+    );
     expect(screen.getByText('Review milk')).toHaveFocus();
   });
 });

@@ -2147,7 +2147,7 @@
       "status": {
         "suitability": "Suitable",
         "conflict": "Conflict",
-        "review": "Needs review"
+        "review": "Review suggested"
       },
       "provenance": {
         "label": "Assessment source",
@@ -2165,7 +2165,7 @@
       "recognized": "{recognized} of {total} {total, plural, one {ingredient} other {ingredients}} recognized",
       "attentionTitle": "Needs attention",
       "finding": {
-        "conflict": "Conflict",
+        "conflict": "May conflict",
         "unresolved": "Needs review"
       },
       "ingredientFinding": "{ingredient}: {finding}",
@@ -2180,10 +2180,12 @@
       }
     },
     "assessments": {
-      "title": "Dietary assessments",
-      "description": "Open a badge to review confidence, ingredient coverage, and anything that needs attention.",
+      "title": "Dietary fit",
+      "description": "Confirmed recipe details appear first. Automated checks are suggestions, not guarantees.",
       "authorSource": "recipe author",
       "more": "Show {count} more assessments",
+      "automatedReview": "Review {count, plural, one {# automated finding} other {# automated findings}}",
+      "automatedDescription": "These checks may help you review the recipe, but they cannot confirm brands, preparation, or cross-contact.",
       "rules": {
         "allergenPeanut": "Peanut-free",
         "allergenTreeNut": "Tree-nut-free",
@@ -3819,9 +3821,10 @@
     "reasonNot": "not {list}",
     "rangeTo": "{low} to {high}",
     "dietaryEvidence": {
-      "ariaLabel": "Dietary evidence for {ingredient}",
-      "review": "Evidence",
-      "correctionGroup": "Correct {rule} evidence",
+      "review": "Review ingredient analysis ({count})",
+      "sharedScope": "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone. Personal dietary profiles are not changed.",
+      "readOnlyScope": "This automated ingredient analysis supports the recipe's dietary suggestions. It does not change your personal dietary profile.",
+      "correctionGroup": "Set the ingredient evidence for {rule}",
       "sourceLabel": "Source: {source}",
       "source": {
         "food-link": "linked food data",
@@ -3836,6 +3839,12 @@
         "absent": "Not present",
         "possible": "Possible",
         "unresolved": "Unresolved"
+      },
+      "correction": {
+        "present": "Applies",
+        "absent": "Does not apply",
+        "possible": "May apply",
+        "unresolved": "Not sure"
       },
       "saved": "Correction saved. Dietary assessments are being recalculated.",
       "saveError": "We couldn't save that correction. Try again."

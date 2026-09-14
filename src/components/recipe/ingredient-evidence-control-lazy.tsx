@@ -3,16 +3,16 @@
 import dynamic from 'next/dynamic';
 import type { ComponentProps } from 'react';
 
-import type { IngredientEvidenceControl as IngredientEvidenceControlComponent } from './ingredient-evidence-control';
+import type { IngredientEvidenceReview as IngredientEvidenceReviewComponent } from './ingredient-evidence-control';
 
-const IngredientEvidenceControlImpl = dynamic(() =>
-  import('./ingredient-evidence-control').then((mod) => mod.IngredientEvidenceControl),
+const IngredientEvidenceReviewImpl = dynamic(() =>
+  import('./ingredient-evidence-control').then((mod) => mod.IngredientEvidenceReview),
 );
 
-type IngredientEvidenceControlProps = ComponentProps<typeof IngredientEvidenceControlComponent>;
+type IngredientEvidenceReviewProps = ComponentProps<typeof IngredientEvidenceReviewComponent>;
 
 export type { IngredientDietaryEvidence } from './ingredient-evidence-control';
 
-export function IngredientEvidenceControl(props: IngredientEvidenceControlProps) {
-  return <IngredientEvidenceControlImpl {...props} />;
+export function IngredientEvidenceReview(props: IngredientEvidenceReviewProps) {
+  return <IngredientEvidenceReviewImpl {...props} />;
 }

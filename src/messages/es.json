@@ -2147,7 +2147,7 @@
       "status": {
         "suitability": "Apto",
         "conflict": "Conflicto",
-        "review": "Requiere revisión"
+        "review": "Se recomienda revisar"
       },
       "provenance": {
         "label": "Fuente de la evaluación",
@@ -2165,7 +2165,7 @@
       "recognized": "{recognized} de {total} {total, plural, one {ingrediente reconocido} other {ingredientes reconocidos}}",
       "attentionTitle": "Requiere atención",
       "finding": {
-        "conflict": "Conflicto",
+        "conflict": "Puede haber conflicto",
         "unresolved": "Requiere revisión"
       },
       "ingredientFinding": "Estado de {ingredient}: {finding}",
@@ -2180,10 +2180,12 @@
       }
     },
     "assessments": {
-      "title": "Evaluaciones dietéticas",
-      "description": "Abre una insignia para revisar la confianza, la cobertura de ingredientes y lo que requiere atención.",
+      "title": "Compatibilidad alimentaria",
+      "description": "Los datos confirmados de la receta aparecen primero. Las comprobaciones automáticas son sugerencias, no garantías.",
       "authorSource": "autor de la receta",
       "more": "Mostrar {count} evaluaciones más",
+      "automatedReview": "Revisar {count, plural, one {# hallazgo automático} other {# hallazgos automáticos}}",
+      "automatedDescription": "Estas comprobaciones pueden ayudar a revisar la receta, pero no confirman marcas, preparación ni contacto cruzado.",
       "rules": {
         "allergenPeanut": "Sin cacahuate",
         "allergenTreeNut": "Sin frutos secos",
@@ -3819,9 +3821,10 @@
     "reasonNot": "no es {list}",
     "rangeTo": "{low} a {high}",
     "dietaryEvidence": {
-      "ariaLabel": "Evidencia dietética de {ingredient}",
-      "review": "Evidencia",
-      "correctionGroup": "Corregir la evidencia de {rule}",
+      "review": "Revisar análisis de ingredientes ({count})",
+      "sharedScope": "Las personas editoras pueden actualizar el análisis de ingredientes de esta receta. Los cambios se aplican a esta receta para todos. Los perfiles dietéticos personales no cambian.",
+      "readOnlyScope": "Este análisis automático de ingredientes respalda las sugerencias dietéticas de la receta. No cambia tu perfil dietético personal.",
+      "correctionGroup": "Establecer la evidencia del ingrediente para {rule}",
       "sourceLabel": "Fuente: {source}",
       "source": {
         "food-link": "datos del alimento enlazado",
@@ -3836,6 +3839,12 @@
         "absent": "No presente",
         "possible": "Posible",
         "unresolved": "Sin resolver"
+      },
+      "correction": {
+        "present": "Se aplica",
+        "absent": "No se aplica",
+        "possible": "Puede aplicarse",
+        "unresolved": "No es seguro"
       },
       "saved": "Corrección guardada. Se están recalculando las evaluaciones dietéticas.",
       "saveError": "No pudimos guardar esa corrección. Inténtalo de nuevo."
