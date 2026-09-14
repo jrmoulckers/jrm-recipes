@@ -298,7 +298,11 @@ describe('IngredientsPanel display-time unit conversion', () => {
       expect(await screen.findByText('Present')).toBeInTheDocument();
       expect(screen.getByText('Possible')).toBeInTheDocument();
       expect(screen.getByText('Unresolved')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'flour' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'flour' })).toHaveAttribute(
+        'id',
+        'dietary-correction-flour',
+      );
+      expect(screen.getByRole('heading', { name: 'flour' })).toHaveAttribute('tabindex', '-1');
       expect(screen.getByRole('heading', { name: 'sugar' })).toBeInTheDocument();
       expect(
         screen.getByText(
@@ -334,13 +338,15 @@ describe('IngredientsPanel display-time unit conversion', () => {
       await user.click(await screen.findByText('Review ingredient analysis (1)'));
       expect(
         screen.getByText(
-          "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone. Personal dietary profiles are not changed.",
+          "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone who can view it. They do not change this ingredient in other recipes or anyone's personal dietary profile.",
         ),
       ).toBeInTheDocument();
       const correctionGroup = await screen.findByRole('radiogroup', {
         name: 'Set the ingredient evidence for Wheat-free',
       });
+      expect(within(correctionGroup).getAllByRole('radio')).toHaveLength(3);
       expect(within(correctionGroup).getByRole('radio', { name: 'Applies' })).toBeChecked();
+      expect(within(correctionGroup).queryByRole('radio', { name: 'May apply' })).toBeNull();
       await user.click(within(correctionGroup).getByRole('radio', { name: 'Does not apply' }));
 
       expect(saveCorrectionMock).toHaveBeenCalledWith({

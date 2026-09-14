@@ -28,6 +28,8 @@ const EVIDENCE_FINDING_LABEL: Record<DietaryEvidenceFinding, string> = {
   unresolved: 'unresolved',
 };
 
+const CORRECTION_FINDINGS = DIETARY_EVIDENCE_FINDINGS.filter((finding) => finding !== 'possible');
+
 const DIETARY_RULE_LABEL_KEY: Readonly<Record<string, string>> = {
   'allergen:peanut': 'allergenPeanut',
   'allergen:tree-nut': 'allergenTreeNut',
@@ -106,13 +108,12 @@ export function IngredientEvidenceReview({
         </p>
         <ul className="mt-4 divide-y divide-border">
           {items.map(({ ingredient, evidence }) => (
-            <li
-              id={`dietary-correction-${ingredient.id}`}
-              key={ingredient.id}
-              tabIndex={-1}
-              className="scroll-mt-24 py-4 first:pt-0 last:pb-0 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-            >
-              <h4 className="font-display text-sm font-semibold wrap-anywhere">
+            <li key={ingredient.id} className="py-4 first:pt-0 last:pb-0">
+              <h4
+                id={`dietary-correction-${ingredient.id}`}
+                tabIndex={-1}
+                className="scroll-mt-24 rounded-sm font-display text-sm font-semibold wrap-anywhere focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+              >
                 {ingredient.item}
               </h4>
               <ul className="mt-3 space-y-4">
@@ -143,7 +144,7 @@ export function IngredientEvidenceReview({
                         })}
                         className="flex flex-wrap gap-1"
                       >
-                        {DIETARY_EVIDENCE_FINDINGS.map((finding) => (
+                        {CORRECTION_FINDINGS.map((finding) => (
                           <label
                             key={finding}
                             className={cn(
