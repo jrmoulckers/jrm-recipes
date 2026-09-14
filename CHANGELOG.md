@@ -5,6 +5,14 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.4.1](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.4.0...heirloom-v0.4.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **dietary:** clarify assessment certainty ([#1138](https://github.com/jrmoulckers/jrm-recipes/issues/1138)) ([#1143](https://github.com/jrmoulckers/jrm-recipes/issues/1143)) ([4b15410](https://github.com/jrmoulckers/jrm-recipes/commit/4b1541090a9740708019985e9560d67cbf718841))
+* **dietary:** refine ingredient correction flow ([#1141](https://github.com/jrmoulckers/jrm-recipes/issues/1141)) ([#1144](https://github.com/jrmoulckers/jrm-recipes/issues/1144)) ([7b6b2a2](https://github.com/jrmoulckers/jrm-recipes/commit/7b6b2a22dd48c9420edec5dc5cc85df059e38ade))
+
 ## [0.4.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.2...heirloom-v0.4.0) (2026-09-10)
 
 
