@@ -162,9 +162,9 @@ describe('RecipeDietaryAssessments', () => {
         />
         <details>
           <summary>Review ingredient analysis</summary>
-          <section id="dietary-correction-milk" tabIndex={-1}>
+          <h4 id="dietary-correction-milk" tabIndex={-1}>
             Review milk
-          </section>
+          </h4>
         </details>
       </IntlWrapper>,
     );

@@ -3822,7 +3822,7 @@
     "rangeTo": "{low} to {high}",
     "dietaryEvidence": {
       "review": "Review ingredient analysis ({count})",
-      "sharedScope": "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone. Personal dietary profiles are not changed.",
+      "sharedScope": "Editors can update this recipe's ingredient analysis. Changes apply to this recipe for everyone who can view it. They do not change this ingredient in other recipes or anyone's personal dietary profile.",
       "readOnlyScope": "This automated ingredient analysis supports the recipe's dietary suggestions. It does not change your personal dietary profile.",
       "correctionGroup": "Set the ingredient evidence for {rule}",
       "sourceLabel": "Source: {source}",
@@ -3843,7 +3843,6 @@
       "correction": {
         "present": "Applies",
         "absent": "Does not apply",
-        "possible": "May apply",
         "unresolved": "Not sure"
       },
       "saved": "Correction saved. Dietary assessments are being recalculated.",

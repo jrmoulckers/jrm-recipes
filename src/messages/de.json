@@ -3822,7 +3822,7 @@
     "rangeTo": "{low} bis {high}",
     "dietaryEvidence": {
       "review": "Zutatenanalyse prüfen ({count})",
-      "sharedScope": "Personen mit Bearbeitungsrechten können die Zutatenanalyse dieses Rezepts ändern. Änderungen gelten für dieses Rezept für alle. Persönliche Ernährungsprofile bleiben unverändert.",
+      "sharedScope": "Personen mit Bearbeitungsrechten können die Zutatenanalyse dieses Rezepts ändern. Änderungen gelten für alle, die dieses Rezept sehen können. Sie ändern weder diese Zutat in anderen Rezepten noch persönliche Ernährungsprofile.",
       "readOnlyScope": "Diese automatische Zutatenanalyse unterstützt die Ernährungshinweise des Rezepts. Dein persönliches Ernährungsprofil wird nicht geändert.",
       "correctionGroup": "Zutatennachweis für {rule} festlegen",
       "sourceLabel": "Quelle: {source}",
@@ -3843,7 +3843,6 @@
       "correction": {
         "present": "Trifft zu",
         "absent": "Trifft nicht zu",
-        "possible": "Trifft möglicherweise zu",
         "unresolved": "Nicht sicher"
       },
       "saved": "Korrektur gespeichert. Die Ernährungsbewertungen werden neu berechnet.",
