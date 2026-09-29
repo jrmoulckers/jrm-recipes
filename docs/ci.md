@@ -20,6 +20,10 @@ readable: `Base freshness` and `Quality gate`. A dispatched release run also
 publishes the aggregate verdict as the `Release PR CI` commit status on the
 release PR head.
 
+The default E2E job uses dev auth bypass and does not establish signed-out
+Clerk behavior. See [Clerk-backed recipe ownership E2E](clerk-e2e.md) for the
+separate, human-provisioned test path and its unverified execution status.
+
 ## Active `main` protection
 
 The active `Protect main` ruleset (`22511124`) permits changes only through pull
