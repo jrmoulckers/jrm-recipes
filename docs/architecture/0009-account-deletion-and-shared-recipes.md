@@ -153,6 +153,8 @@ applies before dietary processing is enabled.
 - Retained dietary recipe facts must remain structurally separate from profile-personal data and
   lose actor linkage on erasure; `groupId` never converts a private profile into shared content.
 - `recipe_versions` remains load-bearing family history and follows the retained recipe's lifetime.
-- The Neon backup horizon remains independently blocked on
+- The Neon backup horizon is tracked independently by
   [#855](https://github.com/jrmoulckers/jrm-recipes/issues/855) and
-  [#806](https://github.com/jrmoulckers/jrm-recipes/issues/806).
+  [#806](https://github.com/jrmoulckers/jrm-recipes/issues/806); its current
+  production setting and notice-review gate are recorded in the
+  [backup runbook](../db-backup-and-recovery.md).

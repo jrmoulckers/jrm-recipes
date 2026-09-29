@@ -4,9 +4,8 @@ Heirloom stores application data in Postgres through `DATABASE_URL`, Drizzle ORM
 SQL migrations in `drizzle/*.sql`. The Drizzle schema source of truth is
 `src/server/db/schema/`, with `drizzle.config.ts` pointing migration output to `./drizzle`.
 
-The production database host is deployment-dependent. The recommendations below assume managed
-Postgres with automated backups and point-in-time recovery, such as Neon, Supabase, or RDS,
-without requiring one specific provider.
+Production uses Neon history for database recovery. The additional backup strategies below are
+recommendations, not currently deployed copies.
 
 ## First-line recovery: soft deletes
 
@@ -42,48 +41,33 @@ backup strategy.
 
 ## Retention recommendation
 
-> **Unpinned. These are recommendations, not the deployed policy.** The ranges below were written
-> before a host was chosen and no one has replaced them with the values actually in force. Until
-> that happens, no honest erasure horizon can be stated to a user. See
-> [Pinning the retention numbers](#pinning-the-retention-numbers) directly below for who decides
-> and how to read the current setting.
+> **Approved production setting (#855): Neon's History window is 6 hours (21,600 seconds).**
+> A human confirmed the saved production setting and chose to keep it. Neon history is currently
+> the only production database recovery copy; there are no separate retained database backups.
+> The longer periods below remain recommendations, not claims about deployed snapshots.
 
-| Backup type                        | Recommended retention                                                       | Notes                                                                 |
-| ---------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Automated daily snapshots          | 14-30 days _(unpinned)_                                                     | Enough to catch most accidental deletion/corruption reports.          |
-| PITR/WAL window                    | 7-14 days minimum _(unpinned)_                                              | Larger windows improve recovery from slow-discovered corruption.      |
-| Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                            |
-| Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage. |
+| Backup type                        | Recommended retention                                                       | Notes                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Separate automated daily snapshots | 14-30 days _(recommended; not deployed)_                                    | Would extend recovery and the erasure horizon if introduced.           |
+| Neon history / PITR                | 6 hours _(approved and deployed)_                                           | Shorter than the recommended 7-14 days for slow-discovered corruption. |
+| Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                             |
+| Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage.  |
 
 ### Pinning the retention numbers
 
-This is the blocking item. It is a hosting and cost decision with a compliance consequence, so it
-needs a human with authority over the Neon plan. It is recorded here rather than left implicit
-because a reader has no other way to tell that the table above is aspirational. Tracked in #855.
+Production runs on **Neon** (`.env.example`, `DEPLOY.md` step 1). Its single **History window**
+retains the restore history for six hours; it is not a separate daily-snapshot policy. The
+approved choice trades recovery from slow-discovered corruption for a shorter period of backup
+exposure after account erasure. The RPO/RTO targets below remain recommendations, not verified
+recovery results; a corruption discovered after six hours may have no recoverable point.
 
-Production runs on **Neon** (`.env.example`, `DEPLOY.md` step 1). Neon does not expose the two
-mechanisms in the table as separate knobs. It has a single **history retention** window: the
-project retains WAL history for that period and any restore, whether to a named point or an
-implicit daily boundary, is served from it. So one number governs both rows, and the longest
-backup lifetime is exactly that window.
-
-To pin it:
-
-1. Read the current value in the Neon console under the production project, **Settings then Storage
-   and history** (also returned by `GET /projects/{id}` as `history_retention_seconds`). The ceiling
-   is capped by the plan, so raising it may require a plan change.
-2. Decide the value against the RPO/RTO targets below, not in isolation. A longer window buys
-   recovery from slow-discovered corruption and lengthens the erasure horizon by the same amount.
-   Those pull in opposite directions and the trade-off is the decision.
-3. Replace the ranges in the table with that single number, drop the _(unpinned)_ markers, and
-   remove the warning above it.
-4. Then wire it into erasure so the horizon is actually recorded per deletion (see
-   [Erasure and backups](#erasure-and-backups)), and revisit the deletion notice, which today omits
-   the horizon because there is no honest value to state.
-
-If the two rows are ever backed by genuinely different mechanisms (for example a separate logical
-dump shipped elsewhere for disaster recovery), pin them separately, and note that the erasure
-horizon is bounded by the **longer** of the two.
+The shared erasure writer in `src/server/users/erasure.ts` records `completedAt + 6 hours`
+for new deletions. Verify the production value under Neon project **Settings then Storage and
+history** (or `GET /projects/{id}` → `history_retention_seconds`) before changing the code,
+runbook, or public notice. If separate database snapshots or logical dumps are introduced, their
+actual retention must be approved and the recorded horizon must cover the **longest** copy; do
+not silently continue using six hours. A longer window also requires revisiting the deletion
+notice and its legal review.
 
 Backup retention above is about copies of the database. This is about the live table, and it is
 called out here because it is where someone looking to reclaim storage would reasonably start.
@@ -282,7 +266,10 @@ Before merging any migration that drops, renames, narrows, or rewrites data:
 
 1. Follow the expand/contract process in [`docs/migrations.md`](migrations.md).
 2. Confirm the PR's destructive-change checklist is complete.
-3. Take a managed-Postgres snapshot immediately before applying the destructive step.
+3. Take a managed-Postgres snapshot immediately before applying the destructive step. This is a
+   required pre-migration safeguard, **not** an assertion that separately retained snapshots
+   exist in the current production configuration; do not perform a destructive migration without
+   confirming the snapshot is available and its retention is included in the erasure horizon.
 4. Record:
    - snapshot identifier.
    - migration file(s).
@@ -312,34 +299,21 @@ still contain it until they expire. Between those two moments the data is _beyon
 only in an immutable backup, restorable only through the runbook above, and re-erased by its
 mandatory gate before that instance can ever serve traffic — rather than truly gone.
 
-That window is the **erasure horizon** disclosed to the user, and it is bounded by the longest
-retention period in the table above.
+For new erasures, `deletion_records.backup_horizon_at` records the upper bound
+`completed_at + 6 hours` inside the shared transaction, whether deletion came from the app,
+Clerk, or legacy-hold replay (#806). Earlier rows can remain `NULL`: their historical setting
+is unknown, so today's six-hour policy must not be backfilled. A null does **not** mean there
+was no backup exposure.
 
-> **Not currently recorded.** `deletion_records.backup_horizon_at` exists for this purpose and
-> `eraseUserAccount` persists whatever it is given, but the parameter is optional and **neither
-> caller supplies it**: the in-app path (`src/server/users/actions.ts`) passes only the trigger and
-> notice version, and the Clerk webhook path (`src/server/auth/index.ts`) passes only the trigger.
-> The column is therefore `NULL` for every erasure performed so far, and it cannot honestly be
-> populated until the retention number above is pinned, since the horizon is computed from it.
-> Do not read a `NULL` there as "no backup exposure". The blocking decision is tracked in #855; the
-> code change it unblocks is #806. (#805 documented these blockers and is closed — following a
-> closed issue here is not evidence the number has been pinned.)
-
-Three consequences:
-
-- The retention numbers above must be **pinned to actual values**, not left as ranges. An honest
-  erasure horizon cannot be stated to a user while the longest backup lifetime is unknown.
-- Until they are, the deletion notice deliberately states **no** horizon, and no per-deletion record
-  exists from which one could be reconstructed afterwards. Both follow from the same unpinned
-  number, so pinning it is the single unblocking step.
-- Backups are deliberately not selectively edited. Surgically removing a user from an immutable
-  backup would compromise its integrity as a recovery artifact, which is why re-application on
-  restore is the control instead.
+The user-facing deletion notice still states no numeric backup horizon. Updating its versioned
+copy in all locales requires qualified legal and localization review; recording the database
+horizon does not itself approve that wording. Backups are not selectively edited: re-application
+on restore is the control that prevents erased data from serving traffic.
 
 ### Dietary profiles and assessments
 
 ADR-0011 dietary data uses this same database and restore boundary. There is no separate dietary
-backup and no shorter promise that bypasses the unpinned Neon history window.
+backup and no shorter promise that bypasses the six-hour Neon history window.
 
 Restore verification and `assertUserErased` coverage include the profile-personal and
 actor-attributed dietary tables introduced by #1101. Re-applying an erasure must:
@@ -357,8 +331,7 @@ They are handled by the account-bound cleanup coordinator landed in #1109 and
 [`docs/privacy/dietary-retention-and-rights.md`](./privacy/dietary-retention-and-rights.md), not by
 database restore.
 
-Deletion copy must not state a dietary backup horizon until #855 pins the actual provider value and
-#806 supplies it to `backup_horizon_at`. Qualified legal review of that wording remains a production
-gate rather than an outcome of this runbook.
+The approved six-hour database horizon does not clear qualified legal review of dietary deletion
+copy or the outstanding restore/erasure drill evidence required for production.
 
-_Related issues: #257, #678, #806, #855 (pin the retention number — blocking), and #1106._
+_Related issues: #257, #678, #806, #855, and #1106._
