@@ -5,6 +5,16 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.4.1](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.4.0...heirloom-v0.4.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **deps:** patch jsdom transitive undici ([#1155](https://github.com/jrmoulckers/jrm-recipes/issues/1155)) ([70ecf98](https://github.com/jrmoulckers/jrm-recipes/commit/70ecf985bfb7ee749fc2097031b5dc3a40601810))
+* **dietary:** clarify assessment certainty ([#1138](https://github.com/jrmoulckers/jrm-recipes/issues/1138)) ([#1143](https://github.com/jrmoulckers/jrm-recipes/issues/1143)) ([4b15410](https://github.com/jrmoulckers/jrm-recipes/commit/4b1541090a9740708019985e9560d67cbf718841))
+* **dietary:** refine ingredient correction flow ([#1141](https://github.com/jrmoulckers/jrm-recipes/issues/1141)) ([#1144](https://github.com/jrmoulckers/jrm-recipes/issues/1144)) ([7b6b2a2](https://github.com/jrmoulckers/jrm-recipes/commit/7b6b2a22dd48c9420edec5dc5cc85df059e38ade))
+* **privacy:** record six-hour Neon erasure horizon ([#1149](https://github.com/jrmoulckers/jrm-recipes/issues/1149)) ([759cc81](https://github.com/jrmoulckers/jrm-recipes/commit/759cc819c731ee3c096b5b916ad43aeb91c6f232))
+
 ## [0.4.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.2...heirloom-v0.4.0) (2026-09-10)
 
 
