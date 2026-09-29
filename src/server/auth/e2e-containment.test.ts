@@ -87,23 +87,27 @@ describe('condition 4: the fixture identity is not a demo persona', () => {
   });
 });
 
-describe("the E2E spec's restated literals match the real identity", () => {
+describe("the E2E specs' restated literals match the real identity", () => {
   // The spec cannot import ~/server/auth/dev-user (Playwright transforms it,
   // and the import would pull the schema barrel into the test process), so it
   // restates the values. #698 restated them too and left only a "must match"
   // comment to hold them together — which is exactly the kind of prose promise
   // that #783 found had quietly stopped being true. Read them back instead.
-  const specPath = join(process.cwd(), 'tests/e2e/co-creator.spec.ts');
-  const spec = readFileSync(specPath, 'utf8');
+  const specPaths = [
+    join(process.cwd(), 'tests/e2e/co-creator.spec.ts'),
+    join(process.cwd(), 'tests/e2e/auth-dev-bypass.spec.ts'),
+  ];
+  const specs = specPaths.map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+  const spec = specs[0]!.source;
 
-  const literal = (name: string): string => {
+  const literal = (name: string, source = spec, path = specPaths[0]!): string => {
     // Quote-agnostic: the spec is read as source text, so pinning this to `"`
     // makes the guard a hostage of the formatter's `singleQuote` setting
     // rather than of the values it is meant to pin.
-    const match = new RegExp(`const ${name} = ['"]([^'"]*)['"]`).exec(spec);
+    const match = new RegExp(`const ${name} = ['"]([^'"]*)['"]`).exec(source);
     // Anti-vacuity: a renamed constant must fail loudly rather than compare
     // undefined against undefined and pass.
-    expect(match, `${name} not found in ${specPath}`).not.toBeNull();
+    expect(match, `${name} not found in ${path}`).not.toBeNull();
     return match![1]!;
   };
 
@@ -118,6 +122,13 @@ describe("the E2E spec's restated literals match the real identity", () => {
 
   it('pins the selector cookie', () => {
     expect(literal('DEV_IDENTITY_COOKIE')).toBe(DEV_IDENTITY_COOKIE);
+  });
+
+  it('pins the identities and selector cookie used by the ownership E2E spec', () => {
+    const { path, source } = specs[1]!;
+    expect(literal('DEV_IDENTITY_COOKIE', source, path)).toBe(DEV_IDENTITY_COOKIE);
+    expect(literal('CO_COOK_ID', source, path)).toBe(DEV_CO_COOK.id);
+    expect(literal('OWNER_ID', source, path)).toBe(DEV_USER.id);
   });
 
   it('leaves no stale reference to the demo persona', () => {
