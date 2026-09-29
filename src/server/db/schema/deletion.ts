@@ -84,14 +84,9 @@ export const deletionRecords = pgTable(
      * is "beyond use" rather than gone, and this is the horizon we intend to
      * disclose to the user.
      *
-     * ALWAYS NULL TODAY (#806). The parameter is optional and neither caller of
-     * `eraseUserAccount` supplies it, so nothing has ever been written here. It
-     * cannot be computed until the backup retention window is pinned to a real
-     * number, which `docs/db-backup-and-recovery.md` still leaves as a range.
-     *
-     * A null therefore means "not yet computed", NOT "no backup exposure". Do not
-     * report absence of a horizon to a user or an auditor as absence of retained
-     * data.
+     * New erasures use the approved production Neon history window (#855, #806).
+     * Historical nulls mean "not computed under the policy at the time", NOT
+     * "no backup exposure"; do not backfill them using today's setting.
      */
     backupHorizonAt: timestamp({ withTimezone: true }),
     /**

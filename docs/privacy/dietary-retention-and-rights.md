@@ -141,8 +141,9 @@ notice must separately state that:
 - backup copies remain beyond use until the configured provider history window expires and are
   re-erased on restore.
 
-Do not state a numeric backup horizon until #855 pins the actual Neon setting and #806 wires
-`backup_horizon_at`.
+The approved production Neon History window is six hours (#855); new deletion records compute
+`backup_horizon_at` from completion time (#806). The versioned user-facing backup disclosure
+still needs qualified legal and localization review before changing its wording.
 
 ## Retained shared recipes
 
@@ -176,8 +177,10 @@ Dietary rows use the same Neon database backup boundary as the rest of the accou
 - client model/IndexedDB/cache data is not restored from Neon and is handled by the account-bound
   cleanup coordinator delivered in #1115 and extended by #1106.
 
-The production notice must use the actual longest retention period, not the current unpinned
-recommendation in [the backup runbook](../db-backup-and-recovery.md).
+The production notice must use the actual longest retention period, not the longer aspirational
+recommendations in [the backup runbook](../db-backup-and-recovery.md). The current six-hour
+database horizon assumes no separate backup copies; adding any requires a new decision and
+updated erasure evidence before making a user-facing promise.
 
 ## Disable, sign-out, account switch, and downgrade
 

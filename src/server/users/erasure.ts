@@ -73,9 +73,10 @@ export type ErasureOptions = {
   requestCount?: number;
   /** Which confirmation copy the user was shown, when ours showed it. */
   noticeVersion?: string;
-  /** When the last backup containing this user expires. */
-  backupHorizonAt?: Date;
 };
+
+/** Approved production Neon history window; keep in sync with the deployed setting (#855). */
+const NEON_HISTORY_RETENTION_MS = 6 * 60 * 60 * 1000;
 
 /**
  * One-way, salted digest of an identifier for the tombstone.
@@ -642,7 +643,7 @@ async function writeDeletionRecord(
       retainedVersionCount: result.retainedVersionCount,
       transferredAssetCount: result.transferredAssetCount,
       purgedAssetCount: result.purgedAssetCount,
-      backupHorizonAt: options.backupHorizonAt ?? null,
+      backupHorizonAt: new Date(now.getTime() + NEON_HISTORY_RETENTION_MS),
       noticeVersion: options.noticeVersion ?? null,
     })
     .onConflictDoNothing({ target: deletionRecords.subjectHash });

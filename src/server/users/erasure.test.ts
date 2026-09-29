@@ -173,6 +173,26 @@ beforeEach(() => {
 });
 
 describe('eraseUserAccount', () => {
+  it.each(['in_app', 'clerk_webhook', 'admin'] as const)(
+    'records the six-hour Neon horizon for %s erasures',
+    async (trigger) => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-09-10T22:30:00.000Z'));
+        queueCoreSelects();
+        await eraseUserAccount('u1', { trigger });
+
+        expect(state.inserted).toMatchObject({
+          trigger,
+          completedAt: new Date('2026-09-10T22:30:00.000Z'),
+          backupHorizonAt: new Date('2026-09-11T04:30:00.000Z'),
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it('transfers retained custody before purging remaining media', async () => {
     queueCoreSelects();
     await eraseUserAccount('u1', { trigger: 'in_app' });
