@@ -270,7 +270,7 @@ jobs:
       registry-url: https://npm.pkg.github.com
       registry-scope: '@jrmoulckers'
       typecheck-command: pnpm typecheck
-      test-command: pnpm test
+      test-command: pnpm test:bug
       build-command: pnpm ci:build
       build-env-json: '{"SKIP_ENV_VALIDATION":"1","NEXT_PUBLIC_APP_URL":"http://localhost:3000","NEXT_PUBLIC_DEV_AUTH_BYPASS":"1"}'
       artifact-name: next-build
@@ -525,7 +525,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
-        run: pnpm test:e2e
+        run: pnpm test:e2e:bug
 
       # A skipped test is invisible in the summary line: it does not fail and it
       # does not inflate a passing count. Name every skip and fail when they
@@ -626,8 +626,8 @@ jobs:
       - name: Seed demo data
         run: pnpm db:seed
 
-      - name: Lighthouse CI
-        run: pnpm exec lhci autorun --config=./lighthouserc.cjs
+      - name: Lighthouse
+        run: pnpm lhci
 
       - name: Upload Lighthouse reports
         if: always()

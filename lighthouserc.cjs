@@ -1,5 +1,5 @@
 /**
- * Lighthouse CI configuration (issue #205).
+ * Lighthouse configuration (issues #205, #1166).
  *
  * A runtime performance gate that complements the static bundle-size budget
  * (#206). CI builds the app, seeds an ephemeral throwaway Postgres (public
@@ -18,14 +18,12 @@
  * The desktop preset (1x CPU, no mobile throttling) keeps the lab metrics
  * stable on shared CI hardware. Bump a budget deliberately with justification.
  *
- * `.cjs` (not `.js`) because this package is ESM ("type":"module") and LHCI
- * loads the config with `require()`. CI passes `--config=./lighthouserc.cjs`.
+ * Consumed by scripts/lighthouse.mjs via `pnpm lhci`; reports stay local.
  */
 module.exports = {
   ci: {
     collect: {
       numberOfRuns: 3,
-      startServerCommand: 'pnpm start',
       // Next.js prints "✓ Ready in <n>ms" once `next start` is serving.
       startServerReadyPattern: 'Ready in',
       startServerReadyTimeout: 60000,
@@ -55,7 +53,6 @@ module.exports = {
       // Write HTML/JSON reports locally. CI publishes them as build artifacts.
       target: 'filesystem',
       outputDir: '.lighthouseci',
-      reportFilenamePattern: '%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%',
     },
   },
 };

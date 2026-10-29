@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/mini';
 
 import type { ParsedInput } from '~/lib/zod-types';
 
@@ -7,7 +7,7 @@ import type { ParsedInput } from '~/lib/zod-types';
  * the server actions share these schemas so the shape is guaranteed end to end.
  */
 
-const idInput = z.string().trim().min(1);
+const idInput = z.string().check(z.trim(), z.minLength(1));
 
 /** Max length for a cook-journal note. Imported by the UI counter (#144). */
 export const COOK_NOTE_MAX_LENGTH = 2000;
@@ -15,32 +15,34 @@ export const COOK_NOTE_MAX_LENGTH = 2000;
 export const COOK_NOTE_TOO_LONG_MESSAGE = 'Keep your note under 2,000 characters';
 
 /** A trimmed, optional string that collapses empty input to `undefined`. */
-const optionalNote = z
-  .string()
-  .trim()
-  .max(COOK_NOTE_MAX_LENGTH, COOK_NOTE_TOO_LONG_MESSAGE)
-  .optional()
-  .transform((v) => (v == null || v.length === 0 ? undefined : v));
+const optionalNote = z.pipe(
+  z.optional(
+    z.string().check(z.trim(), z.maxLength(COOK_NOTE_MAX_LENGTH, COOK_NOTE_TOO_LONG_MESSAGE)),
+  ),
+  z.transform((v) => (v == null || v.length === 0 ? undefined : v)),
+);
 
 /** Optional photo URL. Empty string becomes `undefined` (photo is optional). */
-const optionalPhotoUrl = z
-  .string()
-  .trim()
-  .url()
-  .max(2048)
-  .optional()
-  .or(z.literal('').transform(() => undefined));
+const optionalPhotoUrl = z.union([
+  z.optional(z.string().check(z.trim(), z.url(), z.maxLength(2048))),
+  z.pipe(
+    z.literal(''),
+    z.transform(() => undefined),
+  ),
+]);
 
 /** A nullable, coercible positive integer from a possibly-empty form field. */
-const optionalServings = z
-  .union([z.string(), z.number()])
-  .optional()
-  .transform((v) => {
-    if (v === undefined || v === '' || v === null) return undefined;
-    const n = typeof v === 'number' ? v : Number(v);
-    return Number.isFinite(n) ? n : undefined;
-  })
-  .pipe(z.number().int().min(1).max(100000).optional());
+const optionalServings = z.pipe(
+  z.pipe(
+    z.optional(z.union([z.string(), z.number()])),
+    z.transform((v) => {
+      if (v === undefined || v === '' || v === null) return undefined;
+      const n = typeof v === 'number' ? v : Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    }),
+  ),
+  z.optional(z.number().check(z.int(), z.minimum(1), z.maximum(100000))),
+);
 
 /**
  * Earliest cook date we accept. Guards against epoch/typo dates (e.g. a
@@ -66,22 +68,25 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * Callers that know the real moment should send a full ISO timestamp.
  */
 const optionalCookedAt = z
-  .union([z.string(), z.date()])
-  .optional()
-  .transform((v) => {
-    if (v == null || v === '') return undefined;
-    if (typeof v === 'string' && DATE_ONLY_PATTERN.test(v.trim())) {
-      const noon = new Date(`${v.trim()}T12:00:00`);
-      if (Number.isNaN(noon.getTime())) return undefined;
-      // Today before noon would otherwise fail the "not in the future" bound.
-      return noon.getTime() > Date.now() ? new Date() : noon;
-    }
-    const d = v instanceof Date ? v : new Date(v);
-    return Number.isNaN(d.getTime()) ? undefined : d;
-  })
-  .refine(
-    (d) => d === undefined || (d.getTime() >= COOK_DATE_MIN_MS && d.getTime() <= Date.now()),
-    { message: COOK_DATE_OUT_OF_RANGE_MESSAGE },
+  .pipe(
+    z.optional(z.union([z.string(), z.date()])),
+    z.transform((v) => {
+      if (v == null || v === '') return undefined;
+      if (typeof v === 'string' && DATE_ONLY_PATTERN.test(v.trim())) {
+        const noon = new Date(`${v.trim()}T12:00:00`);
+        if (Number.isNaN(noon.getTime())) return undefined;
+        // Today before noon would otherwise fail the "not in the future" bound.
+        return noon.getTime() > Date.now() ? new Date() : noon;
+      }
+      const d = v instanceof Date ? v : new Date(v);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    }),
+  )
+  .check(
+    z.refine(
+      (d) => d === undefined || (d.getTime() >= COOK_DATE_MIN_MS && d.getTime() <= Date.now()),
+      { message: COOK_DATE_OUT_OF_RANGE_MESSAGE },
+    ),
   );
 
 export const logCookInput = z.object({
@@ -92,7 +97,7 @@ export const logCookInput = z.object({
   servingsMade: optionalServings,
   cookedAt: optionalCookedAt,
   /** Share this cook to the recipe's family group activity feed (#352). */
-  shareWithFamily: z.boolean().optional(),
+  shareWithFamily: z.optional(z.boolean()),
 });
 
 export const deleteCookLogInput = z.object({

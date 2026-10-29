@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { flattenError } from 'zod/mini';
 
 import { requireUser } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
@@ -35,7 +36,7 @@ export async function logCookAction(input: LogCookFormInput): Promise<ActionResu
     return {
       ok: false,
       error: 'Please fix the highlighted fields.',
-      fieldErrors: parsed.error.flatten().fieldErrors,
+      fieldErrors: flattenError(parsed.error).fieldErrors,
     };
   }
 
@@ -59,7 +60,7 @@ export async function deleteCookLogAction(input: DeleteCookLogInput): Promise<Ac
     return {
       ok: false,
       error: 'Please fix the highlighted fields.',
-      fieldErrors: parsed.error.flatten().fieldErrors,
+      fieldErrors: flattenError(parsed.error).fieldErrors,
     };
   }
 

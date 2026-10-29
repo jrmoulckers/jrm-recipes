@@ -262,3 +262,15 @@ against `lighthouserc.cjs`.
 
 Run `pnpm format:check` on every platform. If it reports formatting errors, run
 `pnpm format:write`, review the resulting diff, and rerun the check.
+
+### Reported bugs
+
+When the user reports a bug (including `Bug: ...; preferred fix: ...`), follow
+[the reported-bug loop](docs/bug-loop.md) from reproduction through verified live
+status. The existing bug-bash prompt remains for discovery campaigns.
+
+For an explicitly requested, classifier-eligible fast-lane fix only, the approved
+alternative pre-push gate is `pnpm bug:check --base <full-main-sha> --fast`.
+It preserves the checks above while selecting related unit tests. CI independently
+verifies eligibility and runs smoke plus defect-specific browser regressions.
+All other work uses the complete gate above. Human gates are unchanged.

@@ -1,4 +1,4 @@
-import type { input, output, ZodType } from 'zod';
+import type { input, output, $ZodType } from 'zod/v4/core';
 
 type OptionalizeUndefined<T> = T extends Date
   ? T
@@ -17,7 +17,7 @@ type OptionalizeUndefined<T> = T extends Date
  * represents transformed optional fields as required keys whose value may be
  * `undefined`; callers and persisted snapshots may still omit those keys.
  */
-export type ParsedInput<Schema extends ZodType> = OptionalizeUndefined<output<Schema>>;
+export type ParsedInput<Schema extends $ZodType> = OptionalizeUndefined<output<Schema>>;
 
 /** The raw payload accepted by a schema, with omittable keys modeled as optional. */
-export type SchemaInput<Schema extends ZodType> = OptionalizeUndefined<input<Schema>>;
+export type SchemaInput<Schema extends $ZodType> = OptionalizeUndefined<input<Schema>>;
