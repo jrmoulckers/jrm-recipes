@@ -14,6 +14,10 @@ millions.
 
 ## What is Heirloom?
 
+Found a bug? Send `Bug: ...; preferred fix: ...` in the repository's Copilot
+conversation. The [reported-bug loop](docs/bug-loop.md) owns reproduction through
+production verification, with a fifteen-minute target for eligible small fixes.
+
 Heirloom is a warm, dead-simple, and infinitely-scalable place for a family to write down the
 dishes everyone asks for and actually cook from them. It ships today with the full **core
 loop**, and is architected in phases toward history, collaboration, import, and social.

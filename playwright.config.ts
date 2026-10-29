@@ -28,7 +28,11 @@ export default defineConfig({
         ['html', { open: 'never' }],
         ['json', { outputFile: 'playwright-report/results.json' }],
       ]
-    : [['list'], ['html', { open: 'never' }]],
+    : [
+        ['list'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'playwright-report/results.json' }],
+      ],
   use: {
     baseURL,
     trace: 'on-first-retry',

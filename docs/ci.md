@@ -6,11 +6,11 @@ and production.
 
 ## What runs
 
-| Trigger                                   | What runs                                                       |
-| ----------------------------------------- | --------------------------------------------------------------- |
-| Push to `main` or `staging`               | The full gate.                                                  |
-| **Every pull request, whatever its base** | The full gate.                                                  |
-| `workflow_dispatch`                       | The full gate, but only for the verified Release Please branch. |
+| Trigger                                   | What runs                                                             |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| Push to `main` or `staging`               | The full gate.                                                        |
+| **Every pull request, whatever its base** | Every gate job; eligible opt-in bug fixes use focused unit/E2E scope. |
+| `workflow_dispatch`                       | The full gate, but only for the verified Release Please branch.       |
 
 Jobs: `Verify dispatch source`, `Quality` (lint, format, semantic PR title),
 `Security` (package audit, secret scan), `Copy and i18n guards`, `Web`
@@ -19,6 +19,19 @@ Jobs: `Verify dispatch source`, `Quality` (lint, format, semantic PR title),
 readable: `Base freshness` and `Quality gate`. A dispatched release run also
 publishes the aggregate verdict as the `Release PR CI` commit status on the
 release PR head.
+
+The [reported-bug loop](bug-loop.md) describes the conservative fast-lane policy
+and local commands. `test:bug` and `test:e2e:bug` verify the actual diff in CI;
+without eligibility they run the full suites. No required job is conditionally
+skipped for this lane.
+
+Lighthouse uses the repository-owned `pnpm lhci` runner with current Lighthouse
+and the runner's installed Chrome. It retains three desktop runs per configured
+route, optimistic aggregation, and the warning thresholds in
+[`lighthouserc.cjs`](../lighthouserc.cjs). Missing measurements, audit errors, and
+report failures fail the job. HTML/JSON reports remain private CI artifacts;
+there is no public upload. This replaces the obsolete Lighthouse CI CLI and its
+unpatched extraction dependency without extending audit exceptions.
 
 ## Active `main` protection
 

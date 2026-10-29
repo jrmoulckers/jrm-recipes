@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/mini';
 
 import type { ParsedInput } from '~/lib/zod-types';
 import { slugify } from '~/lib/utils';
@@ -194,43 +194,39 @@ export function parseDietList(value: string | string[] | undefined): DietaryTag[
 }
 
 const trimmedOptional = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .transform((v) => (v == null || v.length === 0 ? undefined : v));
+  z.pipe(
+    z.optional(z.string().check(z.trim(), z.maxLength(max))),
+    z.transform((v) => (v == null || v.length === 0 ? undefined : v)),
+  );
 
 /**
  * A tolerant boolean coerced from a querystring flag. Accepts `1`/`true`/`yes`/`on`
  * (case-insensitive) as `true`. Anything else, including missing, is `false`, so
  * a hand-edited or absent value degrades to "off" rather than throwing.
  */
-const booleanFromParam = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => {
+const booleanFromParam = z.pipe(
+  z.optional(z.string().check(z.trim())),
+  z.transform((v) => {
     if (v == null) return false;
     return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
-  });
+  }),
+);
 
 /**
  * A positive integer coerced from a possibly-empty/garbage querystring value.
  * Invalid input (empty, non-numeric, <= 0) collapses to `undefined` rather than
  * throwing so a hand-edited URL never 500s the page.
  */
-const positiveIntFromParam = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => {
+const positiveIntFromParam = z.pipe(
+  z.optional(z.string().check(z.trim())),
+  z.transform((v) => {
     if (v == null || v.length === 0) return undefined;
     const n = Number(v);
     if (!Number.isFinite(n)) return undefined;
     const int = Math.floor(n);
     return int > 0 && int <= 100000 ? int : undefined;
-  });
+  }),
+);
 
 /**
  * A positive integer coerced from a possibly-empty/garbage querystring value,
@@ -241,18 +237,17 @@ const positiveIntFromParam = z
  * removing their filter.
  */
 const boundedIntFromParam = (bound: number) =>
-  z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => {
+  z.pipe(
+    z.optional(z.string().check(z.trim())),
+    z.transform((v) => {
       if (v == null || v.length === 0) return undefined;
       const n = Number(v);
       if (!Number.isFinite(n)) return undefined;
       const int = Math.floor(n);
       if (int <= 0) return undefined;
       return Math.min(int, bound);
-    });
+    }),
+  );
 
 const macroSchemaShape = Object.fromEntries(
   MACRO_FILTERS.map((f) => [f.param, boundedIntFromParam(f.bound)]),
@@ -260,7 +255,7 @@ const macroSchemaShape = Object.fromEntries(
 
 export const recipeSearchSchema = z.object({
   q: trimmedOptional(120),
-  difficulty: z.enum(recipeDifficultyValues).optional().catch(undefined),
+  difficulty: z.catch(z.optional(z.enum(recipeDifficultyValues)), undefined),
   maxTime: positiveIntFromParam,
   // A saved family member's id. Filters to recipes "safe for" them (#405).
   safeFor: trimmedOptional(24),
@@ -287,7 +282,7 @@ export const recipeSearchSchema = z.object({
   showUncertain: booleanFromParam,
   // Left optional here so the *contextual* default (relevance for a text query,
   // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
-  sort: z.enum(recipeSortValues).optional().catch(undefined),
+  sort: z.catch(z.optional(z.enum(recipeSortValues)), undefined),
 });
 
 export type RecipeSearch = ParsedInput<typeof recipeSearchSchema> & {
