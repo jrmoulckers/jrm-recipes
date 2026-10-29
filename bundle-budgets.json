@@ -23,34 +23,34 @@
     "claims": [
       {
         "route": "/",
-        "kb": 224,
+        "kb": 227,
         "platform": "linux",
-        "runId": "34296606097",
-        "issue": 1100
+        "runId": "40968096957",
+        "issue": 1166
       },
       {
         "route": "/recipes",
-        "kb": 286,
+        "kb": 283,
         "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34289380328",
-        "issue": 1097
+        "runId": "40968096957",
+        "issue": 1166
       },
       {
         "route": "/recipes/[cook]/[recipe]",
-        "kb": 341,
+        "kb": 337,
         "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34289380328",
-        "issue": 1097
+        "runId": "40968096957",
+        "issue": 1166
       },
       {
         "route": "/recipes/[cook]/[recipe]/edit",
-        "kb": 232,
+        "kb": 235,
         "toleranceKb": 1,
         "platform": "linux",
-        "runId": "34286061210",
-        "issue": 1097
+        "runId": "40968096957",
+        "issue": 1166
       }
     ]
   },
