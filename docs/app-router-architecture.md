@@ -40,6 +40,16 @@ Client boundaries are explicit and localized:
 
 This keeps database access and secrets in server modules while letting client components call typed server actions or receive server-rendered props.
 
+## Ingredient scaling advice
+
+Recipe detail and Cook Mode share [`IngredientsPanel`](../src/components/recipe/ingredients-panel.tsx).
+Scaled amounts remain authoritative: fractional counts do not imply that an ingredient should be
+rounded up or down. [`scalingNudge`](../src/lib/substitutions.ts) only offers the existing approximate
+whole-egg measuring tip for explicitly supported whole-egg names, with no explicit unit or
+nonblank preparation/note qualifier. Parts, derivatives, compounds, mixtures and ambiguous names
+receive no conversion advice. Matching never strips qualifiers from the rendered ingredient identity.
+Quantity ranges receive no single-quantity advice.
+
 ## Server-action pipeline
 
 Feature actions live in `src/server/<feature>/actions.ts` and usually call into `queries.ts` and `mutations.ts` siblings. The shared primitives are:

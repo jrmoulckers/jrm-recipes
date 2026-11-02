@@ -327,36 +327,114 @@ describe('SUBSTITUTIONS data integrity', () => {
 });
 
 describe('scalingNudge', () => {
-  it('nudges on an awkward fractional egg count with a volume tip', () => {
-    const note = scalingNudge(1.5, null, 'large eggs');
-    expect(note).toBeTruthy();
-    expect(note).toContain('tbsp');
-    expect(note).toContain('4½'); // 1.5 eggs * 3 tbsp
+  it.each([
+    'egg yolk',
+    'egg yolks',
+    'egg white',
+    'egg whites',
+    'large egg yolks',
+    'egg noodles',
+    'egg rolls',
+    'chocolate eggs',
+    'eggplant',
+    'egg substitute',
+    'powdered eggs',
+    'liquid eggs',
+    'eggs and milk',
+    'duck eggs',
+    'small eggs',
+    'medium egg',
+    'extra-large eggs',
+    'jumbo eggs',
+    'eggs (yolks only)',
+    'eggs, whites only',
+    'eggs, beaten',
+    'eggs.',
+    'eggs?',
+    'egg(s)',
+    '',
+    '  ',
+    null,
+    undefined,
+  ])('omits unsupported conversion and rounding advice for %s', (item) => {
+    expect(scalingNudge(2.5, null, item)).toBeNull();
   });
 
-  it('nudges on other countable items with round guidance', () => {
-    expect(scalingNudge(2.5, null, 'onions')).toContain('Round to 2 or 3');
-    expect(scalingNudge(0.5, null, 'lemon')).toContain('Round up to 1');
+  it.each([
+    'egg',
+    'eggs',
+    'large egg',
+    'large eggs',
+    'whole egg',
+    'whole eggs',
+    'large whole eggs',
+    ' EGGS ',
+    '  LARGE \t WHOLE  Eggs  ',
+  ])('preserves whole-egg volume advice for %s', (item) => {
+    expect(scalingNudge(2.5, null, item)).toBe(
+      'About 2½ eggs. Whisk and measure 7½ tbsp (1 egg ≈ 3 tbsp).',
+    );
   });
 
-  it('stays quiet for whole counts', () => {
-    expect(scalingNudge(2, null, 'eggs')).toBeNull();
-    expect(scalingNudge(3, '', 'onions')).toBeNull();
+  it.each([
+    [0.25, '¼', '¾'],
+    [0.5, '½', '1½'],
+    [0.75, '¾', '2¼'],
+    [1.25, '1¼', '3¾'],
+    [1.5, '1½', '4½'],
+    [1.75, '1¾', '5¼'],
+  ] as const)(
+    'keeps the approximate tip exact for supported fraction %s',
+    (quantity, eggs, tbsp) => {
+      expect(scalingNudge(quantity, null, 'large eggs')).toBe(
+        `About ${eggs} eggs. Whisk and measure ${tbsp} tbsp (1 egg ≈ 3 tbsp).`,
+      );
+    },
+  );
+
+  it.each(['onions', 'lemon', 'bouillon cubes', 'garlic cloves'])(
+    'does not prescribe changing fractional %s quantities',
+    (item) => {
+      for (const quantity of [0.25, 0.5, 0.75, 2.5]) {
+        expect(scalingNudge(quantity, null, item)).toBeNull();
+      }
+    },
+  );
+
+  it.each([1, 2, 2.03, 1.97])('stays quiet for whole or near-whole counts: %s', (quantity) => {
+    expect(scalingNudge(quantity, null, 'eggs')).toBeNull();
   });
 
-  it('stays quiet for measured units (fractions are fine there)', () => {
-    expect(scalingNudge(1.5, 'cup', 'flour')).toBeNull();
-    expect(scalingNudge(0.5, 'tsp', 'salt')).toBeNull();
+  it.each(['g', 'oz', 'ml', 'cup', 'tsp', 'each'])('omits advice for explicit unit %s', (unit) => {
+    expect(scalingNudge(1.5, unit, 'large eggs')).toBeNull();
   });
 
-  it('stays quiet for missing or zero quantities', () => {
-    expect(scalingNudge(null, null, 'eggs')).toBeNull();
-    expect(scalingNudge(undefined, null, 'eggs')).toBeNull();
-    expect(scalingNudge(0, null, 'eggs')).toBeNull();
+  it.each([null, undefined, '', ' \t '])('accepts absent or blank unit %s', (unit) => {
+    expect(scalingNudge(1.5, unit, 'eggs')).toBe(
+      'About 1½ eggs. Whisk and measure 4½ tbsp (1 egg ≈ 3 tbsp).',
+    );
   });
 
-  it('treats near-whole amounts as clean', () => {
-    expect(scalingNudge(2.03, null, 'eggs')).toBeNull();
-    expect(scalingNudge(1.97, null, 'eggs')).toBeNull();
+  it.each([null, undefined, 0, -0.5, -2, NaN, Infinity, -Infinity])(
+    'stays quiet for invalid or nonpositive quantity %s',
+    (quantity) => {
+      expect(scalingNudge(quantity, null, 'eggs')).toBeNull();
+    },
+  );
+
+  it.each([
+    { note: 'yolks only' },
+    { note: 'whites only' },
+    { note: 'room temperature' },
+    { prep: 'separated' },
+    { prep: 'beaten' },
+  ])('conservatively omits advice for structured qualifier %j', (context) => {
+    expect(scalingNudge(1.5, null, 'eggs', context)).toBeNull();
+  });
+
+  it('permits blank preparation metadata without changing the amount', () => {
+    expect(scalingNudge(1.5, null, 'eggs', { note: ' ', prep: null })).toBe(
+      'About 1½ eggs. Whisk and measure 4½ tbsp (1 egg ≈ 3 tbsp).',
+    );
   });
 });
