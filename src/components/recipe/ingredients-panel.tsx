@@ -911,7 +911,7 @@ export function IngredientsPanel({
                 const justChecked = justCheckedIds.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
-                    ? scalingNudge(scaleQuantity(ing.quantity, factor), ing.unit, ing.item)
+                    ? scalingNudge(scaleQuantity(ing.quantity, factor), ing.unit, ing.item, ing)
                     : null;
                 // Practical decomposition of a messy US-volume amount (#391),
                 // e.g. "≈ 1 tbsp + 1 tsp". Uses the displayed (scaled + system-

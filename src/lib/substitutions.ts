@@ -1107,37 +1107,35 @@ export function getSubstitutions(
 // --- Scaling nudge -------------------------------------------------------
 
 /**
- * When scaling servings produces an awkward fractional amount of a countable
- * ingredient (no measuring unit, e.g. "1½ eggs"), return a short, friendly
- * rounding tip. Returns `null` for measured units (fractional cups are fine),
- * missing quantities, or amounts that are already close to whole.
+ * Offer approximate measuring advice only for supported whole eggs.
+ * Fractions remain authoritative: unsupported identities, measured units and
+ * qualified ingredients get no conversion or rounding advice. Notes/prep may
+ * carry identity qualifiers that an importer separated from the item name.
  */
 export function scalingNudge(
   quantity: number | null | undefined,
   unit: string | null | undefined,
   item: string | null | undefined,
+  context?: { note?: string | null; prep?: string | null },
 ): string | null {
-  if (quantity == null || Number.isNaN(quantity)) return null;
+  if (quantity == null || !Number.isFinite(quantity) || quantity <= 0) return null;
   if (unit && unit.trim() !== '') return null; // measured units scale fine
+  if (context?.note?.trim() || context?.prep?.trim()) return null;
 
   const value = roundNice(quantity);
   if (value <= 0) return null;
 
   const lower = Math.floor(value);
-  const upper = Math.ceil(value);
   const frac = value - lower;
   if (frac <= 0.08 || frac >= 0.92) return null; // already effectively whole
 
   const pretty = formatQuantity(value);
-  const normalized = normalizeIngredient(item);
+  const normalized = item?.toLowerCase().replace(/\s+/g, ' ').trim() ?? '';
 
-  if (/\begg\b|\beggs\b/.test(normalized)) {
+  if (/^(?:large )?(?:whole )?eggs?$/.test(normalized)) {
     const tbsp = formatQuantity(roundNice(value * 3));
     return `About ${pretty} eggs. Whisk and measure ${tbsp} tbsp (1 egg ≈ 3 tbsp).`;
   }
 
-  if (lower === 0) {
-    return `About ${pretty}. Round up to ${upper}.`;
-  }
-  return `About ${pretty}. Round to ${lower} or ${upper}.`;
+  return null;
 }

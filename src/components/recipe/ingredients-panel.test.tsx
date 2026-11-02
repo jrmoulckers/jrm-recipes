@@ -1,7 +1,7 @@
 import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 
 import { IntlWrapper } from '~/test/intl';
 import { useActiveMemberStore } from '~/lib/active-member-store';
@@ -84,6 +84,116 @@ const ingredients = [
     optional: false,
   },
 ];
+
+describe('IngredientsPanel fractional egg scaling', () => {
+  it('keeps yolks distinct from whole eggs when increasing four servings to five', async () => {
+    const user = userEvent.setup();
+    render(
+      <IngredientsPanel
+        ingredients={[
+          { ...ingredients[0]!, id: 'eggs', quantity: 4, unit: null, item: 'large eggs' },
+          { ...ingredients[0]!, id: 'yolks', quantity: 2, unit: null, item: 'egg yolks' },
+        ]}
+        baseServings={4}
+        servingsNoun={null}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+
+    expect(screen.getByRole('button', { name: /5\s*large eggs/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /2½\s*egg yolks/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Round (?:up )?to/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Whisk and measure/)).not.toBeInTheDocument();
+
+    screen.getByRole('button', { name: 'More servings' }).focus();
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByRole('button', { name: /6\s*large eggs/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /3\s*egg yolks/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Whisk and measure|Round (?:up )?to/)).not.toBeInTheDocument();
+  });
+
+  const scalingIngredients = [
+    { ...ingredients[0]!, id: 'eggs', quantity: 2, unit: null, item: 'large eggs' },
+    { ...ingredients[0]!, id: 'whites', quantity: 2, unit: null, item: 'egg whites' },
+    { ...ingredients[0]!, id: 'noodles', quantity: 2, unit: null, item: 'egg noodles' },
+    { ...ingredients[0]!, id: 'cubes', quantity: 2, unit: null, item: 'bouillon cubes' },
+    { ...ingredients[0]!, id: 'note', quantity: 2, unit: null, item: 'eggs', note: 'yolks only' },
+    { ...ingredients[0]!, id: 'prep', quantity: 2, unit: null, item: 'eggs', prep: 'whites only' },
+    {
+      ...ingredients[0]!,
+      id: 'range',
+      quantity: 2,
+      quantityMax: 3,
+      unit: null,
+      item: 'whole eggs',
+    },
+    { ...ingredients[0]!, id: 'measured', quantity: 200, unit: 'g', item: 'liquid eggs' },
+  ];
+
+  function ScalingPanel({ controlled }: { controlled: boolean }) {
+    const [servings, onServingsChange] = useState(4);
+    const [system, onSystemChange] = useState<IngredientsPanelControls['system']>('original');
+    return (
+      <IngredientsPanel
+        ingredients={scalingIngredients}
+        baseServings={4}
+        servingsNoun={null}
+        controls={
+          controlled
+            ? {
+                servings,
+                onServingsChange,
+                system,
+                onSystemChange,
+                checked: new Set(),
+                onToggleChecked: vi.fn(),
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
+  it.each([false, true])(
+    'preserves exact amounts through scale, unit selection and reset (cook controls: %s)',
+    async (controlled) => {
+      const user = userEvent.setup();
+      render(<ScalingPanel controlled={controlled} />);
+      await user.click(screen.getByRole('button', { name: 'More servings' }));
+
+      const tip = 'About 2½ eggs. Whisk and measure 7½ tbsp (1 egg ≈ 3 tbsp).';
+      expect(screen.getAllByText(tip)).toHaveLength(1);
+      for (const item of ['large eggs', 'egg whites', 'egg noodles', 'bouillon cubes']) {
+        expect(
+          screen.getByRole('button', { name: new RegExp(`2½\\s*${item}`) }),
+        ).toBeInTheDocument();
+      }
+      expect(screen.getByRole('button', { name: /2½.*3¾\s*whole eggs/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /2½\s*eggs.*yolks only/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /2½\s*eggs.*whites only/ })).toBeInTheDocument();
+      expect(screen.queryByText(/Round (?:up )?to/)).not.toBeInTheDocument();
+
+      for (const name of ['US', 'Metric', 'Grams', 'Original']) {
+        await user.click(screen.getByRole('button', { name }));
+        expect(screen.getAllByText(tip)).toHaveLength(1);
+        expect(screen.getByRole('button', { name: /2½\s*egg whites/ })).toBeInTheDocument();
+        expect(screen.queryByText(/Round (?:up )?to/)).not.toBeInTheDocument();
+      }
+
+      await user.click(screen.getByRole('button', { name: 'Fewer servings' }));
+      await user.click(screen.getByRole('button', { name: 'Fewer servings' }));
+      expect(screen.getByRole('button', { name: /1½\s*egg whites/ })).toBeInTheDocument();
+      expect(
+        screen.getByText('About 1½ eggs. Whisk and measure 4½ tbsp (1 egg ≈ 3 tbsp).'),
+      ).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Reset' }));
+      expect(screen.getByRole('button', { name: /2\s*egg whites/ })).toBeInTheDocument();
+      expect(screen.queryByText(/Whisk and measure|Round (?:up )?to/)).not.toBeInTheDocument();
+    },
+  );
+});
 
 function makeControls(checked: string[]): IngredientsPanelControls {
   return {
