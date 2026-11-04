@@ -1,6 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { readLocaleCookie } from './locale-cookie';
+import { readLocaleCookie, writeLocaleCookie } from './locale-cookie';
+import { SUPPORTED_LOCALES } from '~/config/i18n';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  document.cookie = 'NEXT_LOCALE=; Path=/; Max-age=0';
+});
+
+describe('writeLocaleCookie', () => {
+  it.each(SUPPORTED_LOCALES)('round-trips %s with separate persistence attributes', (locale) => {
+    const setter = vi.spyOn(document, 'cookie', 'set');
+
+    writeLocaleCookie(locale);
+
+    expect(setter).toHaveBeenCalledExactlyOnceWith(
+      `NEXT_LOCALE=${locale}; Path=/; Max-age=31536000; Samesite=lax`,
+    );
+    expect(document.cookie.split(/; */).find((part) => part.startsWith('NEXT_LOCALE='))).toBe(
+      `NEXT_LOCALE=${locale}`,
+    );
+    expect(readLocaleCookie(document.cookie)).toBe(locale);
+  });
+});
 
 describe('readLocaleCookie', () => {
   it('returns the default locale when the cookie is absent', () => {
