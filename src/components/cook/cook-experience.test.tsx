@@ -20,6 +20,10 @@ vi.mock('next/navigation', () => ({
 
 import { CookExperience } from './cook-experience';
 import type { CookRecipe } from './types';
+import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
+import { UnitPrefsProvider } from '~/components/recipe/unit-prefs-context';
+import { cookStorageKey, parseCookState, serializeCookState } from '~/lib/cook-state';
+import userEvent from '@testing-library/user-event';
 
 afterEach(cleanup);
 
@@ -97,6 +101,136 @@ function makeRecipe(overrides: Partial<CookRecipe> = {}): CookRecipe {
     ...overrides,
   };
 }
+
+describe('Recipe detail to Cook selection handoff (#1173)', () => {
+  beforeEach(() => localStorage.clear());
+
+  const recipe = makeRecipe({
+    cook: 'test-cook',
+    servingsNoun: 'servings',
+    steps: [makeRecipe().steps[0]!, { ...makeRecipe().steps[0]!, id: 'step-2', position: 2 }],
+    ingredients: [
+      {
+        id: 'spaghetti',
+        position: 1,
+        section: null,
+        quantity: 400,
+        quantityMax: null,
+        unit: 'g',
+        item: 'spaghetti',
+        note: null,
+        optional: false,
+      },
+    ],
+  });
+
+  function renderDetail() {
+    return render(
+      <IngredientsPanel
+        ingredients={recipe.ingredients}
+        baseServings={4}
+        servingsNoun="servings"
+        recipeContext={{ recipeId: recipe.id, updatedAt: '2026-11-04T00:00:00Z', canEdit: false }}
+      />,
+    );
+  }
+
+  it('carries six metric servings into a resumed Cook session and back without resetting progress', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      cookStorageKey(recipe.id),
+      serializeCookState({
+        stepIndex: 1,
+        servings: 4,
+        system: 'us',
+        checked: ['spaghetti'],
+        timers: {
+          'step-1': { duration: 60, remaining: 30, status: 'paused', endsAt: null },
+        },
+        customTimers: [],
+      }),
+    );
+    const detail = renderDetail();
+    await user.click(screen.getByRole('button', { name: 'Metric' }));
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    expect(screen.getByRole('button', { name: /600 g\s*spaghetti/ })).toBeInTheDocument();
+    detail.unmount();
+
+    const cook = render(<CookExperience recipe={recipe} />);
+    expect(screen.getByRole('button', { name: 'Metric' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /600 g\s*spaghetti/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('link', { name: /exit cook mode/i })).toHaveAttribute(
+      'href',
+      '/recipes/test-cook/sunday-sauce',
+    );
+    expect(parseCookState(localStorage.getItem(cookStorageKey(recipe.id)))).toMatchObject({
+      stepIndex: 1,
+      timers: { 'step-1': { remaining: 30, status: 'paused' } },
+    });
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    cook.unmount();
+
+    renderDetail();
+    expect(screen.getByRole('button', { name: 'Metric' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /700 g\s*spaghetti/ })).toBeInTheDocument();
+  });
+
+  it.each([true, false])('honors saved autoConvert=%s for a fresh Cook session', (autoConvert) => {
+    render(
+      <UnitPrefsProvider prefs={{ autoConvert, defaultSystem: 'metric' }}>
+        <CookExperience recipe={recipe} />
+      </UnitPrefsProvider>,
+    );
+    expect(
+      screen.getByRole('button', { name: autoConvert ? 'Metric' : 'Original' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('does not replace saved units when only servings were explicitly changed', async () => {
+    const user = userEvent.setup();
+    const detail = renderDetail();
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    detail.unmount();
+
+    render(
+      <UnitPrefsProvider prefs={{ autoConvert: true, defaultSystem: 'metric' }}>
+        <CookExperience recipe={recipe} />
+      </UnitPrefsProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Metric' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /500 g\s*spaghetti/ })).toBeInTheDocument();
+  });
+
+  it('restores selections only for the current detail recipe', async () => {
+    const user = userEvent.setup();
+    const detail = renderDetail();
+    await user.click(screen.getByRole('button', { name: 'Metric' }));
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    detail.rerender(
+      <IntlWrapper>
+        <IngredientsPanel
+          ingredients={recipe.ingredients}
+          baseServings={4}
+          servingsNoun="servings"
+          recipeContext={{
+            recipeId: 'another-recipe',
+            updatedAt: '2026-11-04T00:00:00Z',
+            canEdit: false,
+          }}
+        />
+      </IntlWrapper>,
+    );
+    expect(screen.getByRole('button', { name: 'Original' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /400 g\s*spaghetti/ })).toBeInTheDocument();
+  });
+});
 
 describe('Cook Mode step-video captions (issue #989)', () => {
   it('renders the stored WebVTT track as the default captions', () => {
