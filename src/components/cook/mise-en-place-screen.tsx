@@ -10,6 +10,7 @@ import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
 import type { IngredientsPanelControls } from '~/components/recipe/ingredients-panel';
 import { cn } from '~/lib/utils';
 import { derivePrepTasks } from '~/lib/mise-en-place';
+import { recipeDetailPath } from '~/lib/recipe-path';
 
 import type { CookRecipe } from './types';
 
@@ -49,7 +50,7 @@ export function MiseEnPlaceScreen({
             </h1>
           </div>
           <Button asChild variant="ghost" size="icon" aria-label={t('a11y.exit')}>
-            <Link href={`/recipes/${recipe.slug}`}>
+            <Link href={recipeDetailPath(recipe)}>
               <X />
             </Link>
           </Button>

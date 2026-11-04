@@ -27,7 +27,9 @@ loop**, and is architected in phases toward history, collaboration, import, and 
 - **Ridiculously easy recipes**: a structured editor for ingredients, steps, photos, timers,
   tags, sources, and visibility. Create, edit, delete, share.
 - **Cook mode**: hands-free, step-by-step, with built-in timers, serving **scaling**, and **unit
-  conversion**. Works **offline** in the kitchen.
+  conversion**. Explicit servings and units follow you from recipe detail into Cook and back
+  within the same browser tab; fresh Cook sessions respect saved unit preferences.
+  Works **offline** in the kitchen.
 - **Print & share**: export a recipe card, full page, or compact format. Shareable links.
 - **Family groups**: recipes can belong to a family/group (foundation in place).
 - **Five UI modes × light/dark**: Kitchen, Whimsy, Professional, Kids, and Simple, each a full

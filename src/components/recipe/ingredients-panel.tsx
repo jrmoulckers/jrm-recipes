@@ -46,6 +46,10 @@ import { Badge } from '~/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { IngredientSubstitutions } from '~/components/recipe/ingredient-substitutions-lazy';
 import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
+import {
+  readRecipeCookingSelection,
+  saveRecipeCookingSelection,
+} from '~/lib/recipe-cooking-selection';
 import { NutritionPanel, type CalorieMember } from '~/components/recipe/nutrition-panel';
 import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
 import { type Nutrition } from '~/lib/nutrition';
@@ -341,12 +345,18 @@ export function IngredientsPanel({
   // Seed the display system from the viewer's saved preference so amounts
   // auto-convert on open; "original" preserves the author's units when the
   // viewer opts out of auto-conversion.
-  const [systemInternal, setSystemInternal] = React.useState<System>(
-    prefs?.autoConvert ? prefs.defaultSystem : 'original',
-  );
+  const initialSystem = prefs?.autoConvert ? prefs.defaultSystem : 'original';
+  const [systemInternal, setSystemInternal] = React.useState<System>(initialSystem);
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(new Set());
-  // Gate check-off animations to post-mount so pre-checked items (e.g. a
-  // resumed cook session) render statically instead of animating on load.
+  const selectionRecipeId = recipeContext?.recipeId;
+  React.useEffect(() => {
+    if (controls || !selectionRecipeId) return;
+    const selection = readRecipeCookingSelection(selectionRecipeId);
+    setServingsInternal(selection.servings ?? baseServings ?? 1);
+    setSystemInternal(selection.system ?? initialSystem);
+  }, [controls, selectionRecipeId, baseServings, initialSystem]);
+  // Selection controls wait for hydration and tab-selection restoration.
+  // Pre-checked items also render without check-off animations on load.
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -586,12 +596,18 @@ export function IngredientsPanel({
 
   function updateServings(next: number) {
     if (controls) controls.onServingsChange(next);
-    else setServingsInternal(next);
+    else {
+      setServingsInternal(next);
+      if (selectionRecipeId) saveRecipeCookingSelection(selectionRecipeId, { servings: next });
+    }
   }
 
   function updateSystem(next: System) {
     if (controls) controls.onSystemChange(next);
-    else setSystemInternal(next);
+    else {
+      setSystemInternal(next);
+      if (selectionRecipeId) saveRecipeCookingSelection(selectionRecipeId, { system: next });
+    }
   }
 
   // Ingredients that carry a numeric amount are the only ones we can pin a
@@ -652,6 +668,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label={t('fewerServings')}
+              disabled={!mounted}
               onClick={() => updateServings(Math.max(1, servings - 1))}
             >
               <Minus />
@@ -674,6 +691,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label={t('moreServings')}
+              disabled={!mounted}
               onClick={() => updateServings(Math.min(1000, servings + 1))}
             >
               <Plus />
@@ -683,6 +701,7 @@ export function IngredientsPanel({
                 type="button"
                 size="sm"
                 variant="ghost"
+                disabled={!mounted}
                 onClick={() => updateServings(baseServings)}
               >
                 {t('reset')}
@@ -722,7 +741,7 @@ export function IngredientsPanel({
           onValueChange={(next) => updateSystem(next as System)}
         >
           {SYSTEM_OPTIONS.map((s) => (
-            <ToggleGroupItem key={s} value={s} className="px-2.5 py-1">
+            <ToggleGroupItem key={s} value={s} disabled={!mounted} className="px-2.5 py-1">
               {t(`system.${s}`)}
             </ToggleGroupItem>
           ))}

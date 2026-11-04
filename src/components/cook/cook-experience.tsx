@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { recipeDetailPath } from '~/lib/recipe-path';
 import { useLocale, useTranslations } from 'next-intl';
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import {
@@ -176,11 +177,11 @@ export function CookExperience({
       description: tToasts('complete.description', { title: recipe.title }),
       action: {
         label: tToasts('complete.action'),
-        onClick: () => router.push(`/recipes/${recipe.slug}`),
+        onClick: () => router.push(recipeDetailPath(recipe)),
       },
     });
-    router.push(`/recipes/${recipe.slug}`);
-  }, [clearSession, recipe.slug, recipe.title, router, tToasts]);
+    router.push(recipeDetailPath(recipe));
+  }, [clearSession, recipe, router, tToasts]);
 
   // "Let's get ready!" pre-cook gate for Kids mode (#444). The grown-up-help
   // line only shows when the recipe genuinely has hot/sharp steps, so we detect
@@ -745,7 +746,7 @@ function CookHeader({
           controls={ingredientControls}
         />
         <Button asChild variant="ghost" size="icon" aria-label={t('exit')}>
-          <Link href={`/recipes/${recipe.slug}`}>
+          <Link href={recipeDetailPath(recipe)}>
             <X />
           </Link>
         </Button>
@@ -1851,7 +1852,7 @@ function EmptyCookExperience({
             controls={ingredientControls}
           />
           <Button asChild variant="ghost" size="icon" aria-label={t('exit')}>
-            <Link href={`/recipes/${recipe.slug}`}>
+            <Link href={recipeDetailPath(recipe)}>
               <X />
             </Link>
           </Button>
@@ -1871,7 +1872,7 @@ function EmptyCookExperience({
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
-              <Link href={`/recipes/${recipe.slug}`}>
+              <Link href={recipeDetailPath(recipe)}>
                 <ArrowLeft />
                 {tEmpty('back')}
               </Link>

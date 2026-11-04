@@ -3,6 +3,11 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { useUnitPrefsContext } from '~/components/recipe/unit-prefs-context';
+import {
+  readRecipeCookingSelection,
+  saveRecipeCookingSelection,
+} from '~/lib/recipe-cooking-selection';
 
 import {
   clampStepIndex,
@@ -213,14 +218,19 @@ export function useCookSession(recipe: CookRecipe, options?: { householdSize?: n
   const storageKey = cookStorageKey(recipe.id);
   const totalSteps = recipe.steps.length;
   const baseServings = recipe.servings ?? null;
-  // No stored preference yet? Start from the system the reader's locale implies
-  // (US → imperial, elsewhere → metric). An explicit, persisted choice always
-  // wins during hydration below.
+  // Explicit tab selections win over a resumed session; saved unit preferences
+  // seed new sessions, with locale as the signed-out fallback.
   const locale = useLocale();
   const tTimer = useTranslations('cook.timer');
 
+  const { prefs } = useUnitPrefsContext();
+  const initialSystem = prefs
+    ? prefs.autoConvert
+      ? prefs.defaultSystem
+      : 'original'
+    : defaultSystemForLocale(locale);
   const [state, setState] = React.useState<StoredCookState>(() =>
-    defaultState(recipe, householdSize, defaultSystemForLocale(locale)),
+    defaultState(recipe, householdSize, initialSystem),
   );
   const [loaded, setLoaded] = React.useState(false);
   const announcedTimersRef = React.useRef<Set<string>>(new Set());
@@ -233,6 +243,7 @@ export function useCookSession(recipe: CookRecipe, options?: { householdSize?: n
     }
 
     const stored = parseCookState(window.localStorage.getItem(storageKey));
+    const selection = readRecipeCookingSelection(recipe.id);
     if (stored) {
       const timers = reconcileTimers(stored.timers, Date.now());
       const customTimers = reconcileCustomTimers(stored.customTimers, Date.now());
@@ -245,15 +256,24 @@ export function useCookSession(recipe: CookRecipe, options?: { householdSize?: n
       }
       setState({
         stepIndex: clampStepIndex(stored.stepIndex, totalSteps),
-        servings: stored.servings ?? householdSize ?? baseServings,
-        system: stored.system,
+        servings: selection.servings ?? stored.servings ?? householdSize ?? baseServings,
+        system: selection.system ?? stored.system,
         checked: stored.checked,
         timers,
         customTimers,
       });
+    } else {
+      setState({
+        stepIndex: 0,
+        servings: selection.servings ?? householdSize ?? baseServings,
+        system: selection.system ?? initialSystem,
+        checked: [],
+        timers: {},
+        customTimers: [],
+      });
     }
     setLoaded(true);
-  }, [storageKey, totalSteps, baseServings, householdSize]);
+  }, [storageKey, totalSteps, baseServings, householdSize, recipe.id, initialSystem]);
 
   // Persist after hydration. Skipping the pre-load render avoids clobbering
   // stored data with the initial defaults.
@@ -590,6 +610,7 @@ export function useCookSession(recipe: CookRecipe, options?: { householdSize?: n
   const setServings = React.useCallback(
     (next: number) => {
       track('cook_servings_scaled', { recipeId: recipe.id, servings: next });
+      saveRecipeCookingSelection(recipe.id, { servings: next });
       setState((prev) => ({ ...prev, servings: next }));
     },
     [recipe.id],
@@ -598,6 +619,7 @@ export function useCookSession(recipe: CookRecipe, options?: { householdSize?: n
   const setSystem = React.useCallback(
     (next: UnitSystem) => {
       track('cook_unit_system_changed', { recipeId: recipe.id, system: next });
+      saveRecipeCookingSelection(recipe.id, { system: next });
       setState((prev) => ({ ...prev, system: next }));
     },
     [recipe.id],

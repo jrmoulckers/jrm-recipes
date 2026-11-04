@@ -2,9 +2,14 @@ import { cleanup, render as rtlRender, screen, within } from '@testing-library/r
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
+import { renderToString } from 'react-dom/server';
 
 import { IntlWrapper } from '~/test/intl';
 import { useActiveMemberStore } from '~/lib/active-member-store';
+import {
+  readRecipeCookingSelection,
+  saveRecipeCookingSelection,
+} from '~/lib/recipe-cooking-selection';
 import {
   IngredientsPanel,
   type IngredientsPanelControls,
@@ -84,6 +89,59 @@ const ingredients = [
     optional: false,
   },
 ];
+
+describe('IngredientsPanel selection readiness', () => {
+  afterEach(() => {
+    sessionStorage.removeItem('heirloom:recipe-cooking-selection:hydration-recipe');
+  });
+
+  it('disables server-rendered selections until restoration, then retains keyboard changes', async () => {
+    const user = userEvent.setup();
+    saveRecipeCookingSelection('hydration-recipe', { servings: 6, system: 'us' });
+    const panel = (
+      <IntlWrapper>
+        <IngredientsPanel
+          ingredients={ingredients}
+          baseServings={4}
+          servingsNoun={null}
+          recipeContext={{
+            recipeId: 'hydration-recipe',
+            updatedAt: '2026-11-04T00:00:00.000Z',
+            canEdit: false,
+          }}
+        />
+      </IntlWrapper>
+    );
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(panel);
+    document.body.appendChild(container);
+    const view = within(container);
+
+    for (const name of ['Fewer servings', 'More servings', 'Original', 'US', 'Metric', 'Grams']) {
+      expect(view.getByRole('button', { name })).toBeDisabled();
+    }
+
+    rtlRender(panel, { container, hydrate: true });
+
+    expect(view.getByRole('button', { name: 'US' })).toHaveAttribute('aria-pressed', 'true');
+    const metric = view.getByRole('button', { name: 'Metric' });
+    expect(metric).toBeEnabled();
+    metric.focus();
+    await user.keyboard('{Enter}');
+    expect(metric).toHaveAttribute('aria-pressed', 'true');
+    expect(view.getByRole('button', { name: /300 g\s*flour/ })).toBeInTheDocument();
+    const more = view.getByRole('button', { name: 'More servings' });
+    expect(more).toBeEnabled();
+    more.focus();
+    await user.keyboard('{Enter}');
+    expect(view.getByRole('button', { name: /350 g\s*flour/ })).toBeInTheDocument();
+    expect(metric).toHaveAttribute('aria-pressed', 'true');
+    expect(readRecipeCookingSelection('hydration-recipe')).toEqual({
+      servings: 7,
+      system: 'metric',
+    });
+  });
+});
 
 describe('IngredientsPanel fractional egg scaling', () => {
   it('keeps yolks distinct from whole eggs when increasing four servings to five', async () => {
