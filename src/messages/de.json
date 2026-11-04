@@ -3800,6 +3800,7 @@
     "scaleFactor": "≈ {factor}× des Rezepts",
     "scaleFactorWithServings": "≈ {factor}× des Rezepts, {servings} {noun}",
     "cannotConvert": "Diese Menge lässt sich nicht in die Einheit dieser Zutat umrechnen.",
+    "targetOutsideServingsRange": "Diese Zielmenge erfordert weniger als {minimum} oder mehr als {maximum} Portionen. Ändere die Menge, um innerhalb dieses Bereichs zu bleiben.",
     "totalFlour": "Mehl gesamt",
     "hydration": "Hydratation",
     "batchWeight": "Teiggewicht",

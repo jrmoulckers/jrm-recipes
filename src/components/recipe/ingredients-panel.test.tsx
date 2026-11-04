@@ -1,4 +1,4 @@
-import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
@@ -84,6 +84,120 @@ const ingredients = [
     optional: false,
   },
 ];
+
+describe('IngredientsPanel Scale to target bounds (#1180)', () => {
+  const spaghetti = [{ ...ingredients[0]!, id: 'spaghetti', item: 'spaghetti', quantity: 400 }];
+
+  it.each(['50', '99.999', '100000.001', '100001', '1e308'])(
+    'keeps unsupported target %s editable without applying clamped servings',
+    async (target) => {
+      const user = userEvent.setup();
+      const onServingsChange = vi.fn();
+      render(
+        <IngredientsPanel
+          ingredients={spaghetti}
+          baseServings={4}
+          servingsNoun="servings"
+          controls={{
+            servings: 4,
+            onServingsChange,
+            system: 'original',
+            onSystemChange: vi.fn(),
+            checked: new Set(),
+            onToggleChecked: vi.fn(),
+          }}
+        />,
+      );
+      await user.click(screen.getByRole('button', { name: 'Scale to…' }));
+      const amount = screen.getByRole('spinbutton', { name: 'Target amount' });
+      fireEvent.change(amount, { target: { value: target } });
+
+      expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+      expect(amount).toHaveAttribute('aria-invalid', 'true');
+      expect(amount).toHaveAccessibleDescription(
+        'This target needs fewer than 1 or more than 1000 servings. Change the amount to stay within that range.',
+      );
+      fireEvent.submit(amount.closest('form')!);
+      expect(onServingsChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('spinbutton', { name: 'Target amount' })).toHaveValue(Number(target));
+      expect(screen.getByRole('button', { name: /400\s*g\s*spaghetti/ })).toBeInTheDocument();
+
+      await user.clear(amount);
+      await user.type(amount, '150');
+      expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+      expect(amount).not.toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText('≈ ⅜× the recipe, 1½ servings')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Apply' }));
+      expect(onServingsChange).toHaveBeenCalledExactlyOnceWith(1.5);
+      expect(screen.queryByRole('spinbutton', { name: 'Target amount' })).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([
+    ['100', 'g', 1, '100'],
+    ['100000', 'g', 1000, '100000'],
+    ['150', 'g', 1.5, '150'],
+    ['123.456', 'g', 1.23456, '123'],
+    ['0.15', 'kg', 1.5, '150'],
+  ])(
+    'applies valid target %s %s without rounding servings',
+    async (target, unit, expected, amount) => {
+      const user = userEvent.setup();
+      let currentServings = 4;
+      function Panel() {
+        const [servings, setServings] = useState(4);
+        currentServings = servings;
+        return (
+          <IngredientsPanel
+            ingredients={spaghetti}
+            baseServings={4}
+            servingsNoun="servings"
+            controls={{
+              servings,
+              onServingsChange: setServings,
+              system: 'original',
+              onSystemChange: vi.fn(),
+              checked: new Set(),
+              onToggleChecked: vi.fn(),
+            }}
+          />
+        );
+      }
+      render(<Panel />);
+      await user.click(screen.getByRole('button', { name: 'Scale to…' }));
+      await user.type(screen.getByRole('spinbutton', { name: 'Target amount' }), target);
+      const unitInput = screen.getByRole('textbox', { name: 'Unit' });
+      await user.clear(unitInput);
+      await user.type(unitInput, unit);
+      expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+      screen.getByRole('button', { name: 'Apply' }).focus();
+      await user.keyboard('{Enter}');
+      expect(currentServings).toBeCloseTo(expected, 10);
+      expect(
+        screen.getByRole('button', { name: new RegExp(`${amount}\\s*g\\s*spaghetti`) }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('spinbutton', { name: 'Target amount' })).not.toBeInTheDocument();
+    },
+  );
+
+  it('rejects incompatible units but accepts a valid fractional uncontrolled target', async () => {
+    const user = userEvent.setup();
+    render(<IngredientsPanel ingredients={spaghetti} baseServings={4} servingsNoun="servings" />);
+    await user.click(screen.getByRole('button', { name: 'Scale to…' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Target amount' }), '150');
+    const unit = screen.getByRole('textbox', { name: 'Unit' });
+    await user.clear(unit);
+    await user.type(unit, 'cup');
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(
+      screen.getByText("That amount can't be converted to this ingredient's unit."),
+    ).toBeInTheDocument();
+    await user.clear(unit);
+    await user.type(unit, 'g');
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(screen.getByRole('button', { name: /150\s*g\s*spaghetti/ })).toBeInTheDocument();
+  });
+});
 
 describe('IngredientsPanel fractional egg scaling', () => {
   it('keeps yolks distinct from whole eggs when increasing four servings to five', async () => {
