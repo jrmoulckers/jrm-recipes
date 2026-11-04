@@ -45,7 +45,7 @@ export function KeepsakeView({
         <KeepsakePrintButton />
       </div>
 
-      <article className="rounded-3xl border border-border bg-card p-8 shadow-token print:rounded-none print:border-0 print:p-0 print:shadow-none">
+      <article className="rounded-3xl border border-border bg-card p-8 wrap-anywhere shadow-token print:rounded-none print:border-0 print:p-0 print:shadow-none">
         {/* Keepsake header: the personal note comes first, warmly framed. */}
         <header className="mb-8 border-b border-border pb-8 text-center">
           <span className="inline-flex size-12 items-center justify-center rounded-full bg-primary/12 text-primary">
