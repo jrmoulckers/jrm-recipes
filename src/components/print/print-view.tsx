@@ -254,7 +254,7 @@ function SourceBlock({
         className,
       )}
     >
-      <div className="min-w-0 flex-1">{attribution}</div>
+      <div className="min-w-0 flex-1 wrap-anywhere">{attribution}</div>
       {shareUrl ? <PrintQr url={shareUrl} size={84} /> : null}
     </footer>
   );
@@ -650,7 +650,7 @@ function IndexCard({
       </div>
 
       <footer className="flex items-end justify-between gap-3 border-t border-border pt-2 text-[0.7rem] text-muted-foreground print:border-black/30 print:text-black">
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 wrap-anywhere">
           {recipe.sourceName ?? brand.tagline} · {url}
         </span>
         {shareUrl ? <PrintQr url={shareUrl} size={64} caption={null} /> : null}
