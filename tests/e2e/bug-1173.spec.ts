@@ -15,7 +15,9 @@ for (const width of [390, 1194]) {
       const path = await gotoSeededRecipe(page);
       expect(path, 'The handoff regression requires the public seeded recipe').not.toBeNull();
 
-      await page.getByRole('button', { name: 'Metric', exact: true }).click();
+      const metric = page.getByRole('button', { name: 'Metric', exact: true });
+      await metric.click();
+      await expect(metric).toHaveAttribute('aria-pressed', 'true');
       const initialServings = Number(await servingCount(page).textContent());
       expect(initialServings).toBeGreaterThan(0);
       const initialAmounts = await amounts(page).allTextContents();
@@ -25,6 +27,7 @@ for (const width of [390, 1194]) {
       await expect(servingCount(page)).toHaveText(String(initialServings + 2));
       const selectedAmounts = await amounts(page).allTextContents();
       expect(selectedAmounts).not.toEqual(initialAmounts);
+      await expect(metric).toHaveAttribute('aria-pressed', 'true');
 
       await page.getByRole('link', { name: entry, exact: true }).click();
       await expect(page).toHaveURL(`${path}/cook`);

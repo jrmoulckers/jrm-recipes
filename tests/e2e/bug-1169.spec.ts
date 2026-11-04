@@ -51,7 +51,17 @@ test('bug #1169: detail and cook scaling preserve parts and compounds without wh
   ).toHaveCount(1);
 
   await page.goto(`${recipePath}/cook`);
+  const servingCount = page
+    .getByRole('button', { name: 'More servings', exact: true })
+    .locator('..')
+    .locator('.min-w-24 span');
+  await expect(servingCount).toHaveText('3');
+  await expect(page.getByRole('button', { name: /^1½\s*large eggs\b/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(servingCount).toHaveText('4');
+  await expect(page.getByRole('button', { name: /^2\s*large eggs\b/ })).toBeVisible();
   await page.getByRole('button', { name: 'More servings', exact: true }).click();
+  await expect(servingCount).toHaveText('5');
   await expectFractionalIngredients(page);
   await page.getByTestId('cook-mode-start').click();
   await page

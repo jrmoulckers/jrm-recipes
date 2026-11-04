@@ -355,8 +355,8 @@ export function IngredientsPanel({
     setServingsInternal(selection.servings ?? baseServings ?? 1);
     setSystemInternal(selection.system ?? initialSystem);
   }, [controls, selectionRecipeId, baseServings, initialSystem]);
-  // Gate check-off animations to post-mount so pre-checked items (e.g. a
-  // resumed cook session) render statically instead of animating on load.
+  // Selection controls wait for hydration and tab-selection restoration.
+  // Pre-checked items also render without check-off animations on load.
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -668,6 +668,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label={t('fewerServings')}
+              disabled={!mounted}
               onClick={() => updateServings(Math.max(1, servings - 1))}
             >
               <Minus />
@@ -690,6 +691,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label={t('moreServings')}
+              disabled={!mounted}
               onClick={() => updateServings(Math.min(1000, servings + 1))}
             >
               <Plus />
@@ -699,6 +701,7 @@ export function IngredientsPanel({
                 type="button"
                 size="sm"
                 variant="ghost"
+                disabled={!mounted}
                 onClick={() => updateServings(baseServings)}
               >
                 {t('reset')}
@@ -738,7 +741,7 @@ export function IngredientsPanel({
           onValueChange={(next) => updateSystem(next as System)}
         >
           {SYSTEM_OPTIONS.map((s) => (
-            <ToggleGroupItem key={s} value={s} className="px-2.5 py-1">
+            <ToggleGroupItem key={s} value={s} disabled={!mounted} className="px-2.5 py-1">
               {t(`system.${s}`)}
             </ToggleGroupItem>
           ))}
