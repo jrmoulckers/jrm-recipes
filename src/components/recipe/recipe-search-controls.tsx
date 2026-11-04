@@ -210,6 +210,9 @@ export function RecipeSearchControls({
   // value once the transition settles, at which point the committed params say
   // the same thing.
   const committedQuery = currentParams.toString();
+  const requestedParams = React.useRef(new URLSearchParams(committedQuery));
+  const ownNavigations = React.useRef(new Set<string>());
+  const queryInput = React.useRef<HTMLInputElement>(null);
   const [optimisticQuery, setOptimisticQuery] = React.useOptimistic(committedQuery);
   const activeParams = React.useMemo(() => new URLSearchParams(optimisticQuery), [optimisticQuery]);
   // The optimistic params are always ones we built, so parsing them cannot
@@ -223,15 +226,40 @@ export function RecipeSearchControls({
     }
   }, [activeParams, search]);
 
-  // Reflect URL changes driven elsewhere (back/forward, Clear) into the input.
+  // Our navigation acknowledges an older draft, not permission to replace
+  // text typed since. External URLs and history navigation still own both inputs.
   React.useEffect(() => {
+    if (ownNavigations.current.has(committedQuery)) {
+      for (const qs of ownNavigations.current) {
+        ownNavigations.current.delete(qs);
+        if (qs === committedQuery) break;
+      }
+      return;
+    }
+    ownNavigations.current.clear();
+    requestedParams.current = new URLSearchParams(committedQuery);
     setQuery(search.q ?? '');
-  }, [search.q]);
-
-  // Keep the ingredient input in sync with URL-driven changes (chips, Clear).
-  React.useEffect(() => {
     setIngredient(search.ingredient ?? '');
-  }, [search.ingredient]);
+  }, [committedQuery, search.q, search.ingredient]);
+
+  React.useEffect(() => {
+    // Cancelling back to the committed URL need not change committedQuery.
+    if (!isPending && committedQuery === requestedParams.current.toString()) {
+      ownNavigations.current.clear();
+    }
+  });
+
+  React.useEffect(() => {
+    const restoreHistory = () => {
+      ownNavigations.current.clear();
+      const params = new URLSearchParams(window.location.search);
+      requestedParams.current = params;
+      setQuery(params.get('q') ?? '');
+      setIngredient(params.get('ingredient') ?? '');
+    };
+    window.addEventListener('popstate', restoreHistory);
+    return () => window.removeEventListener('popstate', restoreHistory);
+  }, []);
 
   const navigate = React.useCallback(
     (params: URLSearchParams) => {
@@ -240,6 +268,9 @@ export function RecipeSearchControls({
       const effectiveDefault = defaultSortFor(params.get('q'));
       if (params.get('sort') === effectiveDefault) params.delete('sort');
       const qs = params.toString();
+      if (qs === requestedParams.current.toString()) return;
+      requestedParams.current = new URLSearchParams(qs);
+      ownNavigations.current.add(qs);
       startTransition(() => {
         setOptimisticQuery(qs);
         router.push(pathnameWithQuery(pathname, qs), { scroll: false });
@@ -248,11 +279,11 @@ export function RecipeSearchControls({
     [pathname, router, setOptimisticQuery],
   );
 
-  // Every mutation composes onto the *optimistic* params, so two quick taps
+  // Every mutation composes onto the latest requested params, so two quick taps
   // stack instead of the second one racing the first back to the old URL.
   const pushParams = React.useCallback(
     (updates: Partial<Record<ParamKey, string | undefined>>) => {
-      const params = new URLSearchParams(activeParams.toString());
+      const params = new URLSearchParams(requestedParams.current);
       for (const [key, value] of Object.entries(updates)) {
         if (value == null || value.length === 0 || value === ANY) {
           params.delete(key);
@@ -262,20 +293,20 @@ export function RecipeSearchControls({
       }
       navigate(params);
     },
-    [activeParams, navigate],
+    [navigate],
   );
 
   // Multi-select facets carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
     (key: RecipeFacetParam, values: string[]) => {
-      const params = new URLSearchParams(activeParams.toString());
+      const params = new URLSearchParams(requestedParams.current);
       params.delete(key);
       for (const value of values) params.append(key, value);
       if (values.length < 2) params.delete(MATCH_PARAM_BY_FACET[key]);
       navigate(params);
     },
-    [activeParams, navigate],
+    [navigate],
   );
 
   const toggleListValue = React.useCallback(
@@ -289,7 +320,7 @@ export function RecipeSearchControls({
 
   const pushMatchMode = React.useCallback(
     (key: RecipeFacetParam, mode: FacetMatchMode) => {
-      const params = new URLSearchParams(activeParams.toString());
+      const params = new URLSearchParams(requestedParams.current);
       const matchParam = MATCH_PARAM_BY_FACET[key];
       if (mode === DEFAULT_FACET_MATCH_MODES[key]) {
         params.delete(matchParam);
@@ -298,37 +329,35 @@ export function RecipeSearchControls({
       }
       navigate(params);
     },
-    [activeParams, navigate],
+    [navigate],
   );
 
   // Preset chips (#378): compose several existing params in one tap. Reuses the
   // pure toggle from recipe-presets so the result stays a shareable URL.
   const pushPreset = React.useCallback(
     (preset: RecipePreset) => {
-      navigate(togglePreset(activeParams, preset));
+      navigate(togglePreset(requestedParams.current, preset));
     },
-    [activeParams, navigate],
+    [navigate],
   );
 
-  // Debounce the free-text query so we navigate once the user pauses.
+  // Submit both drafts atomically, comparing with the last requested URL rather
+  // than server props that may still describe an in-flight navigation.
   React.useEffect(() => {
-    const next = query.trim();
-    if (next === (search.q ?? '')) return;
-    const id = window.setTimeout(() => pushParams({ q: next || undefined }), TEXT_DEBOUNCE_MS);
-    return () => window.clearTimeout(id);
-  }, [query, search.q, pushParams]);
-
-  // Debounce the ingredient filter the same way. The server resolves the term to
-  // a canonical food and constrains results to recipes that use it.
-  React.useEffect(() => {
-    const next = ingredient.trim();
-    if (next === (search.ingredient ?? '')) return;
+    const q = query.trim();
+    const term = ingredient.trim();
+    if (
+      q === (requestedParams.current.get('q') ?? '') &&
+      term === (requestedParams.current.get('ingredient') ?? '')
+    ) {
+      return;
+    }
     const id = window.setTimeout(
-      () => pushParams({ ingredient: next || undefined }),
+      () => pushParams({ q: q || undefined, ingredient: term || undefined }),
       TEXT_DEBOUNCE_MS,
     );
     return () => window.clearTimeout(id);
-  }, [ingredient, search.ingredient, pushParams]);
+  }, [query, ingredient, pushParams]);
 
   const filtersActive = hasActiveRecipeFilters(activeSearch);
 
@@ -598,25 +627,30 @@ export function RecipeSearchControls({
       className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4"
     >
       <div className="relative">
-        <Search className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <span className="pointer-events-none absolute inset-s-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+          {isPending ? <Spinner label={t('updating')} /> : <Search className="size-4" />}
+        </span>
         <Label htmlFor={searchId} className="sr-only">
           {t('searchLabel')}
         </Label>
         <Input
           id={searchId}
+          ref={queryInput}
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="ps-10 pe-10"
+          className="ps-10 pe-10 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none"
         />
         <span className="absolute inset-e-3 top-1/2 -translate-y-1/2">
-          {isPending ? (
-            <Spinner label={t('updating')} className="text-muted-foreground" />
-          ) : query ? (
+          {query ? (
             <button
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                pushParams({ q: undefined });
+                queryInput.current?.focus();
+              }}
               aria-label={t('clearSearch')}
               className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
             >
@@ -657,7 +691,7 @@ export function RecipeSearchControls({
             <ChipButton
               key={`${item.category}:${item.slug}`}
               active={isClassificationActive(activeParams, item)}
-              onClick={() => navigate(toggleClassification(activeParams, item))}
+              onClick={() => navigate(toggleClassification(requestedParams.current, item))}
             >
               {classificationLabel(item)}
               <span className="text-xs tabular-nums opacity-70">{item.count}</span>
