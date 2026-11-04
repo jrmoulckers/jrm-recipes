@@ -3800,6 +3800,7 @@
     "scaleFactor": "≈ {factor}× la receta",
     "scaleFactorWithServings": "≈ {factor}× la receta, {servings} {noun}",
     "cannotConvert": "Esa cantidad no se puede convertir a la unidad de este ingrediente.",
+    "targetOutsideServingsRange": "Esta cantidad requiere menos de {minimum} o más de {maximum} porciones. Cambia la cantidad para mantenerla dentro de ese intervalo.",
     "totalFlour": "Harina total",
     "hydration": "Hidratación",
     "batchWeight": "Peso de la tanda",

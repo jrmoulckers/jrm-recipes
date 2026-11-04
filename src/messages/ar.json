@@ -3800,6 +3800,7 @@
     "scaleFactor": "≈ {factor}× من الوصفة",
     "scaleFactorWithServings": "≈ {factor}× من الوصفة، {servings} {noun}",
     "cannotConvert": "لا يمكن تحويل هذه الكمية إلى وحدة هذا المكون.",
+    "targetOutsideServingsRange": "تتطلب هذه الكمية أقل من {minimum} أو أكثر من {maximum} حصص. غيّر الكمية لتبقى ضمن هذا النطاق.",
     "totalFlour": "إجمالي الدقيق",
     "hydration": "نسبة الماء",
     "batchWeight": "وزن الدفعة",
