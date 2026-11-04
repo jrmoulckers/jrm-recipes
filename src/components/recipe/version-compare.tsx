@@ -187,7 +187,9 @@ function DiffResult({
                     key={field.key}
                     className="rounded-lg border border-border/70 bg-background p-3 text-sm"
                   >
-                    <span className="font-medium">{field.label}</span>
+                    <span className="font-medium">
+                      {t.has(`fields.${field.key}`) ? t(`fields.${field.key}`) : field.label}
+                    </span>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
                       <span className="line-through decoration-destructive/60">
                         {field.before ?? '—'}
