@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { LocaleSwitcher } from './locale-switcher';
+import { LOCALE_ENDONYMS, SUPPORTED_LOCALES, type Locale } from '~/config/i18n';
+import { readLocaleCookie } from '~/lib/locale-cookie';
 import { IntlWrapper } from '~/test/intl';
 
 const refresh = vi.fn();
@@ -21,13 +23,14 @@ beforeAll(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   refresh.mockClear();
   document.cookie = 'NEXT_LOCALE=;path=/;max-age=0';
 });
 
-function render() {
+function render(locale: Locale = 'en') {
   return rtlRender(
-    <IntlWrapper>
+    <IntlWrapper locale={locale}>
       <LocaleSwitcher />
     </IntlWrapper>,
   );
@@ -56,13 +59,31 @@ describe('LocaleSwitcher', () => {
     }
   });
 
-  it('persists the chosen locale to NEXT_LOCALE and refreshes', async () => {
+  it.each(SUPPORTED_LOCALES)('persists exactly %s and refreshes once', async (locale) => {
+    const initialLocale = locale === 'en' ? 'es' : 'en';
+    document.cookie = `NEXT_LOCALE=${initialLocale}; Path=/`;
+    render(initialLocale);
+    const user = await openMenu();
+
+    await user.click(screen.getByRole('menuitemradio', { name: LOCALE_ENDONYMS[locale] }));
+
+    expect(document.cookie.split(/; */).find((part) => part.startsWith('NEXT_LOCALE='))).toBe(
+      `NEXT_LOCALE=${locale}`,
+    );
+    expect(readLocaleCookie(document.cookie)).toBe(locale);
+    expect(refresh).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it('does not rewrite the cookie or refresh when choosing the active locale', async () => {
+    document.cookie = 'NEXT_LOCALE=en; Path=/';
+    const setter = vi.spyOn(document, 'cookie', 'set');
     render();
     const user = await openMenu();
 
-    await user.click(screen.getByRole('menuitemradio', { name: 'Español' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'English' }));
 
-    expect(document.cookie).toContain('NEXT_LOCALE=es');
-    expect(refresh).toHaveBeenCalled();
+    expect(document.cookie).toBe('NEXT_LOCALE=en');
+    expect(setter).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

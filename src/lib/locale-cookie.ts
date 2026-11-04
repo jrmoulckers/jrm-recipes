@@ -7,7 +7,7 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
  * Parse a raw `document.cookie` string and resolve the persisted locale.
  *
  * Kept pure (takes the cookie string rather than touching `document`) so it can
- * be unit tested and reused on the server. Splits on `. ` with optional space so
+ * be unit tested and reused on the server. Splits on `;` with optional spaces so
  * it tolerates both browser-serialized and hand-built cookie strings, and runs
  * the value through {@link resolveLocale} so anything unknown falls back to the
  * default locale instead of poisoning the UI.
@@ -30,5 +30,5 @@ export function readLocaleCookie(cookieString: string): Locale {
 export function writeLocaleCookie(locale: Locale): void {
   document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(
     locale,
-  )}. Path=/. Max-age=${ONE_YEAR}. Samesite=lax`;
+  )}; Path=/; Max-age=${ONE_YEAR}; Samesite=lax`;
 }
