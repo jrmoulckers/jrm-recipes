@@ -61,7 +61,7 @@ async function EmbedRecipePage({ params }: { params: Promise<EmbedRecipeRoutePar
           label: `${recipe.servings} ${recipe.servingsNoun ?? tRecipe('servingsNoun')}`,
         }
       : null,
-    recipe.difficulty ? { icon: Flame, label: recipe.difficulty } : null,
+    recipe.difficulty ? { icon: Flame, label: tRecipe(`difficulty.${recipe.difficulty}`) } : null,
   ].filter(Boolean) as { icon: typeof Clock3; label: string }[];
 
   return (
