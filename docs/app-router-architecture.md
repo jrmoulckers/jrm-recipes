@@ -40,6 +40,16 @@ Client boundaries are explicit and localized:
 
 This keeps database access and secrets in server modules while letting client components call typed server actions or receive server-rendered props.
 
+## Recipe search navigation
+
+[`RecipeSearchControls`](../src/components/recipe/recipe-search-controls.tsx) keeps
+query and ingredient drafts local while submitting them together after a 250 ms pause.
+Filter changes compose with the latest requested URL, including while a server
+navigation is pending. An acknowledgment of a locally requested URL must not replace
+text typed since submission; external URLs and browser back/forward restore both
+drafts. The recipe search uses one custom clear button, available during updates,
+and suppresses Chromium's overlapping native cancel control.
+
 ## Ingredient scaling advice
 
 Recipe detail and Cook Mode share [`IngredientsPanel`](../src/components/recipe/ingredients-panel.tsx).
