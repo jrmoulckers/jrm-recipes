@@ -367,6 +367,7 @@ export function IngredientsPanel({
   const [pinId, setPinId] = React.useState<string>('');
   const [pinAmount, setPinAmount] = React.useState<string>('');
   const [pinUnit, setPinUnit] = React.useState<string>('');
+  const pinFeedbackId = React.useId();
 
   // Baker's percentages (#384). Surfaces only when weights are derivable.
   const [bakersView, setBakersView] = React.useState(false);
@@ -627,10 +628,16 @@ export function IngredientsPanel({
         pinUnit.trim() === '' ? pinIngredient.unit : pinUnit,
       )
     : null;
-  const pinServings =
-    pinFactor != null && canScale && baseServings
-      ? Math.min(1000, Math.max(1, Math.round(baseServings * pinFactor * 100) / 100))
-      : null;
+  const pinScale = (() => {
+    if (pinFactor == null || baseServings == null || !canScale) {
+      return { kind: 'invalid' } as const;
+    }
+    const targetServings = baseServings * pinFactor;
+    if (!Number.isFinite(targetServings) || targetServings < 1 || targetServings > 1000) {
+      return { kind: 'out-of-range' } as const;
+    }
+    return { kind: 'valid', factor: pinFactor, servings: targetServings } as const;
+  })();
 
   function openScaleTo() {
     const seed = pinnable[0] ?? null;
@@ -641,8 +648,8 @@ export function IngredientsPanel({
   }
 
   function applyScaleTo() {
-    if (pinServings == null) return;
-    updateServings(pinServings);
+    if (pinScale.kind !== 'valid') return;
+    updateServings(pinScale.servings);
     setScaleToOpen(false);
   }
 
@@ -784,6 +791,8 @@ export function IngredientsPanel({
               min={0}
               step="any"
               value={pinAmount}
+              aria-describedby={pinFeedbackId}
+              aria-invalid={pinAmount.trim() !== '' && pinScale.kind !== 'valid'}
               onChange={(e) => setPinAmount(e.target.value)}
               placeholder={formatQuantity(pinIngredient.quantity ?? 0, undefined, locale)}
               className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
@@ -800,23 +809,28 @@ export function IngredientsPanel({
               />
             </label>
           )}
-          <Button type="submit" size="sm" disabled={pinServings == null}>
+          <Button type="submit" size="sm" disabled={pinScale.kind !== 'valid'}>
             {t('apply')}
           </Button>
-          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+          <p id={pinFeedbackId} className="w-full text-xs text-muted-foreground" aria-live="polite">
             {pinAmount.trim() === ''
               ? t('pinHint')
-              : pinFactor != null && pinServings != null
-                ? servingsNoun
-                  ? t('scaleFactorWithServings', {
-                      factor: formatQuantity(pinFactor, undefined, locale),
-                      servings: formatQuantity(pinServings, undefined, locale),
-                      noun: servingsNoun,
-                    })
-                  : t('scaleFactor', {
-                      factor: formatQuantity(pinFactor, undefined, locale),
-                    })
-                : t('cannotConvert')}
+              : pinScale.kind === 'out-of-range'
+                ? t('targetOutsideServingsRange', {
+                    minimum: formatQuantity(1, undefined, locale),
+                    maximum: formatQuantity(1000, undefined, locale),
+                  })
+                : pinScale.kind === 'valid'
+                  ? servingsNoun
+                    ? t('scaleFactorWithServings', {
+                        factor: formatQuantity(pinScale.factor, undefined, locale),
+                        servings: formatQuantity(pinScale.servings, undefined, locale),
+                        noun: servingsNoun,
+                      })
+                    : t('scaleFactor', {
+                        factor: formatQuantity(pinScale.factor, undefined, locale),
+                      })
+                  : t('cannotConvert')}
           </p>
         </form>
       )}
