@@ -1924,7 +1924,12 @@
     },
     "page": {
       "title": "Einkaufsliste",
-      "description": "Alles, was du brauchst, aus deinen Rezepten zusammengefasst und aufsummiert. Hake beim Einkaufen einfach ab."
+      "description": "Alles, was du brauchst, aus deinen Rezepten zusammengefasst und aufsummiert. Hake beim Einkaufen einfach ab.",
+      "signIn": {
+        "title": "Melde dich an, um Einkaufslisten zu verwalten",
+        "body": "Melde dich an, um Einkaufslisten zu erstellen und Änderungen in deinem Konto zu speichern.",
+        "unavailable": "Die Anmeldung ist in dieser Umgebung nicht verfügbar. Für Einkaufslisten ist ein Konto erforderlich."
+      }
     }
   },
   "print": {
