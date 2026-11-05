@@ -5,6 +5,7 @@ import type * as React from 'react';
 import { CookAllergenBanner } from './cook-allergen-banner';
 import { type CookIngredient, type CookRecipe } from './types';
 import { IntlWrapper } from '~/test/intl';
+import deMessages from '~/messages/de.json';
 
 function render(ui: React.ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -46,6 +47,23 @@ function makeRecipe(items: string[]): CookRecipe {
 }
 
 describe('CookAllergenBanner', () => {
+  it('localizes direct and hidden names in German without changing membership or order (#1210)', () => {
+    rtlRender(
+      <IntlWrapper locale="de" messages={deMessages}>
+        <CookAllergenBanner
+          recipe={makeRecipe(['flour', 'large eggs', 'whole milk', 'worcestershire sauce'])}
+        />
+      </IntlWrapper>,
+    );
+    const region = screen.getByRole('region', { name: 'Allergen-Sicherheitscheck' });
+    expect(region).toHaveTextContent(
+      'Dieses Rezept enthält: Milchprodukte, Eier und Weizen/Gluten',
+    );
+    expect(region).toHaveTextContent(`${deMessages.cook.allergens.mayContain} Fisch`);
+    expect(region).toHaveTextContent(deMessages.cook.allergens.disclaimer);
+    expect(region).not.toHaveTextContent(/Dairy|Eggs|Wheat\/gluten|Fish/);
+  });
+
   it('surfaces detected allergens on entry', () => {
     render(
       <CookAllergenBanner recipe={makeRecipe(['2 tbsp peanut butter', '1 cup whole milk'])} />,

@@ -31,7 +31,7 @@ describe('AllergenSummary', () => {
     const labels = within(badges)
       .getAllByRole('listitem')
       .map((li) => li.textContent);
-    expect(labels).toEqual(['Dairy', 'Eggs', 'Wheat/gluten']);
+    expect(labels).toEqual(['Lácteos', 'Huevos', 'Trigo/gluten']);
   });
 
   it('shows a best-effort disclaimer alongside the badges', () => {
@@ -59,7 +59,7 @@ describe('AllergenSummary', () => {
     const hiddenList = within(region).getByRole('list', {
       name: /posibles alérgenos ocultos/i,
     });
-    expect(within(hiddenList).getByText('Wheat/gluten')).toBeInTheDocument();
+    expect(within(hiddenList).getByText('Trigo/gluten')).toBeInTheDocument();
     // The cautionary label note is shown.
     expect(screen.getByText(/check for a gluten-free tamari/i)).toBeInTheDocument();
   });
@@ -71,7 +71,7 @@ describe('AllergenSummary', () => {
     const contains = screen.getByRole('list', {
       name: /alérgenos que contiene/i,
     });
-    expect(within(contains).getByText('Wheat/gluten')).toBeInTheDocument();
+    expect(within(contains).getByText('Trigo/gluten')).toBeInTheDocument();
     expect(
       screen.queryByRole('list', { name: /posibles alérgenos ocultos/i }),
     ).not.toBeInTheDocument();

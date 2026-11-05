@@ -22,7 +22,8 @@ import {
   type CustomDietaryRestrictionMutationInputRaw,
   type MemberProfileInputRaw,
 } from '~/server/dietary/validation';
-import { ALLERGENS, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { ALLERGENS, type Allergen } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 import { type CustomRestrictionSeverity } from '~/lib/dietary-contracts';
 import { type CustomDietaryRestrictionInput } from '~/lib/dietary-assessment';
 import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
@@ -174,6 +175,7 @@ export function DietaryProfilesManager({
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
   const t = useTranslations('dietary');
+  const allergenLabels = useAllergenLabels();
   const friendlyError = useFriendlyError();
 
   const groupName = React.useMemo(() => new Map(groups.map((g) => [g.id, g.name])), [groups]);
@@ -416,7 +418,7 @@ export function DietaryProfilesManager({
                 <div className="flex flex-wrap gap-1.5">
                   {profile.allergens.map((a) => (
                     <Badge key={a} variant="warning">
-                      {ALLERGEN_LABELS[a]}
+                      {allergenLabels[a]}
                     </Badge>
                   ))}
                 </div>
@@ -621,7 +623,7 @@ export function DietaryProfilesManager({
                           }))
                         }
                       />
-                      {ALLERGEN_LABELS[a]}
+                      {allergenLabels[a]}
                     </label>
                   );
                 })}

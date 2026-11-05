@@ -6,7 +6,8 @@ import { cn } from '~/lib/utils';
 import { useDialogInitialFocus } from '~/lib/use-initial-focus';
 import { useLocale, useTranslations } from 'next-intl';
 import { describeQuantity, SHOPPING_CATEGORIES, type ShoppingCategory } from '~/lib/shopping-list';
-import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { type Allergen } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 import { allergenConflicts } from '~/lib/dietary-match';
 import { formatList } from '~/lib/i18n-format';
 import { parseAmount } from '~/lib/units';
@@ -157,6 +158,7 @@ function ItemRow({
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
   const t = useTranslations('shopping');
   const allergenDisclaimer = t('allergens.disclaimer');
+  const allergenLabels = useAllergenLabels();
   return (
     <li className="group flex items-center gap-1">
       <button
@@ -224,7 +226,7 @@ function ItemRow({
               title={allergenDisclaimer}
               aria-label={t('allergens.warning', {
                 allergens: formatList(
-                  alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+                  alerts.map((a) => allergenLabels[a]),
                   locale,
                 ),
                 disclaimer: allergenDisclaimer,
@@ -232,7 +234,7 @@ function ItemRow({
             >
               <AlertTriangle className="size-3" aria-hidden />
               {formatList(
-                alerts.map((a) => ALLERGEN_LABELS[a]),
+                alerts.map((a) => allergenLabels[a]),
                 locale,
               )}
             </Badge>
