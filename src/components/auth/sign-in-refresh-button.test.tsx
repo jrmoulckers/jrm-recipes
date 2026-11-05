@@ -37,8 +37,14 @@ afterEach(cleanup);
 describe('shared modal sign-in action', () => {
   it('waits for Clerk, opens its modal, and refreshes the server state after sign-in', async () => {
     const user = userEvent.setup();
-    const view = render(<SignInRefreshButton>Sign in</SignInRefreshButton>);
+    const view = render(
+      <SignInRefreshButton className="fixture-class" title="Sign in to follow">
+        Sign in
+      </SignInRefreshButton>,
+    );
     const button = screen.getByRole('button', { name: 'Sign in' });
+    expect(button).toHaveClass('fixture-class');
+    expect(button).toHaveAttribute('title', 'Sign in to follow');
     expect(button).toBeDisabled();
     await user.click(button);
     expect(state.openSignIn).not.toHaveBeenCalled();

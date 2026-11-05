@@ -6,7 +6,7 @@ import { ChefHat } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import { getPublicProfileByHandle } from '~/server/users/queries';
-import { getCurrentUser } from '~/server/auth';
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
 import { getFollowCounts, isFollowing } from '~/server/follows/queries';
 import { brand } from '~/config/brand';
 import { absoluteUrl, displayNameFrom } from '~/lib/utils';
@@ -127,7 +127,12 @@ async function CookProfilePage({ params }: { params: Promise<HandleRouteParams> 
         </div>
         {showFollow && !isSelf && (
           <div className="sm:ms-auto">
-            <FollowButton followeeId={user.id} initialFollowing={viewerFollows} />
+            <FollowButton
+              followeeId={user.id}
+              initialFollowing={viewerFollows}
+              signedIn={Boolean(viewer)}
+              authConfigured={isAuthConfigured()}
+            />
           </div>
         )}
       </header>
