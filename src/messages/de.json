@@ -2682,6 +2682,12 @@
         "body": "Öffne ein Rezept und tippe auf „Habe ich gekocht“, um dein Tagebuch zu eröffnen. Notizen und Fotos ergeben einen Verlauf, in dem du gern blätterst.",
         "cta": "Rezepte ansehen"
       },
+      "signedOut": {
+        "title": "Melde dich für dein Kochtagebuch an",
+        "body": "Dein Kochverlauf gehört zu deinem Konto. Melde dich an, um deine gespeicherten Kochberichte, Notizen und Fotos zu sehen.",
+        "cta": "Anmelden",
+        "unavailable": "Die Anmeldung ist in dieser Umgebung nicht verfügbar. Dein Kochverlauf kann erst geladen werden, wenn du dich anmelden kannst."
+      },
       "nutritionTitle": "Nährwerte der Auswahl"
     }
   },

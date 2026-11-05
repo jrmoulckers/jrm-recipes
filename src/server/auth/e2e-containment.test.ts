@@ -139,6 +139,14 @@ describe("the E2E specs' restated literals match the real identity", () => {
     expect(literal('GUEST_IDENTITY', source, path)).toBe(DEV_SIGNED_OUT);
   });
 
+  it('pins the guest sentinel and cookie used by the Journal regression', () => {
+    const path = join(process.cwd(), 'tests/e2e/bug-1200.spec.ts');
+    const source = readFileSync(path, 'utf8');
+    expect(literal('DEV_IDENTITY_COOKIE', source, path)).toBe(DEV_IDENTITY_COOKIE);
+    expect(literal('GUEST_IDENTITY', source, path)).toBe(DEV_SIGNED_OUT);
+    expect(literal('CO_COOK_ID', source, path)).toBe(DEV_CO_COOK.id);
+  });
+
   it('leaves no stale reference to the demo persona', () => {
     expect(spec).not.toContain('aunt-rosa');
     expect(spec).not.toContain('seed_usr_rosa');

@@ -2682,6 +2682,12 @@
         "body": "Open a recipe and tap “I cooked this” to begin your journal. Notes and photos build a history you'll love looking back on.",
         "cta": "Browse recipes"
       },
+      "signedOut": {
+        "title": "Sign in to your cooking journal",
+        "body": "Your cooking history belongs to your account. Sign in to see the cooks, notes, and photos you've saved.",
+        "cta": "Sign in",
+        "unavailable": "Sign-in is unavailable in this environment. Your cooking history cannot be loaded until you can sign in."
+      },
       "nutritionTitle": "Nutrition in view"
     }
   },
