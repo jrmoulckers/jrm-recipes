@@ -72,16 +72,21 @@ describe('Tailwind CSS 4 configuration', () => {
   });
 
   it('compiles product font and elevation tokens into a layer that outranks Tailwind defaults', async () => {
-    const result = await postcss([tailwindcss({ base: ROOT })]).process(globalsCss, {
+    const tailwindImport = "@import 'tailwindcss';";
+    expect(globalsCss).toContain(tailwindImport);
+    // Test the token cascade without source discovery; retain even unused default theme tokens.
+    const compilationInput = globalsCss.replace(
+      tailwindImport,
+      "@import 'tailwindcss' source(none) theme(static);",
+    );
+    const result = await postcss([tailwindcss({ base: ROOT })]).process(compilationInput, {
       from: globalsCssPath,
     });
     const layerOrder: string[] = [];
 
     result.root.walkAtRules('layer', (rule) => {
-      if (!rule.nodes) {
-        for (const layer of rule.params.split(',').map((name) => name.trim())) {
-          if (!layerOrder.includes(layer)) layerOrder.push(layer);
-        }
+      for (const layer of rule.params.split(',').map((name) => name.trim())) {
+        if (!layerOrder.includes(layer)) layerOrder.push(layer);
       }
     });
 
