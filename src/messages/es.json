@@ -1929,6 +1929,11 @@
   },
   "print": {
     "title": "Imprimir y compartir",
+    "meta": {
+      "total": "Tiempo total {time}",
+      "prep": "Preparación {time}",
+      "cook": "Cocción {time}"
+    },
     "formatAria": "Formato de impresión",
     "formats": {
       "full": {

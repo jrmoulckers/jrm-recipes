@@ -4,12 +4,12 @@ import { Heart } from 'lucide-react';
 
 import {
   formatIngredientLine,
-  formatRecipeMeta,
   formatStepLine,
   groupIngredients,
   groupSteps,
   provenanceLines,
 } from '~/components/print/export';
+import { useRecipeMeta } from '~/components/print/recipe-meta';
 import type { PrintRecipe } from '~/components/print/types';
 import { buttonVariants } from '~/components/ui/button';
 import { KeepsakePrintButton } from '~/components/recipe/keepsake-print-button';
@@ -32,7 +32,7 @@ export function KeepsakeView({
 }) {
   const t = useTranslations('keepsake');
   const td = useTranslations('recipeDetail');
-  const meta = formatRecipeMeta(recipe);
+  const meta = useRecipeMeta(recipe);
   const provenance = provenanceLines(recipe);
   let stepNumber = 0;
 

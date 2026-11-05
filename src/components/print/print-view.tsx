@@ -34,7 +34,6 @@ import type { PrintRecipe, PrintRecipeIngredient, PrintRecipeStep } from '~/comp
 import {
   formatIngredientAmount,
   formatIngredientLine,
-  formatRecipeMeta,
   formatStepLine,
   formatTimerLabel,
   groupIngredients,
@@ -45,6 +44,7 @@ import {
   serializeRecipePlainText,
   serializeShareCaption,
 } from '~/components/print/export';
+import { useRecipeMeta } from '~/components/print/recipe-meta';
 import { PrintQr } from '~/components/print/qr-code';
 
 const FORMAT_ORDER = ['full', 'compact', 'card-4x6', 'card-3x5'] as const;
@@ -262,7 +262,7 @@ function SourceBlock({
 
 function MetaPills({ recipe }: { recipe: PrintRecipe }) {
   const t = useTranslations('print');
-  const meta = formatRecipeMeta(recipe);
+  const meta = useRecipeMeta(recipe);
 
   if (meta.length === 0) return null;
 
@@ -587,7 +587,7 @@ function IndexCard({
   shareUrl: string | null;
 }) {
   const t = useTranslations('print');
-  const meta = formatRecipeMeta(recipe);
+  const meta = useRecipeMeta(recipe);
 
   return (
     <article className="space-y-4 print:space-y-2">
