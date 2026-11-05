@@ -2,8 +2,6 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { SignInButton, useAuth } from '@clerk/nextjs';
 import { Camera, Download, Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,24 +17,7 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { PasteImportPanel } from '~/components/recipe/paste-import-panel';
 import { ScanRecipeCardPanel } from '~/components/recipe/scan-recipe-card-panel';
-
-function ImportSignInButton() {
-  const t = useTranslations('recipe.import');
-  const router = useRouter();
-  const { isLoaded, userId } = useAuth();
-
-  React.useEffect(() => {
-    if (isLoaded && userId) router.refresh();
-  }, [isLoaded, userId, router]);
-
-  return (
-    <SignInButton mode="modal">
-      <Button type="button" disabled={!isLoaded}>
-        {t('signIn')}
-      </Button>
-    </SignInButton>
-  );
-}
+import { SignInRefreshButton } from '~/components/auth/sign-in-refresh-button';
 
 /**
  * "Import a recipe" import affordance. Create mode only (#294,
@@ -138,7 +119,7 @@ export function ImportRecipePanel({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {authConfigured ? (
-              <ImportSignInButton />
+              <SignInRefreshButton>{t('import.signIn')}</SignInRefreshButton>
             ) : (
               <p className="text-sm text-muted-foreground">{t('import.signInUnavailable')}</p>
             )}

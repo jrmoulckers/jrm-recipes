@@ -2682,6 +2682,12 @@
         "body": "Abre una receta y toca «Lo he cocinado» para inaugurar tu diario. Las notas y las fotos crean un historial al que te encantará volver.",
         "cta": "Ver recetas"
       },
+      "signedOut": {
+        "title": "Inicia sesión en tu diario de cocina",
+        "body": "Tu historial de cocina pertenece a tu cuenta. Inicia sesión para ver los cocinados, las notas y las fotos que has guardado.",
+        "cta": "Iniciar sesión",
+        "unavailable": "El inicio de sesión no está disponible en este entorno. No se puede cargar tu historial de cocina hasta que puedas iniciar sesión."
+      },
       "nutritionTitle": "Nutrición de lo mostrado"
     }
   },

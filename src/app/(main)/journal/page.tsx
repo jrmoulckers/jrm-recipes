@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 
-import { getCurrentUser } from '~/server/auth';
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import {
   getCookedRecipeOptions,
@@ -31,6 +31,7 @@ import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { EmptyState } from '~/components/ui/empty-state';
 import { JournalFilters } from '~/components/cooklog/journal-filters';
+import { SignInRefreshButton } from '~/components/auth/sign-in-refresh-button';
 import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -133,6 +134,8 @@ async function JournalPage({
 
       {!dbReady ? (
         <ConnectDbNotice />
+      ) : !user ? (
+        <SignedOutJournal />
       ) : !hasAnyCooks ? (
         <EmptyJournal />
       ) : (
@@ -305,6 +308,24 @@ async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
         {body}
       </Link>
     </li>
+  );
+}
+
+async function SignedOutJournal() {
+  const t = await getTranslations('cookLog.journal.signedOut');
+  return (
+    <EmptyState
+      icon={<CookingPot />}
+      title={t('title')}
+      description={t('body')}
+      action={
+        isAuthConfigured() ? (
+          <SignInRefreshButton>{t('cta')}</SignInRefreshButton>
+        ) : (
+          <p className="max-w-md text-sm text-muted-foreground">{t('unavailable')}</p>
+        )
+      }
+    />
   );
 }
 
