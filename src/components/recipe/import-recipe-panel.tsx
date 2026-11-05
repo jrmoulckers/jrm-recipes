@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { SignInButton, useAuth } from '@clerk/nextjs';
 import { Camera, Download, Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,6 +20,24 @@ import { Input } from '~/components/ui/input';
 import { PasteImportPanel } from '~/components/recipe/paste-import-panel';
 import { ScanRecipeCardPanel } from '~/components/recipe/scan-recipe-card-panel';
 
+function ImportSignInButton() {
+  const t = useTranslations('recipe.import');
+  const router = useRouter();
+  const { isLoaded, userId } = useAuth();
+
+  React.useEffect(() => {
+    if (isLoaded && userId) router.refresh();
+  }, [isLoaded, userId, router]);
+
+  return (
+    <SignInButton mode="modal">
+      <Button type="button" disabled={!isLoaded}>
+        {t('signIn')}
+      </Button>
+    </SignInButton>
+  );
+}
+
 /**
  * "Import a recipe" import affordance. Create mode only (#294,
  * #370). Extracted into its own module so the editor can `next/dynamic` it,
@@ -31,6 +51,8 @@ export function ImportRecipePanel({
   photoReplaceConfirm,
   urlLabel,
   initialUrl,
+  signedIn,
+  authConfigured,
 }: {
   onImported: (recipe: ImportedRecipe) => void;
   existingIngredients: ExistingIngredient[];
@@ -39,6 +61,8 @@ export function ImportRecipePanel({
   urlLabel: string;
   /** A URL shared into the PWA to pre-fill and auto-import on mount (#50/#55). */
   initialUrl?: string;
+  signedIn: boolean;
+  authConfigured: boolean;
 }) {
   const t = useTranslations('recipe');
   const [importUrl, setImportUrl] = React.useState(initialUrl ?? '');
@@ -51,7 +75,7 @@ export function ImportRecipePanel({
   const runImport = React.useCallback(
     async (rawUrl: string) => {
       const url = rawUrl.trim();
-      if (!url) return;
+      if (!signedIn || !url) return;
       setImporting(true);
       try {
         const res = await importRecipeFromUrlAction(url);
@@ -72,7 +96,7 @@ export function ImportRecipePanel({
         setImporting(false);
       }
     },
-    [t],
+    [signedIn, t],
   );
 
   async function handleImport() {
@@ -84,10 +108,10 @@ export function ImportRecipePanel({
   const autoImportedRef = React.useRef(false);
   React.useEffect(() => {
     const url = initialUrl?.trim();
-    if (!url || autoImportedRef.current) return;
+    if (!signedIn || !url || autoImportedRef.current) return;
     autoImportedRef.current = true;
     void runImport(url);
-  }, [initialUrl, runImport]);
+  }, [initialUrl, runImport, signedIn]);
 
   function applyPhotoImported(recipe: ImportedRecipe): boolean {
     if (
@@ -107,6 +131,23 @@ export function ImportRecipePanel({
         <Link2 className="size-4 text-primary" />
         <h2 className="font-display text-base font-semibold">{t('import.title')}</h2>
       </div>
+      {!signedIn ? (
+        <div className="mt-3 flex flex-col gap-3">
+          <p role="status" className="text-sm text-muted-foreground">
+            {t('import.signInRequired')}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {authConfigured ? (
+              <ImportSignInButton />
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('import.signInUnavailable')}</p>
+            )}
+            <Button type="button" variant="outline" asChild>
+              <a href="#editor-basics">{t('import.writeManually')}</a>
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label={t('import.methodAria')}>
         <Button
           type="button"
@@ -163,7 +204,7 @@ export function ImportRecipePanel({
             <Button
               type="button"
               onClick={() => void handleImport()}
-              disabled={importing || !importUrl.trim()}
+              disabled={!signedIn || importing || !importUrl.trim()}
               className="shrink-0"
             >
               {importing ? <Loader2 className="animate-spin" /> : <Download />}
@@ -172,12 +213,12 @@ export function ImportRecipePanel({
           </div>
         </>
       ) : importMode === 'text' ? (
-        <PasteImportPanel onImported={onImported} />
-      ) : (
+        <PasteImportPanel onImported={onImported} signedIn={signedIn} />
+      ) : signedIn ? (
         <div className="mt-3">
           <ScanRecipeCardPanel onImported={applyPhotoImported} />
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

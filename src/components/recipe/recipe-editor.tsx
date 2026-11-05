@@ -628,6 +628,7 @@ export function RecipeEditor({
   initialTitle,
   initialImportUrl,
   draftOwnerId,
+  authConfigured = false,
   groups = [],
   customUnits = [],
 }: {
@@ -642,6 +643,7 @@ export function RecipeEditor({
   initialImportUrl?: string;
   /** Stable internal user id. Draft persistence is disabled when unavailable. */
   draftOwnerId?: string;
+  authConfigured?: boolean;
   groups?: { id: string; name: string }[];
   /** The author's saved custom units, offered in the unit picker (e.g. "pinch"). */
   customUnits?: CustomUnitDef[];
@@ -1687,10 +1689,12 @@ export function RecipeEditor({
                 photoReplaceConfirm={t('scanReplaceConfirm')}
                 urlLabel={t('importUrl')}
                 initialUrl={initialImportUrl}
+                signedIn={Boolean(draftOwnerId)}
+                authConfigured={authConfigured}
               />
             ) : null}
 
-            <section id="editor-basics" className="flex scroll-mt-28 flex-col gap-4">
+            <section id="editor-basics" tabIndex={-1} className="flex scroll-mt-28 flex-col gap-4">
               <Field label={t('fields.title')} name="title" error={errors.title} required>
                 <Input
                   value={form.title}

@@ -22,6 +22,7 @@ import {
   DEV_IDENTITIES,
   DEV_IDENTITY_COOKIE,
   DEV_USER,
+  DEV_SIGNED_OUT,
   isE2eIdentity,
   isIdentitySelectorEnabled,
   resolveDevIdentity,
@@ -131,6 +132,13 @@ describe("the E2E specs' restated literals match the real identity", () => {
     expect(literal('OWNER_ID', source, path)).toBe(DEV_USER.id);
   });
 
+  it('pins the guest sentinel and cookie used by the import regression', () => {
+    const path = join(process.cwd(), 'tests/e2e/bug-1209.spec.ts');
+    const source = readFileSync(path, 'utf8');
+    expect(literal('DEV_IDENTITY_COOKIE', source, path)).toBe(DEV_IDENTITY_COOKIE);
+    expect(literal('GUEST_IDENTITY', source, path)).toBe(DEV_SIGNED_OUT);
+  });
+
   it('leaves no stale reference to the demo persona', () => {
     expect(spec).not.toContain('aunt-rosa');
     expect(spec).not.toContain('seed_usr_rosa');
@@ -167,5 +175,13 @@ describe('the allowlist stays closed', () => {
     // Anti-vacuity: if this fails, every assertion above passes for the
     // uninteresting reason that resolution is broken for all inputs.
     expect(resolveDevIdentity(DEV_CO_COOK.id)).toBe(DEV_CO_COOK);
+  });
+
+  it('denies authentication for the explicit guest fixture without adding an identity', () => {
+    expect(resolveDevIdentity(DEV_SIGNED_OUT)).toBeNull();
+    expect(DEV_IDENTITIES).toEqual([DEV_USER, DEV_CO_COOK]);
+    for (const value of ['E2E_SIGNED_OUT', ' e2e_signed_out ', 'signed-out']) {
+      expect(resolveDevIdentity(value)).toBe(DEV_USER);
+    }
   });
 });
