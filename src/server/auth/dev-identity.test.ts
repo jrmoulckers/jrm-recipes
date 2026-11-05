@@ -62,7 +62,7 @@ describe('resolveDevIdentity', () => {
     }
   });
 
-  it('never widens access: every resolution is an allowlisted identity', () => {
+  it('keeps ordinary inputs on the authenticated allowlist', () => {
     const probes = ['', 'seed_usr_rosa', 'nope', DEV_USER.id, DEV_CO_COOK.id];
     for (const probe of probes) {
       expect(DEV_IDENTITIES).toContain(resolveDevIdentity(probe));

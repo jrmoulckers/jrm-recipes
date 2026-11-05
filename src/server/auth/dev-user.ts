@@ -74,6 +74,9 @@ export const DEV_IDENTITIES: readonly User[] = [DEV_USER, DEV_CO_COOK];
 /** Cookie a test sets to choose which dev identity a browser context is. */
 export const DEV_IDENTITY_COOKIE = 'heirloom_dev_identity';
 
+/** Signed-out fixture, honored only inside the enabled dev identity selector. */
+export const DEV_SIGNED_OUT = 'e2e_signed_out';
+
 /**
  * Whether the dev identity selector is switched on at all (issue #783).
  *
@@ -97,12 +100,12 @@ export function isIdentitySelectorEnabled(
 /**
  * Resolve a requested dev identity, defaulting to {@link DEV_USER}.
  *
- * Total by construction: every input maps to a real allowlisted identity, so a
- * caller can never end up with a half-resolved or attacker-shaped user. This is
- * only ever reached from the dev-bypass branch, which `assertDevBypassAllowed`
- * has already refused to enter in production.
+ * The explicit signed-out fixture denies authentication; every other input maps
+ * to an allowlisted identity. This is only reached from the enabled selector
+ * inside the guarded dev-bypass branch, never from real Clerk authentication.
  */
-export function resolveDevIdentity(requested: string | undefined | null): User {
+export function resolveDevIdentity(requested: string | undefined | null): User | null {
+  if (requested === DEV_SIGNED_OUT) return null;
   if (!requested) return DEV_USER;
   return DEV_IDENTITIES.find((identity) => identity.id === requested) ?? DEV_USER;
 }

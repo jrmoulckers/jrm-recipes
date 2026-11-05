@@ -46,7 +46,8 @@ export { DEV_USER };
  * placement is deliberate and is the whole security argument: the selector is
  * not a second way in, because it is unreachable everywhere the bypass itself
  * is. It cannot widen access, only choose among identities the bypass was
- * already willing to serve unconditionally.
+ * already willing to serve unconditionally, or deny authentication for the
+ * explicit guest fixture.
  *
  * On top of that, the selector is **off unless `E2E_IDENTITY_SELECTOR=1`**
  * (issue #783). Deliberately not `NEXT_PUBLIC_`, so it cannot be set from a
@@ -57,7 +58,7 @@ export { DEV_USER };
  * would make it a documented deployment knob.
  *
  * Without the flag this returns {@link DEV_USER} *without reading the cookie
- * at all*, so the second identity is not merely unselected but unreachable.
+ * at all*, so the second identity and guest fixture are unreachable.
  *
  * Reading a cookie costs nothing in render semantics here — the root layout
  * already calls `cookies()` for the theme and CSP nonce, so every route is
@@ -66,7 +67,7 @@ export { DEV_USER };
  * Falls back to `DEV_USER` when there is no request scope at all, so a script
  * or a non-request caller behaves exactly as it did before this existed.
  */
-async function selectDevIdentity(): Promise<User> {
+async function selectDevIdentity(): Promise<User | null> {
   if (!isIdentitySelectorEnabled()) return DEV_USER;
   try {
     const { cookies } = await import('next/headers');
@@ -111,8 +112,9 @@ export type AuthState = {
   user: User | null;
 };
 
-async function getOrCreateDevUser(): Promise<User> {
+async function getOrCreateDevUser(): Promise<User | null> {
   const identity = await selectDevIdentity();
+  if (!identity) return null;
   if (!isDbConfigured()) return identity;
   const existing = await db.query.users.findFirst({
     where: eq(users.id, identity.id),
@@ -238,7 +240,7 @@ async function resolveCurrentUser(): Promise<User | null> {
 }
 
 /**
- * The current app user, or null if not signed in (never null in dev-bypass).
+ * The current app user, or null if not signed in (including the E2E guest fixture).
  *
  * Wrapped in React `cache()` so the many callers within a single server render:
  * the root layout's `getAuthState`, each page's `load = cache(...)`,

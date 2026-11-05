@@ -1,6 +1,6 @@
 import { type Metadata } from 'next';
 
-import { getCurrentUser } from '~/server/auth';
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
 import { getLimitStatus } from '~/server/billing/entitlements';
 import { listUserGroups } from '~/server/recipes/queries';
 import { RecipeEditor } from '~/components/recipe/recipe-editor';
@@ -71,6 +71,7 @@ async function NewRecipePage({
             initialTitle={initialTitle}
             initialImportUrl={initialImportUrl}
             draftOwnerId={user?.id}
+            authConfigured={isAuthConfigured()}
           />
         }
       />

@@ -65,9 +65,6 @@ test('creates a recipe with the guided flow at a narrow viewport', async ({ page
   await page.goto('/recipes/new?flow=guided');
 
   const heading = page.getByRole('heading', { name: 'Add a recipe', exact: true });
-  if ((await heading.count()) === 0) {
-    test.skip(true, 'Guided editor unavailable (auth bypass disabled).');
-  }
   await expect(heading).toBeVisible();
 
   const unique = `Guided E2E Pie ${Date.now()}`;

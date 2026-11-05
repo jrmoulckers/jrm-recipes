@@ -16,14 +16,20 @@ import { Textarea } from '~/components/ui/textarea';
  * editor can `next/dynamic` it. Keeping the parser-adjacent UI out of the
  * /recipes/[cook]/[recipe]/edit first-load JS budget.
  */
-export function PasteImportPanel({ onImported }: { onImported: (recipe: ImportedRecipe) => void }) {
+export function PasteImportPanel({
+  onImported,
+  signedIn,
+}: {
+  onImported: (recipe: ImportedRecipe) => void;
+  signedIn: boolean;
+}) {
   const t = useTranslations('recipe');
   const [pasteText, setPasteText] = React.useState('');
   const [importing, setImporting] = React.useState(false);
 
   async function handlePasteImport() {
     const text = pasteText.trim();
-    if (!text) return;
+    if (!signedIn || !text) return;
     setImporting(true);
     try {
       const res = await importRecipeTextAction(text);
@@ -60,7 +66,7 @@ export function PasteImportPanel({ onImported }: { onImported: (recipe: Imported
         <Button
           type="button"
           onClick={() => void handlePasteImport()}
-          disabled={importing || !pasteText.trim()}
+          disabled={!signedIn || importing || !pasteText.trim()}
           className="shrink-0 self-start"
         >
           {importing ? <Loader2 className="animate-spin" /> : <Download />}
