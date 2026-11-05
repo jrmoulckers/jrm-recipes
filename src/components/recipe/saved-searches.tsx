@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '~/components/ui/dialog';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -129,15 +130,16 @@ export function SavedSearches({
       )}
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!filtersActive}
-          title={filtersActive ? undefined : t('savedSearches.disabledTitle')}
-          onClick={() => setSaveOpen(true)}
-        >
-          <BookmarkPlus /> {t('savedSearches.trigger')}
-        </Button>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!filtersActive}
+            title={filtersActive ? undefined : t('savedSearches.disabledTitle')}
+          >
+            <BookmarkPlus /> {t('savedSearches.trigger')}
+          </Button>
+        </DialogTrigger>
         <DialogContent onOpenAutoFocus={onOpenAutoFocus}>
           <form onSubmit={onSave} className="grid gap-5">
             <DialogHeader>
