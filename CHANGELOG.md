@@ -5,6 +5,37 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.5.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.4.0...heirloom-v0.5.0) (2026-11-05)
+
+
+### Features
+
+* **bugs:** add a risk-based reported-bug delivery loop ([#1167](https://github.com/jrmoulckers/jrm-recipes/issues/1167)) ([fdb56b7](https://github.com/jrmoulckers/jrm-recipes/commit/fdb56b7e9fcec95ae5aed646124540056af8c2d2))
+
+
+### Bug Fixes
+
+* **cook:** preserve selected servings and units ([#1173](https://github.com/jrmoulckers/jrm-recipes/issues/1173)) ([#1190](https://github.com/jrmoulckers/jrm-recipes/issues/1190)) ([ba8a707](https://github.com/jrmoulckers/jrm-recipes/commit/ba8a70790ef10618c8207173c21a8e4e97e5d924))
+* **deps:** patch jsdom transitive undici ([#1155](https://github.com/jrmoulckers/jrm-recipes/issues/1155)) ([70ecf98](https://github.com/jrmoulckers/jrm-recipes/commit/70ecf985bfb7ee749fc2097031b5dc3a40601810))
+* **dietary:** clarify assessment certainty ([#1138](https://github.com/jrmoulckers/jrm-recipes/issues/1138)) ([#1143](https://github.com/jrmoulckers/jrm-recipes/issues/1143)) ([4b15410](https://github.com/jrmoulckers/jrm-recipes/commit/4b1541090a9740708019985e9560d67cbf718841))
+* **dietary:** refine ingredient correction flow ([#1141](https://github.com/jrmoulckers/jrm-recipes/issues/1141)) ([#1144](https://github.com/jrmoulckers/jrm-recipes/issues/1144)) ([7b6b2a2](https://github.com/jrmoulckers/jrm-recipes/commit/7b6b2a22dd48c9420edec5dc5cc85df059e38ade))
+* **embed:** localize recipe difficulty ([#1204](https://github.com/jrmoulckers/jrm-recipes/issues/1204)) ([#1225](https://github.com/jrmoulckers/jrm-recipes/issues/1225)) ([a6257f8](https://github.com/jrmoulckers/jrm-recipes/commit/a6257f85c171b3b8cef140ab5080ea698fd85776))
+* **follows:** route guest Follow through sign-in ([#1202](https://github.com/jrmoulckers/jrm-recipes/issues/1202)) ([#1243](https://github.com/jrmoulckers/jrm-recipes/issues/1243)) ([063b0e5](https://github.com/jrmoulckers/jrm-recipes/commit/063b0e5a2d6a59757aca7339a3987328147eaf15))
+* **i18n:** localize allergen display names ([#1210](https://github.com/jrmoulckers/jrm-recipes/issues/1210)) ([#1242](https://github.com/jrmoulckers/jrm-recipes/issues/1242)) ([34c69ad](https://github.com/jrmoulckers/jrm-recipes/commit/34c69ad6589d69e864c8d4f70ad57ecb91603a34))
+* **i18n:** localize comparison metadata labels ([#1198](https://github.com/jrmoulckers/jrm-recipes/issues/1198)) ([#1205](https://github.com/jrmoulckers/jrm-recipes/issues/1205)) ([7c1e856](https://github.com/jrmoulckers/jrm-recipes/commit/7c1e856e68fe1d7f7ddddc3700438341e7aa688e))
+* **i18n:** persist language selection with valid cookie attributes ([#1189](https://github.com/jrmoulckers/jrm-recipes/issues/1189)) ([#1223](https://github.com/jrmoulckers/jrm-recipes/issues/1223)) ([b32712d](https://github.com/jrmoulckers/jrm-recipes/commit/b32712df2d96221d32dd53a3f8b068c9a613949b))
+* **import:** explain guest sign-in and retain sources ([#1234](https://github.com/jrmoulckers/jrm-recipes/issues/1234)) ([b6dc8c0](https://github.com/jrmoulckers/jrm-recipes/commit/b6dc8c03471dbac607e8e40be647f2aa95f90bd8))
+* **journal:** distinguish signed-out cooking history ([#1239](https://github.com/jrmoulckers/jrm-recipes/issues/1239)) ([d8beb1d](https://github.com/jrmoulckers/jrm-recipes/commit/d8beb1d1058e18e2f2735407bfb1b225612f1d9b))
+* **keepsake:** wrap long text within the card ([#1203](https://github.com/jrmoulckers/jrm-recipes/issues/1203)) ([#1216](https://github.com/jrmoulckers/jrm-recipes/issues/1216)) ([0f35bf1](https://github.com/jrmoulckers/jrm-recipes/commit/0f35bf148aad6ff41de865b21bc95cd8df45a267))
+* **print:** keep source URLs clear of QR codes ([#1174](https://github.com/jrmoulckers/jrm-recipes/issues/1174)) ([#1182](https://github.com/jrmoulckers/jrm-recipes/issues/1182)) ([d8dc9c7](https://github.com/jrmoulckers/jrm-recipes/commit/d8dc9c7e7aa9d76018bf8867782f3711acfc76c2))
+* **print:** localize generated recipe metadata ([#1206](https://github.com/jrmoulckers/jrm-recipes/issues/1206)) ([#1231](https://github.com/jrmoulckers/jrm-recipes/issues/1231)) ([f35a09f](https://github.com/jrmoulckers/jrm-recipes/commit/f35a09fd6a2af3952d081822ca938fbcf4a973e2))
+* **privacy:** record six-hour Neon erasure horizon ([#1149](https://github.com/jrmoulckers/jrm-recipes/issues/1149)) ([759cc81](https://github.com/jrmoulckers/jrm-recipes/commit/759cc819c731ee3c096b5b916ad43aeb91c6f232))
+* **recipe:** contain long authored preview text ([#1207](https://github.com/jrmoulckers/jrm-recipes/issues/1207)) ([#1232](https://github.com/jrmoulckers/jrm-recipes/issues/1232)) ([b914399](https://github.com/jrmoulckers/jrm-recipes/commit/b9143998422c5c1462a2741714eb9b4e816e3772))
+* **recipes:** preserve ingredient identity in scaling advice ([#1169](https://github.com/jrmoulckers/jrm-recipes/issues/1169)) ([#1170](https://github.com/jrmoulckers/jrm-recipes/issues/1170)) ([a43fe03](https://github.com/jrmoulckers/jrm-recipes/commit/a43fe03d6e37c79669168008f244f1b95c6c3287))
+* **search:** preserve drafts through navigation and use one clear control ([#1171](https://github.com/jrmoulckers/jrm-recipes/issues/1171)) ([#1172](https://github.com/jrmoulckers/jrm-recipes/issues/1172)) ([d516b35](https://github.com/jrmoulckers/jrm-recipes/commit/d516b3584f863dfd0c27f54d4caaf3588d37ebfc))
+* **search:** restore saved-search dialog focus ([#1208](https://github.com/jrmoulckers/jrm-recipes/issues/1208)) ([#1233](https://github.com/jrmoulckers/jrm-recipes/issues/1233)) ([5ed7592](https://github.com/jrmoulckers/jrm-recipes/commit/5ed75923b4aeadf87a4f00de87a421f660926490))
+* **shopping:** gate account lists behind sign-in ([#1201](https://github.com/jrmoulckers/jrm-recipes/issues/1201)) ([#1240](https://github.com/jrmoulckers/jrm-recipes/issues/1240)) ([639bcd9](https://github.com/jrmoulckers/jrm-recipes/commit/639bcd903bae06922a62d6b535e071024bbb6be4))
+
 ## [0.4.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.3.2...heirloom-v0.4.0) (2026-09-10)
 
 
