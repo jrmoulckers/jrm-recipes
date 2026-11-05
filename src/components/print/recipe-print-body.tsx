@@ -2,12 +2,12 @@ import { useTranslations } from 'next-intl';
 
 import {
   formatIngredientLine,
-  formatRecipeMeta,
   formatStepLine,
   groupIngredients,
   groupSteps,
   provenanceLines,
 } from '~/components/print/export';
+import { useRecipeMeta } from '~/components/print/recipe-meta';
 import type { PrintRecipe } from '~/components/print/types';
 
 /**
@@ -18,7 +18,7 @@ import type { PrintRecipe } from '~/components/print/types';
  */
 export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
   const t = useTranslations('print.body');
-  const meta = formatRecipeMeta(recipe);
+  const meta = useRecipeMeta(recipe);
   const provenance = provenanceLines(recipe);
   let stepNumber = 0;
 

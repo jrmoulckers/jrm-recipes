@@ -1929,6 +1929,11 @@
   },
   "print": {
     "title": "الطباعة والمشاركة",
+    "meta": {
+      "total": "الإجمالي {time}",
+      "prep": "التحضير {time}",
+      "cook": "الطهي {time}"
+    },
     "formatAria": "تنسيق الطباعة",
     "formats": {
       "full": {

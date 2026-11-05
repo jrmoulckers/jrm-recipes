@@ -1929,6 +1929,11 @@
   },
   "print": {
     "title": "Print and share",
+    "meta": {
+      "total": "Total {time}",
+      "prep": "Prep {time}",
+      "cook": "Cook {time}"
+    },
     "formatAria": "Print format",
     "formats": {
       "full": {

@@ -51,22 +51,37 @@ export function recipeUrl(recipe: Pick<PrintRecipe, 'slug'>): string {
   return absoluteUrl(`/recipes/${recipe.slug}`);
 }
 
-export function formatRecipeMeta(recipe: PrintRecipe): string[] {
+type RecipeMetaPresentation = {
+  time: (kind: 'total' | 'prep' | 'cook', minutes: number) => string;
+  difficulty: (value: string) => string;
+};
+
+const exportMetaPresentation: RecipeMetaPresentation = {
+  time: (kind, minutes) => `${capitalize(kind)} ${formatMinutes(minutes)}`,
+  difficulty: capitalize,
+};
+
+export function formatRecipeMeta(
+  recipe: PrintRecipe,
+  presentation: RecipeMetaPresentation = exportMetaPresentation,
+): string[] {
   const meta: string[] = [];
 
   if (recipe.servings != null) {
     meta.push(`${formatQuantity(recipe.servings)} ${recipe.servingsNoun ?? 'servings'}`);
   }
   if (recipe.totalMinutes != null && recipe.totalMinutes > 0) {
-    meta.push(`Total ${formatMinutes(recipe.totalMinutes)}`);
+    meta.push(presentation.time('total', recipe.totalMinutes));
   }
   if (recipe.prepMinutes != null && recipe.prepMinutes > 0) {
-    meta.push(`Prep ${formatMinutes(recipe.prepMinutes)}`);
+    meta.push(presentation.time('prep', recipe.prepMinutes));
   }
   if (recipe.cookMinutes != null && recipe.cookMinutes > 0) {
-    meta.push(`Cook ${formatMinutes(recipe.cookMinutes)}`);
+    meta.push(presentation.time('cook', recipe.cookMinutes));
   }
-  if (recipe.difficulty) meta.push(capitalize(recipe.difficulty));
+  if (recipe.difficulty) {
+    meta.push(presentation.difficulty(recipe.difficulty));
+  }
   if (recipe.cuisines.length > 0) meta.push(recipe.cuisines.join(', '));
   else if (recipe.cuisine) meta.push(recipe.cuisine);
 

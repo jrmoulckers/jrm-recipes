@@ -1929,6 +1929,11 @@
   },
   "print": {
     "title": "Drucken und teilen",
+    "meta": {
+      "total": "Gesamt {time}",
+      "prep": "Vorbereitung {time}",
+      "cook": "Garzeit {time}"
+    },
     "formatAria": "Druckformat",
     "formats": {
       "full": {
