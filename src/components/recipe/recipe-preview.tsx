@@ -128,7 +128,7 @@ export function RecipePreview({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-w-0 flex-col gap-8 wrap-anywhere">
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Sparkles className="size-4 text-primary" aria-hidden="true" />
         {t('notice')}
@@ -244,7 +244,7 @@ export function RecipePreview({
                               {qty}
                             </span>
                           )}
-                          <span className="flex-1">
+                          <span className="min-w-0 flex-1">
                             {ing.item}
                             {ing.prep && (
                               <span className="text-muted-foreground">, {ing.prep}</span>
@@ -314,7 +314,7 @@ export function RecipePreview({
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 font-display text-lg font-semibold text-primary">
                     {i + 1}
                   </span>
-                  <div className="flex flex-1 flex-col gap-2 pt-1">
+                  <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
                     {step.section && (
                       <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         {step.section}
