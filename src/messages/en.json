@@ -1924,7 +1924,12 @@
     },
     "page": {
       "title": "Shopping list",
-      "description": "Everything you need, combined and tallied across your recipes. Check items off as you shop."
+      "description": "Everything you need, combined and tallied across your recipes. Check items off as you shop.",
+      "signIn": {
+        "title": "Sign in to manage shopping lists",
+        "body": "Sign in to create shopping lists and save changes to your account.",
+        "unavailable": "Sign-in is unavailable in this environment. Shopping lists require an account."
+      }
     }
   },
   "print": {

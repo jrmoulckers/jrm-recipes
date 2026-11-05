@@ -1924,7 +1924,12 @@
     },
     "page": {
       "title": "Lista de la compra",
-      "description": "Todo lo que necesitas, agrupado y sumado a partir de tus recetas. Ve marcando mientras compras."
+      "description": "Todo lo que necesitas, agrupado y sumado a partir de tus recetas. Ve marcando mientras compras.",
+      "signIn": {
+        "title": "Inicia sesión para gestionar las listas de la compra",
+        "body": "Inicia sesión para crear listas de la compra y guardar los cambios en tu cuenta.",
+        "unavailable": "El inicio de sesión no está disponible en este entorno. Las listas de la compra requieren una cuenta."
+      }
     }
   },
   "print": {

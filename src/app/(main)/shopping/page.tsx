@@ -2,7 +2,7 @@ import { type Metadata } from 'next';
 import { ShoppingCart } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser } from '~/server/auth';
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
 import { isDbConfigured } from '~/server/db';
 import { getShoppingListHistory, getShoppingWorkspace } from '~/server/shopping/queries';
 import { listMemberProfiles } from '~/server/dietary/queries';
@@ -16,6 +16,7 @@ import { type ShoppingViewItem } from '~/components/shopping/shopping-list-view'
 import { type ShoppingListSummary } from '~/components/shopping/shopping-list-navigation';
 import { type ShoppingHistoryEntry } from '~/components/shopping/shopping-history';
 import { withRouteMessages } from '~/components/i18n/route-messages';
+import { AuthControls } from '~/components/auth/auth-controls';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata');
@@ -126,7 +127,24 @@ async function ShoppingPage({
         <p className="text-muted-foreground">{t('description')}</p>
       </header>
 
-      {dbEnabled ? (
+      {dbEnabled && !user ? (
+        <section
+          aria-labelledby="shopping-sign-in-heading"
+          className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-card p-6 shadow-token-sm"
+        >
+          <h2 id="shopping-sign-in-heading" className="font-display text-xl font-semibold">
+            {t('signIn.title')}
+          </h2>
+          <p className="text-muted-foreground" role="status">
+            {t('signIn.body')}
+          </p>
+          {isAuthConfigured() ? (
+            <AuthControls isConfigured user={null} />
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('signIn.unavailable')}</p>
+          )}
+        </section>
+      ) : dbEnabled ? (
         <DbShoppingList
           items={items}
           lists={lists}
