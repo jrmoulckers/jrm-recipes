@@ -4,7 +4,8 @@ import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { AlertTriangle, X } from 'lucide-react';
 
-import { ALLERGEN_LABELS, summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
+import { summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 import { formatList } from '~/lib/i18n-format';
 import { Button } from '~/components/ui/button';
 import { type CookRecipe } from './types';
@@ -29,13 +30,14 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
   const [acknowledged, setAcknowledged] = React.useState(false);
   const locale = useLocale();
   const t = useTranslations('cook.allergens');
+  const allergenLabels = useAllergenLabels();
 
   if ((allergens.length === 0 && hidden.length === 0) || acknowledged) {
     return null;
   }
 
-  const labels = allergens.map((a) => ALLERGEN_LABELS[a]);
-  const hiddenLabels = hidden.map((w) => ALLERGEN_LABELS[w.allergen]);
+  const labels = allergens.map((a) => allergenLabels[a]);
+  const hiddenLabels = hidden.map((w) => allergenLabels[w.allergen]);
 
   return (
     <div

@@ -3,7 +3,8 @@ import { AlertTriangle, Eye, ShieldCheck } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Badge } from '~/components/ui/badge';
-import { ALLERGEN_LABELS, summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
+import { summarizeAllergens, summarizeHiddenAllergens } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 
 /**
  * A compact, server-rendered "Contains" allergen summary for a recipe. Rolls
@@ -27,6 +28,7 @@ export function AllergenSummary({
   headingId?: string;
 }) {
   const t = useTranslations('allergenSummary');
+  const allergenLabels = useAllergenLabels();
   const allergens = summarizeAllergens(items);
   const hidden = summarizeHiddenAllergens(items);
   const hiddenNotes = [...new Set(hidden.map((warning) => warning.note))];
@@ -63,7 +65,7 @@ export function AllergenSummary({
           <ul className="flex flex-wrap gap-1.5" aria-label={t('containsList')}>
             {allergens.map((allergen) => (
               <li key={allergen}>
-                <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>
+                <Badge variant="warning">{allergenLabels[allergen]}</Badge>
               </li>
             ))}
           </ul>
@@ -84,7 +86,7 @@ export function AllergenSummary({
           <ul className="flex flex-wrap gap-1.5" aria-label={t('hiddenList')}>
             {hidden.map((warning) => (
               <li key={warning.allergen}>
-                <Badge variant="outline">{ALLERGEN_LABELS[warning.allergen]}</Badge>
+                <Badge variant="outline">{allergenLabels[warning.allergen]}</Badge>
               </li>
             ))}
           </ul>

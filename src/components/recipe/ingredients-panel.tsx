@@ -32,7 +32,8 @@ import {
   DIETARY_TAGS,
   type DietaryTag,
 } from '~/lib/substitutions';
-import { detectAllergensForSafety, ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { detectAllergensForSafety, type Allergen } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 import {
   detectIngredientConflict,
   isIngredientConflict,
@@ -376,6 +377,7 @@ export function IngredientsPanel({
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
   const t = useTranslations('ingredientsPanel');
+  const allergenLabels = useAllergenLabels();
   const tNames = useTranslations('classificationNames');
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
@@ -996,7 +998,7 @@ export function IngredientsPanel({
                         conflict.allergens.length > 0
                           ? t('reasonContains', {
                               list: formatList(
-                                conflict.allergens.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+                                conflict.allergens.map((a) => allergenLabels[a]),
                                 locale,
                               ),
                             })
@@ -1128,11 +1130,11 @@ export function IngredientsPanel({
                               variant="muted"
                               className="ms-2 align-middle"
                               title={t('containsTitle', {
-                                allergen: ALLERGEN_LABELS[allergen].toLowerCase(),
+                                allergen: allergenLabels[allergen],
                               })}
                             >
                               <span className="sr-only">{t('containsSr')}</span>
-                              {ALLERGEN_LABELS[allergen]}
+                              {allergenLabels[allergen]}
                             </Badge>
                           ))}
                         </span>

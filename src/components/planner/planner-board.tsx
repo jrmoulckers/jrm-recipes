@@ -26,7 +26,8 @@ import { MEAL_SLOTS, type MealSlotValue } from '~/lib/meal-slots';
 import { cookTimestampForParam } from '~/server/planner/week';
 import { cn } from '~/lib/utils';
 import { parseLeftoversNote } from '~/lib/planner-batch';
-import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { type Allergen } from '~/lib/allergens';
+import { useAllergenLabels } from '~/lib/allergen-labels';
 import { allergenConflicts, type ActiveMemberOption } from '~/lib/dietary-match';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import { formatList } from '~/lib/i18n-format';
@@ -284,6 +285,7 @@ function EntryChip({
   const [isCooking, startCooking] = React.useTransition();
   const [cooked, setCooked] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const allergenLabels = useAllergenLabels();
 
   function removeEntries(alsoLeftovers: boolean) {
     startTransition(async () => {
@@ -347,7 +349,7 @@ function EntryChip({
     alerts.length > 0
       ? t('allergenContains', {
           allergens: formatList(
-            alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+            alerts.map((a) => allergenLabels[a]),
             locale,
           ),
         })

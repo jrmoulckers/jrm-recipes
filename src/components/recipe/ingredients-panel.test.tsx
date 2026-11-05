@@ -5,6 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { IntlWrapper } from '~/test/intl';
+import deMessages from '~/messages/de.json';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import {
   readRecipeCookingSelection,
@@ -140,6 +141,32 @@ describe('IngredientsPanel selection readiness', () => {
       servings: 7,
       system: 'metric',
     });
+  });
+});
+
+describe('IngredientsPanel allergen display', () => {
+  it('localizes German badges and titles while preserving author ingredient prose (#1210)', () => {
+    rtlRender(
+      <IntlWrapper locale="de" messages={deMessages}>
+        <IngredientsPanel
+          ingredients={[
+            { ...ingredients[0]!, item: 'flour', note: 'Family flour note' },
+            { ...ingredients[0]!, id: 'egg', item: 'large eggs' },
+            { ...ingredients[0]!, id: 'milk', item: 'whole milk' },
+          ]}
+          baseServings={4}
+          servingsNoun={null}
+        />
+      </IntlWrapper>,
+    );
+
+    for (const label of ['Weizen/Gluten', 'Eier', 'Milchprodukte']) {
+      expect(screen.getByTitle(`Enthält ${label}`)).toHaveTextContent(`Enthält ${label}`);
+    }
+    expect(screen.queryAllByTitle(/Dairy|Eggs|Wheat\/gluten/)).toHaveLength(0);
+    expect(screen.getByRole('button', { name: /flour.*Family flour note/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /large eggs/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /whole milk/ })).toBeInTheDocument();
   });
 });
 

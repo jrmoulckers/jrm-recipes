@@ -3714,7 +3714,18 @@
     "delete": "Eliminar",
     "close": "Cerrar",
     "loading": "Cargando…",
-    "loadingRecipe": "Cargando la receta…"
+    "loadingRecipe": "Cargando la receta…",
+    "allergenNames": {
+      "peanut": "Cacahuetes",
+      "tree-nut": "Frutos de cáscara",
+      "dairy": "Lácteos",
+      "egg": "Huevos",
+      "soy": "Soja",
+      "wheat": "Trigo/gluten",
+      "fish": "Pescado",
+      "shellfish": "Mariscos",
+      "sesame": "Sésamo"
+    }
   },
   "imageUpload": {
     "previewAlt": "Vista previa de la foto elegida",

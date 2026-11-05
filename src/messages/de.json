@@ -3714,7 +3714,18 @@
     "delete": "Löschen",
     "close": "Schließen",
     "loading": "Wird geladen…",
-    "loadingRecipe": "Rezept wird geladen…"
+    "loadingRecipe": "Rezept wird geladen…",
+    "allergenNames": {
+      "peanut": "Erdnüsse",
+      "tree-nut": "Schalenfrüchte",
+      "dairy": "Milchprodukte",
+      "egg": "Eier",
+      "soy": "Soja",
+      "wheat": "Weizen/Gluten",
+      "fish": "Fisch",
+      "shellfish": "Krebstiere und Weichtiere",
+      "sesame": "Sesam"
+    }
   },
   "imageUpload": {
     "previewAlt": "Vorschau des gewählten Fotos",

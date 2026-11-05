@@ -3714,7 +3714,18 @@
     "delete": "Delete",
     "close": "Close",
     "loading": "Loading…",
-    "loadingRecipe": "Loading recipe…"
+    "loadingRecipe": "Loading recipe…",
+    "allergenNames": {
+      "peanut": "Peanuts",
+      "tree-nut": "Tree nuts",
+      "dairy": "Dairy",
+      "egg": "Eggs",
+      "soy": "Soy",
+      "wheat": "Wheat/gluten",
+      "fish": "Fish",
+      "shellfish": "Shellfish",
+      "sesame": "Sesame"
+    }
   },
   "imageUpload": {
     "previewAlt": "Selected photo preview",
