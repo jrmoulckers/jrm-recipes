@@ -132,6 +132,8 @@ async function inviteCook(page: Page): Promise<Locator> {
   const invite = panel.getByRole('button', { name: /^Invite$/ });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    // A pre-hydration fill can leave the DOM ahead of React's controlled state.
+    await identifier.fill('');
     await identifier.fill(CO_COOK_SLUG);
     if (
       await expect(invite)
@@ -275,6 +277,47 @@ test.describe('co-creation across two identities (#698)', () => {
   test("the recipe does not answer in the invitee's namespace yet", async () => {
     await cook.goto(`/recipes/${CO_COOK_SLUG}/nonnas-sunday-gravy`);
     await expectRevoked(cook);
+  });
+
+  test('recovers an invite identifier entered before hydration (#1241)', async ({ browser }) => {
+    const context = await contextAs(browser);
+    const page = await context.newPage();
+    let releaseScripts!: () => void;
+    const scriptsReleased = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    let blockedScripts = 0;
+    await page.route('**/_next/static/**/*.js', async (route) => {
+      blockedScripts += 1;
+      await scriptsReleased;
+      await route.continue();
+    });
+
+    try {
+      await page.goto(`${BASE_URL}${ownerPath}`, { waitUntil: 'commit' });
+      const panel = creatorPanel(page);
+      const identifier = panel.getByLabel(/invite a cook/i);
+      const invite = panel.getByRole('button', { name: /^Invite$/ });
+      await identifier.fill(CO_COOK_SLUG);
+      await expect(identifier).toHaveValue(CO_COOK_SLUG);
+      await expect(invite).toBeDisabled();
+      expect(blockedScripts, 'the initial fill precedes client execution').toBeGreaterThan(0);
+
+      releaseScripts();
+      await page.waitForLoadState('load');
+      await openActionsMenu(page);
+      await page.keyboard.press('Escape');
+      await expect(identifier).toHaveValue(CO_COOK_SLUG);
+      await expect(identifier).toHaveAttribute('value', '');
+      await expect(invite).toBeDisabled();
+
+      await inviteCook(page);
+      await expect(panel.getByText(/^Invited$/)).toBeVisible();
+      await resetCoCreators(page);
+    } finally {
+      releaseScripts();
+      await context.close();
+    }
   });
 
   test('a pending invitation grants nothing', async () => {
