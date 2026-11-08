@@ -4009,6 +4009,30 @@
     "quickPick": {
       "safeFor": "Safe for {name}"
     },
+    "presets": {
+      "weeknight": {
+        "label": "Weeknight",
+        "description": "Easy dinners in 30 minutes or less, quickest first."
+      },
+      "quick-15": {
+        "label": "≤15 min",
+        "description": "The fastest recipes you can make."
+      },
+      "kid-friendly": {
+        "label": "Kid-friendly",
+        "description": "Recipes tagged kid-friendly."
+      }
+    },
+    "sortOptions": {
+      "relevance": "Best match",
+      "newest": "Newest",
+      "quickest": "Quickest",
+      "az": "A–Z",
+      "top-rated": "Top rated",
+      "popular": "Popular",
+      "protein-high": "Most protein",
+      "calories-low": "Fewest calories"
+    },
     "safeForNote": "Best-effort filtering from ingredient names and declared diets. Always double-check labels for allergies.",
     "field": {
       "meal": "Meal or course",
