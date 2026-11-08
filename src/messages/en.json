@@ -3831,6 +3831,7 @@
     "scaleFactor": "≈ {factor}× the recipe",
     "scaleFactorWithServings": "≈ {factor}× the recipe, {servings} {noun}",
     "cannotConvert": "That amount can't be converted to this ingredient's unit.",
+    "targetOutsideServingsRange": "This target needs fewer than {minimum} or more than {maximum} servings. Change the amount to stay within that range.",
     "totalFlour": "Total flour",
     "hydration": "Hydration",
     "batchWeight": "Batch weight",
