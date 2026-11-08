@@ -3837,6 +3837,7 @@
     "batchWeight": "Peso de la tanda",
     "divideInto": "Dividir en",
     "pieceCountAria": "Número de piezas",
+    "pieceCountInvalid": "Introduce un número entero de piezas, como mínimo 1.",
     "each": "= {weight} cada una",
     "scaledToHousehold": "Ajustado a tu familia de {count}.",
     "cookingFor": "Cocinas para",

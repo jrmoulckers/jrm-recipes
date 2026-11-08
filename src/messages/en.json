@@ -3837,6 +3837,7 @@
     "batchWeight": "Batch weight",
     "divideInto": "Divide into",
     "pieceCountAria": "Number of pieces",
+    "pieceCountInvalid": "Enter a whole number of pieces, at least 1.",
     "each": "= {weight} each",
     "scaledToHousehold": "Scaled to your family of {count}.",
     "cookingFor": "Cooking for",

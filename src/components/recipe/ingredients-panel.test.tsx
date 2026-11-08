@@ -91,6 +91,90 @@ const ingredients = [
   },
 ];
 
+describe('IngredientsPanel piece-count drafts', () => {
+  const pieceIngredients = [
+    { ...ingredients[0]!, quantity: 400 },
+    { ...ingredients[1]!, quantity: 256 },
+  ];
+  it.each(['1.5', '0', '-2'])(
+    'suppresses the target for invalid draft %s and recovers without changing batch weight',
+    async (draft) => {
+      const user = userEvent.setup();
+      render(
+        <IngredientsPanel ingredients={pieceIngredients} baseServings={4} servingsNoun="pieces" />,
+      );
+      const count = screen.getByRole('spinbutton', { name: 'Number of pieces' });
+
+      expect(screen.getByText('= 164 g each')).toBeInTheDocument();
+      await user.type(count, '8');
+      expect(screen.getByText('= 82 g each')).toBeInTheDocument();
+      await user.clear(count);
+      await user.type(count, draft);
+
+      expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
+      expect(count).toHaveValue(Number(draft));
+      expect(count).toHaveAttribute('aria-invalid', 'true');
+      expect(count).toHaveAccessibleDescription('Enter a whole number of pieces, at least 1.');
+      expect(screen.getByText('Enter a whole number of pieces, at least 1.')).toBeVisible();
+      expect(screen.getByText('656 g')).toBeInTheDocument();
+
+      await user.clear(count);
+      await user.type(count, '3');
+      expect(screen.getByText('= 219 g each')).toBeInTheDocument();
+      expect(count).not.toHaveAttribute('aria-invalid', 'true');
+      expect(count).not.toHaveAttribute('aria-describedby');
+
+      await user.clear(count);
+      expect(screen.getByText('= 164 g each')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Enter a whole number of pieces, at least 1.'),
+      ).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'More servings' }));
+      expect(screen.getByText('820 g')).toBeInTheDocument();
+      expect(screen.getByText('= 164 g each')).toBeInTheDocument();
+    },
+  );
+
+  it('distinguishes native badInput from a deliberately blank default and recovers', async () => {
+    const user = userEvent.setup();
+    render(
+      <IngredientsPanel ingredients={pieceIngredients} baseServings={4} servingsNoun="pieces" />,
+    );
+    const count = screen.getByRole('spinbutton', { name: 'Number of pieces' });
+    const badInput = vi.spyOn((count as HTMLInputElement).validity, 'badInput', 'get');
+    badInput.mockReturnValue(true);
+    fireEvent.input(count);
+
+    expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
+    expect(count).toHaveAttribute('aria-invalid', 'true');
+    expect(count).toHaveAccessibleDescription('Enter a whole number of pieces, at least 1.');
+    expect(screen.getByText('Enter a whole number of pieces, at least 1.')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Metric' }));
+    expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
+
+    badInput.mockRestore();
+    fireEvent.input(count);
+    expect(screen.getByText('= 164 g each')).toBeInTheDocument();
+    expect(count).not.toHaveAttribute('aria-invalid', 'true');
+    await user.type(count, '8');
+    expect(screen.getByText('= 82 g each')).toBeInTheDocument();
+  });
+
+  it('keeps an uncountable yield blank until a valid explicit piece count is supplied', async () => {
+    const user = userEvent.setup();
+    render(<IngredientsPanel ingredients={ingredients} baseServings={4} servingsNoun={null} />);
+    const count = screen.getByRole('spinbutton', { name: 'Number of pieces' });
+
+    expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
+    expect(count).not.toHaveAttribute('aria-invalid', 'true');
+    await user.type(count, '1');
+    expect(screen.getByText('= 300 g each')).toBeInTheDocument();
+    await user.clear(count);
+    expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
+    expect(count).not.toHaveAttribute('aria-invalid', 'true');
+  });
+});
+
 describe('IngredientsPanel selection readiness', () => {
   afterEach(() => {
     sessionStorage.removeItem('heirloom:recipe-cooking-selection:hydration-recipe');

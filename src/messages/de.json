@@ -3837,6 +3837,7 @@
     "batchWeight": "Teiggewicht",
     "divideInto": "Aufteilen in",
     "pieceCountAria": "Anzahl der Stücke",
+    "pieceCountInvalid": "Gib eine ganze Stückzahl von mindestens 1 ein.",
     "each": "= je {weight}",
     "scaledToHousehold": "Angepasst an deine Familie mit {count} Personen.",
     "cookingFor": "Kochen für",

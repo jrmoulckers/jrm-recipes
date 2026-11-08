@@ -373,6 +373,8 @@ export function IngredientsPanel({
   const [bakersView, setBakersView] = React.useState(false);
   // Batch-weight math (#418): total + per-piece portioning.
   const [pieceCount, setPieceCount] = React.useState<string>('');
+  const [pieceCountBadInput, setPieceCountBadInput] = React.useState(false);
+  const pieceCountErrorId = React.useId();
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -540,7 +542,15 @@ export function IngredientsPanel({
   // A countable yield (e.g. "12 rolls") seeds the divide-into piece count.
   const countableYield =
     servingsNoun && Number.isFinite(servings) && servings > 0 ? Math.round(servings) : null;
-  const pieces = pieceCount.trim() === '' ? countableYield : Number(pieceCount);
+  const pieceCountValue = Number(pieceCount);
+  const pieceCountInvalid =
+    pieceCountBadInput ||
+    (pieceCount.trim() !== '' && (!Number.isInteger(pieceCountValue) || pieceCountValue < 1));
+  const pieces = pieceCountInvalid
+    ? null
+    : pieceCount.trim() === ''
+      ? countableYield
+      : pieceCountValue;
   const batchYield = React.useMemo(
     () => computeBatchYield(weighed, factor, pieces),
     [weighed, factor, pieces],
@@ -872,8 +882,11 @@ export function IngredientsPanel({
                   step="1"
                   value={pieceCount}
                   onChange={(e) => setPieceCount(e.target.value)}
+                  onInput={(e) => setPieceCountBadInput(e.currentTarget.validity.badInput)}
                   placeholder={countableYield != null ? String(countableYield) : 'N'}
                   aria-label={t('pieceCountAria')}
+                  aria-invalid={pieceCountInvalid || undefined}
+                  aria-describedby={pieceCountInvalid ? pieceCountErrorId : undefined}
                   className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
                 />
                 {batchYield.perUnit != null && (
@@ -884,6 +897,14 @@ export function IngredientsPanel({
                   </span>
                 )}
               </label>
+              <p
+                id={pieceCountErrorId}
+                aria-live="polite"
+                aria-atomic="true"
+                className={cn('w-full text-xs text-destructive', !pieceCountInvalid && 'sr-only')}
+              >
+                {pieceCountInvalid ? t('pieceCountInvalid') : ''}
+              </p>
             </>
           )}
         </div>
