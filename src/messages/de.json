@@ -4009,6 +4009,30 @@
     "quickPick": {
       "safeFor": "Geeignet für {name}"
     },
+    "presets": {
+      "weeknight": {
+        "label": "Unter der Woche",
+        "description": "Einfache Abendessen in höchstens 30 Minuten, die schnellsten zuerst."
+      },
+      "quick-15": {
+        "label": "≤15 Min.",
+        "description": "Die schnellsten Rezepte zum Nachkochen."
+      },
+      "kid-friendly": {
+        "label": "Kinderfreundlich",
+        "description": "Rezepte mit dem Schlagwort kinderfreundlich."
+      }
+    },
+    "sortOptions": {
+      "relevance": "Beste Treffer",
+      "newest": "Neueste",
+      "quickest": "Schnellste",
+      "az": "Von A bis Z",
+      "top-rated": "Am besten bewertet",
+      "popular": "Beliebt",
+      "protein-high": "Meistes Protein",
+      "calories-low": "Wenigste Kalorien"
+    },
     "safeForNote": "Filterung nach bestem Wissen anhand von Zutatennamen und angegebenen Ernährungsweisen. Prüfe Etiketten bei Allergien immer selbst.",
     "field": {
       "meal": "Mahlzeit oder Gang",

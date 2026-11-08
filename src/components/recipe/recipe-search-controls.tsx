@@ -45,7 +45,6 @@ import {
   MACRO_FILTERS,
   parseRecipeSearch,
   recipeDifficultyValues,
-  recipeSortLabels,
   recipeSortValues,
   type MacroFilterParam,
   type RecipeFacetParam,
@@ -384,7 +383,14 @@ export function RecipeSearchControls({
         params: [{ key: 'safeFor', value: member.id }],
       });
     }
-    return [...personalized, ...RECIPE_PRESETS];
+    return [
+      ...personalized,
+      ...RECIPE_PRESETS.map((preset) => ({
+        ...preset,
+        label: t(`presets.${preset.id}.label`),
+        description: t(`presets.${preset.id}.description`),
+      })),
+    ];
   }, [members, signedIn, t]);
 
   /**
@@ -735,7 +741,7 @@ export function RecipeSearchControls({
             <SelectContent>
               {recipeSortValues.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {recipeSortLabels[option]}
+                  {t(`sortOptions.${option}`)}
                 </SelectItem>
               ))}
             </SelectContent>

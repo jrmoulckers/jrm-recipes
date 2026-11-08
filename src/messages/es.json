@@ -4009,6 +4009,30 @@
     "quickPick": {
       "safeFor": "Apto para {name}"
     },
+    "presets": {
+      "weeknight": {
+        "label": "Entre semana",
+        "description": "Cenas fáciles en 30 minutos o menos, las más rápidas primero."
+      },
+      "quick-15": {
+        "label": "≤15 minutos",
+        "description": "Las recetas más rápidas que puedes preparar."
+      },
+      "kid-friendly": {
+        "label": "Para niños",
+        "description": "Recetas con la etiqueta para niños."
+      }
+    },
+    "sortOptions": {
+      "relevance": "Mejor coincidencia",
+      "newest": "Más recientes",
+      "quickest": "Más rápidas",
+      "az": "De A a Z",
+      "top-rated": "Mejor valoradas",
+      "popular": "Populares",
+      "protein-high": "Más proteína",
+      "calories-low": "Menos calorías"
+    },
     "safeForNote": "Filtrado aproximado a partir de los nombres de los ingredientes y las dietas declaradas. Revisa siempre las etiquetas si hay alergias.",
     "field": {
       "meal": "Comida o plato",
