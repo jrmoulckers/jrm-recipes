@@ -4,6 +4,12 @@ const boundsMessage =
   'This target needs fewer than 1 or more than 1000 servings. Change the amount to stay within that range.';
 
 async function checkTargetBounds(surface: Page | Locator) {
+  const original = surface
+    .getByRole('group', { name: 'Measurement system', exact: true })
+    .getByRole('button', { name: 'Original', exact: true });
+  await original.click();
+  await expect(original).toHaveAttribute('aria-pressed', 'true');
+  await expect(surface.getByRole('button', { name: /^400\s*g\s*spaghetti\b/ })).toBeVisible();
   await surface.getByRole('button', { name: 'Scale to…', exact: true }).click();
   const amount = surface.getByRole('spinbutton', { name: 'Target amount', exact: true });
   const apply = surface.getByRole('button', { name: 'Apply', exact: true });
