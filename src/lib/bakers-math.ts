@@ -127,12 +127,14 @@ export type BatchYield = {
   totalWeight: number;
   /** Grams per unit when the yield is a countable number, else `null`. */
   perUnit: number | null;
+  /** Ingredient lines excluded from both weights by this calculation. */
+  omittedItems: string[];
 };
 
 /**
- * Total batch weight (grams) plus an optional per-unit target when the recipe
- * yields a countable number of pieces (e.g. "12 rolls"). Returns `null` when no
- * ingredient weight is derivable.
+ * Known-ingredient weight (grams) plus an optional per-unit target when the recipe
+ * yields a countable number of pieces (e.g. "12 rolls"). Both weights are partial
+ * when `omittedItems` is nonempty. Returns `null` when no weight is derivable.
  */
 export function computeBatchYield(
   ingredients: WeighedIngredient[],
@@ -141,10 +143,14 @@ export function computeBatchYield(
 ): BatchYield | null {
   let totalWeight = 0;
   let any = false;
+  const omittedItems: string[] = [];
   for (const ing of ingredients) {
     const scaled = scaleQuantity(ing.quantity, factor);
     const grams = toWeight(scaled, ing.unit, ing.item);
-    if (grams == null || grams <= 0) continue;
+    if (grams == null || grams <= 0) {
+      omittedItems.push(ing.item);
+      continue;
+    }
     any = true;
     totalWeight += grams;
   }
@@ -152,6 +158,7 @@ export function computeBatchYield(
   return {
     totalWeight,
     perUnit: perPieceWeight(totalWeight, pieces),
+    omittedItems,
   };
 }
 

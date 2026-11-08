@@ -79,6 +79,59 @@ describe('computeBatchYield + perPieceWeight (#418)', () => {
     const y = computeBatchYield(dough, 1, 12)!;
     expect(y.totalWeight).toBe(960); // 500 + 350 + 10 + 100
     expect(y.perUnit).toBeCloseTo(80, 5);
+    expect(y.omittedItems).toEqual(['eggs']);
+  });
+
+  it('reports the exact omitted lines without changing the known-weight subtotal (#1187)', () => {
+    const mixed: WeighedIngredient[] = [
+      { item: 'spaghetti', quantity: 400, unit: 'g' },
+      { item: 'guanciale', quantity: 156, unit: 'g' },
+      { item: 'pecorino', quantity: 100, unit: 'g' },
+      { item: 'large eggs', quantity: 4, unit: null },
+      { item: 'egg yolks', quantity: 2, unit: null },
+      { item: 'unresolved seasoning', quantity: 1, unit: 'tsp' },
+    ];
+    expect(computeBatchYield(mixed, 1, 8)).toEqual({
+      totalWeight: 656,
+      perUnit: 82,
+      omittedItems: ['large eggs', 'egg yolks', 'unresolved seasoning'],
+    });
+    expect(computeBatchYield(mixed, 2, 8)).toEqual({
+      totalWeight: 1312,
+      perUnit: 164,
+      omittedItems: ['large eggs', 'egg yolks', 'unresolved seasoning'],
+    });
+    expect(computeBatchYield(mixed, 1, 4)?.perUnit).toBe(164);
+  });
+
+  it('keeps an explicit all-mass batch complete at 960 g and 80 g per piece (#1187)', () => {
+    expect(
+      computeBatchYield(
+        [
+          { item: 'bread flour', quantity: 500, unit: 'g' },
+          { item: 'water', quantity: 350, unit: 'g' },
+          { item: 'salt', quantity: 10, unit: 'g' },
+          { item: 'levain', quantity: 100, unit: 'g' },
+        ],
+        1,
+        12,
+      ),
+    ).toEqual({ totalWeight: 960, perUnit: 80, omittedItems: [] });
+  });
+
+  it('records nonpositive and missing amounts in calculation coverage (#1187)', () => {
+    expect(
+      computeBatchYield([
+        { item: 'flour', quantity: 100, unit: 'g' },
+        { item: 'zero salt', quantity: 0, unit: 'g' },
+        { item: 'negative sugar', quantity: -1, unit: 'g' },
+        { item: 'water to taste', quantity: null, unit: 'g' },
+      ]),
+    ).toEqual({
+      totalWeight: 100,
+      perUnit: null,
+      omittedItems: ['zero salt', 'negative sugar', 'water to taste'],
+    });
   });
 
   it('scales the total with the factor', () => {

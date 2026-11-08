@@ -868,7 +868,7 @@ export function IngredientsPanel({
           {batchYield && (
             <>
               <span className="text-muted-foreground">
-                {t('batchWeight')}{' '}
+                {t(batchYield.omittedItems.length > 0 ? 'partialBatchWeight' : 'batchWeight')}{' '}
                 <span className="text-foreground tabular-nums">
                   {formatGrams(batchYield.totalWeight, locale)}
                 </span>
@@ -891,7 +891,7 @@ export function IngredientsPanel({
                 />
                 {batchYield.perUnit != null && (
                   <span className="text-foreground tabular-nums">
-                    {t('each', {
+                    {t(batchYield.omittedItems.length > 0 ? 'partialEach' : 'each', {
                       weight: formatGrams(batchYield.perUnit, locale),
                     })}
                   </span>
@@ -905,6 +905,13 @@ export function IngredientsPanel({
               >
                 {pieceCountInvalid ? t('pieceCountInvalid') : ''}
               </p>
+              {batchYield.omittedItems.length > 0 && (
+                <p className="w-full text-xs text-muted-foreground">
+                  {t('omittedBatchWeights', {
+                    ingredients: formatList(batchYield.omittedItems, locale),
+                  })}
+                </p>
+              )}
             </>
           )}
         </div>
