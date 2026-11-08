@@ -13,6 +13,8 @@ type Ingredient = {
   unit: string | null;
 };
 
+test.describe.configure({ retries: 0 });
+
 // Authored snapshot supplied by the coordinator, not an existing seeded recipe
 // or a replay of the original production journey.
 const carbonara: Ingredient[] = [
@@ -212,27 +214,53 @@ test('partial batch and per-piece weights disclose omitted lines, unlike complet
                 await pieces.fill('');
                 await expect(page.getByText(each(164), { exact: true })).toBeVisible();
               }
+              const measureHelper = () =>
+                batch.locator('..').evaluate((helper) => {
+                  const rect = helper.getBoundingClientRect();
+                  return {
+                    scrollWidth: helper.scrollWidth,
+                    clientWidth: helper.clientWidth,
+                    left: rect.left,
+                    right: rect.right,
+                    viewportWidth: document.documentElement.clientWidth,
+                    innerWidth: window.innerWidth,
+                    documentScrollWidth: document.documentElement.scrollWidth,
+                    scrollX: window.scrollX,
+                    focus: document.activeElement?.getAttribute('aria-label'),
+                  };
+                });
+              const beforeScreenshot = await measureHelper();
               await test.info().attach(`bug-1187-${locale}-${width}-partial`, {
                 body: await page.screenshot({ fullPage: true }),
                 contentType: 'image/png',
               });
+              const afterScreenshot = await measureHelper();
+              await test.info().attach(`bug-1187-${locale}-${width}-geometry`, {
+                body: Buffer.from(JSON.stringify({ beforeScreenshot, afterScreenshot }, null, 2)),
+                contentType: 'application/json',
+              });
+              for (const [phase, geometry] of Object.entries({
+                beforeScreenshot,
+                afterScreenshot,
+              })) {
+                expect(
+                  geometry.scrollWidth,
+                  `${phase}: helper contents fit its client width`,
+                ).toBeLessThanOrEqual(geometry.clientWidth);
+                expect(
+                  geometry.left,
+                  `${phase}: helper starts inside the viewport`,
+                ).toBeGreaterThanOrEqual(0);
+                expect(
+                  geometry.right,
+                  `${phase}: helper ends inside the viewport`,
+                ).toBeLessThanOrEqual(geometry.viewportWidth);
+              }
             } else {
               await expect(page.getByText(copy.partialBatchWeight, { exact: false })).toHaveCount(
                 0,
               );
               await expect(page.getByText(omittedPrefix, { exact: false })).toHaveCount(0);
-            }
-            if (fixture.kind === 'partial') {
-              expect(
-                await batch
-                  .locator('..')
-                  .evaluate(
-                    (helper) =>
-                      helper.scrollWidth <= helper.clientWidth &&
-                      helper.getBoundingClientRect().left >= 0 &&
-                      helper.getBoundingClientRect().right <= document.documentElement.clientWidth,
-                  ),
-              ).toBe(true);
             }
           });
         }
