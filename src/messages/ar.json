@@ -3837,6 +3837,7 @@
     "batchWeight": "وزن الدفعة",
     "divideInto": "قسمها إلى",
     "pieceCountAria": "عدد القطع",
+    "pieceCountInvalid": "أدخل عددًا صحيحًا من القطع، لا يقل عن 1.",
     "each": "= {weight} لكل قطعة",
     "scaledToHousehold": "معدلة لعائلتك المكونة من {count}.",
     "cookingFor": "تطبخ لـ",
