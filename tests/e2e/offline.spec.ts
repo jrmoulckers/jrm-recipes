@@ -31,16 +31,86 @@ async function bootServiceWorker(page: Page): Promise<void> {
  * pre-cook screen (#402). Step through it to reach step 1 so the
  * `#current-step-title` heading is present. Mirrors tests/e2e/cook-journey.spec.ts.
  */
-async function startCooking(page: Page): Promise<void> {
+async function startCooking(page: Page, beforeStart?: () => Promise<void>): Promise<void> {
   const startCooking = page.getByTestId('cook-mode-start');
   const currentStep = page.locator('#current-step-title');
 
   await expect(startCooking.first().or(currentStep).first()).toBeVisible();
   if (await startCooking.first().isVisible()) {
+    if (beforeStart) await beforeStart();
     await startCooking.first().click();
   }
   await expect(currentStep).toBeVisible();
 }
+
+async function resumeCooking(page: Page): Promise<void> {
+  await expect(page.locator('#current-step-title')).toBeVisible();
+}
+
+test('awaits resumed Cook state when hydration is delayed (#1252)', async ({ browser }) => {
+  // Block service workers here so the script gate controls hydration, not transport.
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  let releaseScripts!: () => void;
+  let scriptsReleased = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  let blockedScripts = 0;
+  let selectedStart = false;
+
+  try {
+    const recipePath = await gotoSeededRecipe(page);
+    if (recipePath == null)
+      throw new Error('The delayed-resume control requires a seeded database.');
+    const cookPath = `${recipePath}/cook`;
+    await page.goto(cookPath);
+    await startCooking(page);
+    const currentStep = page.locator('#current-step-title');
+    const onlineStepTitle = await currentStep.textContent();
+    expect(onlineStepTitle?.trim()).toBeTruthy();
+
+    await page.route('**/_next/static/**/*.js', async (route) => {
+      blockedScripts += 1;
+      await scriptsReleased;
+      await route.continue();
+    });
+    await page.goto(cookPath, { waitUntil: 'commit' });
+    await expect(page.getByTestId('cook-mode-start').first()).toBeVisible();
+    await expect.poll(() => blockedScripts).toBeGreaterThan(0);
+    await expect(currentStep).toHaveCount(0);
+
+    // Pause only after the old helper has selected the real SSR Start branch.
+    // Hydration removes that target before its click, reproducing the retained race.
+    await expect(
+      startCooking(page, async () => {
+        selectedStart = true;
+        releaseScripts();
+        await expect(currentStep).toBeVisible();
+        await expect(page.getByTestId('cook-mode-start')).toHaveCount(0);
+        page.setDefaultTimeout(1_000);
+      }),
+    ).rejects.toThrow(/locator\.click: Timeout/);
+    expect(selectedStart).toBe(true);
+    page.setDefaultTimeout(30_000);
+
+    scriptsReleased = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    blockedScripts = 0;
+    await page.goto(cookPath, { waitUntil: 'commit' });
+    await expect(page.getByTestId('cook-mode-start').first()).toBeVisible();
+    await expect.poll(() => blockedScripts).toBeGreaterThan(0);
+    await expect(currentStep).toHaveCount(0);
+    page.setDefaultTimeout(1_000);
+    const resumed = resumeCooking(page);
+    releaseScripts();
+    await resumed;
+    await expect(currentStep).toHaveText(onlineStepTitle!);
+  } finally {
+    releaseScripts();
+    await context.close();
+  }
+});
 
 test('serves the offline fallback for an uncached navigation', async ({ page, context }) => {
   await bootServiceWorker(page);
@@ -97,8 +167,7 @@ test('a previously opened recipe and Cook Mode work offline', async ({ page, con
   await expect(page.locator(`a[href="${cookPath}"]`).first()).toBeVisible();
 
   await page.goto(cookPath);
-  await startCooking(page);
-  await expect(page.locator('#current-step-title')).toBeVisible();
+  await resumeCooking(page);
   // The step content the network served proves Cook Mode rendered from cache,
   // not a generic offline shell. Comparing the two renders is not circular: the
   // online value came over the network and the offline one comes from the
