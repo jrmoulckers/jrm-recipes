@@ -234,6 +234,15 @@ async function fixtureStepHasInstruction(instruction: string): Promise<boolean> 
   }
 }
 
+async function fillInstruction(firstStep: Locator, instruction: string): Promise<void> {
+  await expect(async () => {
+    // Refill even when the DOM already matches: hydration may not have observed that input.
+    await firstStep.fill('');
+    await firstStep.fill(instruction);
+    await expect(firstStep).toHaveJSProperty('defaultValue', instruction);
+  }).toPass({ timeout: 15_000 });
+}
+
 test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
 test.describe('co-creation across two identities (#698)', () => {
@@ -380,33 +389,64 @@ test.describe('co-creation across two identities (#698)', () => {
     expect(new URL(ownerCanonical!).pathname).toBe(ownerPath);
   });
 
-  test('a co-creator edit is visible under both namespaces', async () => {
-    const marker = `Rested overnight ${Date.now()}`;
-
-    await cook.goto(`${mirrorPath}/edit`);
-    const firstStep = cook.getByRole('textbox', { name: /instruction/i }).first();
+  async function saveCoCreatorEdit(page: Page, marker: string): Promise<void> {
+    const firstStep = page.getByRole('textbox', { name: /instruction/i }).first();
     await expect(firstStep).not.toHaveValue('');
-    await firstStep.fill(marker);
-
-    const save = cook.getByRole('button', { name: /save changes/i });
-    let saved = false;
-    for (let attempt = 0; attempt < 3 && !saved; attempt += 1) {
-      await save.click();
-      saved = await expect
-        .poll(() => fixtureStepHasInstruction(marker), {
-          timeout: 20_000,
-        })
-        .toBe(true)
-        .then(() => true)
-        .catch(() => false);
-    }
-    expect(saved, "the co-creator's edit completed").toBe(true);
+    await fillInstruction(firstStep, marker);
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect
+      .poll(() => fixtureStepHasInstruction(marker), {
+        timeout: 20_000,
+        message: "the co-creator's single Save must persist the instruction",
+      })
+      .toBe(true);
 
     // This is the end-to-end fan-out property that would have caught #695.
     for (const path of [ownerPath, mirrorPath]) {
-      await cook.goto(path);
-      await expect(cook.getByText(marker), `the edit must be visible at ${path}`).toBeVisible();
+      await page.goto(path);
+      await expect(page.getByText(marker), `the edit must be visible at ${path}`).toBeVisible();
     }
+  }
+
+  test('recovers a co-creator instruction entered before hydration (#1248)', async ({
+    browser,
+  }) => {
+    const context = await contextAs(browser, CO_COOK_ID);
+    const page = await context.newPage();
+    let releaseScripts!: () => void;
+    const scriptsReleased = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    let blockedScripts = 0;
+    await page.route('**/_next/static/**/*.js', async (route) => {
+      blockedScripts += 1;
+      await scriptsReleased;
+      await route.continue();
+    });
+
+    try {
+      await page.goto(`${BASE_URL}${mirrorPath}/edit`, { waitUntil: 'commit' });
+      const firstStep = page.getByRole('textbox', { name: /instruction/i }).first();
+      await expect(firstStep).not.toHaveValue('');
+      const marker = `Before hydration ${Date.now()}`;
+      await firstStep.fill(marker);
+      await expect(firstStep).toHaveValue(marker);
+      expect(blockedScripts, 'the initial fill precedes client execution').toBeGreaterThan(0);
+      await expect(firstStep).not.toHaveJSProperty('defaultValue', marker);
+
+      releaseScripts();
+      await page.waitForLoadState('load');
+      await saveCoCreatorEdit(page, marker);
+    } finally {
+      releaseScripts();
+      await context.close();
+    }
+  });
+
+  test('a co-creator edit is visible under both namespaces', async () => {
+    const marker = `Rested overnight ${Date.now()}`;
+    await cook.goto(`${mirrorPath}/edit`);
+    await saveCoCreatorEdit(cook, marker);
   });
 
   test('a co-creator is refused delete, share-link, and creator management', async () => {
