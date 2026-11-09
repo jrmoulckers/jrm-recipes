@@ -140,7 +140,31 @@ test('partial batch and per-piece weights disclose omitted lines, unlike complet
               'dir',
               locale === 'ar' ? 'rtl' : 'ltr',
             );
-            await page.getByRole('button', { name: copy.system.grams, exact: true }).click();
+            const gramsButton = page.getByRole('button', {
+              name: copy.system.grams,
+              exact: true,
+            });
+            const gramsBounds = await gramsButton.evaluate((button) => {
+              const rect = button.getBoundingClientRect();
+              return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+              };
+            });
+            expect(
+              gramsBounds.left,
+              'Grams is contained before the pointer action',
+            ).toBeGreaterThanOrEqual(0);
+            expect(gramsBounds.right).toBeLessThanOrEqual(gramsBounds.viewportWidth);
+            expect(gramsBounds.top).toBeGreaterThanOrEqual(0);
+            expect(gramsBounds.bottom).toBeLessThanOrEqual(gramsBounds.viewportHeight);
+            // Keep the contained target in place through Playwright's internal alignment retries.
+            await gramsButton.click({ scroll: 'none' });
+            await expect(gramsButton).toBeFocused();
 
             const pieces = page.getByRole('spinbutton', { name: copy.pieceCountAria });
             if (fixture.kind === 'unknown') {
