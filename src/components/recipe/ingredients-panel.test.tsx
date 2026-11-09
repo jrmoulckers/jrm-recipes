@@ -1,11 +1,14 @@
 import { cleanup, fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useState, type ReactElement } from 'react';
+import { useState, type ComponentProps, type ReactElement } from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { IntlWrapper } from '~/test/intl';
 import deMessages from '~/messages/de.json';
+import ar from '~/messages/ar.json';
+import en from '~/messages/en.json';
+import es from '~/messages/es.json';
 import { useActiveMemberStore } from '~/lib/active-member-store';
 import {
   readRecipeCookingSelection,
@@ -173,6 +176,99 @@ describe('IngredientsPanel piece-count drafts', () => {
     expect(screen.queryByText(/= .+ each/)).not.toBeInTheDocument();
     expect(count).not.toHaveAttribute('aria-invalid', 'true');
   });
+});
+
+describe('IngredientsPanel batch-weight coverage (#1187)', () => {
+  const knownWeights = [
+    { ...ingredients[0]!, id: 'flour', item: 'bread flour', quantity: 500 },
+    { ...ingredients[0]!, id: 'water', item: 'water', quantity: 350 },
+    { ...ingredients[0]!, id: 'salt', item: 'salt', quantity: 10 },
+    { ...ingredients[0]!, id: 'levain', item: 'levain', quantity: 100 },
+  ];
+  const unknownWeights = [
+    { ...ingredients[0]!, id: 'eggs', item: 'large eggs', quantity: 4, unit: null },
+    { ...ingredients[0]!, id: 'yolks', item: 'egg yolks', quantity: 2, unit: null },
+    {
+      ...ingredients[0]!,
+      id: 'seasoning',
+      item: 'unresolved seasoning',
+      quantity: 1,
+      unit: 'tsp',
+    },
+  ];
+
+  it('qualifies both carbonara subtotal outputs and preserves scaling and division', async () => {
+    const user = userEvent.setup();
+    render(
+      <IngredientsPanel
+        ingredients={[
+          { ...ingredients[0]!, item: 'spaghetti', quantity: 400 },
+          { ...ingredients[1]!, item: 'guanciale', quantity: 156 },
+          { ...ingredients[0]!, id: 'cheese', item: 'pecorino', quantity: 100 },
+          ...unknownWeights,
+        ]}
+        baseServings={4}
+        servingsNoun={null}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /^Grams$/ }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Number of pieces' }), '8');
+    const batch = screen.getByText('Known-ingredient subtotal (partial)');
+    expect(batch).toHaveTextContent('656 g');
+    expect(screen.getByText('= 82 g each (partial, known ingredients only)')).toBeVisible();
+    expect(
+      screen.getByText(
+        'Weight not included for: large eggs, egg yolks, and unresolved seasoning. These are not the complete batch or portion weights.',
+      ),
+    ).toBeVisible();
+    await user.clear(screen.getByRole('spinbutton', { name: 'Number of pieces' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Number of pieces' }), '4');
+    expect(screen.getByText('= 164 g each (partial, known ingredients only)')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'More servings' }));
+    expect(batch).toHaveTextContent('820 g');
+    expect(screen.getByText('= 205 g each (partial, known ingredients only)')).toBeVisible();
+  });
+
+  it.each([
+    ['en', en],
+    ['es', es],
+    ['de', deMessages],
+    ['ar', ar],
+  ] as const)(
+    'discloses both partial values only when weights are omitted (%s)',
+    async (locale, messages) => {
+      const user = userEvent.setup();
+      const panel = (rows: ComponentProps<typeof IngredientsPanel>['ingredients']) => (
+        <IntlWrapper locale={locale} messages={messages}>
+          <IngredientsPanel ingredients={rows} baseServings={4} servingsNoun={null} />
+        </IntlWrapper>
+      );
+      const view = rtlRender(panel([...knownWeights, ...unknownWeights]));
+      const copy = messages.ingredientsPanel;
+      const weight = (grams: number) => `${new Intl.NumberFormat(locale).format(grams)} g`;
+      const omittedPrefix = copy.omittedBatchWeights.split('{ingredients}')[0]!;
+      await user.type(screen.getByRole('spinbutton', { name: copy.pieceCountAria }), '12');
+      expect(screen.getByText(copy.partialBatchWeight)).toBeVisible();
+      expect(screen.getByText(copy.partialEach.replace('{weight}', weight(80)))).toBeVisible();
+      const explanation = screen.getByText((text) => text.startsWith(omittedPrefix));
+      for (const item of unknownWeights) {
+        expect(explanation).toHaveTextContent(item.item);
+      }
+
+      view.rerender(panel(knownWeights));
+      expect(screen.getByText(copy.batchWeight)).toHaveTextContent(weight(960));
+      expect(screen.getByText(copy.each.replace('{weight}', weight(80)))).toBeVisible();
+      expect(screen.queryByText(copy.partialBatchWeight)).not.toBeInTheDocument();
+      expect(screen.queryByText((text) => text.startsWith(omittedPrefix))).not.toBeInTheDocument();
+
+      view.rerender(panel(unknownWeights));
+      expect(
+        screen.queryByRole('spinbutton', { name: copy.pieceCountAria }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(copy.batchWeight)).not.toBeInTheDocument();
+      expect(screen.queryByText(copy.partialBatchWeight)).not.toBeInTheDocument();
+    },
+  );
 });
 
 describe('IngredientsPanel selection readiness', () => {
