@@ -31,7 +31,7 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const dialogContentVariants = cva(
-  'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain',
+  'fixed z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] gap-4 overflow-y-auto overscroll-contain',
   {
     variants: {
       // Content-driven widths; `lg` preserves the historical default.
@@ -41,7 +41,7 @@ const dialogContentVariants = cva(
         lg: 'max-w-lg',
         xl: 'max-w-3xl',
       },
-      // Enter/exit motion. `center` scales from the middle (the default for
+      // Positioning and motion. `center` scales from the middle (the default for
       // every centered dialog); `sheet` slides from the inline-end edge so a
       // full-height side drawer's motion matches its spatial model (issue #93).
       // The slide axis is direction-aware: LTR docks/animates on the right edge,
@@ -50,7 +50,8 @@ const dialogContentVariants = cva(
       // explicit dir, so exactly one variant applies). The `sheet` positioning
       // itself is supplied by the caller's className.
       variant: {
-        center: 'data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
+        center:
+          'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
         sheet:
           'data-[state=closed]:ltr:animate-slide-out-to-right data-[state=open]:ltr:animate-slide-in-from-right data-[state=closed]:rtl:animate-slide-out-to-left data-[state=open]:rtl:animate-slide-in-from-left',
       },

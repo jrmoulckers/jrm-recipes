@@ -7,10 +7,10 @@ import { OVERLAY_SURFACE } from './overlay-surface';
 
 afterEach(cleanup);
 
-function renderDialog(className?: string) {
+function renderDialog(className?: string, variant?: 'center' | 'sheet') {
   render(
     <Dialog open>
-      <DialogContent className={className}>
+      <DialogContent className={className} variant={variant}>
         <DialogTitle>Title</DialogTitle>
         <DialogDescription>Body</DialogDescription>
       </DialogContent>
@@ -84,6 +84,22 @@ describe('DialogContent size variants', () => {
 });
 
 describe('DialogContent sheet variant motion', () => {
+  it('reserves centered positioning for centered dialogs, not caller-anchored sheets (#1212)', () => {
+    const centered = renderDialog();
+    const positioning = ['top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2'];
+    for (const token of positioning) {
+      expect(centered.className.split(' ')).toContain(token);
+    }
+
+    cleanup();
+    const sheet = renderDialog('inset-s-auto inset-e-0 top-0 translate-x-0 translate-y-0', 'sheet');
+    for (const token of positioning) {
+      expect(sheet.className.split(' ')).not.toContain(token);
+    }
+    expect(sheet.className.split(' ')).toContain('inset-e-0');
+    expect(sheet.className.split(' ')).toContain('inset-s-auto');
+  });
+
   it('slides in a direction-aware axis so the sheet hugs its end-anchored edge', () => {
     render(
       <Dialog open>
