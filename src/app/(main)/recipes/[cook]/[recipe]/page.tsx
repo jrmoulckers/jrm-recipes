@@ -713,7 +713,7 @@ async function RecipePage({
         )}
 
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
-          <TabsList className="self-start">
+          <TabsList className="max-w-full flex-wrap self-start">
             <TabsTrigger id="recipe-tab-trigger" value="recipe">
               <BookOpen className="size-4" /> {t('tabs.recipe')}
             </TabsTrigger>
