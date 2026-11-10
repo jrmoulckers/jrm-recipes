@@ -113,6 +113,64 @@ sell the Family/Premium plan.
 That's it. On this and every future deploy, Vercel will run the migrations
 against Neon and build the app.
 
+### Quota policy activation
+
+**Prepared for review, not operationally activated.** See
+[ADR-0013](docs/architecture/0013-on-demand-bug-bash-releases.md) and the
+[on-demand release procedure](docs/bug-loop.md#on-demand-bug-bash-releases).
+No quota recovery is established by this change.
+
+The repository config uses Vercel's documented
+[`git.deploymentEnabled`](https://vercel.com/docs/project-configuration/git-configuration):
+`{"**": false, "main": true}`. Unspecified branches default to enabled, and
+any matching `true` wins. Globstar covers slash-separated fix/release branches;
+a single `*` is not a catch-all for those names under minimatch semantics.
+`main` remains enabled as the production target. This suppresses automatic Git
+deployments, not just an ignored build step; it does not block explicit
+deployments, dashboard actions or existing queued work.
+
+**First-publication gate:** the branch-matching reference does not explicitly
+establish which revision supplies configuration before the first deployment
+allocation. Do not infer bootstrap safety from a local config test. Hold the
+initial push/PR until that behavior is established for the connected project,
+or a human approves and confirms an independent Git-deployment stop.
+Vercel documents **Settings > Git > Connected Git Repository > Disconnect**
+in its [Git settings](https://vercel.com/docs/project-configuration/git-settings).
+That is a possible human-controlled bootstrap option, not an instruction to
+execute it: identify every connected project first, review outstanding work,
+and separately authorize reconnection and any deployment it might cause.
+An ignored build step is not a substitute for stopping deployment allocation.
+
+Before activation, a human must:
+
+1. Inspect Vercel's actual exhausted resource and resumption requirements. Do not
+   assume a calendar reset, or probe paused production to check whether it lifted.
+2. Review and authorize merging this deployment-affecting policy PR. It may
+   itself trigger a main deployment. Confirm the project production branch is
+   `main` and review any project/root-directory overrides that change which
+   configuration Vercel reads. No settings changes are performed by this PR.
+3. Reconcile outstanding/older fix and bot branches **before their next push**:
+   they may carry the old configuration. The policy does not retroactively
+   rewrite them or cancel queued deployments. If safe source-commit suppression
+   cannot be established, hold publication and obtain approval for the needed
+   dashboard Git-deployment control first; never test safety with a real push.
+4. Authorize the named integration branch, release owner, selected peer-PR
+   integration operations and batch release. Until then this is a proposal,
+   not permission to change shared branches or deploy.
+5. After an authorized release and hosting availability, inspect the central
+   watcher receipt and collect each bug's no-retry browser acceptance on that
+   SHA. A health GET proves neither UI correctness nor recovery of the quota.
+
+Once merged, the workflows have no warming/hourly schedules. The manual
+connectivity workflow makes one request with a 30-second ceiling and accepts
+HTTP 200 only; it is not release acceptance. Deploy watch makes one such request
+per successful Production event and requires exact SHA, `status=ok`, `db=ok`.
+Its manual drift fallback compares against checked-out `main` with the same
+health requirements; an in-flight deployment defers verification. Each event
+or deliberate rerun is a separate invocation, not a globally once-only check.
+Failed-deployment diagnostics retain their GitHub API queries and do not probe
+production. All five existing business/privacy crons remain unchanged.
+
 ### Environment variables
 
 | Variable                             | Required?       | Value                                                                                                                                                                                                           |
@@ -149,6 +207,10 @@ against Neon and build the app.
 > unaffected.
 
 ### Isolating preview databases
+
+Automatic non-main Git deployments are disabled by the proposed quota policy.
+The guidance below applies only to explicitly approved hosted previews; it is
+not an instruction to enable them for each bug.
 
 Vercel runs `vercel-build` for **preview** deployments too, and a preview shares
 the project's environment variables. If you add the production `DATABASE_URL` to
@@ -234,34 +296,20 @@ pnpm db:seed
 It creates a demo cook, a "family" group, and three sample recipes (all
 idempotent and safe to run twice. Delete them from the UI any time).
 
-### Run a staging environment (optional)
+### Test a bug-bash release before production
 
-Want a stable, always-on pre-production URL (separate from per-PR previews) to
-smoke-test before promoting to production? Heirloom supports a **staging**
-environment:
-
-1. In Vercel → **Settings → Git**, keep Production tracking `main` and add a
-   long-lived **`staging`** branch as a deployment branch (or use a dedicated
-   Vercel "Preview" branch). Pushes to `staging` build a stable staging URL.
-2. Give staging its **own** `DATABASE_URL`. A Neon branch of production is
-   ideal, and its own Clerk keys, exactly like production (never point staging
-   at the production database).
-3. `staging` runs the **same CI gate** as `main` (the CI workflow triggers on
-   pushes to both), so nothing lands on staging without passing lint, tests, and
-   the build.
-4. Promote by fast-forwarding `main` to the reviewed `staging` commit (or open a
-   `staging → main` PR). Vercel then deploys production from `main` as usual.
-
-Because migrations only auto-run in production and are skipped on preview
-(#258), staging uses its own branch database and the standard `vercel-build`
-flow, so a broken migration surfaces on staging before it can reach production.
+Use the [isolated batch procedure](docs/bug-loop.md#on-demand-bug-bash-releases),
+local production builds and GitHub CI, not a permanent staging deployment.
+The presence of `staging` in a CI trigger does not establish an existing remote
+branch. A hosted preview is an explicit human-approved exception with its own
+quota budget and isolated database; the main-only Git policy does not enable it.
 
 ### Automated releases (versioning & changelog)
 
 Versioning, the changelog, and release tags are automated with
 [release-please](https://github.com/googleapis/release-please)
-(`.github/workflows/release.yml`), so every production deploy maps to a
-human-readable version instead of a raw commit SHA:
+(`.github/workflows/release.yml`). Version releases and Vercel deployments have
+separate cadences; this does not batch application deployments:
 
 1. Write commits using [Conventional
    Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
@@ -304,15 +352,12 @@ The probe runs a cheap `SELECT 1` with a short timeout, is never cached
 `ok`/`degraded`/`not_configured` enum, never a driver error or connection
 string).
 
-Wire an external uptime monitor against `https://<your-domain>/api/health`:
-
-1. In [Better Stack](https://betterstack.com/uptime),
-   [UptimeRobot](https://uptimerobot.com/), or Vercel's built-in monitoring,
-   create an HTTP monitor for that URL on a 1–5 minute interval.
-2. Treat any non-200 (including 503) as **down** and add an email/Slack/SMS
-   alert contact.
-3. Optionally assert the body contains `"status":"ok"` to catch degraded-DB
-   states that some monitors would otherwise see as reachable.
+The quota-friendly policy deliberately has **no scheduled health monitor**.
+Use the central release check, with a manual check only for an authorized
+diagnostic. This trades background outage detection and warm compute for lower
+idle traffic. Adding an external monitor requires human review of its request
+and database-compute budget; do not silently replace the removed schedules
+with another service.
 
 ---
 

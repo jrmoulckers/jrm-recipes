@@ -21,9 +21,7 @@ on:
   # Fires for every deployment status Vercel publishes, including Preview builds
   # for pull requests -- hence the environment filter on the job below.
   deployment_status:
-  # The event above cannot report a deploy that never started. See the drift job.
-  schedule:
-    - cron: '17 * * * *'
+  # Manual drift diagnosis covers missing events without background HTTP traffic.
   workflow_dispatch:
 
 # The event payload carries the SHA, environment, and log URL. The failure job
@@ -34,8 +32,8 @@ permissions: {}
 jobs:
   production-deploy-failed:
     name: Report failed production deployment
-    # Preview deployments are noisy by design: one per push per PR, across a
-    # fleet of concurrent sessions. Only Production is worth waking anyone for.
+    # Older branches or explicitly approved previews can still publish events.
+    # Only Production is worth waking anyone for.
     # Vercel labels these deployments "Production".
     if: >-
       github.event.deployment.environment == 'Production' &&
@@ -131,7 +129,8 @@ jobs:
   # five of the twelve never reached production and produced no run, no event,
   # and a green Actions tab.
   #
-  # Absence cannot be observed from an event that never fires, so this polls.
+  # Absence cannot be observed from an event that never fires. A release owner
+  # dispatches this once if the expected event is missing; there is no schedule.
   # It also asserts the property actually wanted -- production is serving main --
   # instead of the absence of one known failure, so it needs no knowledge of
   # either mode and will not go blind when a third appears.
@@ -142,8 +141,7 @@ jobs:
   # deploy reports success without becoming the live alias.
   production-drift:
     name: Production drift
-    # Skip on deployment_status runs: the job above already owns that path.
-    if: github.event_name != 'deployment_status'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -153,7 +151,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # rev-list needs the commits between the deployed sha and main.
+          ref: main
+          # rev-list provides diagnostic distance, not the success predicate.
           fetch-depth: 0
 
       - name: Compare main against the last successful production deploy
@@ -170,14 +169,14 @@ jobs:
           # This is strictly better than the deployments API, which records what
           # Vercel *intended*. A deploy that reports success but never becomes
           # the live alias is invisible to the API and obvious here.
-          health="$(curl -sS --max-time 30 "${HEALTH_URL}" || echo '')"
-          if [ -z "${health}" ]; then
-            echo "::error title=Production health unreachable::GET ${HEALTH_URL} returned nothing. Production may be down."
+          if ! health="$(curl --fail -sS --max-time 30 "${HEALTH_URL}")" || [ -z "${health}" ]; then
+            echo "::error title=Production health unreachable::GET ${HEALTH_URL} failed or returned nothing. No automatic retry."
             exit 1
           fi
 
           deployed_sha="$(printf '%s' "${health}" | jq -r '.sha // ""')"
           health_status="$(printf '%s' "${health}" | jq -r '.status // "unknown"')"
+          db="$(printf '%s' "${health}" | jq -r '.db // "unknown"')"
           echo "health:   ${health}"
 
           if [ -z "${deployed_sha}" ] || [ "${deployed_sha}" = "dev" ]; then
@@ -191,8 +190,13 @@ jobs:
           echo "deployed: ${deployed_sha}"
           echo "drift:    ${drift}"
 
-          if [ "${drift}" = "0" ]; then
-            echo "Production is serving main (status=${health_status})."
+          if [ "${health_status}" != "ok" ] || [ "${db}" != "ok" ]; then
+            echo "::error title=Production is unhealthy::status=${health_status} db=${db}"
+            exit 1
+          fi
+
+          if [ "${deployed_sha}" = "${head_sha}" ]; then
+            echo "Production is serving main and reports healthy."
             exit 0
           fi
 
@@ -204,7 +208,7 @@ jobs:
             newest_state="$(gh api "repos/${REPO}/deployments/${newest_id}/statuses?per_page=1" --jq '.[0].state // "none"')"
             case "${newest_state}" in
               pending | in_progress | queued)
-                echo "A production deployment is in flight (${newest_state}). Nothing to report."
+                echo "::warning::A production deployment is in flight (${newest_state}). Verification deferred, not passed."
                 exit 0
                 ;;
             esac
@@ -222,7 +226,7 @@ jobs:
           echo
           echo "Vercel says: ${description}"
           echo "Mode:        ${mode}"
-          echo "::error title=Production is behind main::Production is serving ${deployed_sha}, ${drift} commit(s) behind main. Mode: ${mode}"
+          echo "::error title=Production does not match main::Production is serving ${deployed_sha}, expected ${head_sha}; diagnostic drift=${drift}. Mode: ${mode}"
           exit 1
 
   # A deployment_status of "success" says Vercel finished, not that users are
@@ -241,35 +245,24 @@ jobs:
       github.event.deployment.environment == 'Production' &&
       github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     permissions: {}
     steps:
-      - name: Poll health until it reports the deployed commit
+      - name: Verify the deployed commit with one health request
         env:
           DEPLOY_SHA: ${{ github.event.deployment.sha }}
           HEALTH_URL: https://heirloom.jrmoulckers.com/api/health
         run: |
           set -euo pipefail
 
-          served=""
-          status=""
-          db=""
-          # Propagation is usually seconds; allow well past that before alarming.
-          for attempt in $(seq 1 20); do
-            health="$(curl -sS --max-time 30 "${HEALTH_URL}" || echo '')"
-            if [ -n "${health}" ]; then
-              served="$(printf '%s' "${health}" | jq -r '.sha // ""')"
-              status="$(printf '%s' "${health}" | jq -r '.status // "unknown"')"
-              db="$(printf '%s' "${health}" | jq -r '.db // "unknown"')"
-              echo "Attempt ${attempt}: sha=${served} status=${status} db=${db}"
-              if [ "${served}" = "${DEPLOY_SHA}" ]; then
-                break
-              fi
-            else
-              echo "Attempt ${attempt}: no response"
-            fi
-            sleep 15
-          done
+          if ! health="$(curl --fail -sS --max-time 30 "${HEALTH_URL}")" || [ -z "${health}" ]; then
+            echo "::error title=Production health unreachable::Health request failed or returned nothing. No automatic retry."
+            exit 1
+          fi
+          served="$(printf '%s' "${health}" | jq -r '.sha // ""')"
+          status="$(printf '%s' "${health}" | jq -r '.status // "unknown"')"
+          db="$(printf '%s' "${health}" | jq -r '.db // "unknown"')"
+          echo "sha=${served} status=${status} db=${db}"
 
           if [ "${served}" != "${DEPLOY_SHA}" ]; then
             echo "::error title=Deploy reported success but is not being served::Vercel reported ${DEPLOY_SHA} deployed, but production is serving ${served:-nothing}."

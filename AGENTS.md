@@ -274,3 +274,14 @@ alternative pre-push gate is `pnpm bug:check --base <full-main-sha> --fast`.
 It preserves the checks above while selecting related unit tests. CI independently
 verifies eligibility and runs smoke plus defect-specific browser regressions.
 All other work uses the complete gate above. Human gates are unchanged.
+
+### Proposed bug-bash release batches
+
+The [batch-release decision](docs/architecture/0013-on-demand-bug-bash-releases.md)
+requires human activation. After that approval, bug-bash fix PRs may target the
+named, isolated release integration branch instead of `main`; the integration
+PR targets current `main` and runs the full gate. This is the product-local
+exception to main-targeting and per-fix landing, not a bypass of CI or peer-PR
+approval. Follow the [release procedure](docs/bug-loop.md#on-demand-bug-bash-releases).
+Outside an activated batch, existing delivery rules apply. Fifteen minutes
+targets a validated fix, not guaranteed production delivery.

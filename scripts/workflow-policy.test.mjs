@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -28,6 +28,7 @@ const [ci, release, keepWarm, deployWatch, prConflicts, rawDeploy, rawLighthouse
 const lighthouse = rawLighthouse.replace(/'/g, '"');
 const packageBuild = rawPackageBuild.replace(/'/g, '"');
 const deploy = rawDeploy.replace(/\s+/g, ' ');
+const vercel = JSON.parse(await readFile(resolve('vercel.json'), 'utf8'));
 
 // Returns the body of one trigger under `on:`, or null when that trigger is not
 // declared. Returning null rather than '' is deliberate: the caller below bans a
@@ -59,6 +60,61 @@ function jobBlocks(workflow) {
 }
 
 describe('workflow integrity policy', () => {
+  it('disables non-main Git deployments including slash-separated release branches', () => {
+    const rules = vercel.git?.deploymentEnabled;
+    expect(rules).toEqual({ '**': false, main: true });
+    const enabled = (branch) => {
+      const matches = Object.entries(rules).filter(([pattern]) =>
+        posix.matchesGlob(branch, pattern),
+      );
+      return matches.length === 0 || matches.some(([, value]) => value);
+    };
+    expect(enabled('main')).toBe(true);
+    for (const branch of [
+      'fix-one',
+      'fix/one',
+      'release/bug-bash/one',
+      'release-please--branches--main--components--heirloom',
+      'jrmoulckers-quota-friendly-bug-bash-releases',
+    ]) {
+      expect(enabled(branch), branch).toBe(false);
+    }
+    expect(vercel.regions).toEqual(['pdx1']);
+    expect(vercel.crons).toEqual([
+      { path: '/api/cron/digest', schedule: '0 14 * * 1' },
+      { path: '/api/cron/cook-along-reminders', schedule: '0 15 * * *' },
+      { path: '/api/cron/food-graph', schedule: '0 8 * * *' },
+      { path: '/api/cron/erasure-backlog', schedule: '0 9 * * *' },
+      { path: '/api/cron/dietary-retention', schedule: '0 10 * * *' },
+    ]);
+  });
+
+  it('makes connectivity deliberate and deploy verification event-driven, never scheduled', () => {
+    for (const workflow of [keepWarm, deployWatch]) {
+      expect(triggerBody(workflow, 'workflow_dispatch')).not.toBeNull();
+      expect(triggerBody(workflow, 'schedule')).toBeNull();
+    }
+    expect(triggerBody(deployWatch, 'deployment_status')).not.toBeNull();
+    const ping = jobBlocks(keepWarm).find(({ name }) => name === 'ping');
+    const serving = jobBlocks(deployWatch).find(({ name }) => name === 'production-serving');
+    const drift = jobBlocks(deployWatch).find(({ name }) => name === 'production-drift');
+    expect(ping).toBeDefined();
+    expect(serving).toBeDefined();
+    expect(drift).toBeDefined();
+    for (const { body } of [ping, serving, drift]) {
+      expect(body.match(/curl /g)).toHaveLength(1);
+      expect(body).toContain('--max-time 30');
+      expect(body).not.toMatch(/\b(for|while|until) .+; do|--retry|\bsleep \d/);
+    }
+    expect(serving.body).toContain("github.event.deployment_status.state == 'success'");
+    expect(serving.body).toContain("github.event.deployment.environment == 'Production'");
+    expect(drift.body).toContain("github.event_name == 'workflow_dispatch'");
+    expect(drift.body).toMatch(/^\s+ref: main$/m);
+    for (const { body } of [serving, drift]) {
+      expect(body).toContain('curl --fail');
+    }
+  });
+
   it('pins every canonical caller to the reviewed commit', () => {
     for (const workflow of [
       'reusable-ci-lint.yml',
@@ -182,7 +238,7 @@ describe('workflow integrity policy', () => {
   });
 
   it('bounds every local runner job', () => {
-    const localJobs = [ci, release, keepWarm, prConflicts].flatMap((workflow) =>
+    const localJobs = [ci, release, keepWarm, deployWatch, prConflicts].flatMap((workflow) =>
       jobBlocks(workflow).filter(({ body }) => body.includes('runs-on:')),
     );
 

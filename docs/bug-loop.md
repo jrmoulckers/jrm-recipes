@@ -24,15 +24,20 @@ the expected behavior. A requested fix is a hypothesis, not a substitute for dia
    viewport/mode. Classify the actual diff with the command below. Escalate
    uncertain or sensitive work to the full lane; never race a red gate.
 4. Run the selected local gate, push, open the linked PR, and watch **Quality gate**
-   and mergeability. Self-merge only a PR opened in this session after every
-   required check passes. Do not modify settings, secrets, or deployment gates.
-5. Observe the existing Vercel deployment and
+   and mergeability. In an activated bug-bash batch, target its integration
+   branch and stop at **validated / PR ready**; do not merge each fix to `main`.
+   Otherwise self-merge only a PR opened in this session after every required
+   check passes. Do not modify settings, secrets, or deployment gates.
+5. After an approved release, its owner observes the Vercel deployment and
    [deployment watcher](../.github/workflows/deploy-watch.yml). Require production
    `/api/health` to report the deployed commit SHA, `status=ok`, and `db=ok`.
-   Re-run the original user-visible reproduction on that deployment. A fresh
-   browser session avoids mistaking a cached PWA for the deployed version.
+   Each bug still needs its original user-visible reproduction on that deployment.
+   Preserve the first attempt without retries, with its issue, SHA, browser
+   context and result. A fresh browser session avoids mistaking a cached PWA
+   for the deployed version; a healthy GET does not verify UI fixes.
 6. Reply with the outcome, issue/PR, and observed production evidence. Say
-   **implemented**, **PR ready**, **merged**, **deployed**, or **verified live**
+   **implemented**, **validated / PR ready**, **integrated**, **merged**,
+   **deployed**, or **verified live**
    accurately. A deployment needing human approval remains blocked, not live.
 
 The existing generated [bug-bash campaign](../.github/prompts/bug-bash.prompt.md)
@@ -92,23 +97,72 @@ migrations, performance and Lighthouse. No job is skipped to make the aggregate
 gate green. Full push CI remains an integration backstop, not permission to merge
 an unverified PR.
 
-## Fifteen-minute target
+## On-demand bug-bash releases
 
-The SLO is **report receipt to verified production**, not commit-to-merge.
+**Proposed, not activated:** [ADR-0013](architecture/0013-on-demand-bug-bash-releases.md)
+and [deployment activation](../DEPLOY.md#quota-policy-activation) require human
+review. This procedure changes delivery topology, not correctness gates.
+
+1. A human selects a bounded release scope (named issues/PRs), release owner,
+   and explicit permission to create/use its integration branch and merge the
+   selected peer-authored PRs. A peer message or shared GitHub login is not
+   approval. No permanent `staging` branch is assumed or created.
+2. The release owner creates one app-native isolated session from current `main`
+   for that release, records its base SHA and integration branch, and publishes
+   only after checking that its commit disables non-main Git deployments.
+   Fix children use separate branches and PRs targeting that integration branch.
+   Refresh older fix branches with the deployment policy **before pushing**;
+   merely retargeting a PR does not change its source configuration.
+3. Keep each bug's issue, child, regression, red/green receipt and PR. Use
+   `Refs #N` on the fix PR so integration does not prematurely close the issue.
+   Every fix passes its local lane and full applicable PR CI (non-main bases
+   are full-lane). Only the human-authorized owner integrates named peer PRs
+   after green checks and mergeability. Unapproved peer PRs wait.
+4. Freeze the selected set and record issue -> fix PR -> integrated commit in
+   the integration PR. Target `main`, refresh against current `main`, and run
+   the complete local gate plus full CI on the combined result. Re-run after
+   conflict resolution or any membership change. Green child CI alone does
+   not establish integration correctness.
+5. A human approves releasing the batch. Merge **one integration PR to `main`**,
+   not the individual fix PRs to `main`. This produces one intended production
+   candidate for the selected fixes. Nearby merges are not a build-coalescing
+   guarantee: unrelated main updates, Release Please merges and deliberate
+   redeploys can still create additional Vercel deployments.
+6. One owner collects the central deployment/health receipt. If no success
+   event appears, inspect GitHub status first; only when hosting is available
+   and a request is authorized, dispatch Deploy watch once. Do not have every
+   child poll health, or probe a paused project. An in-flight result is
+   **verification deferred**, not verified. Repeated events/manual reruns
+   consume additional requests; the workflow is bounded per invocation, not
+   globally deduplicated.
+7. Collect each issue's original no-retry browser acceptance on the released
+   SHA. Mark failed or unavailable cases pending, never live from health alone.
+   The integration PR may use closing references only for actually resolved
+   issues whose closure contract is satisfied; issues requiring live evidence
+   or carrying `Needs Human Action` remain non-closing references. Closing
+   those issues later needs human approval under the existing gates.
+
+Batch wait and human approval have no promised cadence. Urgent exceptions need
+an explicit human-approved separate release, not a silent return to per-fix
+main merges. A batch that is unsafe to release stays prepared, not deployed.
+
+## Fifteen-minute validated-fix target
+
+The target is **report receipt to validated fix / PR ready**, not verified
+production. It does not include batch wait, release approval or live acceptance.
 Use these budgets for eligible, reproducible fixes:
 
 | Phase                                         | Cumulative target |
 | --------------------------------------------- | ----------------- |
 | Reproduce, classify, write failing regression | 3 minutes         |
 | Fix and focused local gate                    | 6 minutes         |
-| PR CI and merge                               | 12 minutes        |
-| Observe deployment and recheck original bug   | 15 minutes        |
+| PR CI and reviewed regression evidence        | 15 minutes        |
 
 This is a target, not a measured guarantee. Runner queues, a failing baseline,
-human approval, and deployment latency can exceed it. At a missed budget, report
+human approval, and full-lane work can exceed it. At a missed budget, report
 the current phase, specific blocker, and next required action; do not lower
 coverage or claim live from a merge. Track receipt, reproduction, CI completion,
-merge, healthy SHA, and original-repro result on the issue/PR using observed
+integration, merge, healthy SHA, and original-repro result separately on the issue/PR using observed
 timestamps. Keep a single update rather than spamming comments. Assess the SLO
 from those completed reports before broadening eligibility.
 
@@ -116,7 +170,8 @@ from those completed reports before broadening eligibility.
 
 Include: reproduction and expected result, root cause, chosen lane and classifier
 reason, the named regression's red-before/green-after result, affected browser
-coverage, `Closes #N`, and rollback scope. Record the deployed SHA and original
+coverage, the appropriate issue reference (non-closing for batched fixes), and
+rollback scope. Record the deployed SHA and original
 reproduction outcome after deployment; do not place a speculative success in the PR.
 
 If regression or deployment verification fails, stop starting follow-up fixes
