@@ -62,7 +62,11 @@ intended trade: a stacked PR is exactly the PR nobody has validated.
 
 **If you stack a PR,** the gate now runs — but it validates your branch merged
 into _its own base_, not into `main`. The `Base freshness` job says so in the run
-summary. Retarget at `main` before merging.
+summary. Retarget at `main` before merging, except for an explicitly activated
+[bug-bash integration batch](bug-loop.md#on-demand-bug-bash-releases).
+Its fix PRs land only in the authorized integration branch; the combined release
+PR targets current `main` and reruns the full gate. No Vercel preview is required
+for that gate, and no existing remote `staging` branch is implied by its trigger.
 
 ## The one defect, and the only remedy that has ever worked
 
@@ -1657,21 +1661,28 @@ different reasons — and the split is the point:
 
 - **Report failed production deployment** fires on `deployment_status`. It sees
   builds that ran and broke.
-- **Production drift** polls hourly and compares `main` against the commit
+- **Production drift** runs only on deliberate manual dispatch and compares `main` against the commit
   production reports it is serving. It exists because the first job cannot
   see a deploy that never started: a quota-blocked attempt creates no deployment
   object, so no event is published and no run appears at all (#868). Over twelve
   consecutive commits, a Deploy watch run existed if and only if a deployment
   object did — five never reached production and produced no run, no event, and a
   green Actions tab.
-- **Verify production is serving the deployed commit** fires on a _successful_
+- **Verify production is serving the deployed commit** makes one health request
+  (30-second ceiling, no retry) on a _successful_
   `deployment_status`. It sees deploys that reported success without reaching
   users.
 
 The drift job asserts the property actually wanted — production is serving `main`
-— rather than the absence of a known failure. That is why it needs no knowledge
-of either mode and will not go blind when a third appears. An event-triggered
-check can only ever report things that happened; **absence has to be polled for.**
+— with exact SHA equality, `status=ok` and `db=ok`, rather than treating zero
+ancestry distance or HTTP 200 alone as success. An in-flight result is deferred,
+not verified. An event-triggered check cannot observe a missing event; the
+release owner must inspect status and deliberately invoke the fallback when
+hosting is available and the request is authorized. There is no hourly outage
+detection or scheduled DB warming. Repeated events/manual reruns each cost
+another bounded request; they are not globally deduplicated. One owner shares
+the release receipt; every bug still needs its original no-retry browser
+acceptance on that SHA. See [activation gates](../DEPLOY.md#quota-policy-activation).
 
 ### Only `main` commits are evidence about production, and absent is not success
 
