@@ -2,6 +2,7 @@ import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse, type NextMiddleware, type NextRequest } from 'next/server';
 
 import { LOCALE_COOKIE, PATHNAME_HEADER, negotiateAcceptLanguage } from '~/config/i18n';
+import { isProductionDeploy, productionSafetyIssues } from '~/config/deployment';
 import {
   applySecurityHeaders,
   buildContentSecurityPolicy,
@@ -77,18 +78,18 @@ function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
  * Fail closed on a real production deploy: skipping Clerk here is exactly the
  * dev-bypass path, so refuse to boot the middleware when it would run
  * unauthenticated in production. Vercel sets `VERCEL_ENV=production` (at build +
- * runtime). `SKIP_ENV_VALIDATION` is the single escape hatch (CI build + e2e).
+ * runtime); other hosts set `APP_ENV=production`. CI's validation skip cannot
+ * override either production marker.
  * This mirrors the guards in `~/env` and `~/server/auth`.
  */
 const clerkConfigured =
   Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
   process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== '1';
 
-if (
-  !clerkConfigured &&
-  process.env.VERCEL_ENV === 'production' &&
-  !process.env.SKIP_ENV_VALIDATION
-) {
+const safetyIssues = productionSafetyIssues();
+if (safetyIssues.length) throw new Error(safetyIssues.join(' '));
+
+if (!clerkConfigured && isProductionDeploy()) {
   throw new Error(
     'Refusing to run without Clerk auth on a production deploy. Configure ' +
       'Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset ' +
@@ -100,7 +101,11 @@ const authMiddleware: NextMiddleware = clerkConfigured
   ? clerkMiddleware((_auth, request) => securedNext(request))
   : (request: NextRequest) => securedNext(request);
 
-export default withNegotiatedLocale(authMiddleware);
+export default withNegotiatedLocale((request, event) =>
+  request.nextUrl.pathname === '/api/health/live'
+    ? securedNext(request)
+    : authMiddleware(request, event),
+);
 
 export const config = {
   matcher: [
