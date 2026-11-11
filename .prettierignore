@@ -13,6 +13,8 @@ CHANGELOG.md
 # Build, test, and tooling artifacts (gitignored, but keep local `format:*`
 # fast and prevent it from rewriting generated output).
 .next/
+.tools/
+.hosting-build.json
 coverage/
 playwright-report/
 test-results/

@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { env } from '~/env';
+import { isProductionDeploy } from '~/config/deployment';
 import { db, isDbConfigured } from '~/server/db';
 import { groupMembers, recipes, users, type User } from '~/server/db/schema';
 import {
@@ -88,8 +89,8 @@ export function assertDevBypassAllowed(
   nodeEnv: string = env.NODE_ENV,
   skipValidation = Boolean(process.env.SKIP_ENV_VALIDATION),
 ): void {
-  if (skipValidation) return;
-  if (nodeEnv === 'production') {
+  if (skipValidation && !isProductionDeploy()) return;
+  if (nodeEnv === 'production' || isProductionDeploy()) {
     throw new Error(
       'Refusing to serve the shared dev-bypass user in production. Configure ' +
         'Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset ' +

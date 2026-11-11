@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { env } from '~/env';
+import { schedulerOwner } from '~/config/deployment';
 
 /**
  * Shared bearer-secret guard for the scheduled cron endpoints (#354/#353).
@@ -15,7 +16,7 @@ import { env } from '~/env';
 
 /** True when a cron secret is configured and the endpoints may run. */
 export function isCronConfigured(): boolean {
-  return Boolean(env.CRON_SECRET);
+  return Boolean(env.CRON_SECRET) && schedulerOwner().enabled;
 }
 
 /**
@@ -25,7 +26,10 @@ export function isCronConfigured(): boolean {
  */
 export function isCronAuthorized(request: Request): boolean {
   const secret = env.CRON_SECRET;
-  if (!secret) return false;
+  if (!secret || !isCronConfigured()) return false;
+  const { owner } = schedulerOwner();
+  const sender = request.headers.get('x-heirloom-scheduler') || 'vercel';
+  if (sender !== owner) return false;
   const header = request.headers.get('authorization');
   return header === `Bearer ${secret}`;
 }

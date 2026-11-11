@@ -1,5 +1,10 @@
 # Deploying Heirloom
 
+For retained Vercel plus portable Node/Azure preparation, use the
+[reversible hosting runbook](docs/reversible-hosting.md). Release builds now require
+the shared Server Actions key and immutable revision contract described there;
+configure these before activating this change on native Vercel.
+
 This is the **one-time setup** to take Heirloom live. After this, every merge to
 `main` auto-deploys and runs database migrations for you.
 

@@ -4,24 +4,51 @@
  */
 import './src/env.js';
 
-import { readdirSync } from 'node:fs';
+import { readdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import withSerwistInit from '@serwist/next';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 import { BundleBudgetWebpackPlugin } from './scripts/bundle-budget-webpack-plugin.mjs';
 import { imageConfig } from './src/config/next-image.js';
+import {
+  buildContract,
+  isProductionDeploy,
+  productionSafetyIssues,
+} from './src/config/deployment.js';
 
 // Point the next-intl plugin at the request config (cookie-based locale
 // resolution). This makes getTranslations/useTranslations, getLocale, and the
 // formatters available throughout the App Router tree.
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
-// Stable per deploy: use the commit SHA when a platform provides it (Vercel),
-// otherwise stamp the build time. Threaded into the offline page's precache
-// revision so a new deploy invalidates the cached fallback.
+// One revision identifies both native and container artifacts and PWA assets.
+const standalone = process.env.OUTPUT_STANDALONE === '1';
+const releaseBuild = standalone || isProductionDeploy();
+const safetyIssues = productionSafetyIssues(
+  standalone ? { ...process.env, APP_ENV: 'production' } : process.env,
+);
+if (safetyIssues.length) throw new Error(safetyIssues.join(' '));
+const contract = releaseBuild ? buildContract() : undefined;
 const buildRevision =
-  process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? Date.now().toString(36);
+  contract?.revision ??
+  process.env.SOURCE_REVISION ??
+  process.env.VERCEL_GIT_COMMIT_SHA ??
+  process.env.GITHUB_SHA ??
+  'dev';
+if (standalone) {
+  writeFileSync(
+    '.hosting-build.json',
+    JSON.stringify({
+      contract,
+      actionKeyHash: createHash('sha256')
+        .update(process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY || '')
+        .digest('hex'),
+    }),
+  );
+}
 
 const recipeFallbackPrecacheEntries = readdirSync(
   new URL('./public/img/recipe-fallbacks/', import.meta.url),
@@ -57,6 +84,17 @@ const withSerwist = withSerwistInit({
 
 /** @type {import("next").NextConfig} */
 const config = {
+  ...(standalone
+    ? {
+        output: 'standalone',
+        cacheHandler: fileURLToPath(new URL('./scripts/container-cache.cjs', import.meta.url)),
+        cacheMaxMemorySize: 0,
+      }
+    : {}),
+  env: { HEIRLOOM_BUILD_REVISION: buildRevision },
+  ...(contract
+    ? { generateBuildId: async () => contract.revision, deploymentId: contract.revision }
+    : {}),
   reactStrictMode: true,
   // Statically type all internal hrefs/router pushes against the app's real
   // route tree so a typo or renamed segment fails at compile time (#189).

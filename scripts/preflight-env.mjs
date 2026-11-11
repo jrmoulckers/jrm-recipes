@@ -12,13 +12,19 @@
  * silently ships an app with no database or wrong share/PWA URLs. This asserts
  * the production-only requirements up front instead.
  *
- * Scope: only acts when `VERCEL_ENV=production`. Local, CI, and preview
+ * Scope: acts when `VERCEL_ENV=production` or `APP_ENV=production`. Local, CI, and preview
  * (zero-config) runs are untouched and always pass. It complements, never
  * duplicates, the fail-closed auth guard in `src/env.js`. That guard rejects
  * dev-bypass in production, this checks config *completeness*.
  */
 
-const isProduction = process.env.VERCEL_ENV === 'production';
+import {
+  isProductionDeploy,
+  productionSafetyIssues,
+  buildContract,
+} from '../src/config/deployment.js';
+
+const isProduction = isProductionDeploy();
 
 if (!isProduction) {
   console.log('[preflight] Non-production environment, skipping production env checks.');
@@ -26,7 +32,12 @@ if (!isProduction) {
 }
 
 /** @type {string[]} */
-const problems = [];
+const problems = productionSafetyIssues();
+try {
+  buildContract();
+} catch (error) {
+  problems.push(error instanceof Error ? error.message : 'Build contract validation failed.');
+}
 
 /**
  * Require a var to be a non-empty, parseable URL.

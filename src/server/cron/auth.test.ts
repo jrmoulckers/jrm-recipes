@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { state } = vi.hoisted(() => ({
   state: { secret: undefined as string | undefined },
@@ -20,9 +20,27 @@ function req(authorization?: string): Request {
 
 beforeEach(() => {
   state.secret = undefined;
+  vi.stubEnv('HOST_PROVIDER', 'vercel');
+  vi.stubEnv('CRON_OWNER', '');
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe('cron auth', () => {
+  it('requires explicit Azure ownership and the matching sender', () => {
+    state.secret = 's3cret';
+    vi.stubEnv('HOST_PROVIDER', 'azure');
+    expect(isCronConfigured()).toBe(false);
+    vi.stubEnv('CRON_OWNER', 'vercel');
+    expect(isCronConfigured()).toBe(false);
+    vi.stubEnv('CRON_OWNER', 'azure');
+    expect(isCronConfigured()).toBe(true);
+    expect(isCronAuthorized(req('Bearer s3cret'))).toBe(false);
+    const azure = req('Bearer s3cret');
+    azure.headers.set('x-heirloom-scheduler', 'azure');
+    expect(isCronAuthorized(azure)).toBe(true);
+    vi.stubEnv('CRON_OWNER', 'none');
+    expect(isCronAuthorized(azure)).toBe(false);
+  });
   it('reports unconfigured when CRON_SECRET is unset', () => {
     expect(isCronConfigured()).toBe(false);
     // Even a "Bearer undefined"-style header must never authorize.
