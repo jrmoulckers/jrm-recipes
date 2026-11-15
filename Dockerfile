@@ -40,6 +40,7 @@ COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/.hosting-build.json ./
 COPY --chown=node:node scripts/container-start.mjs scripts/container-cache.cjs scripts/cron-runner.mjs ./scripts/
 COPY --chown=node:node src/config/deployment.js ./src/config/deployment.js
+COPY --chown=node:node src/config/recovery-policy.js ./src/config/recovery-policy.js
 COPY --chown=node:node vercel.json ./
 USER node
 EXPOSE 3000

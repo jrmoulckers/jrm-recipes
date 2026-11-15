@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { and, count, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 
 import { env } from '~/env';
+import { recoveryHorizon, recoveryPolicy } from '~/config/recovery-policy.js';
 import { db, isDbConfigured } from '~/server/db';
 import {
   auditLog,
@@ -75,9 +76,6 @@ export type ErasureOptions = {
   noticeVersion?: string;
 };
 
-/** Approved production Neon history window; keep in sync with the deployed setting (#855). */
-const NEON_HISTORY_RETENTION_MS = 6 * 60 * 60 * 1000;
-
 /**
  * One-way, salted digest of an identifier for the tombstone.
  *
@@ -131,6 +129,8 @@ export async function eraseUserAccount(
 ): Promise<ErasureResult> {
   if (!isDbConfigured()) throw new Error('NOT_CONFIGURED');
   if (!env.DELETION_HASH_SALT) throw new Error('DELETION_EVIDENCE_NOT_CONFIGURED');
+  const policy = recoveryPolicy(env);
+  recoveryHorizon(new Date(), policy);
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
@@ -520,7 +520,7 @@ export async function eraseUserAccount(
       counts.recipes_rating_recomputed = recomputeIds.length;
     }
 
-    await writeDeletionRecord(t, user.id, user.clerkId, options, {
+    await writeDeletionRecord(t, user.id, user.clerkId, options, policy, {
       counts,
       retainedRecipeCount,
       unclaimedRecipeCount,
@@ -622,6 +622,7 @@ async function writeDeletionRecord(
   userId: string,
   clerkId: string | null,
   options: ErasureOptions,
+  policy: ReturnType<typeof recoveryPolicy>,
   result: Omit<ErasureResult, 'status'>,
 ): Promise<void> {
   const subjectHash = hashDeletionSubject(userId);
@@ -643,7 +644,7 @@ async function writeDeletionRecord(
       retainedVersionCount: result.retainedVersionCount,
       transferredAssetCount: result.transferredAssetCount,
       purgedAssetCount: result.purgedAssetCount,
-      backupHorizonAt: new Date(now.getTime() + NEON_HISTORY_RETENTION_MS),
+      backupHorizonAt: recoveryHorizon(now, policy),
       noticeVersion: options.noticeVersion ?? null,
     })
     .onConflictDoNothing({ target: deletionRecords.subjectHash });

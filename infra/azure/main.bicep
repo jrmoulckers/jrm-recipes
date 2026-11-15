@@ -17,12 +17,18 @@ param identityId string
 param registryServer string
 @description('Public build variables, identical to the image build. Do not put secret values here.')
 param publicEnvironment object
-@description('Exact 40-character source revision matching the image and retained Vercel build.')
+@description('Exact 40-character source revision matching the image; no Vercel artifact is required.')
 @minLength(40)
 @maxLength(40)
 param sourceRevision string
 @description('Array of {name, keyVaultUrl, envName}; URLs only. Include database, Clerk and Actions key.')
 param secretReferences array
+@description('Reviewed longest rolling recovery-copy retention in hours; seven days requires at least 168.')
+@minValue(168)
+@maxValue(876000)
+param backupRetentionHours int
+@description('Latest fixed source/export copy expiry, offset-aware ISO instant; empty only after reviewed inventory finds none.')
+param recoveryCopyExpiresAt string
 @allowed(['none', 'azure'])
 param schedulerOwner string = 'none'
 @description('Keep false until old scheduler is disabled and in-flight work has drained.')
@@ -65,7 +71,9 @@ var environment = concat(
     { name: 'APP_ENV', value: 'production' }
     { name: 'HOST_PROVIDER', value: 'azure' }
     { name: 'CRON_OWNER', value: schedulerOwner }
-  ]
+    { name: 'BACKUP_RETENTION_HOURS', value: string(backupRetentionHours) }
+  ],
+  empty(recoveryCopyExpiresAt) ? [] : [{ name: 'RECOVERY_COPY_EXPIRES_AT', value: recoveryCopyExpiresAt }]
 )
 
 resource app 'Microsoft.App/containerApps@2025-01-01' = {

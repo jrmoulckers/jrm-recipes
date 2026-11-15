@@ -97,9 +97,10 @@ export const env = createEnv({
     // tombstone must outlive the erased `users` row without storing anything
     // that identifies its subject, so ids are stored only as salted SHA-256.
     // Without the salt, a hash of a known cuid2 would be trivially confirmable
-    // by anyone who obtained the table. When unset, erasure still runs but the
-    // tombstone is skipped rather than written with a guessable digest.
+    // by anyone who obtained the table. Erasure refuses to run without the salt.
     DELETION_HASH_SALT: z.optional(z.string().check(z.minLength(16))),
+    BACKUP_RETENTION_HOURS: optionalString,
+    RECOVERY_COPY_EXPIRES_AT: optionalString,
     // Transactional email (Resend), optional. With `RESEND_API_KEY` unset the
     // email layer degrades to a log/no-op provider (see ~/server/digest/email
     // `getEmailProvider`), so the digest cron builds + "sends" with zero config
@@ -160,6 +161,8 @@ export const env = createEnv({
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
     DELETION_HASH_SALT: process.env.DELETION_HASH_SALT,
+    BACKUP_RETENTION_HOURS: process.env.BACKUP_RETENTION_HOURS,
+    RECOVERY_COPY_EXPIRES_AT: process.env.RECOVERY_COPY_EXPIRES_AT,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

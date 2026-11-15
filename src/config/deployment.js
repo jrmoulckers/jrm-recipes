@@ -1,4 +1,5 @@
 // @ts-check
+import { recoveryPolicy } from './recovery-policy.js';
 
 /** @param {Record<string, string | undefined>} [vars] */
 export function isProductionDeploy(vars = process.env) {
@@ -9,6 +10,11 @@ export function isProductionDeploy(vars = process.env) {
 export function productionSafetyIssues(vars = process.env) {
   if (!isProductionDeploy(vars)) return [];
   const issues = [];
+  try {
+    recoveryPolicy(vars);
+  } catch (error) {
+    issues.push(error instanceof Error ? error.message : 'Recovery policy validation failed.');
+  }
   for (const name of [
     'SKIP_ENV_VALIDATION',
     'NEXT_PUBLIC_DEV_AUTH_BYPASS',

@@ -1,13 +1,17 @@
 # Reversible hosting
 
 This is **preparation, not activation** ([#1261](https://github.com/jrmoulckers/jrm-recipes/issues/1261)).
-Azure Container Apps is the initial alternate Node host. Retain the native Vercel
-deployment from the same source revision, existing Neon/Postgres, Cloudinary,
-Clerk, Stripe and PostHog, and the canonical HTTPS domain. Do not copy production
-data or rotate providers merely to change compute.
+Azure Container Apps and a separately owned PostgreSQL instance form an independent
+target: no Vercel deployment, runtime or database-management dependency. Preserve
+production data and identities through a separately authorized transfer, retain
+Cloudinary, Clerk, Stripe and PostHog, and keep the canonical HTTPS domain unchanged.
+Native Vercel is a potential later target, not a prerequisite or available rollback.
 
-Publication remains held until the parent confirms preview-safe publication or
-obtains separate human approval. The independent [#1260](https://github.com/jrmoulckers/jrm-recipes/pull/1260)
+The initial preparation was published as [#1262](https://github.com/jrmoulckers/jrm-recipes/pull/1262)
+under separate approval accepting possible preview attempts. The independent-database
+delta remains local-only until separately authorized. Neither approval authorizes
+merge, provisioning, secret access, data transfer, deployment, DNS or activation.
+The independent [#1260](https://github.com/jrmoulckers/jrm-recipes/pull/1260)
 quota-policy proposal owns Git-deployment suppression, warming/watcher removal and
 bounded production verification. This preparation neither activates nor replaces it.
 Do not infer suppression from an older branch's configuration.
@@ -27,7 +31,7 @@ native Vercel deployment ID and rollback target ID must be recorded separately:
 the source SHA is not proof two independent artifacts are byte-identical.
 
 Supply `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` as the **same base64-encoded 32-byte
-secret** at build and runtime on both providers. A human must arrange the secret
+secret** at build and runtime on prepared targets. A human must arrange the secret
 through approved stores before this change is activated on Vercel. Docker reads it
 through a BuildKit secret mount, never an ARG; only a one-way digest enters the
 private build contract. Treat images as private artifacts: Next's server output
@@ -67,15 +71,17 @@ environment, registry, managed identity and Key Vault**. It does not establish
 their networking, grants, cost controls or compliance. Parameters contain references,
 not secret values:
 
-| Input                                           | Meaning                                                                   |
-| ----------------------------------------------- | ------------------------------------------------------------------------- |
-| `location`                                      | Human-selected region; no default regional assumption                     |
-| `imageRepository`, `imageDigest`                | Approved private registry repository and SHA-256 digest (not a tag)       |
-| `environmentId`, `identityId`, `registryServer` | Existing approved resources and registry pull identity                    |
-| `sourceRevision`, `publicEnvironment`           | Exact build inputs                                                        |
-| `secretReferences`                              | `{name, keyVaultUrl, envName}` for runtime secrets, including Actions key |
-| `schedulerOwner`, `enableSchedules`             | Default `none` and `false`; web ownership and job triggering must agree   |
-| `minReplicas`                                   | 0 by default; 1 only after cold-start/cost review; maximum remains 1      |
+| Input                                           | Meaning                                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `location`                                      | Human-selected region; no default regional assumption                        |
+| `imageRepository`, `imageDigest`                | Approved private registry repository and SHA-256 digest (not a tag)          |
+| `environmentId`, `identityId`, `registryServer` | Existing approved resources and registry pull identity                       |
+| `sourceRevision`, `publicEnvironment`           | Exact build inputs                                                           |
+| `secretReferences`                              | `{name, keyVaultUrl, envName}` for runtime secrets, including Actions key    |
+| `schedulerOwner`, `enableSchedules`             | Default `none` and `false`; web ownership and job triggering must agree      |
+| `minReplicas`                                   | 0 by default; 1 only after cold-start/cost review; maximum remains 1         |
+| `backupRetentionHours`                          | Required reviewed longest rolling bound, at least 168 for this Azure adapter |
+| `recoveryCopyExpiresAt`                         | Required review input; empty only after inventory proves no later fixed copy |
 
 Use a unique prepared app name of 3-10 characters so suffixed job names stay bounded.
 The template runs 0.5 vCPU/1 GiB web compute with
@@ -95,6 +101,70 @@ publication and secrets are separately approved. Run Bicep build and a human-rev
 what-if before deployment; compilation does not establish resource availability or grants.
 Scheduler jobs receive only the cron secret reference, owner, target and revision;
 they do not need database, Clerk or Actions secrets.
+
+## Independent private database preparation
+
+`infra/azure/private-data.bicep` prepares NEW resources only. Do not point its
+names at the existing foundation: the current non-VNet ACA environment cannot
+change network type. Keep that environment, registry, vault and runtime identity
+untouched. Feed the new `environmentId` output to the app template. Reuse the
+approved registry/vault identity by reference; AcrPull/Secrets User do not grant
+PostgreSQL login.
+
+Required non-secret parameters are `location`, `virtualNetworkName`,
+`virtualNetworkCidr`, `appSubnetName`, `appSubnetCidr`, `postgresSubnetName`,
+`postgresSubnetCidr`, `environmentName`, `infrastructureResourceGroupName`,
+`postgresServerName`, `postgresPrivateDnsZoneName`, `postgresAdministratorLogin`,
+`postgresStorageSizeGB` and `geoRedundantBackup`. None has a default.
+`postgresAdministratorPassword` is a secure private-entry parameter, never a
+checked-in parameter value or output. Prepare least-privilege runtime and migration
+roles separately; never use the administrator connection as `DATABASE_URL`.
+
+The template selects PostgreSQL 15 / Standard_B2s / Burstable, seven-day automated
+backups and HA Disabled. B2s CPU-credit limits and restore downtime are real:
+backups are not HA. **32 GiB remains proposed**, not approved; storage and geo-backup
+redundancy require explicit review. Validate actual regional API/SKU/storage and
+redundancy availability before provisioning; local compilation cannot establish them.
+Production eligibility/terms for the supplied subscription remain a human prerequisite.
+
+The new external-ingress workload-profiles environment uses Consumption. Its ACA
+subnet is exclusively delegated to `Microsoft.App/environments` (/27 or larger);
+the distinct PG subnet exclusively to `Microsoft.DBforPostgreSQL/flexibleServers`
+(/28 or larger). Review CIDR validity, containment, non-overlap with each other and
+connected networks, name availability and required outbound service access before
+deployment. Azure validates network parameters; compilation alone does not.
+Private PG uses a linked private DNS zone ending `.postgres.database.azure.com`
+and disables public access. No allow-Azure firewall, NAT, VPN, Bastion or migration
+runner is added. The existing ACA ingress IP is not an outbound firewall address.
+Private app-to-DB traffic alone does not require NAT.
+
+Azure creates the separately named **managed infrastructure resource group** and
+billable load-balancer/public-IP components for custom-VNet ACA. This is a side
+effect beyond the target resource group, requiring explicit approval. The parent
+planning example at 730 hours was USD25.55/month for that network infrastructure
+and USD78.87 including B2s/proposed32GiB, before app, registry, vault, DNS, traffic,
+logs and other charges. These are review estimates, not a live quote or spend cap.
+
+Migration requires a separately authorized runner with private routing and DNS,
+direct source connectivity, encrypted transport and approved temporary storage.
+No data-copy tool executes from this template. Preserve users, Clerk/Stripe IDs,
+media ownership, the Drizzle journal, deletion records and the SAME deletion salt.
+The template allowlists `pg_trgm`/`pgcrypto` through `azure.extensions` for the
+existing migrations. Verify PG15 compatibility, actual extension availability, TLS and role grants
+before applying reviewed migrations explicitly, never at replica startup.
+
+Set `BACKUP_RETENTION_HOURS` to the longest verified rolling bound (selected Azure
+backup setting is 168 hours), not simply the target's setting if other copies last
+longer. Optionally set `RECOVERY_COPY_EXPIRES_AT` to the latest reviewed expiry of
+fixed source/export/snapshot copies, including timezone offset. The shared policy
+requires whole hours 1..876000 (a technical 100-year bound, not approved retention),
+strict calendar instants with explicit offset, and records the maximum of rolling
+completion time and fixed expiry. Production boot and every erasure fail closed
+on missing/invalid rolling policy; erasure validates before DB/media effects.
+Marker-free builds still work without it; actual local erasure requires it.
+An omitted fixed expiry means an inventory established there is no later containing
+copy, NOT that unknown copies expired. Unknown/unbounded expiry is a promotion blocker.
+See [backup recovery](db-backup-and-recovery.md) for historical-cohort reconciliation.
 
 ## Scheduler ownership
 
@@ -128,7 +198,7 @@ business routes against production.
 Use synthetic/non-production integration accounts and data unless separately
 approved. Do not probe production as part of repository preparation.
 
-1. Build both artifacts from one SHA and verify configuration/key parity.
+1. Build the independent target from a recorded SHA; verify parity with any other prepared artifact.
 2. Start the target with scheduling disabled. `/api/health/live` must report that
    SHA without DB/Clerk network access; `/api/health` must pass its database probe.
    A live probe is not readiness. Exercise invalid startup inputs and confirm refusal.
@@ -168,20 +238,38 @@ Freeze releases; record the old and prepared immutable targets. Confirm DB
 migrations are backward-compatible with **both** retained application revisions.
 Use expand/contract migrations in a separate approved release step; defer destructive
 contract changes until the rollback window closes. Container replicas never migrate.
-Native Vercel's existing migration-on-build path must be coordinated as that one
+Any later native Vercel migration-on-build path must be coordinated as that one
 release step, not independently raced against Azure. Restoring an old image does
 not restore a schema or roll back data.
 
-Disable/drain the old scheduler, verify target readiness and functional checks,
-then perform the approved traffic/domain switch. Check forwarded host/protocol,
+**Fence all old writers before final transfer**, not only schedules: old ingress,
+Server Actions, GET cron routes, lazy-read writes, signed webhooks, background
+workers, direct DB clients and in-flight work. An Azure-only setting cannot fence
+unavailable old Vercel code. Use separately approved origin/provider controls and
+DB runtime-role fencing/session termination while retaining a separate export
+role. A default read-only transaction setting is not a hard fence and does not
+prevent pre-DB external effects. If complete fencing cannot be demonstrated,
+lossless cutover is blocked. Do not claim this repository implements that fence.
+During the window, use retryable 503/Retry-After with verified provider replay or
+an approved durable queue; never return 2xx while dropping a webhook.
+
+Take the final consistent transfer only after fencing/draining, compare required
+data and identifiers, reconcile the authoritative erasure ledger by membership
+and content (not counts), reapply erasures and verify readiness/functional checks.
+Keep one writable authority; independent writable databases do not synchronize.
+Then perform the approved traffic/domain switch. Check forwarded host/protocol,
 secure cookies, canonical links, CSP, signed webhooks, uploads, analytics proxy
 and data writes. Enable exactly one scheduler only after traffic settles.
 
-Rollback by disabling/draining Azure scheduling first, restoring the recorded
-native Vercel target/domain route, verifying readiness/auth/data and only then
-restoring Vercel scheduling. Do not rebuild an arbitrary old branch, run down
-migrations, or assume Vercel limits recover after thirty days. If Vercel is not
-deployable/healthy, it is not an available rollback target.
+Once Azure accepts writes, the old Neon database is stale. Returning requires
+either separately designed secure Vercel-to-private-PG connectivity, or a separately
+authorized reverse transfer: fence/drain Azure, transfer/catch up all accepted
+writes and erasures, verify identities/media/ledger/schema and only then promote
+the destination and one scheduler. A traffic-only reversal loses data. Before
+Azure accepts any writes, a source return still requires verified source health,
+fence release and webhook reconciliation. Never rebuild an arbitrary old branch,
+run down migrations or assume Vercel recovers after thirty days. No fifteen-minute
+switch is promised without prepared connectivity, readiness and measured data evidence.
 
 ## Cost and human decisions
 

@@ -46,7 +46,11 @@ describe('portable release contract', () => {
     mkdirSync('.tools', { recursive: true });
     const root = mkdtempSync(resolve('.tools', 'startup-'));
     for (const dir of ['scripts', 'src', 'src/config']) mkdirSync(`${root}/${dir}`);
-    const files = ['scripts/container-start.mjs', 'src/config/deployment.js'];
+    const files = [
+      'scripts/container-start.mjs',
+      'src/config/deployment.js',
+      'src/config/recovery-policy.js',
+    ];
     for (const file of files) copyFileSync(file, `${root}/${file}`);
     writeFileSync(`${root}/package.json`, '{"type":"module"}');
     writeFileSync(`${root}/server.js`, 'console.log("SERVER_STARTED");');
@@ -67,6 +71,7 @@ describe('portable release contract', () => {
       CRON_OWNER: 'none',
       CLERK_SECRET_KEY: 'sk_test_fixture',
       DATABASE_URL: 'postgresql://fixture:fixture@localhost/fixture',
+      BACKUP_RETENTION_HOURS: '168',
     };
     const invoke = (overrides = {}) => {
       const result = spawnSync(process.execPath, [`${root}/scripts/container-start.mjs`], {
@@ -81,6 +86,9 @@ describe('portable release contract', () => {
       expect(good.status).toBe(0);
       expect(good.stdout).toContain('SERVER_STARTED');
       for (const [overrides, reason] of [
+        [{ BACKUP_RETENTION_HOURS: '' }, 'BACKUP_RETENTION_HOURS'],
+        [{ BACKUP_RETENTION_HOURS: '7days' }, 'BACKUP_RETENTION_HOURS'],
+        [{ RECOVERY_COPY_EXPIRES_AT: '2026-09-20' }, 'RECOVERY_COPY_EXPIRES_AT'],
         [{ SKIP_ENV_VALIDATION: '1' }, 'forbidden'],
         [{ SKIP_ENV_VALIDATION: '0' }, 'forbidden'],
         [{ SOURCE_REVISION: 'b'.repeat(40) }, 'differs from the built artifact'],
@@ -206,6 +214,27 @@ describe('portable release contract', () => {
     expect(result.stderr).toContain('SKIP_ENV_VALIDATION is forbidden');
   });
 
+  it('requires recovery inventory at the actual production preflight, not zero-config CI', () => {
+    expect(productionSafetyIssues({})).toEqual([]);
+    for (const marker of [{ APP_ENV: 'production' }, { VERCEL_ENV: 'production' }]) {
+      expect(productionSafetyIssues({ ...marker, BACKUP_RETENTION_HOURS: '168' })).toEqual([]);
+      expect(productionSafetyIssues(marker).join()).toContain('BACKUP_RETENTION_HOURS');
+    }
+    const result = spawnSync(process.execPath, ['scripts/preflight-env.mjs'], {
+      env: {
+        ...release,
+        APP_ENV: 'production',
+        BACKUP_RETENTION_HOURS: '',
+        CLERK_SECRET_KEY: 'sk_test_fixture',
+        DATABASE_URL: 'postgresql://fixture:fixture@localhost/fixture',
+      },
+      encoding: 'utf8',
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('BACKUP_RETENTION_HOURS');
+  });
+
   it('preserves all five UTC schedules in the inactive-by-default Azure adapter', () => {
     const { crons } = JSON.parse(readFileSync('vercel.json', 'utf8'));
     const bicep = readFileSync('infra/azure/main.bicep', 'utf8');
@@ -226,6 +255,35 @@ describe('portable release contract', () => {
     expect(dockerfile).toContain('type=secret,id=actions_key,required=true');
     expect(dockerfile).not.toMatch(/ARG .*SECRET|ARG NEXT_SERVER_ACTIONS/);
     expect(dockerfile).not.toContain('migrate');
+    expect(dockerfile).toMatch(
+      /^COPY .*src\/config\/recovery-policy\.js \.\/src\/config\/recovery-policy\.js$/m,
+    );
+  });
+
+  it('keeps new database infrastructure private and unresolved decisions mandatory', () => {
+    const bicep = readFileSync('infra/azure/private-data.bicep', 'utf8');
+    expect(bicep).toContain("publicNetworkAccess: 'Disabled'");
+    expect(bicep).toContain("serviceName: 'Microsoft.App/environments'");
+    expect(bicep).toContain("serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'");
+    expect(bicep).toContain('privateDnsZoneArmResourceId: dns.id');
+    expect(bicep).toContain('infrastructureResourceGroup: infrastructureResourceGroupName');
+    expect(bicep).not.toMatch(/firewallRules|natGateways|bastionHosts|virtualNetworkGateways/);
+    for (const name of [
+      'postgresStorageSizeGB',
+      'geoRedundantBackup',
+      'virtualNetworkCidr',
+      'appSubnetCidr',
+      'postgresSubnetCidr',
+      'environmentName',
+      'postgresServerName',
+      'infrastructureResourceGroupName',
+    ]) {
+      expect(bicep, `${name} must not silently acquire a default`).toMatch(
+        new RegExp(`^param ${name} \\w+\\s*$`, 'm'),
+      );
+    }
+    expect(bicep).toMatch(/@secure\(\)[\s\S]*?param postgresAdministratorPassword string/);
+    expect(bicep).not.toMatch(/^output .*(?:[Pp]assword|[Cc]onnection)/m);
   });
 
   it('gives Azure readiness headroom beyond the application database deadline', () => {

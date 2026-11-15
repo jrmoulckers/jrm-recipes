@@ -13,6 +13,7 @@ describe('portable liveness middleware', () => {
 
   it('bypasses Clerk only for the exact liveness path while preserving CSP and locale', async () => {
     vi.stubEnv('APP_ENV', 'production');
+    vi.stubEnv('BACKUP_RETENTION_HOURS', '168');
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('SKIP_ENV_VALIDATION', '');
     vi.stubEnv('NEXT_PUBLIC_DEV_AUTH_BYPASS', '');
