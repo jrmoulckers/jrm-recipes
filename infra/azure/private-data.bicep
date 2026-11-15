@@ -111,6 +111,14 @@ resource extensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@20
     source: 'user-override'
   }
 }
+resource secureTransport 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: postgres
+  name: 'require_secure_transport'
+  properties: {
+    value: 'on'
+    source: 'user-override'
+  }
+}
 resource environment 'Microsoft.App/managedEnvironments@2025-01-01' = {
   name: environmentName
   location: location

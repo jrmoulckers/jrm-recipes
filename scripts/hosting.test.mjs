@@ -286,6 +286,21 @@ describe('portable release contract', () => {
     expect(bicep).not.toMatch(/^output .*(?:[Pp]assword|[Cc]onnection)/m);
   });
 
+  it('explicitly enforces secure transport on the private PostgreSQL server', () => {
+    const bicep = readFileSync('infra/azure/private-data.bicep', 'utf8');
+    const configurations = [
+      ...bicep.matchAll(
+        /resource \w+ 'Microsoft\.DBforPostgreSQL\/flexibleServers\/configurations@[^']+' = \{([\s\S]*?)^\}/gm,
+      ),
+    ];
+    const transport = configurations.find(([, body]) =>
+      /name: 'require_secure_transport'/.test(body),
+    );
+    expect(transport, 'Secure transport must not rely on provider defaults').toBeDefined();
+    expect(transport?.[1]).toMatch(/parent: postgres\b/);
+    expect(transport?.[1]).toMatch(/properties: \{\s+value: 'on'\s+source: 'user-override'\s+\}/);
+  });
+
   it('gives Azure readiness headroom beyond the application database deadline', () => {
     const bicep = readFileSync('infra/azure/main.bicep', 'utf8');
     const route = readFileSync('src/app/api/health/route.ts', 'utf8');
