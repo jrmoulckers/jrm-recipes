@@ -14,7 +14,7 @@ export const revalidate = 0;
  * Commit the running build was produced from. Vercel and GitHub Actions expose
  * it under different names. Falls back to `dev` for a local `next start`.
  */
-const BUILD_SHA = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? 'dev';
+const BUILD_SHA = process.env.HEIRLOOM_BUILD_REVISION ?? 'dev';
 
 /** Human-readable release version, kept in lockstep by release-please (#265). */
 const VERSION = packageJson.version;

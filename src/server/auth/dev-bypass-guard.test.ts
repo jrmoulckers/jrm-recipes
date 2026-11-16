@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { findProductionAuthIssues, isProductionDeploy } from '~/env';
 import { assertDevBypassAllowed } from '~/server/auth';
@@ -103,8 +103,9 @@ describe('findProductionAuthIssues', () => {
 });
 
 describe('isProductionDeploy', () => {
-  it('is true only for a real Vercel production deploy', () => {
+  it('recognizes both production hosts', () => {
     expect(isProductionDeploy({ VERCEL_ENV: 'production' })).toBe(true);
+    expect(isProductionDeploy({ APP_ENV: 'production' })).toBe(true);
   });
 
   it('is false for previews, dev, and non-Vercel contexts', () => {
@@ -113,17 +114,24 @@ describe('isProductionDeploy', () => {
     expect(isProductionDeploy({})).toBe(false);
   });
 
-  it('is false when env validation is explicitly skipped', () => {
+  it('cannot disable the production marker by skipping validation', () => {
     expect(
       isProductionDeploy({
         VERCEL_ENV: 'production',
         SKIP_ENV_VALIDATION: '1',
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
 describe('assertDevBypassAllowed', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('refuses a deployed host even with the CI validation escape', () => {
+    vi.stubEnv('APP_ENV', 'production');
+    expect(() => assertDevBypassAllowed('production', true)).toThrow(/dev-bypass/i);
+    expect(() => assertDevBypassAllowed('development', true)).toThrow(/dev-bypass/i);
+  });
   it('throws in production (fails closed)', () => {
     expect(() => assertDevBypassAllowed('production', false)).toThrow(/dev-bypass/i);
   });

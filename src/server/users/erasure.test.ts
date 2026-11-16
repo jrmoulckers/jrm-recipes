@@ -121,7 +121,13 @@ const { state, db, dietaryFindMany, purge, custody, retentionApi, envMock } = vi
     purge,
     custody,
     retentionApi,
-    envMock: { env: { DELETION_HASH_SALT: 'a-sufficiently-long-salt' } },
+    envMock: {
+      env: {
+        DELETION_HASH_SALT: 'a-sufficiently-long-salt',
+        BACKUP_RETENTION_HOURS: '6' as string | undefined,
+        RECOVERY_COPY_EXPIRES_AT: undefined as string | undefined,
+      },
+    },
   };
 });
 
@@ -147,6 +153,8 @@ function queueCoreSelects(retainedVersionCount?: number) {
 }
 
 beforeEach(() => {
+  envMock.env.BACKUP_RETENTION_HOURS = '6';
+  envMock.env.RECOVERY_COPY_EXPIRES_AT = undefined;
   state.configured = true;
   state.user = { id: 'u1', clerkId: 'clerk_1', email: 'nonna@example.com' };
   state.calls = [];
@@ -174,7 +182,7 @@ beforeEach(() => {
 
 describe('eraseUserAccount', () => {
   it.each(['in_app', 'clerk_webhook', 'admin'] as const)(
-    'records the six-hour Neon horizon for %s erasures',
+    'records the explicitly configured legacy six-hour horizon for %s erasures',
     async (trigger) => {
       vi.useFakeTimers();
       try {
@@ -192,6 +200,41 @@ describe('eraseUserAccount', () => {
       }
     },
   );
+
+  it.each(['in_app', 'clerk_webhook', 'admin'] as const)(
+    'covers seven-day and later fixed recovery copies for %s erasures',
+    async (trigger) => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-09-10T22:30:00Z'));
+        envMock.env.BACKUP_RETENTION_HOURS = '168';
+        queueCoreSelects();
+        await eraseUserAccount('u1', { trigger });
+        expect(state.inserted?.backupHorizonAt).toEqual(new Date('2026-09-17T22:30:00Z'));
+        envMock.env.RECOVERY_COPY_EXPIRES_AT = '2026-09-21T02:00:00+02:00';
+        queueCoreSelects();
+        await eraseUserAccount('u1', { trigger });
+        expect(state.inserted?.backupHorizonAt).toEqual(new Date('2026-09-21T00:00:00Z'));
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it.each([
+    { BACKUP_RETENTION_HOURS: undefined },
+    { BACKUP_RETENTION_HOURS: '0' },
+    { RECOVERY_COPY_EXPIRES_AT: '2026-02-30T00:00:00Z' },
+  ])('refuses invalid recovery policy before database or media effects: %s', async (policy) => {
+    Object.assign(envMock.env, policy);
+    await expect(eraseUserAccount('u1', { trigger: 'admin' })).rejects.toThrow(
+      /BACKUP_RETENTION_HOURS|RECOVERY_COPY_EXPIRES_AT/,
+    );
+    expect(db.query.users.findFirst).not.toHaveBeenCalled();
+    expect(db.transaction).not.toHaveBeenCalled();
+    expect(purge.purgeUserMedia).not.toHaveBeenCalled();
+    expect(state.inserted).toBeNull();
+  });
 
   it('transfers retained custody before purging remaining media', async () => {
     queueCoreSelects();

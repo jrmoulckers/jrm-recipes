@@ -84,7 +84,7 @@ export const deletionRecords = pgTable(
      * is "beyond use" rather than gone, and this is the horizon we intend to
      * disclose to the user.
      *
-     * New erasures use the approved production Neon history window (#855, #806).
+     * New erasures use the validated provider-independent recovery-copy policy.
      * Historical nulls mean "not computed under the policy at the time", NOT
      * "no backup exposure"; do not backfill them using today's setting.
      */

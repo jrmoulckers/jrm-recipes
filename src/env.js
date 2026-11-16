@@ -1,5 +1,8 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod/mini';
+import { isProductionDeploy, productionSafetyIssues } from './config/deployment.js';
+
+export { isProductionDeploy } from './config/deployment.js';
 
 /**
  * Heirloom env schema.
@@ -27,25 +30,6 @@ import { z } from 'zod/mini';
 const skipValidation = !!process.env.SKIP_ENV_VALIDATION || process.env.NODE_ENV === 'test';
 const optionalString = z.optional(z.string());
 const optionalUrl = z.optional(z.url());
-
-/**
- * True when running in (or building for) a *real production deployment*, where
- * dev-bypass auth must be impossible. Vercel sets `VERCEL_ENV=production` for
- * production deploys (and `preview`/`development` otherwise), at both build and
- * runtime. This is deliberately narrower than `NODE_ENV==="production"`: Next
- * forces `NODE_ENV=production` for every `next build`/`next lint`, including the
- * zero-config CI + local builds that must keep passing. `SKIP_ENV_VALIDATION`
- * is the single escape hatch (used only by the CI build + e2e, which serve no
- * real users). Preview deploys are *not* caught here (they run as
- * `VERCEL_ENV=preview`), but are still fail-closed per request by the runtime
- * guard in `~/server/auth`, so no deployed environment can serve dev-bypass.
- *
- * @param {Record<string, string | undefined>} [vars]
- * @returns {boolean}
- */
-export function isProductionDeploy(vars = process.env) {
-  return vars.VERCEL_ENV === 'production' && !vars.SKIP_ENV_VALIDATION;
-}
 
 /**
  * Reasons the given env would let dev-bypass auth run in production. Returns an
@@ -113,9 +97,10 @@ export const env = createEnv({
     // tombstone must outlive the erased `users` row without storing anything
     // that identifies its subject, so ids are stored only as salted SHA-256.
     // Without the salt, a hash of a known cuid2 would be trivially confirmable
-    // by anyone who obtained the table. When unset, erasure still runs but the
-    // tombstone is skipped rather than written with a guessable digest.
+    // by anyone who obtained the table. Erasure refuses to run without the salt.
     DELETION_HASH_SALT: z.optional(z.string().check(z.minLength(16))),
+    BACKUP_RETENTION_HOURS: optionalString,
+    RECOVERY_COPY_EXPIRES_AT: optionalString,
     // Transactional email (Resend), optional. With `RESEND_API_KEY` unset the
     // email layer degrades to a log/no-op provider (see ~/server/digest/email
     // `getEmailProvider`), so the digest cron builds + "sends" with zero config
@@ -176,6 +161,8 @@ export const env = createEnv({
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
     DELETION_HASH_SALT: process.env.DELETION_HASH_SALT,
+    BACKUP_RETENTION_HOURS: process.env.BACKUP_RETENTION_HOURS,
+    RECOVERY_COPY_EXPIRES_AT: process.env.RECOVERY_COPY_EXPIRES_AT,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
@@ -213,6 +200,8 @@ export const env = createEnv({
  * deployed environment, preview or production, requires real Clerk keys.
  */
 if (isProductionDeploy() && typeof window === 'undefined') {
+  const safetyIssues = productionSafetyIssues();
+  if (safetyIssues.length) throw new Error(safetyIssues.join(' '));
   const productionAuthSchema = z
     .object({
       NEXT_PUBLIC_DEV_AUTH_BYPASS: optionalString,

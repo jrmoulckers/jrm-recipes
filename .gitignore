@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.tools/
+/.hosting-build.json
 /.pnp
 .pnp.js
 

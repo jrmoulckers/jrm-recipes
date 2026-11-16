@@ -4,8 +4,10 @@ Heirloom stores application data in Postgres through `DATABASE_URL`, Drizzle ORM
 SQL migrations in `drizzle/*.sql`. The Drizzle schema source of truth is
 `src/server/db/schema/`, with `drizzle.config.ts` pointing migration output to `./drizzle`.
 
-Production uses Neon history for database recovery. The additional backup strategies below are
-recommendations, not currently deployed copies.
+The last approved production baseline uses Neon history (#855). The independently
+operated Azure target is repository preparation only: PostgreSQL 15, B2s, seven-day
+automated backups, no HA and private access. No database or recovery copy was
+provisioned by this change. See [reversible hosting](reversible-hosting.md).
 
 ## First-line recovery: soft deletes
 
@@ -41,33 +43,52 @@ backup strategy.
 
 ## Retention recommendation
 
-> **Approved production setting (#855): Neon's History window is 6 hours (21,600 seconds).**
-> A human confirmed the saved production setting and chose to keep it. Neon history is currently
-> the only production database recovery copy; there are no separate retained database backups.
+> **Historical approved production setting (#855): Neon's History window is 6 hours (21,600 seconds).**
+> A human confirmed the saved production setting and chose to keep it. At that approval,
+> Neon history was the only production database recovery copy, with no separate retained backups.
 > The longer periods below remain recommendations, not claims about deployed snapshots.
 
-| Backup type                        | Recommended retention                                                       | Notes                                                                  |
-| ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Separate automated daily snapshots | 14-30 days _(recommended; not deployed)_                                    | Would extend recovery and the erasure horizon if introduced.           |
-| Neon history / PITR                | 6 hours _(approved and deployed)_                                           | Shorter than the recommended 7-14 days for slow-discovered corruption. |
-| Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                             |
-| Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage.  |
+| Backup type                        | Recommended retention                                              | Notes                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Separate automated daily snapshots | 14-30 days _(recommended; not deployed)_                           | Would extend recovery and the erasure horizon if introduced.              |
+| Neon history / PITR                | 6 hours _(historically approved; reverify before relying on it)_   | Shorter than the recommended 7-14 days for slow-discovered corruption.    |
+| Pre-destructive-migration snapshot | Explicit reviewed expiry covering the migration observation window | Required before risky schema/data changes; inventory and verify disposal. |
+| Restore-drill artifacts            | Keep latest drill notes and verification evidence                  | Do not keep exported production data outside approved secure storage.     |
 
-### Pinning the retention numbers
+### Configuring the recovery-copy policy
 
-Production runs on **Neon** (`.env.example`, `DEPLOY.md` step 1). Its single **History window**
+The historical **Neon** baseline has a single **History window** that
 retains the restore history for six hours; it is not a separate daily-snapshot policy. The
 approved choice trades recovery from slow-discovered corruption for a shorter period of backup
 exposure after account erasure. The RPO/RTO targets below remain recommendations, not verified
 recovery results; a corruption discovered after six hours may have no recoverable point.
 
-The shared erasure writer in `src/server/users/erasure.ts` records `completedAt + 6 hours`
-for new deletions. Verify the production value under Neon project **Settings then Storage and
-history** (or `GET /projects/{id}` → `history_retention_seconds`) before changing the code,
-runbook, or public notice. If separate database snapshots or logical dumps are introduced, their
-actual retention must be approved and the recorded horizon must cover the **longest** copy; do
-not silently continue using six hours. A longer window also requires revisiting the deletion
-notice and its legal review.
+The shared erasure writer now requires explicit `BACKUP_RETENTION_HOURS` covering the
+longest rolling recovery copy, validated before database lookup, transactions or
+media effects. Six hours is valid only for a verified six-hour-only inventory;
+the selected Azure seven-day setting requires at least 168 hours. There is no
+provider default. The shared policy also accepts optional `RECOVERY_COPY_EXPIRES_AT`:
+a strict valid calendar instant with explicit known UTC offset, not a local date
+or RFC3339 unknown offset `-00:00`. New tombstones record the **maximum** of
+`completedAt + rolling hours` and that fixed-copy expiry.
+
+Inventory every containing copy: old-source PITR and branches, destination backups
+and geo copies, export/staging files, migration runner disks, snapshots and drill
+copies. Record each approved retention/expiry and its enforceable disposal evidence.
+An absent fixed-copy setting is justified only by a reviewed inventory showing
+none lasts later; an unknown source/export expiry blocks promotion, not a reason to
+invent a deadline. Changing retention or creating another copy requires reviewing
+the bound again and revisiting the deletion notice with qualified legal review.
+
+Preserve all existing deletion records and the SAME salt, including `NULL` unknown
+horizons. No startup migration or automatic tombstone rewrite is provided. A newly
+created post-erasure dump does not contain a subject merely because it lasts seven
+days; an earlier copy may. Review historical cohorts against actual containing
+copies and their deadlines. Any authorized reconciliation must only extend known
+horizons conservatively from evidence, never shorten them or fill unknowns with
+`now + 7 days` / `completedAt + 7 days`. Provider retry and legal-hold evidence must
+survive reconciliation. If a valid horizon cannot be established, retain unknown
+status and block promotion until resolved.
 
 Backup retention above is about copies of the database. This is about the live table, and it is
 called out here because it is where someone looking to reclaim storage would reasonably start.
@@ -187,13 +208,12 @@ committed by the recovery itself. See [ADR-0004](./architecture/0004-account-era
 `deletion_records` exists precisely so this is answerable after the identifying rows are gone. It
 stores a salted SHA-256 of each erased `users.id`, so a restored row can be hashed and matched.
 
-1. Confirm the restored database still carries the tombstones. They are only lost if the restore
-   point predates the erasure _and_ the table itself — if `deletion_records` is missing or shorter
-   than production's, stop and take the list from production before proceeding.
-
-   ```sql
-   select count(*) from deletion_records where completed_at is not null;
-   ```
+1. Reconcile the restored ledger with a separately secured authoritative erasure
+   ledger through the fenced transfer/recovery cutoff. A restore before an
+   erasure loses that tombstone even when the table existed; equal row counts do
+   not prove matching subjects or evidence. Verify membership and content,
+   including completed/held/provider-retry records and unknown horizons, using the
+   same salt. Missing authority or unresolved ledger differences block promotion.
 
 2. Find resurrected subjects. Run this against the restored instance with the **same**
    `DELETION_HASH_SALT` the erasures used; a different salt produces no matches and a false all-clear.
@@ -214,18 +234,29 @@ stores a salted SHA-256 of each erased `users.id`, so a restored row can be hash
 5. Check whether any Cloudinary assets were also restored from a provider-side backup. If so, re-run
    the media purge for those subjects.
 
-Only once this returns clean may the restored instance serve production traffic.
+Only after reconciliation, normal-path erasure and database/media/version/dietary
+verification may the restored instance serve traffic. A zero join alone is not
+sufficient if the ledger or salt is wrong. Historical tombstones remain unchanged
+on conflict; policy changes do not silently relabel old evidence.
 
 ### 6. Repoint the application
 
 1. Schedule a maintenance window if user-visible downtime or lost writes are possible.
-2. Put the app into a safe state if the platform supports it, or pause writes at the
-   application/provider layer.
-3. Update the production `DATABASE_URL` in Vercel to the restored instance.
+2. Completely fence/drain every old writer at origin/provider and database role/session
+   boundaries, including webhooks, Server Actions, lazy-read writes and cron.
+   An Azure-only setting cannot fence old unavailable Vercel code; inability to
+   demonstrate the fence blocks a lossless transition. Validate retry/replay for
+   external events; never acknowledge dropped events as successful.
+3. Update `DATABASE_URL` in the active host's approved private configuration store.
 4. Update any direct migration URL, such as `DATABASE_URL_UNPOOLED` or
    `POSTGRES_URL_NON_POOLING`, if used.
 5. Redeploy production.
-6. Confirm `/api/health` reports database health.
+6. Confirm `/api/health` reports database health and complete functional checks before
+   releasing the fence and promoting exactly one scheduler. Dependency-free
+   `/api/health/live` alone does not establish DB readiness.
+7. After new writes, the old database is stale. Switching back needs secure connectivity
+   to the authoritative private DB or another fenced, verified reverse transfer,
+   including erasure reconciliation. Never run two independently writable authorities.
 
 ### 7. Apply pending migrations if needed
 
@@ -275,7 +306,9 @@ Before merging any migration that drops, renames, narrows, or rewrites data:
    - migration file(s).
    - deploy SHA.
    - expected rollback/repair plan.
-5. Keep the snapshot until the migration has been healthy through one normal business cycle.
+5. Agree an explicit snapshot expiry and include it in the recovery-copy inventory
+   before creation. Keep it through the reviewed verification period, then verify
+   disposal; do not extend it silently.
 
 ## Restore drills
 
@@ -300,9 +333,9 @@ only in an immutable backup, restorable only through the runbook above, and re-e
 mandatory gate before that instance can ever serve traffic — rather than truly gone.
 
 For new erasures, `deletion_records.backup_horizon_at` records the upper bound
-`completed_at + 6 hours` inside the shared transaction, whether deletion came from the app,
+the validated rolling/fixed-copy maximum inside the shared transaction, whether deletion came from the app,
 Clerk, or legacy-hold replay (#806). Earlier rows can remain `NULL`: their historical setting
-is unknown, so today's six-hour policy must not be backfilled. A null does **not** mean there
+is unknown, so today's policy must not be backfilled automatically. A null does **not** mean there
 was no backup exposure.
 
 The user-facing deletion notice still states no numeric backup horizon. Updating its versioned
@@ -313,7 +346,7 @@ on restore is the control that prevents erased data from serving traffic.
 ### Dietary profiles and assessments
 
 ADR-0011 dietary data uses this same database and restore boundary. There is no separate dietary
-backup and no shorter promise that bypasses the six-hour Neon history window.
+backup and no shorter promise that bypasses the reviewed recovery-copy inventory.
 
 Restore verification and `assertUserErased` coverage include the profile-personal and
 actor-attributed dietary tables introduced by #1101. Re-applying an erasure must:
@@ -326,12 +359,12 @@ actor-attributed dietary tables introduced by #1101. Re-applying an erasure must
   verdict, or hidden subject/manager linkage;
 - preserve only aggregate dietary deletion/retention counts in `deletion_records`.
 
-Browser model, worker, analysis, IndexedDB, and personalized recipe-page caches are outside Neon.
+Browser model, worker, analysis, IndexedDB, and personalized recipe-page caches are outside the database.
 They are handled by the account-bound cleanup coordinator landed in #1109 and
 [`docs/privacy/dietary-retention-and-rights.md`](./privacy/dietary-retention-and-rights.md), not by
 database restore.
 
-The approved six-hour database horizon does not clear qualified legal review of dietary deletion
+Configuring a database horizon does not clear qualified legal review of dietary deletion
 copy or the outstanding restore/erasure drill evidence required for production.
 
 _Related issues: #257, #678, #806, #855, and #1106._

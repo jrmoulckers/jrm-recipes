@@ -1,6 +1,15 @@
 # Deploying Heirloom
 
-This is the **one-time setup** to take Heirloom live. After this, every merge to
+For independently operated Azure application **and private PostgreSQL** preparation, use the
+[reversible hosting runbook](docs/reversible-hosting.md). Release builds now require
+the shared Server Actions key, explicit recovery-copy policy and immutable revision contract described there;
+configure these before activating this change on native Vercel.
+
+## Legacy Vercel setup reference
+
+The remainder describes the earlier Vercel-managed setup, not the independent Azure
+transition. It does not authorize provisioning or imply Vercel is currently usable.
+For that legacy flow, every merge to
 `main` auto-deploys and runs database migrations for you.
 
 You'll provision three services (all have generous free tiers), paste their keys
